@@ -1,5 +1,5 @@
 import { useLoaderData } from '@remix-run/react'
-import { DataFunctionArgs, json } from '@remix-run/server-runtime'
+import { type DataFunctionArgs, json } from '@remix-run/server-runtime'
 import { ExperienceEditor } from '~/routes/resources+/experience-editor.tsx'
 import { requireUserId } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'

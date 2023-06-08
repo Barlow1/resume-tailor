@@ -1,6 +1,6 @@
 import { conform, useForm } from '@conform-to/react'
 import { getFieldsetConstraint, parse } from '@conform-to/zod'
-import { Skill, type Education, type Experience } from '@prisma/client'
+import { type Skill, type Education, type Experience } from '@prisma/client'
 import { json, redirect, type DataFunctionArgs } from '@remix-run/node'
 import { Link, useFetcher } from '@remix-run/react'
 import { z } from 'zod'

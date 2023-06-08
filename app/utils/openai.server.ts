@@ -1,4 +1,3 @@
-import { Job } from '@prisma/client'
 import { Configuration, OpenAIApi } from 'openai'
 
 export const getAnimalResponse = async (animal: string) => {
