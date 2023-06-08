@@ -1,7 +1,7 @@
 import type { V2_MetaFunction } from '@remix-run/node'
-import { logos, kodyRocket, stars } from './logos/logos.ts'
+import { logos, ResumeTailor, stars } from './logos/logos.ts'
 
-export const meta: V2_MetaFunction = () => [{ title: 'Epic jobs' }]
+export const meta: V2_MetaFunction = () => [{ title: 'Resume Tailor' }]
 
 export default function Index() {
 	return (
@@ -17,20 +17,19 @@ export default function Index() {
 							<h1 className="text-center text-mega font-extrabold tracking-tight sm:text-8xl lg:text-9xl">
 								<a
 									className="block uppercase text-accent-pink drop-shadow-md"
-									href="https://www.epicweb.dev/stack"
+									href="https://resume-tailor.fly.dev/signup"
 								>
-									Epic Stack
+									Resume Tailor
 								</a>
 							</h1>
 							<p className="mx-auto mt-6 max-w-lg text-center text-xl text-white sm:max-w-3xl">
-								Check the README.md file for instructions on how to get this
-								project deployed.
+								Instantly tailor your resume and CV to land your dream job ✨
 							</p>
-							<a href="https://www.epicweb.dev">
+							<a href="https://resume-tailor.fly.dev">
 								<img
-									src={kodyRocket}
-									alt="Illustration of a Koala riding a rocket"
-									className="mx-auto mt-8 w-full max-w-[12rem] md:max-w-[16rem]"
+									src={ResumeTailor}
+									alt="Old unorganized resume transformed into beautifully tailored stack of resumes"
+									className="mx-auto mt-8 w-full max-h-[56rem] md:max-h-[65rem] max-w-[26rem] md:max-w-[40rem]"
 								/>
 							</a>
 						</div>

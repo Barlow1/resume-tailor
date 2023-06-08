@@ -123,10 +123,10 @@ export function ErrorBoundary() {
 export const meta: V2_MetaFunction<typeof loader> = ({ data, params }) => {
 	const displayName = data?.user.name ?? params.username
 	return [
-		{ title: `${displayName} | Epic HIbs` },
+		{ title: `${displayName} | Resume Tailor` },
 		{
 			name: 'description',
-			content: `${displayName} on Epic Jobs is not a host or renter yet.`,
+			content: `${displayName} on Resume Tailor is not a host or renter yet.`,
 		},
 	]
 }

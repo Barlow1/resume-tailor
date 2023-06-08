@@ -104,7 +104,7 @@ async function sendPasswordResetEmail({
 
 	await sendEmail({
 		to: user.email,
-		subject: `Epic jobs Password Reset`,
+		subject: `Resume Tailor Password Reset`,
 		text: `Please open this URL: ${resetPasswordUrl}`,
 		html: `
 		<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -113,8 +113,8 @@ async function sendPasswordResetEmail({
 				<meta http-equiv="Content-Type" content="text/html charset=UTF-8" />
 			</head>
 			<body>
-				<h1>Reset your Epic jobs password.</h1>
-				<p>Click the link below to reset the Epic jobs password for ${user.username}.</p>
+				<h1>Reset your Resume Tailor password.</h1>
+				<p>Click the link below to reset the Resume Tailor password for ${user.username}.</p>
 				<a href="${resetPasswordUrl}">${resetPasswordUrl}</a>
 			</body>
 		</html>
@@ -123,7 +123,7 @@ async function sendPasswordResetEmail({
 }
 
 export const meta: V2_MetaFunction = () => {
-	return [{ title: 'Password Recovery for Epic jobs' }]
+	return [{ title: 'Password Recovery for Resume Tailor' }]
 }
 
 export default function SignupRoute() {
