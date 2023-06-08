@@ -16,9 +16,6 @@ export async function loader({ request }: DataFunctionArgs) {
 			skills: true,
 		},
 	})
-	if (!resume) {
-		throw new Response('Not found', { status: 404 })
-	}
 	return json({ resume })
 }
 

@@ -119,7 +119,7 @@ export function ResumeEditor({
 		experience: Stringify<Experience>[]
 		education: Stringify<Education>[]
 		skills: Stringify<Skill>[]
-	}
+	} | null
 }) {
 	const resumeEditorFetcher = useFetcher<typeof action>()
 
