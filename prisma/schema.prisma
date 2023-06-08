@@ -1,0 +1,157 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model File {
+  id   String @id @unique @default(uuid())
+  blob Bytes
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  image     Image?
+}
+
+model Image {
+  file   File   @relation(fields: [fileId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  fileId String @unique
+
+  contentType String
+  altText     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User?
+}
+
+model Role {
+  id   String @id @unique @default(cuid())
+  name String @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users       User[]
+  permissions Permission[]
+}
+
+model Permission {
+  id   String @id @unique @default(cuid())
+  name String @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  roles Role[]
+}
+
+model User {
+  id       String  @id @unique @default(cuid())
+  email    String  @unique
+  username String  @unique
+  name     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  image   Image?  @relation(fields: [imageId], references: [fileId])
+  imageId String? @unique
+
+  password Password?
+  jobs     Job[]
+  resumes  Resume[]
+  roles    Role[]
+  Session  Session[]
+}
+
+model Password {
+  hash String
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId String @unique
+}
+
+model Session {
+  id             String   @id @default(uuid())
+  createdAt      DateTime @default(now())
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String
+  expirationDate DateTime
+}
+
+model Job {
+  id        String   @id @unique @default(cuid())
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  ownerId String
+}
+
+model Experience {
+  id              String   @id @unique @default(cuid())
+  employer        String
+  role            String
+  startDate       DateTime
+  endDate         DateTime
+  city            String
+  state           String
+  country         String
+  responsibilities String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  resume          Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  resumeId        String
+}
+
+model Education {
+  id             String   @id @unique @default(cuid())
+  school         String
+  field          String
+  graduationDate DateTime
+  city           String
+  state          String
+  country        String
+  achievements   String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  resume         Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  resumeId       String
+}
+
+model Skill {
+  id        String   @id @unique @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  resume    Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  resumeId  String
+}
+
+model Resume {
+  id         String       @id @unique @default(cuid())
+  title      String
+  firstName  String
+  lastName   String
+  email      String
+  phone      String
+  city       String
+  state      String
+  country    String
+  summary    String
+  experience Experience[]
+  skills     Skill[]
+  education  Education[]
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  ownerId String
+}
