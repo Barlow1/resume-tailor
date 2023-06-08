@@ -1,4 +1,3 @@
-import { Education, Experience, Resume } from '@prisma/client'
 import { Outlet, useLoaderData } from '@remix-run/react'
 import { json, type DataFunctionArgs } from '@remix-run/server-runtime'
 import { ResumeEditor } from '~/routes/resources+/resume-editor.tsx'

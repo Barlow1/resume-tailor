@@ -4,10 +4,9 @@ import * as Dialog from '@radix-ui/react-dialog'
 import { json, redirect, type DataFunctionArgs } from '@remix-run/node'
 import { useFetcher, useNavigate, useRouteLoaderData } from '@remix-run/react'
 import { z } from 'zod'
-import { type User, requireUserId } from '~/utils/auth.server.ts'
+import { type User } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
 import { Button, ErrorList, Field, TextareaField } from '~/utils/forms.tsx'
-import { loader as EditLoader } from '~/routes/users+/$username_+/resume+/edit.tsx'
 
 export const ExperienceEditorSchema = z.object({
 	id: z.string().optional(),

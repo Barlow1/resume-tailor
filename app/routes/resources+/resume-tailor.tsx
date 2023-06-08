@@ -1,12 +1,17 @@
 import { conform, useForm } from '@conform-to/react'
 import { getFieldsetConstraint, parse } from '@conform-to/zod'
-import { Skill, type Education, type Experience, Job } from '@prisma/client'
+import {
+	type Skill,
+	type Education,
+	type Experience,
+	type Job,
+} from '@prisma/client'
 import { json, redirect, type DataFunctionArgs } from '@remix-run/node'
 import { Link, useFetcher } from '@remix-run/react'
 import { z } from 'zod'
 import { requireUserId } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
-import { Button, ErrorList, Field, TextareaField } from '~/utils/forms.tsx'
+import { ErrorList, Field, TextareaField } from '~/utils/forms.tsx'
 import { type Stringify } from '~/utils/misc.ts'
 
 export const ResumeEditorSchema = z.object({
@@ -105,7 +110,7 @@ export async function action({ request }: DataFunctionArgs) {
 export function ResumeTailor({
 	resume,
 }: {
-	job?: Stringify<Job>,
+	job?: Stringify<Job>
 	resume?: {
 		id: string
 		title: string

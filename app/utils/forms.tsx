@@ -1,7 +1,7 @@
 import * as Checkbox from '@radix-ui/react-checkbox'
 import { Link } from '@remix-run/react'
 import { clsx } from 'clsx'
-import React, { useCallback, useEffect, useId, useLayoutEffect } from 'react'
+import React, { useCallback, useId } from 'react'
 import styles from './forms.module.css'
 import useIsomorphicLayoutEffect from './useIsomorphicLayoutEffect.tsx'
 import useEventListener from './useEventListener.ts'

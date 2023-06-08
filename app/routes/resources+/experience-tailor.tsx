@@ -9,7 +9,6 @@ import {
 	Button,
 	ErrorList,
 	TextareaField,
-	useAutosizeTextArea,
 } from '~/utils/forms.tsx'
 import { type Stringify } from '~/utils/misc.ts'
 import { type Job } from '@prisma/client'

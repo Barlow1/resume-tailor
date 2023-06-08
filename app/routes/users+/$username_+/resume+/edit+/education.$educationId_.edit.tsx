@@ -1,5 +1,5 @@
 import { useLoaderData } from '@remix-run/react'
-import { DataFunctionArgs, json } from '@remix-run/server-runtime'
+import { type DataFunctionArgs, json } from '@remix-run/server-runtime'
 import { EducationEditor } from '~/routes/resources+/education-editor.tsx'
 import { requireUserId } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
@@ -20,6 +20,6 @@ export async function loader({ request, params }: DataFunctionArgs) {
 
 export default function EditEducationRoute() {
 	const data = useLoaderData<typeof loader>()
-	
+
 	return <EducationEditor education={data.education} />
 }
