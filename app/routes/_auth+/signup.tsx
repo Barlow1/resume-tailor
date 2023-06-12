@@ -118,7 +118,7 @@ export async function action({ request }: DataFunctionArgs) {
 
 	const response = await sendEmail({
 		to: email,
-		subject: `Welcome to Epic jobs!`,
+		subject: `Welcome to Resume Tailor!`,
 		text: `Please open this URL: ${onboardingUrl}`,
 		html: `
 		<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -127,7 +127,7 @@ export async function action({ request }: DataFunctionArgs) {
 				<meta http-equiv="Content-Type" content="text/html charset=UTF-8" />
 			</head>
 			<body>
-				<h1>Welcome to Epic jobs!</h1>
+				<h1>Welcome to Resume Tailor!</h1>
 				<p>Click the link below to get started:</p>
 				<a href="${onboardingUrl}">${onboardingUrl}</a>
 			</body>
@@ -149,7 +149,7 @@ export async function action({ request }: DataFunctionArgs) {
 }
 
 export const meta: V2_MetaFunction = () => {
-	return [{ title: 'Sign Up | Epic jobs' }]
+	return [{ title: 'Sign Up | Resume Tailor' }]
 }
 
 export default function SignupRoute() {

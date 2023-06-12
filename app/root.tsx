@@ -59,7 +59,7 @@ export const links: LinksFunction = () => {
 
 export const meta: V2_MetaFunction = () => {
 	return [
-		{ title: 'Epic Jobs' },
+		{ title: 'Resume Tailor' },
 		{ name: 'description', content: 'Find yourself in outer space' },
 	]
 }
@@ -98,8 +98,8 @@ export default function App() {
 				<header className="container mx-auto py-6">
 					<nav className="flex justify-between">
 						<Link to="/">
-							<div className="font-light">epic</div>
-							<div className="font-bold">jobs</div>
+							<div className="font-light">Resume</div>
+							<div className="font-bold">Tailor</div>
 						</Link>
 						<div className="flex items-center gap-10">
 							{user ? (
@@ -119,8 +119,8 @@ export default function App() {
 
 				<div className="container mx-auto flex justify-between">
 					<Link to="/">
-						<div className="font-light">epic</div>
-						<div className="font-bold">jobs</div>
+						<div className="font-light">Resume</div>
+						<div className="font-bold">Tailor</div>
 					</Link>
 					<ThemeSwitch />
 				</div>

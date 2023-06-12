@@ -29,7 +29,7 @@ export async function loader({ request }: DataFunctionArgs) {
 }
 
 export const meta: V2_MetaFunction = () => {
-	return [{ title: 'Login to Epic jobs' }]
+	return [{ title: 'Login to Resume Tailor' }]
 }
 
 export default function LoginPage() {

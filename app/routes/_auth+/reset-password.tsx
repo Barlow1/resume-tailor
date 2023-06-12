@@ -87,7 +87,7 @@ export async function action({ request }: DataFunctionArgs) {
 }
 
 export const meta: V2_MetaFunction = () => {
-	return [{ title: 'Reset Password | Epic jobs' }]
+	return [{ title: 'Reset Password | Resume Tailor' }]
 }
 
 export default function ResetPasswordPage() {
