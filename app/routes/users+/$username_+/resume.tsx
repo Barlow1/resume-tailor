@@ -75,7 +75,7 @@ export function ErrorBoundary() {
 		<GeneralErrorBoundary
 			statusHandlers={{
 				404: ({ params }) => (
-					<p>No user with the username "{params.username}" exists</p>
+					<p>Resume for "{params.username}" does not exist</p>
 				),
 			}}
 		/>

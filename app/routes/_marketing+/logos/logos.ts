@@ -19,7 +19,7 @@ import eslint from './eslint.svg'
 
 export { default as stars } from './stars.jpg'
 
-export { default as kodyRocket } from './kody-rocket.png'
+export { default as ResumeTailor } from './ResumeTailor.webp'
 
 export const logos = [
 	{

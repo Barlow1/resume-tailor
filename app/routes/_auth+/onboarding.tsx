@@ -117,7 +117,7 @@ export async function action({ request }: DataFunctionArgs) {
 }
 
 export const meta: V2_MetaFunction = () => {
-	return [{ title: 'Setup Epic jobs Account' }]
+	return [{ title: 'Setup Resume Tailor Account' }]
 }
 
 export default function OnboardingPage() {
