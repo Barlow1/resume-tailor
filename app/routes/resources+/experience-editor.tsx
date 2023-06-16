@@ -141,7 +141,7 @@ export function ExperienceEditor({
 		},
 		shouldRevalidate: 'onBlur',
 	})
-	const dismissModal = () => navigate('..')
+	const dismissModal = () => navigate('..', { preventScrollReset: true })
 
 	return (
 		<Dialog.Root open={true}>

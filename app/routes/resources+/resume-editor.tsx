@@ -99,7 +99,23 @@ export async function action({ request }: DataFunctionArgs) {
 	} else {
 		resume = await prisma.resume.create({ data, select })
 	}
-	return redirect(`/users/${resume.owner.username}/resume/edit`)
+
+	const formAction = formData.get('action')
+
+	switch (formAction) {
+		case 'experience':
+			return redirect(
+				`/users/${resume.owner.username}/resume/edit/experiences/new`,
+			)
+		case 'education':
+			return redirect(
+				`/users/${resume.owner.username}/resume/edit/education/new`,
+			)
+		case 'skill':
+			return redirect(`/users/${resume.owner.username}/resume/edit/skills/new`)
+		default:
+			return redirect(`/users/${resume.owner.username}/resume/edit`)
+	}
 }
 
 export function ResumeEditor({
@@ -148,6 +164,7 @@ export function ResumeEditor({
 		<resumeEditorFetcher.Form
 			method="post"
 			action="/resources/resume-editor"
+			preventScrollReset
 			{...form.props}
 		>
 			<input name="id" type="hidden" value={resume?.id} />
@@ -236,7 +253,16 @@ export function ResumeEditor({
 						</div>
 				  ))
 				: null}
-			<Link to="experiences/new">Add new experience +</Link>
+			<Button
+				size="xs"
+				variant="secondary"
+				type="submit"
+				className="mt-2"
+				value={'experience'}
+				name="action"
+			>
+				Add new experience +
+			</Button>
 			<h2 className="mb-2 text-h2">Education</h2>
 			{resume?.education.length
 				? resume.education.map(education => (
@@ -247,7 +273,16 @@ export function ResumeEditor({
 						</div>
 				  ))
 				: null}
-			<Link to="education/new">Add new education +</Link>
+			<Button
+				size="xs"
+				variant="secondary"
+				type="submit"
+				className="mt-2"
+				value={'education'}
+				name="action"
+			>
+				Add new education +
+			</Button>
 			<h2 className="mb-2 text-h2">Skills</h2>
 			{resume?.skills.length
 				? resume.skills.map(skill => (
@@ -258,7 +293,16 @@ export function ResumeEditor({
 						</div>
 				  ))
 				: null}
-			<Link to="skills/new">Add new skill +</Link>
+			<Button
+				size="xs"
+				variant="secondary"
+				type="submit"
+				className="mt-2"
+				value={'skill'}
+				name="action"
+			>
+				Add new skill +
+			</Button>
 			<ErrorList errors={form.errors} id={form.errorId} />
 			<div className="flex justify-end gap-4">
 				<Button size="md" variant="secondary" type="reset">
