@@ -11,7 +11,7 @@ export const getExperienceResponse = async ({
 	jobTitle: string
 	jobDescription: string
 }) => {
-	const llm = new OpenAI({ temperature: 0 })
+	const llm = new OpenAI({ temperature: 0, modelName: 'gpt-4' })
 	const template = `You are an expert resume writer with 20 years experience landing people {jobTitle} roles. I want you to provide me a list of pain points, key skills, and responsibilities an applicant must have to get a first interview with the hiring manager.
  
   Job Description: {jobDescription}
@@ -28,7 +28,7 @@ export const getExperienceResponse = async ({
 	})
 
 	// This is an LLMChain to write a review of a play given a synopsis.
-	const reviewLLM = new OpenAI({ temperature: 0 })
+	const reviewLLM = new OpenAI({ temperature: 0, modelName: 'gpt-4' })
 	const reviewTemplate = `Here are the current experiences listed in my resume: ${experience}.
 	
 	Modify this experience section to emphasize and succinctly present the following key experiences
@@ -53,5 +53,5 @@ export const getExperienceResponse = async ({
 		outputVariables: ['tailoredExperience'],
 	})
 	const review = await overallChain.call({ jobDescription, jobTitle })
-	return review.tailoredExperience;
+	return review.tailoredExperience
 }
