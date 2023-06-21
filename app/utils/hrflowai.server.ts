@@ -1,5 +1,3 @@
-import fs from 'fs'
-
 type HRFlowOptions = {
 	api_email: string
 	api_key: string

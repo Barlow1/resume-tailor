@@ -39,7 +39,7 @@ export async function action({ request }: DataFunctionArgs) {
 			{ status: 400 },
 		)
 	}
-	let experience: { id: string; resume: { title: string; owner: User } }
+	let experience: { id: string; resume: { title: string | null; owner: User } }
 
 	const {
 		employer,

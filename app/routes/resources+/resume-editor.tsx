@@ -123,15 +123,16 @@ export function ResumeEditor({
 }: {
 	resume?: {
 		id: string
-		title: string
-		summary: string
-		firstName: string
-		lastName: string
-		email: string
-		phone: string
-		city: string
-		state: string
-		country: string
+		title: string | null
+		summary: string | null
+		firstName: string | null
+		lastName: string | null
+		email: string | null
+		phone: string | null
+		city: string | null
+		state: string | null
+		fileId: string | null
+		country: string | null
 		experience: Stringify<Experience>[]
 		education: Stringify<Education>[]
 		skills: Stringify<Skill>[]
@@ -147,15 +148,15 @@ export function ResumeEditor({
 			return parse(formData, { schema: ResumeEditorSchema })
 		},
 		defaultValue: {
-			title: resume?.title,
-			summary: resume?.summary,
-			firstName: resume?.firstName,
-			lastName: resume?.lastName,
-			email: resume?.email,
-			phone: resume?.phone,
-			city: resume?.city,
-			state: resume?.state,
-			country: resume?.country,
+			title: resume?.title ?? undefined,
+			summary: resume?.summary ?? undefined,
+			firstName: resume?.firstName ?? undefined,
+			lastName: resume?.lastName ?? undefined,
+			email: resume?.email ?? undefined,
+			phone: resume?.phone ?? undefined,
+			city: resume?.city ?? undefined,
+			state: resume?.state ?? undefined,
+			country: resume?.country ?? undefined,
 		},
 		shouldRevalidate: 'onBlur',
 	})

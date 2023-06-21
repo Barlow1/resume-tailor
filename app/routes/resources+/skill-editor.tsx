@@ -32,7 +32,7 @@ export async function action({ request }: DataFunctionArgs) {
 			{ status: 400 },
 		)
 	}
-	let skill: { id: string; resume: { title: string; owner: User } }
+	let skill: { id: string; resume: { title: string | null; owner: User } }
 
 	const { id, name, resumeId } = submission.value
 
