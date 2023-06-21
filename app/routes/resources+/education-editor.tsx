@@ -38,7 +38,7 @@ export async function action({ request }: DataFunctionArgs) {
 			{ status: 400 },
 		)
 	}
-	let education: { id: string; resume: { title: string; owner: User } }
+	let education: { id: string; resume: { title: string | null; owner: User } }
 
 	const {
 		school,
@@ -136,7 +136,7 @@ export function EducationEditor({
 		},
 		shouldRevalidate: 'onBlur',
 	})
-	const dismissModal = () => navigate('..')
+	const dismissModal = () => navigate('..', { preventScrollReset: true })
 
 	return (
 		<Dialog.Root open={true}>

@@ -63,6 +63,7 @@
     "fs-extra": "^11.1.1",
     "get-port": "^6.1.2",
     "isbot": "^3.6.10",
+    "langchain": "^0.0.95",
     "litefs-js": "^1.1.2",
     "lru-cache": "^7.18.3",
     "morgan": "^1.10.0",

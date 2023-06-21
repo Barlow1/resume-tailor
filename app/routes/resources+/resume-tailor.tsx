@@ -7,11 +7,11 @@ import {
 	type Job,
 } from '@prisma/client'
 import { json, redirect, type DataFunctionArgs } from '@remix-run/node'
-import { Link, useFetcher } from '@remix-run/react'
+import { useFetcher } from '@remix-run/react'
 import { z } from 'zod'
 import { requireUserId } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
-import { ErrorList, Field, TextareaField } from '~/utils/forms.tsx'
+import { ButtonLink, ErrorList, Field, TextareaField } from '~/utils/forms.tsx'
 import { type Stringify } from '~/utils/misc.ts'
 
 export const ResumeEditorSchema = z.object({
@@ -113,15 +113,16 @@ export function ResumeTailor({
 	job?: Stringify<Job>
 	resume?: {
 		id: string
-		title: string
-		summary: string
-		firstName: string
-		lastName: string
-		email: string
-		phone: string
-		city: string
-		state: string
-		country: string
+		title: string | null
+		summary: string | null
+		firstName: string | null
+		lastName: string | null
+		email: string | null
+		phone: string | null
+		city: string | null
+		state: string | null
+		fileId: string | null
+		country: string | null
 		experience: Stringify<Experience>[]
 		education: Stringify<Education>[]
 		skills: Stringify<Skill>[]
@@ -137,15 +138,15 @@ export function ResumeTailor({
 			return parse(formData, { schema: ResumeEditorSchema })
 		},
 		defaultValue: {
-			title: resume?.title,
-			summary: resume?.summary,
-			firstName: resume?.firstName,
-			lastName: resume?.lastName,
-			email: resume?.email,
-			phone: resume?.phone,
-			city: resume?.city,
-			state: resume?.state,
-			country: resume?.country,
+			title: resume?.title ?? undefined,
+			summary: resume?.summary ?? undefined,
+			firstName: resume?.firstName ?? undefined,
+			lastName: resume?.lastName ?? undefined,
+			email: resume?.email ?? undefined,
+			phone: resume?.phone ?? undefined,
+			city: resume?.city ?? undefined,
+			state: resume?.state ?? undefined,
+			country: resume?.country ?? undefined,
 		},
 		shouldRevalidate: 'onBlur',
 	})
@@ -233,38 +234,39 @@ export function ResumeTailor({
 				errors={fields.country.errors}
 			/>
 			<h2 className="mb-2 text-h2">Experience</h2>
-			{resume?.experience.length
-				? resume.experience.map(experience => (
-						<div key={experience.id}>
-							<Link to={`experiences/${experience.id}`}>
-								{experience.employer} - {experience.role}
-							</Link>
-						</div>
-				  ))
-				: null}
-			<Link to="experiences/new">Add new experience +</Link>
+			<div className="space-y-2">
+				{resume?.experience.length
+					? resume.experience.map(experience => (
+							<div key={experience.id}>
+								<ButtonLink
+									size="sm"
+									variant="secondary"
+									to={`experiences/${experience.id}`}
+								>
+									Tailor {experience.employer} - {experience.role}
+								</ButtonLink>
+							</div>
+					  ))
+					: null}
+			</div>
 			<h2 className="mb-2 text-h2">Education</h2>
 			{resume?.education.length
 				? resume.education.map(education => (
 						<div key={education.id}>
-							<Link key={education.id} to={`education/${education.id}`}>
+							<p key={education.id}>
 								{education.school} - {education.field}
-							</Link>
+							</p>
 						</div>
 				  ))
 				: null}
-			<Link to="education/new">Add new education +</Link>
 			<h2 className="mb-2 text-h2">Skills</h2>
 			{resume?.skills.length
 				? resume.skills.map(skill => (
 						<div key={skill.id}>
-							<Link key={skill.id} to={`skills/${skill.id}`}>
-								{skill.name}
-							</Link>
+							<p key={skill.id}>{skill.name}</p>
 						</div>
 				  ))
 				: null}
-			<Link to="skills/new">Add new skill +</Link>
 			<ErrorList errors={form.errors} id={form.errorId} />
 		</resumeTailorFetcher.Form>
 	)
