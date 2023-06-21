@@ -1,4 +1,10 @@
-import { useLoaderData, Outlet, NavLink, Link } from '@remix-run/react'
+import {
+	useLoaderData,
+	Outlet,
+	NavLink,
+	Link,
+	useLocation,
+} from '@remix-run/react'
 import { json, type DataFunctionArgs } from '@remix-run/node'
 import { prisma } from '~/utils/db.server.ts'
 import { clsx } from 'clsx'
@@ -28,6 +34,7 @@ export async function loader({ params, request }: DataFunctionArgs) {
 export default function ResumeRoute() {
 	const data = useLoaderData<typeof loader>()
 	const ownerDisplayName = data.owner.name ?? data.owner.username
+	const location = useLocation()
 	const navLinkDefaultClassName =
 		'line-clamp-2 block rounded-l-full py-2 pl-8 pr-6 text-base lg:text-xl'
 	return (
@@ -50,6 +57,18 @@ export default function ResumeRoute() {
 					<ul>
 						<li>
 							<NavLink
+								to="upload"
+								className={({ isActive }) =>
+									clsx(navLinkDefaultClassName, {
+										'bg-night-400': isActive,
+									})
+								}
+							>
+								Upload
+							</NavLink>
+						</li>
+						<li>
+							<NavLink
 								to="edit"
 								className={({ isActive }) =>
 									clsx(navLinkDefaultClassName, {
@@ -63,6 +82,7 @@ export default function ResumeRoute() {
 					</ul>
 				</div>
 				<main className="col-span-3 bg-night-400 px-10 py-12 md:rounded-r-3xl">
+					{location.pathname.includes('edit') ? null : <p>Resume</p>}
 					<Outlet />
 				</main>
 			</div>
