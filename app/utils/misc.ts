@@ -28,6 +28,10 @@ export function getUserImgSrc(imageId?: string | null) {
 	return imageId ? `/resources/file/${imageId}` : `/img/user.png`
 }
 
+export function getFile(fileId?: string | null) {
+	return fileId ? `/resources/file/${fileId}` : null
+}
+
 export function getErrorMessage(error: unknown) {
 	if (typeof error === 'string') return error
 	if (
@@ -103,5 +107,10 @@ export function useDoubleCheck() {
 }
 
 export type Stringify<T> = {
-	[K in keyof T]: string;
-  };
+	[K in keyof T]: string
+}
+
+export function bytesToMB(bytes: number) {
+	const megabytes = bytes / (1024 * 1024)
+	return Math.round(megabytes * 10) / 10
+}

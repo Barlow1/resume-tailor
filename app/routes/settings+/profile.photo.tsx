@@ -134,7 +134,7 @@ export default function PhotoChooserModal() {
 	})
 
 	const deleteProfilePhotoFormId = 'delete-profile-photo'
-	const dismissModal = () => navigate('..')
+	const dismissModal = () => navigate('..', { preventScrollReset: true })
 	return (
 		<Dialog.Root open={true}>
 			<Dialog.Portal>

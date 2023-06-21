@@ -99,7 +99,23 @@ export async function action({ request }: DataFunctionArgs) {
 	} else {
 		resume = await prisma.resume.create({ data, select })
 	}
-	return redirect(`/users/${resume.owner.username}/resume/edit`)
+
+	const formAction = formData.get('action')
+
+	switch (formAction) {
+		case 'experience':
+			return redirect(
+				`/users/${resume.owner.username}/resume/edit/experiences/new`,
+			)
+		case 'education':
+			return redirect(
+				`/users/${resume.owner.username}/resume/edit/education/new`,
+			)
+		case 'skill':
+			return redirect(`/users/${resume.owner.username}/resume/edit/skills/new`)
+		default:
+			return redirect(`/users/${resume.owner.username}/resume/edit`)
+	}
 }
 
 export function ResumeEditor({
@@ -107,15 +123,16 @@ export function ResumeEditor({
 }: {
 	resume?: {
 		id: string
-		title: string
-		summary: string
-		firstName: string
-		lastName: string
-		email: string
-		phone: string
-		city: string
-		state: string
-		country: string
+		title: string | null
+		summary: string | null
+		firstName: string | null
+		lastName: string | null
+		email: string | null
+		phone: string | null
+		city: string | null
+		state: string | null
+		fileId: string | null
+		country: string | null
 		experience: Stringify<Experience>[]
 		education: Stringify<Education>[]
 		skills: Stringify<Skill>[]
@@ -131,15 +148,15 @@ export function ResumeEditor({
 			return parse(formData, { schema: ResumeEditorSchema })
 		},
 		defaultValue: {
-			title: resume?.title,
-			summary: resume?.summary,
-			firstName: resume?.firstName,
-			lastName: resume?.lastName,
-			email: resume?.email,
-			phone: resume?.phone,
-			city: resume?.city,
-			state: resume?.state,
-			country: resume?.country,
+			title: resume?.title ?? undefined,
+			summary: resume?.summary ?? undefined,
+			firstName: resume?.firstName ?? undefined,
+			lastName: resume?.lastName ?? undefined,
+			email: resume?.email ?? undefined,
+			phone: resume?.phone ?? undefined,
+			city: resume?.city ?? undefined,
+			state: resume?.state ?? undefined,
+			country: resume?.country ?? undefined,
 		},
 		shouldRevalidate: 'onBlur',
 	})
@@ -148,6 +165,7 @@ export function ResumeEditor({
 		<resumeEditorFetcher.Form
 			method="post"
 			action="/resources/resume-editor"
+			preventScrollReset
 			{...form.props}
 		>
 			<input name="id" type="hidden" value={resume?.id} />
@@ -236,7 +254,16 @@ export function ResumeEditor({
 						</div>
 				  ))
 				: null}
-			<Link to="experiences/new">Add new experience +</Link>
+			<Button
+				size="xs"
+				variant="secondary"
+				type="submit"
+				className="mt-2"
+				value={'experience'}
+				name="action"
+			>
+				Add new experience +
+			</Button>
 			<h2 className="mb-2 text-h2">Education</h2>
 			{resume?.education.length
 				? resume.education.map(education => (
@@ -247,7 +274,16 @@ export function ResumeEditor({
 						</div>
 				  ))
 				: null}
-			<Link to="education/new">Add new education +</Link>
+			<Button
+				size="xs"
+				variant="secondary"
+				type="submit"
+				className="mt-2"
+				value={'education'}
+				name="action"
+			>
+				Add new education +
+			</Button>
 			<h2 className="mb-2 text-h2">Skills</h2>
 			{resume?.skills.length
 				? resume.skills.map(skill => (
@@ -258,7 +294,16 @@ export function ResumeEditor({
 						</div>
 				  ))
 				: null}
-			<Link to="skills/new">Add new skill +</Link>
+			<Button
+				size="xs"
+				variant="secondary"
+				type="submit"
+				className="mt-2"
+				value={'skill'}
+				name="action"
+			>
+				Add new skill +
+			</Button>
 			<ErrorList errors={form.errors} id={form.errorId} />
 			<div className="flex justify-end gap-4">
 				<Button size="md" variant="secondary" type="reset">

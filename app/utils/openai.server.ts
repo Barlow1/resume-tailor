@@ -1,31 +1,6 @@
-import { Configuration, OpenAIApi } from 'openai'
-
-export const getAnimalResponse = async (animal: string) => {
-	const configuration = new Configuration({
-		organization: process.env.OPENAI_ORG_ID,
-		apiKey: process.env.OPENAI_API_KEY,
-	})
-	const openai = new OpenAIApi(configuration)
-	const completion = await openai.createCompletion({
-		model: 'text-davinci-003',
-		prompt: generateAnimalPrompt(animal),
-		temperature: 0.6,
-	})
-	return completion.data.choices[0].text ?? ''
-}
-
-const generateAnimalPrompt = (animal: string) => {
-	const capitalizedAnimal =
-		animal[0].toUpperCase() + animal.slice(1).toLowerCase()
-	return `Suggest three names for an animal that is a superhero.
-  
-  Animal: Cat
-  Names: Captain Sharpclaw, Agent Fluffball, The Incredible Feline
-  Animal: Dog
-  Names: Ruff the Protector, Wonder Canine, Sir Barks-a-Lot
-  Animal: ${capitalizedAnimal}
-  Names:`
-}
+import { LLMChain, SequentialChain } from 'langchain/chains'
+import { OpenAI } from 'langchain/llms/openai'
+import { PromptTemplate } from 'langchain/prompts'
 
 export const getExperienceResponse = async ({
 	experience,
@@ -36,40 +11,47 @@ export const getExperienceResponse = async ({
 	jobTitle: string
 	jobDescription: string
 }) => {
-	const configuration = new Configuration({
-		organization: process.env.OPENAI_ORG_ID,
-		apiKey: process.env.OPENAI_API_KEY,
-	})
-	const openai = new OpenAIApi(configuration)
-	const completion = await openai.createCompletion({
-		model: 'text-davinci-003',
-		prompt: generateExperiencePrompt({
-			experience,
-			jobTitle,
-			jobDescription,
-		}),
-		temperature: 0.6,
-		max_tokens: 3000,
-	})
-	return completion.data.choices[0].text ?? ''
-}
+	const llm = new OpenAI({ temperature: 0, modelName: 'gpt-4' })
+	const template = `You are an expert resume writer with 20 years experience landing people {jobTitle} roles. I want you to provide me a list of pain points, key skills, and responsibilities an applicant must have to get a first interview with the hiring manager.
+ 
+  Job Description: {jobDescription}
 
-const generateExperiencePrompt = ({
-	experience,
-	jobTitle,
-	jobDescription,
-}: {
-	experience: string
-	jobTitle: string
-	jobDescription: string
-}) => {
-	return `Create an Experience List using the following Experience List to 
-	include specific examples with quantified 
-	outcomes that will increase the chances of getting 
-	an interview for the supplied Job Title and Job Description.
-	Add and remove experiences if needed but only include the same amount of items in the list.
-	Experience List: ${experience}
-	Job Title: ${jobTitle}
-	Job Description: ${jobDescription}
-	Edited Experience List: `
+  Expert Resume Writer: This is a list of pain points, key skills, and responsibilities an applicant must have to get a first interview with the hiring manager for the above job description:`
+	const promptTemplate = new PromptTemplate({
+		template,
+		inputVariables: ['jobDescription', 'jobTitle'],
+	})
+	const synopsisChain = new LLMChain({
+		llm,
+		prompt: promptTemplate,
+		outputKey: 'previouslyGeneratedExperiences',
+	})
+
+	// This is an LLMChain to write a review of a play given a synopsis.
+	const reviewLLM = new OpenAI({ temperature: 0, modelName: 'gpt-4' })
+	const reviewTemplate = `Here are the current experiences listed in my resume: ${experience}.
+	
+	Modify this experience section to emphasize and succinctly present the following key experiences
+	required for this position: {previouslyGeneratedExperiences}. 
+	Ensure to merge similar experiences, remove redundant wording, and keep each skill description concise.
+	The modified experiences section should highlight these key experiences in a clear and brief manner that aligns with the requirements for the position.
+	Modified Experience List: `
+	const reviewPromptTemplate = new PromptTemplate({
+		template: reviewTemplate,
+		inputVariables: ['previouslyGeneratedExperiences'],
+	})
+	const reviewChain = new LLMChain({
+		llm: reviewLLM,
+		prompt: reviewPromptTemplate,
+		outputKey: 'tailoredExperience',
+	})
+
+	const overallChain = new SequentialChain({
+		chains: [synopsisChain, reviewChain],
+		inputVariables: ['jobTitle', 'jobDescription'],
+		verbose: true,
+		outputVariables: ['tailoredExperience'],
+	})
+	const review = await overallChain.call({ jobDescription, jobTitle })
+	return review.tailoredExperience
 }

@@ -262,7 +262,6 @@ export const useAutosizeTextArea = (
 	}, [textAreaRef])
 	useEventListener('input', handleResize)
 	useIsomorphicLayoutEffect(() => {
-		console.log(textAreaRef?.value)
 		handleResize()
 	}, [textAreaRef, textAreaRef?.value, value])
 
