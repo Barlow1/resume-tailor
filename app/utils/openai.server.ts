@@ -3,55 +3,58 @@ import { OpenAI } from 'langchain/llms/openai'
 import { PromptTemplate } from 'langchain/prompts'
 
 export const getExperienceResponse = async ({
-	experience,
-	jobTitle,
-	jobDescription,
+    experience,
+    jobTitle,
+    jobDescription,
 }: {
-	experience: string
-	jobTitle: string
-	jobDescription: string
+    experience: string
+    jobTitle: string
+    jobDescription: string
 }) => {
-	const llm = new OpenAI({ temperature: 0, modelName: 'gpt-4' })
-	const template = `You are an expert resume writer with 20 years experience landing people {jobTitle} roles. I want you to provide me a list of pain points, key skills, and responsibilities an applicant must have to get a first interview with the hiring manager.
- 
-  Job Description: {jobDescription}
+    const llm = new OpenAI({ temperature: 0, modelName: 'gpt-4' })
+    const needs = `You are an expert resume writer with over 20 years of experience working with job seekers trying to land ${jobTitle} roles.
+    Highlight the 3 most important responsibilities in this job description: ${jobDescription}.`
+    const needIdentification = new PromptTemplate({
+        template: needs,
+        inputVariables: ['jobDescription', 'jobTitle'],
+    })
+    const needsChain = new LLMChain({
+        llm,
+        prompt: needIdentification,
+        outputKey: 'jobNeeds',
+    })
 
-  Expert Resume Writer: This is a list of pain points, key skills, and responsibilities an applicant must have to get a first interview with the hiring manager for the above job description:`
-	const promptTemplate = new PromptTemplate({
-		template,
-		inputVariables: ['jobDescription', 'jobTitle'],
-	})
-	const synopsisChain = new LLMChain({
-		llm,
-		prompt: promptTemplate,
-		outputKey: 'previouslyGeneratedExperiences',
-	})
+    const resumeLLM = new OpenAI({ temperature: 0, modelName: 'gpt-4' })
+    const resume = `Based on these 3 most important responsibilities from the job description, please tailor my experience into no more than 4 succinct bullet points for this ${jobTitle} role. Do not make information up. Keep each bullet point up to 2 lines long. Here is my experience: ${experience}.` // Change made here
+    const resumePrompt = new PromptTemplate({
+        template: resume,
+        inputVariables: ['jobNeeds', 'experience', 'jobTitle'], 
+    })
+    const resumeChain = new LLMChain({
+        llm: resumeLLM,
+        prompt: resumePrompt,
+        outputKey: 'tailoredExperience',
+    })
 
-	// This is an LLMChain to write a review of a play given a synopsis.
-	const reviewLLM = new OpenAI({ temperature: 0, modelName: 'gpt-4' })
-	const reviewTemplate = `Here are the current experiences listed in my resume: ${experience}.
-	
-	Modify this experience section to emphasize and succinctly present the following key experiences
-	required for this position: {previouslyGeneratedExperiences}. 
-	Ensure to merge similar experiences, remove redundant wording, and keep each skill description concise.
-	The modified experiences section should highlight these key experiences in a clear and brief manner that aligns with the requirements for the position.
-	Modified Experience List: `
-	const reviewPromptTemplate = new PromptTemplate({
-		template: reviewTemplate,
-		inputVariables: ['previouslyGeneratedExperiences'],
-	})
-	const reviewChain = new LLMChain({
-		llm: reviewLLM,
-		prompt: reviewPromptTemplate,
-		outputKey: 'tailoredExperience',
-	})
+    const impactLLM = new OpenAI({temperature: 0, modelName: 'gpt-4' })
+    const impact = `Re-write these bullet points using the XYZ formula structure.
+    Use compelling language and keep the bullet point within 50 words. Do not make information up. If no clear way to do this exists, simply tell me I should consider rewriting my bullet points in a way that would fit this structure more closely.”`
+    const impactPrompt = new PromptTemplate({
+        template: impact,
+        inputVariables: ['tailoredExperience'], 
+    })
+    const impactChain = new LLMChain({
+        llm: impactLLM,
+        prompt: impactPrompt,
+        outputKey: 'bulletPoints',
+    })
 
-	const overallChain = new SequentialChain({
-		chains: [synopsisChain, reviewChain],
-		inputVariables: ['jobTitle', 'jobDescription'],
-		verbose: true,
-		outputVariables: ['tailoredExperience'],
-	})
-	const review = await overallChain.call({ jobDescription, jobTitle })
-	return review.tailoredExperience
+    const overallChain = new SequentialChain({
+        chains: [needsChain, resumeChain, impactChain],
+        inputVariables: ['jobTitle', 'jobDescription', 'experience'],
+        verbose: true,
+        outputVariables: ['bulletPoints'],
+    })
+    const result = await overallChain.call({ jobDescription, jobTitle, experience })
+    return result.bulletPoints
 }
