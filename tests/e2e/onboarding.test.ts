@@ -87,7 +87,7 @@ test('onboarding', async ({ page }) => {
 	await expect(page).toHaveURL(`/`)
 
 	// have to do this here because we didn't use insertNewUser (because we're testing user create)
-	await deleteUserByUsername(onboardingData.username)
+	await deleteUserByUsername(onboardingData.username.toLocaleLowerCase())
 })
 
 test('login as existing user', async ({ page }) => {
