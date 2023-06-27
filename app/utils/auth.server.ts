@@ -120,6 +120,7 @@ export async function signup({
 	password: string
 }) {
 	const hashedPassword = await getPasswordHash(password)
+	const caseInsensitiveUsername = username.toLowerCase()
 
 	const session = await prisma.session.create({
 		data: {
@@ -127,13 +128,13 @@ export async function signup({
 			user: {
 				create: {
 					email,
-					username,
 					name,
 					password: {
 						create: {
 							hash: hashedPassword,
 						},
 					},
+					username: caseInsensitiveUsername,
 				},
 			},
 		},
@@ -151,8 +152,9 @@ export async function verifyLogin(
 	username: User['username'],
 	password: Password['hash'],
 ) {
+	const caseInsensitiveUsername = username.toLowerCase()
 	const userWithPassword = await prisma.user.findUnique({
-		where: { username },
+		where: { username: caseInsensitiveUsername },
 		select: { id: true, password: { select: { hash: true } } },
 	})
 

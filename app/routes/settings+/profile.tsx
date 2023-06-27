@@ -104,6 +104,7 @@ export async function action({ request }: DataFunctionArgs) {
 		)
 	}
 	const { name, username, email, newPassword } = submission.value
+	const caseInsensitiveUsername = username.toLowerCase()
 
 	if (email) {
 		// TODO: send a confirmation email
@@ -114,7 +115,6 @@ export async function action({ request }: DataFunctionArgs) {
 		where: { id: userId },
 		data: {
 			name,
-			username,
 			password: newPassword
 				? {
 						update: {
@@ -122,6 +122,7 @@ export async function action({ request }: DataFunctionArgs) {
 						},
 				  }
 				: undefined,
+			username: caseInsensitiveUsername,
 		},
 	})
 
