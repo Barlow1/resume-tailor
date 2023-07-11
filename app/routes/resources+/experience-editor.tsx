@@ -161,6 +161,7 @@ export function ExperienceEditor({
 					<experienceEditorFetcher.Form
 						method="post"
 						action="/resources/experience-editor"
+						preventScrollReset
 						{...form.props}
 					>
 						<input name="id" type="hidden" value={experience?.id} />
@@ -264,7 +265,7 @@ export function ExperienceEditor({
 								type="submit"
 								disabled={experienceEditorFetcher.state !== 'idle'}
 							>
-								Submit
+								Save
 							</Button>
 						</div>
 					</experienceEditorFetcher.Form>

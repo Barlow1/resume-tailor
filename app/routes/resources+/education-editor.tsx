@@ -156,6 +156,7 @@ export function EducationEditor({
 					<educationEditorFetcher.Form
 						method="post"
 						action="/resources/education-editor"
+						preventScrollReset
 						{...form.props}
 					>
 						<input name="id" type="hidden" value={education?.id} />
@@ -250,7 +251,7 @@ export function EducationEditor({
 								type="submit"
 								disabled={educationEditorFetcher.state !== 'idle'}
 							>
-								Submit
+								Save
 							</Button>
 						</div>
 					</educationEditorFetcher.Form>

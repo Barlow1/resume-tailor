@@ -289,6 +289,22 @@ export async function action({ request }: DataFunctionArgs) {
 		},
 	})
 
+	await prisma.gettingStartedProgress.upsert({
+		create: {
+			hasSavedJob: false,
+			hasSavedResume: true,
+			hasGeneratedResume: false,
+			hasTailoredResume: false,
+			ownerId: userId,
+		},
+		update: {
+			hasSavedResume: true,
+		},
+		where: {
+			ownerId: userId,
+		},
+	})
+
 	if (previousUserResume?.fileId) {
 		void prisma.file
 			.delete({

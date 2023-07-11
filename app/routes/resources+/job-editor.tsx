@@ -71,6 +71,22 @@ export async function action({ request }: DataFunctionArgs) {
 		})
 	} else {
 		job = await prisma.job.create({ data, select })
+
+		await prisma.gettingStartedProgress.upsert({
+			create: {
+				hasSavedJob: true,
+				hasSavedResume: false,
+				hasGeneratedResume: false,
+				hasTailoredResume: false,
+				ownerId: userId,
+			},
+			update: {
+				hasSavedJob: true,
+			},
+			where: {
+				ownerId: userId,
+			},
+		})
 	}
 	return redirect(`/users/${job.owner.username}/jobs/${job.id}`)
 }
@@ -102,9 +118,13 @@ export function JobEditor({
 			action="/resources/job-editor"
 			{...form.props}
 		>
+			<h2 className="mb-2 text-h5">Add a job</h2>
+			<p className="mb-2 text-gray-300">
+				Copy and paste the job title & description your applying for
+			</p>
 			<input name="id" type="hidden" value={job?.id} />
 			<Field
-				labelProps={{ htmlFor: fields.title.id, children: 'Title' }}
+				labelProps={{ htmlFor: fields.title.id, children: 'Job Title' }}
 				inputProps={{
 					...conform.input(fields.title),
 					autoComplete: 'title',
@@ -112,11 +132,12 @@ export function JobEditor({
 				errors={fields.title.errors}
 			/>
 			<TextareaField
-				labelProps={{ htmlFor: fields.content.id, children: 'Content' }}
+				labelProps={{ htmlFor: fields.content.id, children: 'Job Description' }}
 				textareaProps={{
 					...conform.textarea(fields.content),
 					autoComplete: 'content',
 				}}
+				isAutoSize
 				errors={fields.content.errors}
 			/>
 			<ErrorList errors={form.errors} id={form.errorId} />
@@ -135,7 +156,7 @@ export function JobEditor({
 					type="submit"
 					disabled={jobEditorFetcher.state !== 'idle'}
 				>
-					Submit
+					Save
 				</Button>
 			</div>
 		</jobEditorFetcher.Form>

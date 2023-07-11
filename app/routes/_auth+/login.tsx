@@ -36,7 +36,7 @@ export default function LoginPage() {
 	const [searchParams] = useSearchParams()
 	const data = useLoaderData<typeof loader>()
 
-	const redirectTo = searchParams.get('redirectTo') || '/'
+	const redirectTo = searchParams.get('redirectTo') || ''
 
 	return (
 		<div className="flex min-h-full flex-col justify-center pb-32 pt-20">

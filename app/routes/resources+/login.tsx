@@ -5,7 +5,8 @@ import { Link, useFetcher } from '@remix-run/react'
 import { AuthorizationError } from 'remix-auth'
 import { FormStrategy } from 'remix-auth-form'
 import { z } from 'zod'
-import { authenticator } from '~/utils/auth.server.ts'
+import { authenticator, getUserId } from '~/utils/auth.server.ts'
+import { prisma } from '~/utils/db.server.ts'
 import { Button, CheckboxField, ErrorList, Field } from '~/utils/forms.tsx'
 import { safeRedirect } from '~/utils/misc.ts'
 import { commitSession, getSession } from '~/utils/session.server.ts'
@@ -67,8 +68,27 @@ export async function action({ request }: DataFunctionArgs) {
 			? 60 * 60 * 24 * 7 // 7 days
 			: undefined,
 	})
+	const newSession = await prisma.session.findUnique({
+		where: { id: sessionId },
+		select: { userId: true },
+	})
+	const userId = newSession?.userId
+	let user
+	if (userId) {
+		user = await prisma.user.findUnique({
+			where: {
+				id: userId,
+			},
+		})
+	}
+
 	if (redirectTo) {
 		throw redirect(safeRedirect(redirectTo), {
+			headers: { 'Set-Cookie': newCookie },
+		})
+	}
+	if (user?.username) {
+		throw redirect(safeRedirect(`/users/${user?.username}/jobs/new`), {
 			headers: { 'Set-Cookie': newCookie },
 		})
 	}
