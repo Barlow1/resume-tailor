@@ -155,7 +155,7 @@ export function ResumeEditor({
 }) {
 	const resumeEditorFetcher = useFetcher<typeof action>()
 
-	const [form, fields] = useForm({
+	const [form] = useForm({
 		id: 'resume-editor',
 		constraint: getFieldsetConstraint(ResumeEditorSchema),
 		lastSubmission: resumeEditorFetcher.data?.submission,
