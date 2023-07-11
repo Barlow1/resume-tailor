@@ -1,4 +1,4 @@
-import { conform, useForm } from '@conform-to/react'
+import { useForm } from '@conform-to/react'
 import { getFieldsetConstraint, parse } from '@conform-to/zod'
 import {
 	type Skill,
@@ -11,7 +11,7 @@ import { useFetcher } from '@remix-run/react'
 import { z } from 'zod'
 import { requireUserId } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
-import { ButtonLink, ErrorList, Field, TextareaField } from '~/utils/forms.tsx'
+import { ButtonLink, ErrorList } from '~/utils/forms.tsx'
 import { type Stringify } from '~/utils/misc.ts'
 
 export const ResumeEditorSchema = z.object({
@@ -130,7 +130,7 @@ export function ResumeTailor({
 }) {
 	const resumeTailorFetcher = useFetcher<typeof action>()
 
-	const [form, fields] = useForm({
+	const [form] = useForm({
 		id: 'resume-tailor',
 		constraint: getFieldsetConstraint(ResumeEditorSchema),
 		lastSubmission: resumeTailorFetcher.data?.submission,
