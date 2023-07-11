@@ -5,14 +5,11 @@ import { json, type DataFunctionArgs } from '@remix-run/node'
 import { useFetcher, useNavigate, useRouteLoaderData } from '@remix-run/react'
 import { z } from 'zod'
 import { requireUserId } from '~/utils/auth.server.ts'
-import {
-	Button,
-	ErrorList,
-	TextareaField,
-} from '~/utils/forms.tsx'
+import { Button, ErrorList, TextareaField } from '~/utils/forms.tsx'
 import { type Stringify } from '~/utils/misc.ts'
 import { type Job } from '@prisma/client'
 import { getExperienceResponse } from '~/utils/openai.server.ts'
+import { prisma } from '~/utils/db.server.ts'
 
 export const ExperienceTailorSchema = z.object({
 	experience: z.string().min(1),
@@ -22,7 +19,7 @@ export const ExperienceTailorSchema = z.object({
 })
 
 export async function action({ request }: DataFunctionArgs) {
-	await requireUserId(request)
+	const userId = await requireUserId(request)
 	const formData = await request.formData()
 	const submission = parse(formData, {
 		schema: ExperienceTailorSchema,
@@ -44,7 +41,24 @@ export async function action({ request }: DataFunctionArgs) {
 
 	const values = submission.value
 
-	const response = await getExperienceResponse(values)
+	const [response] = await Promise.all([
+		getExperienceResponse(values),
+		prisma.gettingStartedProgress.upsert({
+			create: {
+				hasSavedJob: false,
+				hasSavedResume: false,
+				hasGeneratedResume: false,
+				hasTailoredResume: true,
+				ownerId: userId,
+			},
+			update: {
+				hasTailoredResume: true,
+			},
+			where: {
+				ownerId: userId,
+			},
+		}),
+	])
 
 	return json({ status: 'success', submission, response: response } as const)
 }
@@ -103,6 +117,7 @@ export function ExperienceTailor({
 					<experienceTailorFetcher.Form
 						method="post"
 						action="/resources/experience-tailor"
+						preventScrollReset
 						{...form.props}
 					>
 						<div className="grid grid-cols-2 gap-4">
@@ -128,6 +143,7 @@ export function ExperienceTailor({
 										}}
 										errors={fields.experience.errors}
 										isAutoSize
+										truncate
 									/>
 									<ErrorList errors={form.errors} id={form.errorId} />
 								</div>
@@ -148,6 +164,7 @@ export function ExperienceTailor({
 											}}
 											errors={fields.tailoredExperience.errors}
 											isAutoSize
+											truncate
 										/>
 									</div>
 								) : null}
@@ -168,7 +185,9 @@ export function ExperienceTailor({
 								type="submit"
 								disabled={experienceTailorFetcher.state !== 'idle'}
 							>
-								{experienceTailorFetcher.state === 'submitting' ? 'Generating...' : 'Generate'}
+								{experienceTailorFetcher.state === 'submitting'
+									? 'Generating...'
+									: 'Generate'}
 							</Button>
 						</div>
 					</experienceTailorFetcher.Form>

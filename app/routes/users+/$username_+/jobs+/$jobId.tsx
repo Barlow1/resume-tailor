@@ -8,6 +8,7 @@ import { z } from 'zod'
 import { ButtonLink } from '~/utils/forms.tsx'
 import { parse } from '@conform-to/zod'
 import { getExperienceResponse } from '~/utils/openai.server.ts'
+import { useUser } from '~/utils/user.ts'
 
 export const JobEditorSchema = z.object({
 	experience: z.string().min(1),
@@ -56,14 +57,20 @@ export async function loader({ request, params }: DataFunctionArgs) {
 			ownerId: true,
 		},
 	})
+	const resume = await prisma.resume.findFirst({
+		where: {
+			ownerId: userId ?? undefined,
+		},
+	})
 	if (!job) {
 		throw new Response('Not found', { status: 404 })
 	}
-	return json({ job, isOwner: userId === job.ownerId })
+	return json({ job, isOwner: userId === job.ownerId, resume })
 }
 
 export default function JobIdRoute() {
 	const data = useLoaderData<typeof loader>()
+	const user = useUser()
 
 	return (
 		<div className="flex h-full flex-col">
@@ -75,7 +82,13 @@ export default function JobIdRoute() {
 				<div className="flex justify-end gap-4 py-5">
 					<input hidden name="jobTitle" value={data.job.title} />
 					<input hidden name="jobDescription" value={data.job.content} />
-					<ButtonLink size="md" variant="primary" to="tailor">
+					<ButtonLink
+						size="md"
+						variant="primary"
+						to={
+							data.resume ? 'tailor' : `/users/${user.username}/resume/upload`
+						}
+					>
 						Tailor Resume
 					</ButtonLink>
 					<ButtonLink size="md" variant="secondary" to="edit">

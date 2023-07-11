@@ -29,6 +29,7 @@ import { getEnv } from './utils/env.server.ts'
 import { ButtonLink } from './utils/forms.tsx'
 import { getUserImgSrc } from './utils/misc.ts'
 import { useUser } from './utils/user.ts'
+import OnboardingStepper from './routes/resources+/onboarding-stepper.tsx'
 
 export const links: LinksFunction = () => {
 	return [
@@ -80,12 +81,26 @@ export async function loader({ request }: DataFunctionArgs) {
 		await authenticator.logout(request, { redirectTo: '/' })
 	}
 
-	return json({ user, ENV: getEnv() })
+	let firstJob = null
+	let gettingStartedProgress = null
+
+	if (userId) {
+		;[firstJob, gettingStartedProgress] = await Promise.all([
+			prisma.job.findFirst({ where: { ownerId: userId } }),
+			prisma.gettingStartedProgress.findUnique({
+				where: {
+					ownerId: userId,
+				},
+			}),
+		])
+	}
+
+	return json({ user, ENV: getEnv(), firstJob, gettingStartedProgress })
 }
 
 export default function App() {
 	const data = useLoaderData<typeof loader>()
-	const { user } = data
+	const { user, firstJob, gettingStartedProgress } = data
 	return (
 		<html lang="en" className="dark h-full">
 			<head>
@@ -116,6 +131,11 @@ export default function App() {
 				<div className="flex-1">
 					<Outlet />
 				</div>
+
+				<OnboardingStepper
+					firstJob={firstJob}
+					gettingStartedProgress={gettingStartedProgress}
+				/>
 
 				<div className="container mx-auto flex justify-between">
 					<Link to="/">

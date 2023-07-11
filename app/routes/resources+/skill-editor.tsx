@@ -120,6 +120,7 @@ export function SkillEditor({
 					<skillEditorFetcher.Form
 						method="post"
 						action="/resources/skill-editor"
+						preventScrollReset
 						{...form.props}
 					>
 						<input name="id" type="hidden" value={skill?.id} />
@@ -153,7 +154,7 @@ export function SkillEditor({
 								type="submit"
 								disabled={skillEditorFetcher.state !== 'idle'}
 							>
-								Submit
+								Save
 							</Button>
 						</div>
 					</skillEditorFetcher.Form>

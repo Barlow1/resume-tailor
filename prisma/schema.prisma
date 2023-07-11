@@ -63,11 +63,12 @@ model User {
   image   Image?  @relation(fields: [imageId], references: [fileId])
   imageId String? @unique
 
-  password Password?
-  jobs     Job[]
-  resumes  Resume[]
-  roles    Role[]
-  Session  Session[]
+  password               Password?
+  jobs                   Job[]
+  resumes                Resume[]
+  roles                  Role[]
+  Session                Session[]
+  gettingStartedProgress GettingStartedProgress?
 }
 
 model Password {
@@ -162,4 +163,14 @@ model Resume {
   fileId     String?      @unique
   owner      User         @relation(fields: [ownerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   ownerId    String
+}
+
+model GettingStartedProgress {
+  id       String  @id @unique @default(cuid())
+  hasSavedJob      Boolean
+  hasSavedResume   Boolean
+  hasTailoredResume   Boolean
+  hasGeneratedResume Boolean
+  owner    User    @relation(fields: [ownerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  ownerId  String @unique
 }

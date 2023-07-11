@@ -66,6 +66,7 @@ export function TextareaField({
 	textareaProps,
 	errors,
 	className,
+	truncate = false,
 	isAutoSize = false,
 }: {
 	labelProps: Omit<JSX.IntrinsicElements['label'], 'className'>
@@ -73,6 +74,7 @@ export function TextareaField({
 	errors?: ListOfErrors
 	className?: string
 	isAutoSize?: boolean
+	truncate?: boolean
 }) {
 	const fallbackId = useId()
 	const textAreaRef = useAutosizeTextArea(textareaProps.value)
@@ -88,7 +90,10 @@ export function TextareaField({
 					aria-describedby={errorId}
 					placeholder=" "
 					{...textareaProps}
-					className="w-full rounded-lg border border-night-400 bg-night-700 px-4 pt-8 text-body-xs caret-white outline-none focus:border-accent-purple disabled:bg-night-400"
+					className={clsx(
+						'min-h-[200px] w-full rounded-lg border border-night-400 bg-night-700 px-4 pt-8 text-body-xs caret-white outline-none focus:border-accent-purple disabled:bg-night-400',
+						{ 'max-h-[400px]': truncate },
+					)}
 				/>
 			) : (
 				<textarea
