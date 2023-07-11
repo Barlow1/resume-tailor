@@ -75,12 +75,14 @@ test('onboarding', async ({ page }) => {
 
 	await page.getByRole('button', { name: /Create an account/i }).click()
 
-	await expect(page).toHaveURL(`/`)
+	await expect(page).toHaveURL(`/users/${onboardingData.name}/jobs/new`)
 
 	await page.getByRole('link', { name: onboardingData.name }).click()
 	await page.getByRole('menuitem', { name: /profile/i }).click()
 
-	await expect(page).toHaveURL(`/users/${onboardingData.username.toLowerCase()}`)
+	await expect(page).toHaveURL(
+		`/users/${onboardingData.username.toLowerCase()}`,
+	)
 
 	await page.getByRole('link', { name: onboardingData.name }).click()
 	await page.getByRole('menuitem', { name: /logout/i }).click()
@@ -98,7 +100,7 @@ test('login as existing user', async ({ page }) => {
 	await page.getByRole('textbox', { name: /username/i }).fill(user.username)
 	await page.getByLabel(/^password$/i).fill(password)
 	await page.getByRole('button', { name: /log in/i }).click()
-	await expect(page).toHaveURL(`/`)
+	await expect(page).toHaveURL(`/users/${user.name}/jobs/new`)
 
 	await expect(page.getByRole('link', { name: user.name })).toBeVisible()
 })
@@ -151,7 +153,7 @@ test('reset password', async ({ page }) => {
 	await page.getByLabel(/^password$/i).fill(newPassword)
 	await page.getByRole('button', { name: /log in/i }).click()
 
-	await expect(page).toHaveURL(`/`)
+	await expect(page).toHaveURL(`/users/${user.username}/jobs/new`)
 
 	await expect(page.getByRole('link', { name: user.name })).toBeVisible()
 })
