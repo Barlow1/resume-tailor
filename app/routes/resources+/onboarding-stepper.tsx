@@ -104,7 +104,7 @@ export default function OnboardingStepper({
 				</resetStepperFetcher.Form>
 			</div>
 			<Dialog.Root open={!isGettingStartedCompleted && isVisible}>
-				<Dialog.Portal>
+				<Dialog.Portal role="presentation">
 					<Dialog.Overlay className="fixed inset-0 backdrop-blur-[2px]" />
 					<Dialog.Content
 						onEscapeKeyDown={dismissModal}
@@ -127,6 +127,7 @@ export default function OnboardingStepper({
 								<button
 									onClick={dismissModal}
 									type="button"
+									name="close"
 									data-drawer-hide="drawer-navigation"
 									aria-controls="drawer-navigation"
 									className="absolute right-2.5 top-2.5 inline-flex items-center rounded-lg bg-transparent p-1.5 text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white"

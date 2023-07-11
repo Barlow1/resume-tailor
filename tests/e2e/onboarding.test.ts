@@ -75,9 +75,13 @@ test('onboarding', async ({ page }) => {
 
 	await page.getByRole('button', { name: /Create an account/i }).click()
 
-	await expect(page).toHaveURL(`/users/${onboardingData.username.toLowerCase()}/jobs/new`)
+	await expect(page).toHaveURL(
+		`/users/${onboardingData.username.toLowerCase()}/jobs/new`,
+	)
 
-	await page.getByRole('link', { name: onboardingData.name }).click()
+	await page.getByRole('button', { name: 'close' }).click()
+
+	await page.getByRole('link', { name: onboardingData.name }).first().click()
 	await page.getByRole('menuitem', { name: /profile/i }).click()
 
 	await expect(page).toHaveURL(
@@ -101,8 +105,11 @@ test('login as existing user', async ({ page }) => {
 	await page.getByLabel(/^password$/i).fill(password)
 	await page.getByRole('button', { name: /log in/i }).click()
 	await expect(page).toHaveURL(`/users/${user.username.toLowerCase()}/jobs/new`)
+	await page.getByRole('button', { name: 'close' }).click()
 
-	await expect(page.getByRole('link', { name: user.name })).toBeVisible()
+	await expect(
+		page.getByRole('link', { name: user.name }).first(),
+	).toBeVisible()
 })
 
 test('reset password', async ({ page }) => {
@@ -154,6 +161,9 @@ test('reset password', async ({ page }) => {
 	await page.getByRole('button', { name: /log in/i }).click()
 
 	await expect(page).toHaveURL(`/users/${user.username.toLowerCase()}/jobs/new`)
+	await page.getByRole('button', { name: 'close' }).click()
 
-	await expect(page.getByRole('link', { name: user.name })).toBeVisible()
+	await expect(
+		page.getByRole('link', { name: user.name }).first(),
+	).toBeVisible()
 })
