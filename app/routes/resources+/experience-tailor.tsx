@@ -10,6 +10,7 @@ import { type Stringify } from '~/utils/misc.ts'
 import { type Job } from '@prisma/client'
 import { prisma } from '~/utils/db.server.ts'
 import React from 'react'
+import { flushSync } from 'react-dom';
 import CopyButton from '~/components/copy-button.tsx'
 
 export const ExperienceTailorSchema = z.object({
@@ -203,10 +204,13 @@ export function ExperienceTailor({
 									)
 
 									sse.addEventListener('message', event => {
-										setContent(
-											prevContent =>
-												prevContent + event.data.replace(/__NEWLINE__/g, '\n'),
-										)
+										flushSync(() => {
+											setContent(
+												prevContent =>
+													prevContent +
+													event.data.replace(/__NEWLINE__/g, '\n'),
+											)
+										})
 									})
 
 									sse.addEventListener('done', event => {
