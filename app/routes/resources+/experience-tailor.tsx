@@ -8,8 +8,9 @@ import { requireUserId } from '~/utils/auth.server.ts'
 import { Button, ErrorList, TextareaField } from '~/utils/forms.tsx'
 import { type Stringify } from '~/utils/misc.ts'
 import { type Job } from '@prisma/client'
-import { getExperienceResponse } from '~/utils/openai.server.ts'
 import { prisma } from '~/utils/db.server.ts'
+import React from 'react'
+import CopyButton from '~/components/copy-button.tsx'
 
 export const ExperienceTailorSchema = z.object({
 	experience: z.string().min(1),
@@ -20,29 +21,8 @@ export const ExperienceTailorSchema = z.object({
 
 export async function action({ request }: DataFunctionArgs) {
 	const userId = await requireUserId(request)
-	const formData = await request.formData()
-	const submission = parse(formData, {
-		schema: ExperienceTailorSchema,
-		acceptMultipleErrors: () => true,
-	})
-	if (submission.intent !== 'submit') {
-		return json({ status: 'idle', submission, response: null } as const)
-	}
-	if (!submission.value) {
-		return json(
-			{
-				status: 'error',
-				submission,
-				response: null,
-			} as const,
-			{ status: 400 },
-		)
-	}
-
-	const values = submission.value
 
 	const [response] = await Promise.all([
-		getExperienceResponse(values),
 		prisma.gettingStartedProgress.upsert({
 			create: {
 				hasSavedJob: false,
@@ -60,7 +40,7 @@ export async function action({ request }: DataFunctionArgs) {
 		}),
 	])
 
-	return json({ status: 'success', submission, response: response } as const)
+	return json({ status: 'success', response: response } as const)
 }
 
 export function ExperienceTailor({
@@ -89,17 +69,17 @@ export function ExperienceTailor({
 	const [form, fields] = useForm({
 		id: 'experience-tailor',
 		constraint: getFieldsetConstraint(ExperienceTailorSchema),
-		lastSubmission: experienceTailorFetcher.data?.submission,
 		onValidate({ formData }) {
 			return parse(formData, { schema: ExperienceTailorSchema })
 		},
 		defaultValue: {
 			experience: experience.responsibilities,
-			tailoredExperience: experienceTailorFetcher.data?.response || '',
 		},
 		shouldRevalidate: 'onBlur',
 	})
 	const dismissModal = () => navigate('..', { preventScrollReset: true })
+	const [content, setContent] = React.useState('')
+	const [loading, setLoading] = React.useState(false)
 
 	return (
 		<Dialog.Root open={true}>
@@ -130,7 +110,9 @@ export function ExperienceTailor({
 									type="hidden"
 									value={editData?.resume?.id}
 								/>
-								<p>{editData.resume?.title}</p>
+								<p className="align-center flex text-center">
+									{editData.resume?.title}
+								</p>
 								<div className="py-5">
 									<TextareaField
 										labelProps={{
@@ -149,8 +131,13 @@ export function ExperienceTailor({
 								</div>
 							</div>
 							<div>
-								<p>{job?.title}</p>
-								{experienceTailorFetcher.data?.response ? (
+								<div className="flex flex-row justify-around">
+									<p className="align-center flex text-center">{job?.title}</p>
+									{content ? (
+										<CopyButton inputId={fields.tailoredExperience.id ?? ''} />
+									) : null}
+								</div>
+								{content ? (
 									<div className="py-5">
 										<TextareaField
 											labelProps={{
@@ -160,7 +147,7 @@ export function ExperienceTailor({
 											textareaProps={{
 												...conform.textarea(fields.tailoredExperience),
 												autoComplete: 'tailoredExperience',
-												value: experienceTailorFetcher.data?.response.trim(),
+												value: content,
 											}}
 											errors={fields.tailoredExperience.errors}
 											isAutoSize
@@ -171,23 +158,71 @@ export function ExperienceTailor({
 							</div>
 						</div>
 						<div className="flex justify-end gap-4">
-							<Button size="md" variant="secondary" type="reset">
+							<Button
+								size="md"
+								variant="secondary"
+								type="reset"
+								onClick={() => {
+									// because this is a controlled form, we need to reset the state
+									// because the built-in browser behavior will no longer work.
+									setContent('')
+								}}
+							>
 								Reset
 							</Button>
 							<Button
-								size="md"
 								variant="primary"
-								status={
-									experienceTailorFetcher.state === 'submitting'
-										? 'pending'
-										: experienceTailorFetcher.data?.status ?? 'idle'
-								}
-								type="submit"
-								disabled={experienceTailorFetcher.state !== 'idle'}
+								type="button"
+								size="md"
+								status={loading ? 'pending' : content ? 'success' : 'idle'}
+								onClick={event => {
+									if (content) setContent('')
+									experienceTailorFetcher.submit(
+										{},
+										{ method: 'POST', action: '/resources/experience-tailor' },
+									)
+									setLoading(true)
+									event.preventDefault()
+
+									const jobTitle =
+										// @ts-expect-error we'll fix this later probably...
+
+										event.currentTarget.form.elements.jobTitle.value
+									const jobDescription =
+										// @ts-expect-error we'll fix this later probably...
+										event.currentTarget.form.elements.jobDescription.value
+									const experience =
+										// @ts-expect-error we'll fix this later probably...
+										event.currentTarget.form.elements.experience.value
+									const sse = new EventSource(
+										`/resources/completions?${new URLSearchParams({
+											jobTitle,
+											jobDescription,
+											experience,
+										})}`,
+									)
+
+									sse.addEventListener('message', event => {
+										setContent(
+											prevContent =>
+												prevContent + event.data.replace(/__NEWLINE__/g, '\n'),
+										)
+									})
+
+									sse.addEventListener('done', event => {
+										setLoading(false)
+										sse.close()
+									})
+
+									sse.addEventListener('error', event => {
+										setLoading(false)
+										console.log('error: ', event)
+										sse.close()
+									})
+								}}
+								disabled={loading}
 							>
-								{experienceTailorFetcher.state === 'submitting'
-									? 'Generating...'
-									: 'Generate'}
+								{loading ? 'Generating...' : 'Generate Experience'}
 							</Button>
 						</div>
 					</experienceTailorFetcher.Form>

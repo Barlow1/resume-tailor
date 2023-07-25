@@ -5,7 +5,6 @@ import { requireUserId } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
 import { z } from 'zod'
 import { parse } from '@conform-to/zod'
-import { getExperienceResponse } from '~/utils/openai.server.ts'
 import { ResumeTailor } from '~/routes/resources+/resume-tailor.tsx'
 
 export const JobEditorSchema = z.object({
@@ -13,34 +12,6 @@ export const JobEditorSchema = z.object({
 	jobTitle: z.string().min(1),
 	jobDescription: z.string().min(1),
 })
-
-export async function action({ request }: DataFunctionArgs) {
-	await requireUserId(request)
-	const formData = await request.formData()
-	const submission = parse(formData, {
-		schema: JobEditorSchema,
-		acceptMultipleErrors: () => true,
-	})
-	if (submission.intent !== 'submit') {
-		return json({ status: 'idle', submission, response: null } as const)
-	}
-	if (!submission.value) {
-		return json(
-			{
-				status: 'error',
-				submission,
-				response: null,
-			} as const,
-			{ status: 400 },
-		)
-	}
-
-	const values = submission.value
-
-	const response = await getExperienceResponse(values)
-
-	return json({ status: 'success', submission, response: response } as const)
-}
 
 export async function loader({ request, params }: DataFunctionArgs) {
 	const userId = await requireUserId(request)
