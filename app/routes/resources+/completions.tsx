@@ -66,7 +66,7 @@ export async function loader({ request }: DataFunctionArgs) {
 
 		// @ts-expect-error 🤷‍♂️
 		response.data.on('end', () => {
-			send({ event: 'done', data: 'done' })
+			controller.abort()
 		})
 
 		return function clear() {}
