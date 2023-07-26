@@ -6,6 +6,7 @@ import { verifyUserPassword } from '~/utils/auth.server.ts'
 test('Users can update their basic info', async ({ login, page }) => {
 	await login()
 	await page.goto('/settings/profile')
+	await page.getByRole('button', { name: 'close' }).click()
 
 	const newUserData = createUser()
 
@@ -27,6 +28,8 @@ test('Users can update their password', async ({ login, page }) => {
 	const user = await insertNewUser({ password: oldPassword })
 	await login(user)
 	await page.goto('/settings/profile')
+
+	await page.getByRole('button', { name: 'close' }).click()
 
 	const fieldset = page.getByRole('group', { name: /change password/i })
 
@@ -55,6 +58,7 @@ test('Users can update their password', async ({ login, page }) => {
 test('Users can update their profile photo', async ({ login, page }) => {
 	const user = await login()
 	await page.goto('/settings/profile')
+	await page.getByRole('button', { name: 'close' }).click()
 
 	const beforeSrc = await page
 		.getByRole('img', { name: user.name ?? user.username })

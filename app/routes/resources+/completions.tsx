@@ -33,6 +33,7 @@ export async function loader({ request }: DataFunctionArgs) {
 	})
 
 	return eventStream(controller.signal, function setup(send) {
+		// @ts-expect-error 🤷‍♂️
 		response.data.on('data', (data: any) => {
 			const lines = data
 				.toString()
@@ -58,10 +59,12 @@ export async function loader({ request }: DataFunctionArgs) {
 			}
 		})
 
+		// @ts-expect-error 🤷‍♂️
 		response.data.on('error', (error: any) => {
 			console.error('Stream error', error)
 		})
 
+		// @ts-expect-error 🤷‍♂️
 		response.data.on('end', () => {
 			controller.abort()
 		})

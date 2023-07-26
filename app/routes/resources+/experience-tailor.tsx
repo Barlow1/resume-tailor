@@ -110,7 +110,7 @@ export function ExperienceTailor({
 							<TextareaField
 								labelProps={{
 									htmlFor: fields.experience.id,
-									children: 'Experience',
+									"aria-label": 'Experience',
 								}}
 								textareaProps={{
 									...conform.textarea(fields.experience),
@@ -130,7 +130,7 @@ export function ExperienceTailor({
 								<TextareaField
 									labelProps={{
 										htmlFor: fields.tailoredExperience.id,
-										children: 'Tailored Experience',
+										"aria-label": 'Tailored Experience',
 									}}
 									textareaProps={{
 										...conform.textarea(fields.tailoredExperience),
