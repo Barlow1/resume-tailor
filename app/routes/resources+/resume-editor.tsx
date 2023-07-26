@@ -199,6 +199,7 @@ export function ResumeEditor({
 							? resume.experience.map(experience => (
 									<div key={experience.id}>
 										<Link
+											// eslint-disable-next-line remix-react-routes/require-valid-paths
 											to={`experiences/${experience.id}/edit`}
 											preventScrollReset
 										>
@@ -235,6 +236,7 @@ export function ResumeEditor({
 						{resume?.skills.length
 							? resume.skills.map(skills => (
 									<div key={skills.id}>
+										{/* eslint-disable-next-line remix-react-routes/require-valid-paths */}										
 										<Link to={`skills/${skills.id}/edit`} preventScrollReset>
 											<li className="list-none rounded-lg border border-gray-200 p-5 dark:border-gray-400">
 												{skills.name}

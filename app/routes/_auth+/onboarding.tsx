@@ -120,6 +120,24 @@ export async function action({ request }: DataFunctionArgs) {
 	const newCookie = await commitSession(cookieSession, {
 		expires: remember ? session.expirationDate : undefined,
 	})
+	const newSession = await prisma.session.findUnique({
+		where: { id: session.id },
+		select: { userId: true },
+	})
+	const userId = newSession?.userId
+	let user
+	if (userId) {
+		user = await prisma.user.findUnique({
+			where: {
+				id: userId,
+			},
+		})
+	}
+	if (user?.username) {
+		throw redirect(safeRedirect(`/users/${user?.username}/jobs/new`), {
+			headers: { 'Set-Cookie': newCookie },
+		})
+	}
 	return redirectWithConfetti(safeRedirect(redirectTo, '/'), {
 		headers: { 'Set-Cookie': newCookie },
 	})

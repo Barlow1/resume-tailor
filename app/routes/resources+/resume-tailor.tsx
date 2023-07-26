@@ -169,6 +169,7 @@ export function ResumeTailor({
 					? resume.experience.map(experience => (
 							<div key={experience.id}>
 								<Button asChild size="sm" variant="secondary">
+									{/* eslint-disable-next-line remix-react-routes/require-valid-paths */}
 									<Link to={`experiences/${experience.id}`}>
 										Tailor {experience.employer} - {experience.role}
 									</Link>
