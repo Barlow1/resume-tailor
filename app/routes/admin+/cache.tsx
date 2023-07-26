@@ -1,23 +1,28 @@
 import { json, redirect, type DataFunctionArgs } from '@remix-run/node'
 import {
 	Form,
+	Link,
 	useFetcher,
 	useLoaderData,
 	useSearchParams,
 	useSubmit,
 } from '@remix-run/react'
-import { getAllInstances, getInstanceInfo } from 'litefs-js'
-import { ensureInstance } from 'litefs-js/remix.js'
-import invariant from 'tiny-invariant'
+import {
+	getAllInstances,
+	getInstanceInfo,
+	ensureInstance,
+} from '~/utils/litefs.server.ts'
+import * as React from 'react'
+import { Field } from '~/components/forms.tsx'
 import { Spacer } from '~/components/spacer.tsx'
+import { Button } from '~/components/ui/button.tsx'
 import {
 	cache,
 	getAllCacheKeys,
 	lruCache,
 	searchCacheKeys,
 } from '~/utils/cache.server.ts'
-import { Button, Field } from '~/utils/forms.tsx'
-import { useDebounce, useDoubleCheck } from '~/utils/misc.ts'
+import { invariantResponse, useDebounce, useDoubleCheck } from '~/utils/misc.ts'
 import { requireAdmin } from '~/utils/permissions.server.ts'
 
 export async function loader({ request }: DataFunctionArgs) {
@@ -53,9 +58,9 @@ export async function action({ request }: DataFunctionArgs) {
 	const instance = formData.get('instance') ?? currentInstance
 	const type = formData.get('type')
 
-	invariant(typeof key === 'string', 'cacheKey must be a string')
-	invariant(typeof type === 'string', 'type must be a string')
-	invariant(typeof instance === 'string', 'instance must be a string')
+	invariantResponse(typeof key === 'string', 'cacheKey must be a string')
+	invariantResponse(typeof type === 'string', 'type must be a string')
+	invariantResponse(typeof instance === 'string', 'instance must be a string')
 	await ensureInstance(instance)
 
 	switch (type) {
@@ -87,7 +92,7 @@ export default function CacheAdminRoute() {
 	}, 400)
 
 	return (
-		<div className="container mx-auto">
+		<div className="container">
 			<h1 className="text-h1">Cache Admin</h1>
 			<Spacer size="2xs" />
 			<Form
@@ -112,7 +117,7 @@ export default function CacheAdminRoute() {
 								defaultValue: query,
 							}}
 						/>
-						<div className="flex h-16 w-14 items-center text-lg font-medium text-slate-500">
+						<div className="flex h-16 w-14 items-center text-lg font-medium text-muted-foreground">
 							<span title="Total results shown">
 								{data.cacheKeys.sqlite.length + data.cacheKeys.lru.length}
 							</span>
@@ -189,10 +194,12 @@ function CacheKeyRow({
 }: {
 	cacheKey: string
 	instance?: string
-	type: string
+	type: 'sqlite' | 'lru'
 }) {
-	const fetcher = useFetcher()
+	const fetcher = useFetcher<typeof action>()
 	const dc = useDoubleCheck()
+	const encodedKey = encodeURIComponent(cacheKey)
+	const valuePage = `/admin/cache/${type}/${encodedKey}?instance=${instance}`
 	return (
 		<div className="flex items-center gap-2 font-mono">
 			<fetcher.Form method="post">
@@ -211,13 +218,9 @@ function CacheKeyRow({
 						: 'Deleting...'}
 				</Button>
 			</fetcher.Form>
-			<a
-				href={`/admin/cache/${type}/${encodeURIComponent(
-					cacheKey,
-				)}?instance=${instance}`}
-			>
+			<Link reloadDocument to={valuePage}>
 				{cacheKey}
-			</a>
+			</Link>
 		</div>
 	)
 }

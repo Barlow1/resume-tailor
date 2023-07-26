@@ -1,11 +1,12 @@
 import { json, type DataFunctionArgs, redirect } from '@remix-run/node'
 import { useFetcher } from '@remix-run/react'
-import { Button, ErrorList } from '~/utils/forms.tsx'
 import { useForm } from '@conform-to/react'
 import { getFieldsetConstraint, parse } from '@conform-to/zod'
 import { z } from 'zod'
 import { requireUserId } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
+import { Button } from '~/components/ui/button.tsx'
+import { ErrorList } from '~/components/forms.tsx'
 
 const DeleteFormSchema = z.object({
 	jobid: z.string(),
@@ -71,7 +72,6 @@ export function DeleteJob({ id }: { id: string }) {
 			<input type="hidden" name="jobid" value={id} />
 			<Button
 				type="submit"
-				size="md"
 				variant="secondary"
 				status={
 					jobDeleteFetcher.state === 'submitting'

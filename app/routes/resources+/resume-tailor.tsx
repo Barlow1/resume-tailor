@@ -1,4 +1,4 @@
-import { conform, useForm } from '@conform-to/react'
+import { useForm } from '@conform-to/react'
 import { getFieldsetConstraint, parse } from '@conform-to/zod'
 import {
 	type Skill,
@@ -7,11 +7,12 @@ import {
 	type Job,
 } from '@prisma/client'
 import { json, redirect, type DataFunctionArgs } from '@remix-run/node'
-import { useFetcher } from '@remix-run/react'
+import { Link, useFetcher } from '@remix-run/react'
 import { z } from 'zod'
+import { ErrorList } from '~/components/forms.tsx'
+import { Button } from '~/components/ui/button.tsx'
 import { requireUserId } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
-import { ButtonLink, ErrorList, Field, TextareaField } from '~/utils/forms.tsx'
 import { type Stringify } from '~/utils/misc.ts'
 
 export const ResumeEditorSchema = z.object({
@@ -130,7 +131,7 @@ export function ResumeTailor({
 }) {
 	const resumeTailorFetcher = useFetcher<typeof action>()
 
-	const [form, fields] = useForm({
+	const [form] = useForm({
 		id: 'resume-tailor',
 		constraint: getFieldsetConstraint(ResumeEditorSchema),
 		lastSubmission: resumeTailorFetcher.data?.submission,
@@ -158,115 +159,24 @@ export function ResumeTailor({
 			{...form.props}
 		>
 			<input name="id" type="hidden" value={resume?.id} />
-			<Field
-				labelProps={{ htmlFor: fields.title.id, children: 'Title' }}
-				inputProps={{
-					...conform.input(fields.title),
-					autoComplete: 'title',
-				}}
-				errors={fields.title.errors}
-			/>
-			<TextareaField
-				labelProps={{ htmlFor: fields.summary.id, children: 'Summary' }}
-				textareaProps={{
-					...conform.textarea(fields.summary),
-					autoComplete: 'summary',
-				}}
-				errors={fields.summary.errors}
-			/>
-			<h2 className="mb-2 text-h2">Contact</h2>
-			<div className="grid grid-cols-2 gap-2">
-				<Field
-					labelProps={{ htmlFor: fields.firstName.id, children: 'First Name' }}
-					inputProps={{
-						...conform.input(fields.firstName),
-						autoComplete: 'firstName',
-					}}
-					errors={fields.firstName.errors}
-				/>
-				<Field
-					labelProps={{ htmlFor: fields.lastName.id, children: 'Last Name' }}
-					inputProps={{
-						...conform.input(fields.lastName),
-						autoComplete: 'lastName',
-					}}
-					errors={fields.lastName.errors}
-				/>
-				<Field
-					labelProps={{ htmlFor: fields.email.id, children: 'Email' }}
-					inputProps={{
-						...conform.input(fields.email),
-						autoComplete: 'email',
-					}}
-					errors={fields.email.errors}
-				/>
-				<Field
-					labelProps={{ htmlFor: fields.phone.id, children: 'Phone Number' }}
-					inputProps={{
-						...conform.input(fields.phone),
-						autoComplete: 'phone',
-					}}
-					errors={fields.phone.errors}
-				/>
-				<Field
-					labelProps={{ htmlFor: fields.city.id, children: 'City' }}
-					inputProps={{
-						...conform.input(fields.city),
-						autoComplete: 'city',
-					}}
-					errors={fields.city.errors}
-				/>
-				<Field
-					labelProps={{ htmlFor: fields.state.id, children: 'State' }}
-					inputProps={{
-						...conform.input(fields.state),
-						autoComplete: 'state',
-					}}
-					errors={fields.state.errors}
-				/>
+			<div className="mb-5">
+				<label className="text-accent text-body-xs">Summary</label>
+				<p>{resume?.summary}</p>
 			</div>
-			<Field
-				labelProps={{ htmlFor: fields.country.id, children: 'Country' }}
-				inputProps={{
-					...conform.input(fields.country),
-					autoComplete: 'country',
-				}}
-				errors={fields.country.errors}
-			/>
 			<h2 className="mb-2 text-h2">Experience</h2>
 			<div className="space-y-2">
 				{resume?.experience.length
 					? resume.experience.map(experience => (
 							<div key={experience.id}>
-								<ButtonLink
-									size="sm"
-									variant="secondary"
-									to={`experiences/${experience.id}`}
-								>
-									Tailor {experience.employer} - {experience.role}
-								</ButtonLink>
+								<Button asChild size="sm" variant="secondary">
+									<Link to={`experiences/${experience.id}`}>
+										Tailor {experience.employer} - {experience.role}
+									</Link>
+								</Button>
 							</div>
 					  ))
 					: null}
 			</div>
-			<h2 className="mb-2 text-h2">Education</h2>
-			{resume?.education.length
-				? resume.education.map(education => (
-						<div key={education.id}>
-							<p key={education.id}>
-								{education.school} - {education.field}
-							</p>
-						</div>
-				  ))
-				: null}
-			<h2 className="mb-2 text-h2">Skills</h2>
-			{resume?.skills.length
-				? resume.skills.map(skill => (
-						<div key={skill.id}>
-							<p key={skill.id}>{skill.name}</p>
-						</div>
-				  ))
-				: null}
 			<ErrorList errors={form.errors} id={form.errorId} />
 		</resumeTailorFetcher.Form>
 	)

@@ -14,11 +14,12 @@ import {
 	useNavigation,
 	useSearchParams,
 } from '@remix-run/react'
+import { safeRedirect } from 'remix-utils'
 import { z } from 'zod'
 import { Spacer } from '~/components/spacer.tsx'
+import { StatusButton } from '~/components/ui/status-button.tsx'
 import { authenticator, requireAnonymous, signup } from '~/utils/auth.server.ts'
-import { Button, CheckboxField, ErrorList, Field } from '~/utils/forms.tsx'
-import { safeRedirect } from '~/utils/misc.ts'
+import { CheckboxField, ErrorList, Field } from '~/components/forms.tsx'
 import { commitSession, getSession } from '~/utils/session.server.ts'
 import {
 	nameSchema,
@@ -26,7 +27,10 @@ import {
 	usernameSchema,
 } from '~/utils/user-validation.ts'
 import { checkboxSchema } from '~/utils/zod-extensions.ts'
-import { onboardingEmailSessionKey } from './signup.tsx'
+import { redirectWithConfetti } from '~/utils/flash-session.server.ts'
+import { prisma } from '~/utils/db.server.ts'
+
+export const onboardingEmailSessionKey = 'onboardingEmail'
 
 const OnboardingFormSchema = z
 	.object({
@@ -59,13 +63,10 @@ export async function loader({ request }: DataFunctionArgs) {
 	if (typeof onboardingEmail !== 'string' || !onboardingEmail) {
 		return redirect('/signup')
 	}
+	const message = error?.message ?? null
 	return json(
-		{ formError: error?.message },
-		{
-			headers: {
-				'Set-Cookie': await commitSession(session),
-			},
-		},
+		{ formError: typeof message === 'string' ? message : null },
+		{ headers: { 'Set-Cookie': await commitSession(session) } },
 	)
 }
 
@@ -77,21 +78,29 @@ export async function action({ request }: DataFunctionArgs) {
 	}
 
 	const formData = await request.formData()
-	const submission = parse(formData, {
-		schema: OnboardingFormSchema,
+	const submission = await parse(formData, {
+		schema: OnboardingFormSchema.superRefine(async (data, ctx) => {
+			const existingUser = await prisma.user.findUnique({
+				where: { username: data.username },
+				select: { id: true },
+			})
+			if (existingUser) {
+				ctx.addIssue({
+					path: ['username'],
+					code: z.ZodIssueCode.custom,
+					message: 'A user already exists with this username',
+				})
+				return
+			}
+		}),
 		acceptMultipleErrors: () => true,
+		async: true,
 	})
 	if (submission.intent !== 'submit') {
 		return json({ status: 'idle', submission } as const)
 	}
 	if (!submission.value) {
-		return json(
-			{
-				status: 'error',
-				submission,
-			} as const,
-			{ status: 400 },
-		)
+		return json({ status: 'error', submission } as const, { status: 400 })
 	}
 	const {
 		username,
@@ -111,7 +120,7 @@ export async function action({ request }: DataFunctionArgs) {
 	const newCookie = await commitSession(cookieSession, {
 		expires: remember ? session.expirationDate : undefined,
 	})
-	return redirect(safeRedirect(redirectTo, '/'), {
+	return redirectWithConfetti(safeRedirect(redirectTo, '/'), {
 		headers: { 'Set-Cookie': newCookie },
 	})
 }
@@ -140,11 +149,11 @@ export default function OnboardingPage() {
 	const redirectTo = searchParams.get('redirectTo') || '/'
 
 	return (
-		<div className="container mx-auto flex min-h-full flex-col justify-center pb-32 pt-20">
+		<div className="container flex min-h-full flex-col justify-center pb-32 pt-20">
 			<div className="mx-auto w-full max-w-lg">
 				<div className="flex flex-col gap-3 text-center">
 					<h1 className="text-h1">Welcome aboard!</h1>
-					<p className="text-body-md text-night-200">
+					<p className="text-body-md text-muted-foreground">
 						Please enter your details.
 					</p>
 				</div>
@@ -162,6 +171,7 @@ export default function OnboardingPage() {
 							autoFocus:
 								typeof actionData === 'undefined' ||
 								typeof fields.username.initialError !== 'undefined',
+							className: 'lowercase',
 						}}
 						errors={fields.username.errors}
 					/>
@@ -234,14 +244,14 @@ export default function OnboardingPage() {
 						value={redirectTo}
 					/>
 
-					<ErrorList errors={data.formError ? [data.formError] : []} />
-					<ErrorList errors={form.errors} id={form.errorId} />
+					<ErrorList
+						errors={[...form.errors, data.formError]}
+						id={form.errorId}
+					/>
 
 					<div className="flex items-center justify-between gap-6">
-						<Button
+						<StatusButton
 							className="w-full"
-							size="md"
-							variant="primary"
 							status={
 								navigation.state === 'submitting' &&
 								navigation.formAction === formAction &&
@@ -253,7 +263,7 @@ export default function OnboardingPage() {
 							disabled={navigation.state !== 'idle'}
 						>
 							Create an account
-						</Button>
+						</StatusButton>
 					</div>
 				</Form>
 			</div>

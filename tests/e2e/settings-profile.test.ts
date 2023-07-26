@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker'
 import { expect, insertNewUser, test } from '../playwright-utils.ts'
 import { createUser } from '../../tests/db-utils.ts'
-import { verifyLogin } from '~/utils/auth.server.ts'
+import { verifyUserPassword } from '~/utils/auth.server.ts'
 
 test('Users can update their basic info', async ({ login, page }) => {
 	await login()
@@ -41,12 +41,13 @@ test('Users can update their password', async ({ login, page }) => {
 
 	await expect(page).toHaveURL(`/users/${user.username}`)
 
+	const { username } = user
 	expect(
-		await verifyLogin(user.username, oldPassword),
+		await verifyUserPassword({ username }, oldPassword),
 		'Old password still works',
 	).toEqual(null)
 	expect(
-		await verifyLogin(user.username, newPassword),
+		await verifyUserPassword({ username }, newPassword),
 		'New password does not work',
 	).toEqual({ id: user.id })
 })
@@ -56,7 +57,7 @@ test('Users can update their profile photo', async ({ login, page }) => {
 	await page.goto('/settings/profile')
 
 	const beforeSrc = await page
-		.getByAltText(user.name ?? user.username)
+		.getByRole('img', { name: user.name ?? user.username })
 		.getAttribute('src')
 
 	await page.getByRole('link', { name: /change profile photo/i }).click()
@@ -64,14 +65,10 @@ test('Users can update their profile photo', async ({ login, page }) => {
 	await expect(page).toHaveURL(`/settings/profile/photo`)
 
 	await page
-		.getByRole('dialog', { name: /profile photo/i })
-		.getByLabel(/change/i)
+		.getByRole('textbox', { name: /change/i })
 		.setInputFiles('./tests/fixtures/test-profile.jpg')
 
-	await page
-		.getByRole('dialog', { name: /profile photo/i })
-		.getByRole('button', { name: /save/i })
-		.click()
+	await page.getByRole('button', { name: /save/i }).click()
 
 	await expect(
 		page,
@@ -79,7 +76,7 @@ test('Users can update their profile photo', async ({ login, page }) => {
 	).toHaveURL(`/settings/profile`)
 
 	const afterSrc = await page
-		.getByAltText(user.name ?? user.username)
+		.getByRole('img', { name: user.name ?? user.username })
 		.getAttribute('src')
 
 	expect(beforeSrc).not.toEqual(afterSrc)
