@@ -233,36 +233,3 @@ test('reset password with a short code', async ({ page }) => {
 
 	await expect(page).toHaveURL(`/reset-password`)
 })
-
-test('reset password with a short code', async ({ page }) => {
-	const user = await insertNewUser()
-	await page.goto('/login')
-
-	await page.getByRole('link', { name: /forgot password/i }).click()
-	await expect(page).toHaveURL('/forgot-password')
-
-	await expect(
-		page.getByRole('heading', { name: /forgot password/i }),
-	).toBeVisible()
-	await page.getByRole('textbox', { name: /username/i }).fill(user.username)
-	await page.getByRole('button', { name: /recover password/i }).click()
-	await expect(
-		page.getByRole('button', { name: /recover password/i, disabled: true }),
-	).toBeVisible()
-	await expect(page.getByText(/check your email/i)).toBeVisible()
-
-	const email = await readEmail(user.email)
-	invariant(email, 'Email not found')
-	expect(email.subject).toMatch(/password reset/i)
-	expect(email.to).toBe(user.email)
-	expect(email.from).toBe('hello@epicstack.dev')
-	const codeMatch = email.text.match(
-		/Here's your verification code: (?<code>\d+)/,
-	)
-	const code = codeMatch?.groups?.code
-	invariant(code, 'Reset Password code not found')
-	await page.getByRole('textbox', { name: /code/i }).fill(code)
-	await page.getByRole('button', { name: /submit/i }).click()
-
-	await expect(page).toHaveURL(`/reset-password`)
-})
