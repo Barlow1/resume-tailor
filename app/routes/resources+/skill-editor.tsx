@@ -1,12 +1,12 @@
 import { conform, useForm } from '@conform-to/react'
 import { getFieldsetConstraint, parse } from '@conform-to/zod'
-import * as Dialog from '@radix-ui/react-dialog'
 import { json, redirect, type DataFunctionArgs } from '@remix-run/node'
-import { useFetcher, useNavigate, useRouteLoaderData } from '@remix-run/react'
+import { useFetcher, useRouteLoaderData } from '@remix-run/react'
 import { z } from 'zod'
+import { Field, ErrorList } from '~/components/forms.tsx'
+import { Button } from '~/components/ui/button.tsx'
 import { type User } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
-import { Button, ErrorList, Field } from '~/utils/forms.tsx'
 
 export const SkillEditorSchema = z.object({
 	id: z.string().optional(),
@@ -84,7 +84,6 @@ export function SkillEditor({
 	}
 }) {
 	const skillEditorFetcher = useFetcher<typeof action>()
-	const navigate = useNavigate()
 	const editData = useRouteLoaderData(
 		'routes/users+/$username_+/resume+/edit',
 	) as { resume: any }
@@ -102,63 +101,49 @@ export function SkillEditor({
 		},
 		shouldRevalidate: 'onBlur',
 	})
-	const dismissModal = () => navigate('..', { preventScrollReset: true })
 
 	return (
-		<Dialog.Root open={true}>
-			<Dialog.Portal>
-				<Dialog.Overlay className="fixed inset-0 backdrop-blur-[2px]" />
-				<Dialog.Content
-					onEscapeKeyDown={dismissModal}
-					onInteractOutside={dismissModal}
-					onPointerDownOutside={dismissModal}
-					className="fixed left-1/2 top-1/2 w-[90vw] max-w-3xl -translate-x-1/2 -translate-y-1/2 transform rounded-lg bg-night-500 p-12 shadow-lg"
-				>
-					<Dialog.Title asChild className="text-center">
-						<h2 className="mb-2 text-h2">{skill ? 'Edit' : 'Add'} skill</h2>
-					</Dialog.Title>
-					<skillEditorFetcher.Form
-						method="post"
-						action="/resources/skill-editor"
-						{...form.props}
+		<>
+			<h2 className="mb-2 text-h2">{skill ? 'Edit' : 'Add'} skill</h2>
+			<skillEditorFetcher.Form
+				method="post"
+				action="/resources/skill-editor"
+				preventScrollReset
+				{...form.props}
+			>
+				<input name="id" type="hidden" value={skill?.id} />
+				<input name="resumeId" type="hidden" value={editData?.resume?.id} />
+				<div>
+					<Field
+						labelProps={{
+							htmlFor: fields.name.id,
+							children: 'Skill',
+						}}
+						inputProps={{
+							...conform.input(fields.name),
+							autoComplete: 'name',
+						}}
+						errors={fields.name.errors}
+					/>
+				</div>
+				<ErrorList errors={form.errors} id={form.errorId} />
+				<div className="flex justify-end gap-4">
+					<Button variant="secondary" type="reset">
+						Reset
+					</Button>
+					<Button
+						status={
+							skillEditorFetcher.state === 'submitting'
+								? 'pending'
+								: skillEditorFetcher.data?.status ?? 'idle'
+						}
+						type="submit"
+						disabled={skillEditorFetcher.state !== 'idle'}
 					>
-						<input name="id" type="hidden" value={skill?.id} />
-						<input name="resumeId" type="hidden" value={editData?.resume?.id} />
-						<div>
-							<Field
-								labelProps={{
-									htmlFor: fields.name.id,
-									children: 'Skill',
-								}}
-								inputProps={{
-									...conform.input(fields.name),
-									autoComplete: 'name',
-								}}
-								errors={fields.name.errors}
-							/>
-						</div>
-						<ErrorList errors={form.errors} id={form.errorId} />
-						<div className="flex justify-end gap-4">
-							<Button size="md" variant="secondary" type="reset">
-								Reset
-							</Button>
-							<Button
-								size="md"
-								variant="primary"
-								status={
-									skillEditorFetcher.state === 'submitting'
-										? 'pending'
-										: skillEditorFetcher.data?.status ?? 'idle'
-								}
-								type="submit"
-								disabled={skillEditorFetcher.state !== 'idle'}
-							>
-								Submit
-							</Button>
-						</div>
-					</skillEditorFetcher.Form>
-				</Dialog.Content>
-			</Dialog.Portal>
-		</Dialog.Root>
+						Save
+					</Button>
+				</div>
+			</skillEditorFetcher.Form>
+		</>
 	)
 }

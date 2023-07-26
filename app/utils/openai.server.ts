@@ -1,57 +1,72 @@
-import { LLMChain, SequentialChain } from 'langchain/chains'
-import { OpenAI } from 'langchain/llms/openai'
-import { PromptTemplate } from 'langchain/prompts'
+import {
+	type ChatCompletionRequestMessage,
+	Configuration,
+	OpenAIApi,
+} from 'openai'
+import { type User } from '@prisma/client'
+import { invariant } from './misc.ts'
+
+const openai = new OpenAIApi(
+	new Configuration({
+		apiKey: process.env.OPENAI_API_KEY,
+	}),
+)
 
 export const getExperienceResponse = async ({
 	experience,
 	jobTitle,
 	jobDescription,
+	user,
 }: {
 	experience: string
 	jobTitle: string
 	jobDescription: string
+	user: Partial<User>
 }) => {
-	const llm = new OpenAI({ temperature: 0, modelName: 'gpt-4' })
-	const template = `You are an expert resume writer with 20 years experience landing people {jobTitle} roles. I want you to provide me a list of pain points, key skills, and responsibilities an applicant must have to get a first interview with the hiring manager.
+	const name = user.name ?? user.username
+
+	const messages: Array<ChatCompletionRequestMessage> | null =
+		jobTitle && jobDescription
+			? [
+					{
+						role: 'system',
+						content: `You are an expert resume writer with 20 years experience landing people ${jobTitle} roles. I want you to provide me a list of pain points, key skills, and responsibilities an applicant must have to get a first interview with the hiring manager.
  
-  Job Description: {jobDescription}
-
-  Expert Resume Writer: This is a list of pain points, key skills, and responsibilities an applicant must have to get a first interview with the hiring manager for the above job description:`
-	const promptTemplate = new PromptTemplate({
-		template,
-		inputVariables: ['jobDescription', 'jobTitle'],
-	})
-	const synopsisChain = new LLMChain({
-		llm,
-		prompt: promptTemplate,
-		outputKey: 'previouslyGeneratedExperiences',
-	})
-
-	// This is an LLMChain to write a review of a play given a synopsis.
-	const reviewLLM = new OpenAI({ temperature: 0, modelName: 'gpt-4' })
-	const reviewTemplate = `Here are the current experiences listed in my resume: ${experience}.
+                    Job Description: ${jobDescription}
+                    `,
+					},
+					{
+						role: 'user',
+						content: `Expert Resume Writer: This is a list of pain points, key skills, and responsibilities an applicant must have to get a first interview with the hiring manager for the above job description:`,
+						name,
+					},
+					{
+						role: 'user',
+						content: `Here are the current experiences listed in my resume: ${experience}.
 	
-	Modify this experience section to emphasize and succinctly present the following key experiences
-	required for this position: {previouslyGeneratedExperiences}. 
-	Ensure to merge similar experiences, remove redundant wording, and keep each skill description concise.
-	The modified experiences section should highlight these key experiences in a clear and brief manner that aligns with the requirements for the position.
-	Modified Experience List: `
-	const reviewPromptTemplate = new PromptTemplate({
-		template: reviewTemplate,
-		inputVariables: ['previouslyGeneratedExperiences'],
-	})
-	const reviewChain = new LLMChain({
-		llm: reviewLLM,
-		prompt: reviewPromptTemplate,
-		outputKey: 'tailoredExperience',
-	})
+                    Modify the experience I gave you to the pain points, key skills, and responsibilities to emphasize and succinctly present the following key experiences
+                    required for this position. 
+                    Ensure to merge similar experiences, remove redundant wording, and keep each skill description concise.
+                    The modified experiences section should highlight these key experiences in a clear and brief single sentence that aligns with the requirements for the position.
+                    Keep the list limited to 10 items.
+                    Modified Experience List:`,
+						name,
+					},
+			  ]
+			: null
 
-	const overallChain = new SequentialChain({
-		chains: [synopsisChain, reviewChain],
-		inputVariables: ['jobTitle', 'jobDescription'],
-		verbose: true,
-		outputVariables: ['tailoredExperience'],
-	})
-	const review = await overallChain.call({ jobDescription, jobTitle })
-	return review.tailoredExperience
+	invariant(messages, 'Must provide jobTitle and jobDescription')
+
+	const response = await openai.createChatCompletion(
+		{
+			model: 'gpt-4',
+			messages,
+			temperature: 0,
+			max_tokens: 1024,
+			stream: true,
+		},
+		{ responseType: 'stream' },
+	)
+
+	return { response }
 }

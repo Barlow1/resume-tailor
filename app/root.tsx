@@ -1,9 +1,8 @@
-import * as Checkbox from '@radix-ui/react-checkbox'
-import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { cssBundleHref } from '@remix-run/css-bundle'
 import {
 	json,
 	type DataFunctionArgs,
+	type HeadersFunction,
 	type LinksFunction,
 	type V2_MetaFunction,
 } from '@remix-run/node'
@@ -16,62 +15,104 @@ import {
 	Outlet,
 	Scripts,
 	ScrollRestoration,
-	useFetcher,
 	useLoaderData,
+	// useMatches,
 	useSubmit,
 } from '@remix-run/react'
-import { clsx } from 'clsx'
-import { useState } from 'react'
+import { withSentry } from '@sentry/remix'
+import { lazy, useRef } from 'react'
+import { Confetti } from './components/confetti.tsx'
+import { GeneralErrorBoundary } from './components/error-boundary.tsx'
+// import { SearchBar } from './components/search-bar.tsx'
+import { Button } from './components/ui/button.tsx'
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuPortal,
+	DropdownMenuTrigger,
+} from './components/ui/dropdown-menu.tsx'
+import { Icon, href as iconsHref } from './components/ui/icon.tsx'
+import { Toaster } from './components/ui/toaster.tsx'
+import { ThemeSwitch, useTheme } from './routes/resources+/theme/index.tsx'
+import { getTheme } from './routes/resources+/theme/theme.server.ts'
+import fontStylestylesheetUrl from './styles/font.css'
 import tailwindStylesheetUrl from './styles/tailwind.css'
 import { authenticator, getUserId } from './utils/auth.server.ts'
+import { ClientHintCheck, getHints } from './utils/client-hints.tsx'
 import { prisma } from './utils/db.server.ts'
 import { getEnv } from './utils/env.server.ts'
-import { ButtonLink } from './utils/forms.tsx'
-import { getUserImgSrc } from './utils/misc.ts'
-import { useUser } from './utils/user.ts'
+import { getFlashSession } from './utils/flash-session.server.ts'
+import { combineHeaders, getDomainUrl, getUserImgSrc } from './utils/misc.ts'
+import { useNonce } from './utils/nonce-provider.ts'
+import { makeTimings, time } from './utils/timing.server.ts'
+import { useToast } from './utils/useToast.tsx'
+import { useOptionalUser, useUser } from './utils/user.ts'
+import rdtStylesheetUrl from 'remix-development-tools/stylesheet.css'
+import OnboardingStepper from './routes/resources+/onboarding-stepper.tsx'
+const RemixDevTools =
+	process.env.NODE_ENV === 'development'
+		? lazy(() => import('remix-development-tools'))
+		: undefined
 
 export const links: LinksFunction = () => {
 	return [
+		// Preload svg sprite as a resource to avoid render blocking
+		{ rel: 'preload', href: iconsHref, as: 'image' },
+		// Preload CSS as a resource to avoid render blocking
+		{ rel: 'preload', href: fontStylestylesheetUrl, as: 'style' },
+		{ rel: 'preload', href: tailwindStylesheetUrl, as: 'style' },
+		cssBundleHref ? { rel: 'preload', href: cssBundleHref, as: 'style' } : null,
+		rdtStylesheetUrl && process.env.NODE_ENV === 'development'
+			? { rel: 'preload', href: rdtStylesheetUrl, as: 'style' }
+			: null,
+		{ rel: 'mask-icon', href: '/favicons/mask-icon.svg' },
 		{
-			rel: 'apple-touch-icon',
-			sizes: '180x180',
-			href: '/favicons/apple-touch-icon.png',
-		},
-		{
-			rel: 'icon',
+			rel: 'alternate icon',
 			type: 'image/png',
-			sizes: '32x32',
 			href: '/favicons/favicon-32x32.png',
 		},
+		{ rel: 'apple-touch-icon', href: '/favicons/apple-touch-icon.png' },
 		{
-			rel: 'icon',
-			type: 'image/png',
-			sizes: '16x16',
-			href: '/favicons/favicon-16x16.png',
-		},
-		{ rel: 'manifest', href: '/site.webmanifest' },
-		{ rel: 'icon', href: '/favicon.ico' },
-		{ rel: 'stylesheet', href: '/fonts/nunito-sans/font.css' },
+			rel: 'manifest',
+			href: '/site.webmanifest',
+			crossOrigin: 'use-credentials',
+		} as const, // necessary to make typescript happy
+		//These should match the css preloads above to avoid css as render blocking resource
+		{ rel: 'icon', type: 'image/svg+xml', href: '/favicons/favicon.svg' },
+		{ rel: 'stylesheet', href: fontStylestylesheetUrl },
 		{ rel: 'stylesheet', href: tailwindStylesheetUrl },
 		cssBundleHref ? { rel: 'stylesheet', href: cssBundleHref } : null,
+		rdtStylesheetUrl && process.env.NODE_ENV === 'development'
+			? { rel: 'stylesheet', href: rdtStylesheetUrl }
+			: null,
 	].filter(Boolean)
 }
 
-export const meta: V2_MetaFunction = () => {
+export const meta: V2_MetaFunction<typeof loader> = ({ data }) => {
 	return [
-		{ title: 'Resume Tailor' },
-		{ name: 'description', content: 'Find yourself in outer space' },
+		{ title: data ? 'Resume Tailor' : 'Error | Resume Tailor' },
+		{ name: 'description', content: `Your own captain's log` },
 	]
 }
 
 export async function loader({ request }: DataFunctionArgs) {
-	const userId = await getUserId(request)
+	const timings = makeTimings('root loader')
+	const userId = await time(() => getUserId(request), {
+		timings,
+		type: 'getUserId',
+		desc: 'getUserId in root',
+	})
 
 	const user = userId
-		? await prisma.user.findUnique({
-				where: { id: userId },
-				select: { id: true, name: true, username: true, imageId: true },
-		  })
+		? await time(
+				() =>
+					prisma.user.findUnique({
+						where: { id: userId },
+						select: { id: true, name: true, username: true, imageId: true },
+					}),
+				{ timings, type: 'find user', desc: 'find user in root' },
+		  )
 		: null
 	if (userId && !user) {
 		console.info('something weird happened')
@@ -79,201 +120,236 @@ export async function loader({ request }: DataFunctionArgs) {
 		// them in the database. Maybe they were deleted? Let's log them out.
 		await authenticator.logout(request, { redirectTo: '/' })
 	}
+	const { flash, headers: flashHeaders } = await getFlashSession(request)
 
-	return json({ user, ENV: getEnv() })
+	let firstJob = null
+	let gettingStartedProgress = null
+	if (userId) {
+		;[firstJob, gettingStartedProgress] = await Promise.all([
+			prisma.job.findFirst({ where: { ownerId: userId } }),
+			prisma.gettingStartedProgress.findUnique({
+				where: {
+					ownerId: userId,
+				},
+			}),
+		])
+	}
+
+	return json(
+		{
+			user,
+			requestInfo: {
+				hints: getHints(request),
+				origin: getDomainUrl(request),
+				path: new URL(request.url).pathname,
+				userPrefs: {
+					theme: getTheme(request),
+				},
+			},
+			ENV: getEnv(),
+			flash,
+			firstJob,
+			gettingStartedProgress,
+		},
+		{
+			headers: combineHeaders(
+				{ 'Server-Timing': timings.toString() },
+				flashHeaders,
+			),
+		},
+	)
 }
 
-export default function App() {
-	const data = useLoaderData<typeof loader>()
-	const { user } = data
+export const headers: HeadersFunction = ({ loaderHeaders }) => {
+	const headers = {
+		'Server-Timing': loaderHeaders.get('Server-Timing') ?? '',
+	}
+	return headers
+}
+
+function Document({
+	children,
+	nonce,
+	theme = 'light',
+	env = {},
+}: {
+	children: React.ReactNode
+	nonce: string
+	theme?: 'dark' | 'light'
+	env?: Record<string, string>
+}) {
 	return (
-		<html lang="en" className="dark h-full">
+		<html lang="en" className={`${theme} h-full overflow-x-hidden`}>
 			<head>
+				<ClientHintCheck nonce={nonce} />
 				<Meta />
 				<meta charSet="utf-8" />
 				<meta name="viewport" content="width=device-width,initial-scale=1" />
 				<Links />
 			</head>
-			<body className="flex h-full flex-col justify-between bg-night-700 text-white">
-				<header className="container mx-auto py-6">
-					<nav className="flex justify-between">
+			<body className="bg-background text-foreground">
+				{children}
+				<script
+					nonce={nonce}
+					dangerouslySetInnerHTML={{
+						__html: `window.ENV = ${JSON.stringify(env)}`,
+					}}
+				/>
+				<ScrollRestoration nonce={nonce} />
+				<Scripts nonce={nonce} />
+				<LiveReload nonce={nonce} />
+			</body>
+		</html>
+	)
+}
+
+function App() {
+	const data = useLoaderData<typeof loader>()
+	const nonce = useNonce()
+	const user = useOptionalUser()
+	const theme = useTheme()
+	// const matches = useMatches()
+	// const isOnSearchPage = matches.find(m => m.id === 'routes/users+/index')
+	useToast(data.flash?.toast)
+
+	return (
+		<Document nonce={nonce} theme={theme} env={data.ENV}>
+			<div className="flex h-screen flex-col justify-between">
+				<header className="container py-6">
+					<nav className="flex items-center justify-between">
 						<Link to="/">
 							<div className="font-light">Resume</div>
 							<div className="font-bold">Tailor</div>
 						</Link>
+						{/* {isOnSearchPage ? null : (
+							<div className="ml-auto max-w-sm flex-1 pr-10">
+								<SearchBar status="idle" />
+							</div>
+						)} */}
 						<div className="flex items-center gap-10">
-							{user ? (
-								<UserDropdown />
-							) : (
-								<ButtonLink to="/login" size="sm" variant="primary">
-									Log In
-								</ButtonLink>
-							)}
+							<ThemeSwitch userPreference={data.requestInfo.userPrefs.theme} />
+							<div className="flex items-center gap-10">
+								{user ? (
+									<UserDropdown />
+								) : (
+									<Button asChild variant="default" size="sm">
+										<Link to="/login">Log In</Link>
+									</Button>
+								)}
+							</div>
 						</div>
 					</nav>
 				</header>
 
 				<div className="flex-1">
 					<Outlet />
+					<OnboardingStepper
+						firstJob={data.firstJob}
+						gettingStartedProgress={data.gettingStartedProgress}
+					/>
 				</div>
 
-				<div className="container mx-auto flex justify-between">
+				<div className="container flex justify-between pb-5">
 					<Link to="/">
 						<div className="font-light">Resume</div>
 						<div className="font-bold">Tailor</div>
 					</Link>
-					<ThemeSwitch />
 				</div>
-				<div className="h-5" />
-				<ScrollRestoration />
-				<Scripts />
-				<script
-					dangerouslySetInnerHTML={{
-						__html: `window.ENV = ${JSON.stringify(data.ENV)}`,
-					}}
-				/>
-				<LiveReload />
-			</body>
-		</html>
+			</div>
+			<Confetti confetti={data.flash?.confetti} />
+			<Toaster />
+			{RemixDevTools && <RemixDevTools showRouteBoundaries />}
+		</Document>
 	)
 }
-
-function ThemeSwitch() {
-	const fetcher = useFetcher()
-	const [mode, setMode] = useState<'system' | 'dark' | 'light'>('system')
-	const checked: boolean | 'indeterminate' =
-		mode === 'system' ? 'indeterminate' : mode === 'dark'
-	const theme = mode === 'system' ? 'dark' : mode
-	return (
-		<fetcher.Form>
-			<label>
-				<Checkbox.Root
-					className={clsx('bg-gray-night-500 h-10 w-20 rounded-full p-1', {
-						'bg-night-500': theme === 'dark',
-						'bg-white': theme === 'light',
-					})}
-					checked={checked}
-					name="theme"
-					value={mode}
-					onCheckedChange={() =>
-						setMode(oldMode =>
-							oldMode === 'system'
-								? 'light'
-								: oldMode === 'light'
-								? 'dark'
-								: 'system',
-						)
-					}
-					aria-label={
-						mode === 'system'
-							? 'System Theme'
-							: mode === 'dark'
-							? 'Dark Theme'
-							: 'Light Theme'
-					}
-				>
-					<span
-						className={clsx('flex justify-between rounded-full', {
-							'bg-white': mode === 'system' && theme === 'dark',
-							'theme-switch-light': mode === 'system' && theme === 'light',
-						})}
-					>
-						<span
-							className={clsx(
-								'theme-switch-light',
-								'flex h-8 w-8 items-center justify-center rounded-full',
-								{
-									'text-white': mode === 'light',
-								},
-							)}
-						>
-							🔆
-						</span>
-						<span
-							className={clsx(
-								'theme-switch-dark',
-								'flex h-8 w-8 items-center justify-center rounded-full',
-								{
-									'text-white': mode === 'dark',
-								},
-							)}
-						>
-							🌙
-						</span>
-					</span>
-				</Checkbox.Root>
-			</label>
-		</fetcher.Form>
-	)
-}
+export default withSentry(App)
 
 function UserDropdown() {
 	const user = useUser()
 	const submit = useSubmit()
+	const formRef = useRef<HTMLFormElement>(null)
 	return (
-		<DropdownMenu.Root>
-			<DropdownMenu.Trigger asChild>
-				<Link
-					to={`/users/${user.username}`}
-					// this is for progressive enhancement
-					onClick={e => e.preventDefault()}
-					className="flex items-center gap-2 rounded-full bg-night-500 py-2 pl-2 pr-4 outline-none hover:bg-night-400 focus:bg-night-400 radix-state-open:bg-night-400"
-				>
-					<img
-						className="h-8 w-8 rounded-full object-cover"
-						alt={user.name ?? user.username}
-						src={getUserImgSrc(user.imageId)}
-					/>
-					<span className="text-body-sm font-bold">
-						{user.name ?? user.username}
-					</span>
-				</Link>
-			</DropdownMenu.Trigger>
-			<DropdownMenu.Portal>
-				<DropdownMenu.Content
-					sideOffset={8}
-					align="start"
-					className="flex flex-col rounded-3xl bg-[#323232]"
-				>
-					<DropdownMenu.Item asChild>
+		<DropdownMenu>
+			<DropdownMenuTrigger asChild>
+				<Button asChild variant="secondary">
+					<Link
+						to={`/users/${user.username}`}
+						// this is for progressive enhancement
+						onClick={e => e.preventDefault()}
+						className="flex items-center gap-2"
+					>
+						<img
+							className="h-8 w-8 rounded-full object-cover"
+							alt={user.name ?? user.username}
+							src={getUserImgSrc(user.imageId)}
+						/>
+						<span className="text-body-sm font-bold">
+							{user.name ?? user.username}
+						</span>
+					</Link>
+				</Button>
+			</DropdownMenuTrigger>
+			<DropdownMenuPortal>
+				<DropdownMenuContent sideOffset={8} align="start">
+					<DropdownMenuItem asChild>
+						<Link prefetch="intent" to={`/users/${user.username}`}>
+							<Icon className="text-body-md" name="avatar">
+								Profile
+							</Icon>
+						</Link>
+					</DropdownMenuItem>
+					<DropdownMenuItem asChild>
+						<Link prefetch="intent" to={`/users/${user.username}/jobs`}>
+							<Icon className="text-body-md" name="pencil-2">
+								Tailor
+							</Icon>
+						</Link>
+					</DropdownMenuItem>
+					<DropdownMenuItem asChild>
 						<Link
 							prefetch="intent"
-							to={`/users/${user.username}`}
-							className="rounded-t-3xl px-7 py-5 outline-none hover:bg-night-500 radix-highlighted:bg-night-500"
+							to={`/users/${user.username}/resume/upload`}
 						>
-							Profile
+							<Icon className="text-body-md" name="upload">
+								Upload Resume
+							</Icon>
 						</Link>
-					</DropdownMenu.Item>
-					<DropdownMenu.Item asChild>
-						<Link
-							prefetch="intent"
-							to={`/users/${user.username}/jobs`}
-							className="px-7 py-5 outline-none hover:bg-night-500 radix-highlighted:bg-night-500"
-						>
-							Jobs
-						</Link>
-					</DropdownMenu.Item>
-					<DropdownMenu.Item asChild>
-						<Link
-							prefetch="intent"
-							to={`/users/${user.username}/resume/edit`}
-							className="px-7 py-5 outline-none hover:bg-night-500 radix-highlighted:bg-night-500"
-						>
-							Resume
-						</Link>
-					</DropdownMenu.Item>
-					<DropdownMenu.Item asChild>
-						<Form
-							action="/logout"
-							method="POST"
-							className="rounded-b-3xl px-7 py-5 outline-none radix-highlighted:bg-night-500"
-							onClick={e => submit(e.currentTarget)}
-						>
-							<button type="submit">Logout</button>
+					</DropdownMenuItem>
+					<DropdownMenuItem
+						asChild
+						// this prevents the menu from closing before the form submission is completed
+						onSelect={event => {
+							event.preventDefault()
+							submit(formRef.current)
+						}}
+					>
+						<Form action="/logout" method="POST" ref={formRef}>
+							<Icon className="text-body-md" name="exit">
+								<button type="submit">Logout</button>
+							</Icon>
 						</Form>
-					</DropdownMenu.Item>
-				</DropdownMenu.Content>
-			</DropdownMenu.Portal>
-		</DropdownMenu.Root>
+					</DropdownMenuItem>
+				</DropdownMenuContent>
+			</DropdownMenuPortal>
+		</DropdownMenu>
+	)
+}
+
+export function ErrorBoundary() {
+	// the nonce doesn't rely on the loader so we can access that
+	const nonce = useNonce()
+
+	// NOTE: you cannot use useLoaderData in an ErrorBoundary because the loader
+	// likely failed to run so we have to do the best we can.
+	// We could probably do better than this (it's possible the loader did run).
+	// This would require a change in Remix.
+
+	// Just make sure your root route never errors out and you'll always be able
+	// to give the user a better UX.
+
+	return (
+		<Document nonce={nonce}>
+			<GeneralErrorBoundary />
+		</Document>
 	)
 }
