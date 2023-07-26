@@ -3,9 +3,10 @@ import { getFieldsetConstraint, parse } from '@conform-to/zod'
 import { json, redirect, type DataFunctionArgs } from '@remix-run/node'
 import { useFetcher } from '@remix-run/react'
 import { z } from 'zod'
+import { ErrorList, Field, TextareaField } from '~/components/forms.tsx'
+import { Button } from '~/components/ui/button.tsx'
 import { requireUserId } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
-import { Button, ErrorList, Field, TextareaField } from '~/utils/forms.tsx'
 
 export const JobEditorSchema = z.object({
 	id: z.string().optional(),
@@ -142,12 +143,10 @@ export function JobEditor({
 			/>
 			<ErrorList errors={form.errors} id={form.errorId} />
 			<div className="flex justify-end gap-4">
-				<Button size="md" variant="secondary" type="reset">
+				<Button variant="secondary" type="reset">
 					Reset
 				</Button>
 				<Button
-					size="md"
-					variant="primary"
 					status={
 						jobEditorFetcher.state === 'submitting'
 							? 'pending'

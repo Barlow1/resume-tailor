@@ -1,11 +1,10 @@
 import { json, type DataFunctionArgs } from '@remix-run/node'
 import { Outlet, useLoaderData } from '@remix-run/react'
 import { GeneralErrorBoundary } from '~/components/error-boundary.tsx'
-import { requireUserId } from '~/utils/auth.server.ts'
-import { prisma } from '~/utils/db.server.ts'
 import { z } from 'zod'
-import { parse } from '@conform-to/zod'
-import { ResumeTailor } from '~/routes/resources+/resume-tailor.tsx'
+import Breadcrumbs from '~/components/ui/breadcrumbs.tsx'
+import { Spacer } from '~/components/spacer.tsx'
+import { useUser } from '~/utils/user.ts'
 
 export const JobEditorSchema = z.object({
 	experience: z.string().min(1),
@@ -13,41 +12,27 @@ export const JobEditorSchema = z.object({
 	jobDescription: z.string().min(1),
 })
 
-export async function loader({ request, params }: DataFunctionArgs) {
-	const userId = await requireUserId(request)
-	const job = await prisma.job.findUnique({
-		where: {
-			id: params.jobId,
-		},
-	})
-	const resume = await prisma.resume.findFirst({
-		where: {
-			ownerId: userId,
-		},
-		include: {
-			skills: true,
-			experience: true,
-			education: true,
-		},
-	})
-	if (!job) {
-		throw new Response('Not found', { status: 404 })
-	}
-	if (!resume) {
-		throw new Response('No resume found', { status: 404 })
-	}
-	return json({ job, resume, isOwner: userId === job.ownerId })
+export async function loader({ params }: DataFunctionArgs) {
+	return json({ jobId: params.jobId })
 }
 
 export default function ResumeTailorRoute() {
+	const user = useUser()
 	const data = useLoaderData<typeof loader>()
 
 	return (
-		<>
-			<h2 className="mb-2 text-h2 lg:mb-6">{data.job.title}</h2>
-			<ResumeTailor resume={data.resume} job={data.job} />
-			<Outlet />
-		</>
+		<div className="container m-auto mb-36 max-w-3xl">
+			<Breadcrumbs
+				origin={{
+					breadcrumb: 'Tailor',
+					pathname: `/users/${user.username}/jobs/${data.jobId}/tailor`,
+				}}
+			/>
+			<Spacer size="xs" />
+			<main>
+				<Outlet />
+			</main>
+		</div>
 	)
 }
 

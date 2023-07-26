@@ -3,8 +3,8 @@ import {
 	Configuration,
 	OpenAIApi,
 } from 'openai'
-import invariant from 'tiny-invariant'
 import { type User } from '@prisma/client'
+import { invariant } from './misc.ts'
 
 const openai = new OpenAIApi(
 	new Configuration({

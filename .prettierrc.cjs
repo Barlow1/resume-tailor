@@ -17,4 +17,16 @@ module.exports = {
 	tabWidth: 2,
 	trailingComma: 'all',
 	useTabs: true,
+<<<<<<< HEAD
+=======
+	overrides: [
+		{
+			files: ['**/*.json'],
+			options: {
+				useTabs: false,
+			},
+		},
+	],
+	plugins: [require('prettier-plugin-tailwindcss')],
+>>>>>>> v2
 }

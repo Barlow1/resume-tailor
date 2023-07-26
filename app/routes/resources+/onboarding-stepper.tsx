@@ -3,9 +3,9 @@ import * as Dialog from '@radix-ui/react-dialog'
 import { type DataFunctionArgs } from '@remix-run/node'
 import { Link, useFetcher } from '@remix-run/react'
 import { useState } from 'react'
+import { Button } from '~/components/ui/button.tsx'
 import { getUserId } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
-import { Button } from '~/utils/forms.tsx'
 import { type Stringify } from '~/utils/misc.ts'
 import { useOptionalUser } from '~/utils/user.ts'
 
@@ -78,7 +78,6 @@ export default function OnboardingStepper({
 						<Button
 							className="fixed bottom-10 right-10"
 							type="submit"
-							size="md"
 							variant="secondary"
 							onClick={() => setIsVisible(true)}
 							data-drawer-target="drawer-navigation"
@@ -91,7 +90,6 @@ export default function OnboardingStepper({
 						<Button
 							className="fixed bottom-10 right-10"
 							type="button"
-							size="md"
 							variant="secondary"
 							onClick={() => setIsVisible(true)}
 							data-drawer-target="drawer-navigation"
@@ -117,7 +115,7 @@ export default function OnboardingStepper({
 							className="fixed right-0 top-0 z-40 h-screen w-72 -translate-x-full transition-transform sm:translate-x-0"
 							aria-label="Sidebar"
 						>
-							<div className="h-full overflow-y-auto bg-gray-50 px-3 py-4 dark:bg-night-600">
+							<div className="h-full overflow-y-auto bg-accent px-3 py-4">
 								<h5
 									id="drawer-navigation-label"
 									className="text-base font-semibold uppercase text-gray-500 dark:text-gray-400"
@@ -148,13 +146,16 @@ export default function OnboardingStepper({
 									<span className="sr-only">Close menu</span>
 								</button>
 								<div className="overflow-y-auto py-4">
-									<ol className="relative ml-5 border-l border-gray-200 text-gray-500 dark:border-night-400 dark:text-gray-400">
+									<ol
+										onClick={dismissModal}
+										className="dark:border-night-400 relative ml-5 border-l border-gray-500 dark:border-gray-200 text-gray-500 dark:text-gray-400"
+									>
 										<Link to={`/users/${user?.username}/jobs/new`}>
 											<li className="mb-10 ml-6">
 												{gettingStartedProgress?.hasSavedJob ? (
 													<GreenCheckCircle />
 												) : (
-													<span className="absolute -left-4 flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 ring-4 ring-white dark:bg-night-400 dark:ring-gray-900">
+													<span className="dark:bg-night-400 absolute -left-4 flex h-8 w-8 items-center justify-center rounded-full bg-accent ring-4 ring-white dark:ring-gray-900">
 														<svg
 															xmlns="http://www.w3.org/2000/svg"
 															height="1em"
@@ -178,7 +179,7 @@ export default function OnboardingStepper({
 												{gettingStartedProgress?.hasSavedResume ? (
 													<GreenCheckCircle />
 												) : (
-													<span className="absolute -left-4 flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 ring-4 ring-white dark:bg-night-400 dark:ring-gray-900">
+													<span className="dark:bg-night-400 absolute -left-4 flex h-8 w-8 items-center justify-center rounded-full bg-accent ring-4 ring-white dark:ring-gray-900">
 														<svg
 															className="h-3.5 w-3.5 text-gray-500 dark:text-gray-400"
 															aria-hidden="true"
@@ -207,7 +208,7 @@ export default function OnboardingStepper({
 												{gettingStartedProgress?.hasTailoredResume ? (
 													<GreenCheckCircle />
 												) : (
-													<span className="absolute -left-4 flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 ring-4 ring-white dark:bg-night-400 dark:ring-gray-900">
+													<span className="dark:bg-night-400 absolute -left-4 flex h-8 w-8 items-center justify-center rounded-full bg-accent ring-4 ring-white dark:ring-gray-900">
 														<svg
 															className="h-3.5 w-3.5 text-gray-500 dark:text-gray-400"
 															aria-hidden="true"

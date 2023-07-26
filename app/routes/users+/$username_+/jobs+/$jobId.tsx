@@ -1,12 +1,12 @@
 import { json, type DataFunctionArgs } from '@remix-run/node'
-import { useLoaderData } from '@remix-run/react'
+import { Link, useLoaderData } from '@remix-run/react'
 import { GeneralErrorBoundary } from '~/components/error-boundary.tsx'
 import { DeleteJob } from '~/routes/resources+/delete-job.tsx'
 import { getUserId } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
 import { z } from 'zod'
-import { ButtonLink } from '~/utils/forms.tsx'
 import { useUser } from '~/utils/user.ts'
+import { Button } from '~/components/ui/button.tsx'
 
 export const JobEditorSchema = z.object({
 	experience: z.string().min(1),
@@ -52,18 +52,18 @@ export default function JobIdRoute() {
 				<div className="flex justify-end gap-4 py-5">
 					<input hidden name="jobTitle" value={data.job.title} />
 					<input hidden name="jobDescription" value={data.job.content} />
-					<ButtonLink
-						size="md"
-						variant="primary"
-						to={
-							data.resume ? 'tailor' : `/users/${user.username}/resume/upload`
-						}
-					>
-						Tailor Resume
-					</ButtonLink>
-					<ButtonLink size="md" variant="secondary" to="edit">
-						Edit
-					</ButtonLink>
+					<Button asChild>
+						<Link
+							to={
+								data.resume ? 'tailor' : `/users/${user.username}/resume/upload`
+							}
+						>
+							Tailor Resume
+						</Link>
+					</Button>
+					<Button variant="secondary" asChild>
+						<Link to="edit">Edit</Link>
+					</Button>
 					<DeleteJob id={data.job.id} />
 				</div>
 			) : null}

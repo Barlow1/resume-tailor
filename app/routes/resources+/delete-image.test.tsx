@@ -5,9 +5,9 @@ import { faker } from '@faker-js/faker'
 import fs from 'fs'
 import { createPassword, createUser } from 'tests/db-utils.ts'
 import { BASE_URL, getSessionSetCookieHeader } from 'tests/vitest-utils.ts'
-import invariant from 'tiny-invariant'
 import { expect, test } from 'vitest'
 import { prisma } from '~/utils/db.server.ts'
+import { invariantResponse } from '~/utils/misc.ts'
 import { ROUTE_PATH, action } from './delete-image.tsx'
 
 const RESOURCE_URL = `${BASE_URL}${ROUTE_PATH}`
@@ -46,7 +46,7 @@ async function setupUser() {
 		},
 	})
 	const { user } = session
-	invariant(user.imageId, 'User should have an image')
+	invariantResponse(user.imageId, 'User should have an image')
 	return {
 		user: { ...user, imageId: user.imageId },
 		cookie: await getSessionSetCookieHeader(session),
@@ -76,7 +76,7 @@ test('allows users to delete their own images', async () => {
 test('requires auth', async () => {
 	const form = new FormData()
 	form.set('intent', 'submit')
-	form.set('imageId', faker.datatype.uuid())
+	form.set('imageId', faker.string.uuid())
 	const request = new Request(RESOURCE_URL, {
 		method: 'POST',
 		body: form,
@@ -121,7 +121,7 @@ test('cannot delete an image that does not exist', async () => {
 	const { cookie } = await setupUser()
 	const form = new FormData()
 	form.set('intent', 'submit')
-	const fakeImageId = faker.datatype.uuid()
+	const fakeImageId = faker.string.uuid()
 	form.set('imageId', fakeImageId)
 	const request = new Request(RESOURCE_URL, {
 		method: 'POST',
@@ -138,6 +138,9 @@ test('cannot delete an image that does not exist', async () => {
 			intent: 'submit',
 			payload: {
 				intent: 'submit',
+				imageId: fakeImageId,
+			},
+			value: {
 				imageId: fakeImageId,
 			},
 		},
