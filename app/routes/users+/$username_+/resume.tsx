@@ -3,13 +3,11 @@ import {
 	Outlet,
 	NavLink,
 	Link,
-	useLocation,
 } from '@remix-run/react'
 import { json, type DataFunctionArgs } from '@remix-run/node'
 import { prisma } from '~/utils/db.server.ts'
-import { clsx } from 'clsx'
 import { GeneralErrorBoundary } from '~/components/error-boundary.tsx'
-import { getUserImgSrc } from '~/utils/misc.ts'
+import { cn, getUserImgSrc } from '~/utils/misc.ts'
 import { requireUserId } from '~/utils/auth.server.ts'
 
 export async function loader({ params, request }: DataFunctionArgs) {
@@ -34,12 +32,11 @@ export async function loader({ params, request }: DataFunctionArgs) {
 export default function ResumeRoute() {
 	const data = useLoaderData<typeof loader>()
 	const ownerDisplayName = data.owner.name ?? data.owner.username
-	const location = useLocation()
 	const navLinkDefaultClassName =
 		'line-clamp-2 block rounded-l-full py-2 pl-8 pr-6 text-base lg:text-xl'
 	return (
 		<div className="flex h-full pb-12">
-			<div className="mx-auto grid w-full flex-grow grid-cols-4 bg-night-500 pl-2 md:container md:rounded-3xl">
+			<div className="bg-night-500 mx-auto grid w-full flex-grow grid-cols-4 pl-2 md:container md:rounded-3xl">
 				<div className="col-span-1 py-12">
 					<Link
 						to={`/users/${data.owner.username}`}
@@ -59,9 +56,7 @@ export default function ResumeRoute() {
 							<NavLink
 								to="upload"
 								className={({ isActive }) =>
-									clsx(navLinkDefaultClassName, {
-										'bg-night-400': isActive,
-									})
+									cn(navLinkDefaultClassName, isActive && 'bg-accent')
 								}
 							>
 								Upload
@@ -71,9 +66,7 @@ export default function ResumeRoute() {
 							<NavLink
 								to="edit"
 								className={({ isActive }) =>
-									clsx(navLinkDefaultClassName, {
-										'bg-night-400': isActive,
-									})
+									cn(navLinkDefaultClassName, isActive && 'bg-accent')
 								}
 							>
 								Edit
@@ -81,8 +74,7 @@ export default function ResumeRoute() {
 						</li>
 					</ul>
 				</div>
-				<main className="col-span-3 bg-night-400 px-10 py-12 md:rounded-r-3xl">
-					{location.pathname.includes('edit') ? null : <p>Resume</p>}
+				<main className="bg-night-400 col-span-3 px-10 py-12 md:rounded-r-3xl">
 					<Outlet />
 				</main>
 			</div>

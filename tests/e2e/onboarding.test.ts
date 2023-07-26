@@ -1,5 +1,4 @@
 import { faker } from '@faker-js/faker'
-import invariant from 'tiny-invariant'
 import {
 	deleteUserByUsername,
 	expect,
@@ -7,6 +6,8 @@ import {
 	test,
 } from '../playwright-utils.ts'
 import { readEmail } from '../mocks/utils.ts'
+import { createUser } from 'tests/db-utils.ts'
+import { invariant } from '~/utils/misc.ts'
 
 const urlRegex = /(?<url>https?:\/\/[^\s$.?#].[^\s]*)/
 function extractUrl(text: string) {
@@ -14,16 +15,17 @@ function extractUrl(text: string) {
 	return match?.groups?.url
 }
 
-test('onboarding', async ({ page }) => {
-	const firstName = faker.name.firstName()
-	const lastName = faker.name.lastName()
-	const username = faker.internet.userName(firstName, lastName).slice(0, 15)
+function getOnboardingData() {
+	const userData = createUser()
 	const onboardingData = {
-		name: `${firstName} ${lastName}`,
-		username,
-		email: `${username}@example.com`,
+		...userData,
 		password: faker.internet.password(),
 	}
+	return onboardingData
+}
+
+test('onboarding with link', async ({ page }) => {
+	const onboardingData = getOnboardingData()
 
 	await page.goto('/')
 
@@ -41,15 +43,15 @@ test('onboarding', async ({ page }) => {
 	await emailTextbox.click()
 	await emailTextbox.fill(onboardingData.email)
 
-	await page.getByRole('button', { name: /launch/i }).click()
+	await page.getByRole('button', { name: /submit/i }).click()
 	await expect(
-		page.getByRole('button', { name: /launch/i, disabled: true }),
+		page.getByRole('button', { name: /submit/i, disabled: true }),
 	).toBeVisible()
 	await expect(page.getByText(/check your email/i)).toBeVisible()
 
 	const email = await readEmail(onboardingData.email)
 	invariant(email, 'Email not found')
-	expect(email.to).toBe(onboardingData.email)
+	expect(email.to).toBe(onboardingData.email.toLowerCase())
 	expect(email.from).toBe('hello@epicstack.dev')
 	expect(email.subject).toMatch(/welcome/i)
 	const onboardingUrl = extractUrl(email.text)
@@ -93,7 +95,38 @@ test('onboarding', async ({ page }) => {
 	await expect(page).toHaveURL(`/`)
 
 	// have to do this here because we didn't use insertNewUser (because we're testing user create)
-	await deleteUserByUsername(onboardingData.username.toLocaleLowerCase())
+	await deleteUserByUsername(onboardingData.username)
+})
+
+test('onboarding with a short code', async ({ page }) => {
+	const onboardingData = getOnboardingData()
+
+	await page.goto('/signup')
+
+	const emailTextbox = page.getByRole('textbox', { name: /email/i })
+	await emailTextbox.click()
+	await emailTextbox.fill(onboardingData.email)
+
+	await page.getByRole('button', { name: /submit/i }).click()
+	await expect(
+		page.getByRole('button', { name: /submit/i, disabled: true }),
+	).toBeVisible()
+	await expect(page.getByText(/check your email/i)).toBeVisible()
+
+	const email = await readEmail(onboardingData.email)
+	invariant(email, 'Email not found')
+	expect(email.to).toBe(onboardingData.email.toLowerCase())
+	expect(email.from).toBe('hello@epicstack.dev')
+	expect(email.subject).toMatch(/welcome/i)
+	const codeMatch = email.text.match(
+		/Here's your verification code: (?<code>\d+)/,
+	)
+	const code = codeMatch?.groups?.code
+	invariant(code, 'Onboarding code not found')
+	await page.getByRole('textbox', { name: /code/i }).fill(code)
+	await page.getByRole('button', { name: /submit/i }).click()
+
+	await expect(page).toHaveURL(`/onboarding`)
 })
 
 test('login as existing user', async ({ page }) => {
@@ -112,7 +145,7 @@ test('login as existing user', async ({ page }) => {
 	).toBeVisible()
 })
 
-test('reset password', async ({ page }) => {
+test('reset password with a link', async ({ page }) => {
 	const originalPassword = faker.internet.password()
 	const user = await insertNewUser({ password: originalPassword })
 	invariant(user.name, 'User name not found')
@@ -129,12 +162,12 @@ test('reset password', async ({ page }) => {
 	await expect(
 		page.getByRole('button', { name: /recover password/i, disabled: true }),
 	).toBeVisible()
-	await expect(page.getByText(/instructions have been sent/i)).toBeVisible()
+	await expect(page.getByText(/check your email/i)).toBeVisible()
 
 	const email = await readEmail(user.email)
 	invariant(email, 'Email not found')
 	expect(email.subject).toMatch(/password reset/i)
-	expect(email.to).toBe(user.email)
+	expect(email.to).toBe(user.email.toLowerCase())
 	expect(email.from).toBe('hello@epicstack.dev')
 	const resetPasswordUrl = extractUrl(email.text)
 	invariant(resetPasswordUrl, 'Reset password URL not found')
@@ -166,4 +199,37 @@ test('reset password', async ({ page }) => {
 	await expect(
 		page.getByRole('link', { name: user.name }).first(),
 	).toBeVisible()
+})
+
+test('reset password with a short code', async ({ page }) => {
+	const user = await insertNewUser()
+	await page.goto('/login')
+
+	await page.getByRole('link', { name: /forgot password/i }).click()
+	await expect(page).toHaveURL('/forgot-password')
+
+	await expect(
+		page.getByRole('heading', { name: /forgot password/i }),
+	).toBeVisible()
+	await page.getByRole('textbox', { name: /username/i }).fill(user.username)
+	await page.getByRole('button', { name: /recover password/i }).click()
+	await expect(
+		page.getByRole('button', { name: /recover password/i, disabled: true }),
+	).toBeVisible()
+	await expect(page.getByText(/check your email/i)).toBeVisible()
+
+	const email = await readEmail(user.email)
+	invariant(email, 'Email not found')
+	expect(email.subject).toMatch(/password reset/i)
+	expect(email.to).toBe(user.email)
+	expect(email.from).toBe('hello@epicstack.dev')
+	const codeMatch = email.text.match(
+		/Here's your verification code: (?<code>\d+)/,
+	)
+	const code = codeMatch?.groups?.code
+	invariant(code, 'Reset Password code not found')
+	await page.getByRole('textbox', { name: /code/i }).fill(code)
+	await page.getByRole('button', { name: /submit/i }).click()
+
+	await expect(page).toHaveURL(`/reset-password`)
 })

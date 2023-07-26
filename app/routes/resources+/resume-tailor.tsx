@@ -7,11 +7,12 @@ import {
 	type Job,
 } from '@prisma/client'
 import { json, redirect, type DataFunctionArgs } from '@remix-run/node'
-import { useFetcher } from '@remix-run/react'
+import { Link, useFetcher } from '@remix-run/react'
 import { z } from 'zod'
+import { ErrorList } from '~/components/forms.tsx'
+import { Button } from '~/components/ui/button.tsx'
 import { requireUserId } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
-import { ButtonLink, ErrorList } from '~/utils/forms.tsx'
 import { type Stringify } from '~/utils/misc.ts'
 
 export const ResumeEditorSchema = z.object({
@@ -159,7 +160,7 @@ export function ResumeTailor({
 		>
 			<input name="id" type="hidden" value={resume?.id} />
 			<div className="mb-5">
-				<label className="text-body-xs text-night-200">Summary</label>
+				<label className="text-accent text-body-xs">Summary</label>
 				<p>{resume?.summary}</p>
 			</div>
 			<h2 className="mb-2 text-h2">Experience</h2>
@@ -167,13 +168,12 @@ export function ResumeTailor({
 				{resume?.experience.length
 					? resume.experience.map(experience => (
 							<div key={experience.id}>
-								<ButtonLink
-									size="sm"
-									variant="secondary"
-									to={`experiences/${experience.id}`}
-								>
-									Tailor {experience.employer} - {experience.role}
-								</ButtonLink>
+								<Button asChild size="sm" variant="secondary">
+									{/* eslint-disable-next-line remix-react-routes/require-valid-paths */}
+									<Link to={`experiences/${experience.id}`}>
+										Tailor {experience.employer} - {experience.role}
+									</Link>
+								</Button>
 							</div>
 					  ))
 					: null}

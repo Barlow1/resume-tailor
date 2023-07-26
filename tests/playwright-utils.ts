@@ -13,11 +13,15 @@ export function deleteUserByUsername(username: string) {
 	return prisma.user.delete({ where: { username } })
 }
 
-export async function insertNewUser({ password }: { password?: string } = {}) {
+export async function insertNewUser({
+	username,
+	password,
+}: { username?: string; password?: string } = {}) {
 	const userData = createUser()
 	const user = await prisma.user.create({
 		data: {
 			...userData,
+			username: username ?? userData.username,
 			password: {
 				create: {
 					hash: await getPasswordHash(password || userData.username),
@@ -35,7 +39,7 @@ export const test = base.extend<{
 }>({
 	login: [
 		async ({ page, baseURL }, use) => {
-			use(user => loginPage({ page, baseURL, user }))
+			await use(user => loginPage({ page, baseURL, user }))
 		},
 		{ auto: true },
 	],

@@ -1,6 +1,7 @@
 {
 	"name": "Resume Tailor",
 	"short_name": "Resume Tailor",
+	"start_url": "/",
 	"icons": [
 		{
 			"src": "/favicons/android-chrome-192x192.png",

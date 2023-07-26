@@ -1,3 +1,5 @@
+import { conform, useForm } from '@conform-to/react'
+import { getFieldsetConstraint, parse } from '@conform-to/zod'
 import {
 	json,
 	redirect,
@@ -13,17 +15,17 @@ import {
 } from '@remix-run/react'
 import { z } from 'zod'
 import { GeneralErrorBoundary } from '~/components/error-boundary.tsx'
+import { ErrorList, Field } from '~/components/forms.tsx'
+import { StatusButton } from '~/components/ui/status-button.tsx'
 import {
 	authenticator,
 	requireAnonymous,
 	resetUserPassword,
 } from '~/utils/auth.server.ts'
-import { Button, ErrorList, Field } from '~/utils/forms.tsx'
-import { conform, useForm } from '@conform-to/react'
-import { getFieldsetConstraint, parse } from '@conform-to/zod'
 import { commitSession, getSession } from '~/utils/session.server.ts'
 import { passwordSchema } from '~/utils/user-validation.ts'
-import { resetPasswordSessionKey } from './forgot-password.tsx'
+
+export const resetPasswordUsernameSessionKey = 'resetPasswordUsername'
 
 const ResetPasswordSchema = z
 	.object({
@@ -39,18 +41,13 @@ export async function loader({ request }: DataFunctionArgs) {
 	await requireAnonymous(request)
 	const session = await getSession(request.headers.get('cookie'))
 	const error = session.get(authenticator.sessionErrorKey)
-	const resetPasswordUsername = session.get(resetPasswordSessionKey)
+	const resetPasswordUsername = session.get(resetPasswordUsernameSessionKey)
 	if (typeof resetPasswordUsername !== 'string' || !resetPasswordUsername) {
 		return redirect('/login')
 	}
 	return json(
-		{
-			formError: error?.message,
-			resetPasswordUsername,
-		},
-		{
-			headers: { 'Set-Cookie': await commitSession(session) },
-		},
+		{ formError: error?.message, resetPasswordUsername },
+		{ headers: { 'Set-Cookie': await commitSession(session) } },
 	)
 }
 
@@ -64,23 +61,17 @@ export async function action({ request }: DataFunctionArgs) {
 		return json({ status: 'idle', submission } as const)
 	}
 	if (!submission.value) {
-		return json(
-			{
-				status: 'error',
-				submission,
-			} as const,
-			{ status: 400 },
-		)
+		return json({ status: 'error', submission } as const, { status: 400 })
 	}
 	const { password } = submission.value
 
 	const session = await getSession(request.headers.get('cookie'))
-	const username = session.get(resetPasswordSessionKey)
+	const username = session.get(resetPasswordUsernameSessionKey)
 	if (typeof username !== 'string' || !username) {
 		return redirect('/login')
 	}
 	await resetUserPassword({ username, password })
-	session.unset(resetPasswordSessionKey)
+	session.unset(resetPasswordUsernameSessionKey)
 	return redirect('/login', {
 		headers: { 'Set-Cookie': await commitSession(session) },
 	})
@@ -107,10 +98,10 @@ export default function ResetPasswordPage() {
 	})
 
 	return (
-		<div className="container mx-auto flex flex-col justify-center pb-32 pt-20">
+		<div className="container flex flex-col justify-center pb-32 pt-20">
 			<div className="text-center">
 				<h1 className="text-h1">Password Reset</h1>
-				<p className="mt-3 text-body-md text-night-200">
+				<p className="mt-3 text-body-md text-muted-foreground">
 					Hi, {data.resetPasswordUsername}. No worries. It happens all the time.
 				</p>
 			</div>
@@ -144,10 +135,8 @@ export default function ResetPasswordPage() {
 
 				<ErrorList errors={form.errors} id={form.errorId} />
 
-				<Button
+				<StatusButton
 					className="w-full"
-					size="md"
-					variant="primary"
 					status={
 						navigation.state === 'submitting' &&
 						navigation.formAction === formAction &&
@@ -159,7 +148,7 @@ export default function ResetPasswordPage() {
 					disabled={navigation.state !== 'idle'}
 				>
 					Reset password
-				</Button>
+				</StatusButton>
 			</Form>
 		</div>
 	)

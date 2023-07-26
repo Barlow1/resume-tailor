@@ -1,12 +1,12 @@
 import { conform, useForm } from '@conform-to/react'
 import { getFieldsetConstraint, parse } from '@conform-to/zod'
-import * as Dialog from '@radix-ui/react-dialog'
 import { json, redirect, type DataFunctionArgs } from '@remix-run/node'
-import { useFetcher, useNavigate, useRouteLoaderData } from '@remix-run/react'
+import { useFetcher, useRouteLoaderData } from '@remix-run/react'
 import { z } from 'zod'
+import { ErrorList, Field, TextareaField } from '~/components/forms.tsx'
+import { Button } from '~/components/ui/button.tsx'
 import { type User } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
-import { Button, ErrorList, Field, TextareaField } from '~/utils/forms.tsx'
 
 export const EducationEditorSchema = z.object({
 	id: z.string().optional(),
@@ -112,7 +112,6 @@ export function EducationEditor({
 	}
 }) {
 	const educationEditorFetcher = useFetcher<typeof action>()
-	const navigate = useNavigate()
 	const editData = useRouteLoaderData(
 		'routes/users+/$username_+/resume+/edit',
 	) as { resume: any }
@@ -136,127 +135,110 @@ export function EducationEditor({
 		},
 		shouldRevalidate: 'onBlur',
 	})
-	const dismissModal = () => navigate('..', { preventScrollReset: true })
 
 	return (
-		<Dialog.Root open={true}>
-			<Dialog.Portal>
-				<Dialog.Overlay className="fixed inset-0 backdrop-blur-[2px]" />
-				<Dialog.Content
-					onEscapeKeyDown={dismissModal}
-					onInteractOutside={dismissModal}
-					onPointerDownOutside={dismissModal}
-					className="fixed left-1/2 top-1/2 w-[90vw] max-w-3xl -translate-x-1/2 -translate-y-1/2 transform rounded-lg bg-night-500 p-12 shadow-lg"
-				>
-					<Dialog.Title asChild className="text-center">
-						<h2 className="mb-2 text-h2">
-							{education ? 'Edit' : 'Add'} education
-						</h2>
-					</Dialog.Title>
-					<educationEditorFetcher.Form
-						method="post"
-						action="/resources/education-editor"
-						preventScrollReset
-						{...form.props}
+		<>
+			<h2 className="mb-2 text-h2">{education ? 'Edit' : 'Add'} education</h2>
+			<educationEditorFetcher.Form
+				method="post"
+				action="/resources/education-editor"
+				preventScrollReset
+				{...form.props}
+			>
+				<input name="id" type="hidden" value={education?.id} />
+				<input name="resumeId" type="hidden" value={editData?.resume?.id} />
+				<div className="grid grid-cols-2 gap-2">
+					<Field
+						labelProps={{
+							htmlFor: fields.school.id,
+							children: 'School',
+						}}
+						inputProps={{
+							...conform.input(fields.school),
+							autoComplete: 'school',
+						}}
+						errors={fields.school.errors}
+					/>
+					<Field
+						labelProps={{
+							htmlFor: fields.field.id,
+							children: 'Field of Study',
+						}}
+						inputProps={{
+							...conform.input(fields.field),
+							autoComplete: 'field',
+						}}
+						errors={fields.field.errors}
+					/>
+					<Field
+						labelProps={{
+							htmlFor: fields.graduationDate.id,
+							children: 'Graduation Date',
+						}}
+						inputProps={{
+							...conform.input(fields.graduationDate),
+							autoComplete: 'graduationDate',
+							type: 'date',
+						}}
+						errors={fields.graduationDate.errors}
+					/>
+					<Field
+						labelProps={{ htmlFor: fields.city.id, children: 'City' }}
+						inputProps={{
+							...conform.input(fields.city),
+							autoComplete: 'city',
+						}}
+						errors={fields.city.errors}
+					/>
+					<Field
+						labelProps={{ htmlFor: fields.state.id, children: 'State' }}
+						inputProps={{
+							...conform.input(fields.state),
+							autoComplete: 'state',
+						}}
+						errors={fields.state.errors}
+					/>
+					<Field
+						labelProps={{
+							htmlFor: fields.country.id,
+							children: 'Country',
+						}}
+						inputProps={{
+							...conform.input(fields.country),
+							autoComplete: 'country',
+						}}
+						errors={fields.country.errors}
+					/>
+				</div>
+				<TextareaField
+					labelProps={{
+						htmlFor: fields.achievements.id,
+						children: 'Achievements',
+					}}
+					textareaProps={{
+						...conform.textarea(fields.achievements),
+						autoComplete: 'achievements',
+					}}
+					errors={fields.achievements.errors}
+				/>
+				<ErrorList errors={form.errors} id={form.errorId} />
+				<div className="flex justify-end gap-4">
+					<Button variant="secondary" type="reset">
+						Reset
+					</Button>
+					<Button
+						status={
+							educationEditorFetcher.state === 'submitting'
+								? 'pending'
+								: educationEditorFetcher.data?.status ?? 'idle'
+						}
+						type="submit"
+						disabled={educationEditorFetcher.state !== 'idle'}
 					>
-						<input name="id" type="hidden" value={education?.id} />
-						<input name="resumeId" type="hidden" value={editData?.resume?.id} />
-						<div className="grid grid-cols-2 gap-2">
-							<Field
-								labelProps={{
-									htmlFor: fields.school.id,
-									children: 'School',
-								}}
-								inputProps={{
-									...conform.input(fields.school),
-									autoComplete: 'school',
-								}}
-								errors={fields.school.errors}
-							/>
-							<Field
-								labelProps={{
-									htmlFor: fields.field.id,
-									children: 'Field of Study',
-								}}
-								inputProps={{
-									...conform.input(fields.field),
-									autoComplete: 'field',
-								}}
-								errors={fields.field.errors}
-							/>
-							<Field
-								labelProps={{
-									htmlFor: fields.graduationDate.id,
-									children: 'Graduation Date',
-								}}
-								inputProps={{
-									...conform.input(fields.graduationDate),
-									autoComplete: 'graduationDate',
-									type: 'date',
-								}}
-								errors={fields.graduationDate.errors}
-							/>
-							<Field
-								labelProps={{ htmlFor: fields.city.id, children: 'City' }}
-								inputProps={{
-									...conform.input(fields.city),
-									autoComplete: 'city',
-								}}
-								errors={fields.city.errors}
-							/>
-							<Field
-								labelProps={{ htmlFor: fields.state.id, children: 'State' }}
-								inputProps={{
-									...conform.input(fields.state),
-									autoComplete: 'state',
-								}}
-								errors={fields.state.errors}
-							/>
-							<Field
-								labelProps={{
-									htmlFor: fields.country.id,
-									children: 'Country',
-								}}
-								inputProps={{
-									...conform.input(fields.country),
-									autoComplete: 'country',
-								}}
-								errors={fields.country.errors}
-							/>
-						</div>
-						<TextareaField
-							labelProps={{
-								htmlFor: fields.achievements.id,
-								children: 'Achievements',
-							}}
-							textareaProps={{
-								...conform.textarea(fields.achievements),
-								autoComplete: 'achievements',
-							}}
-							errors={fields.achievements.errors}
-						/>
-						<ErrorList errors={form.errors} id={form.errorId} />
-						<div className="flex justify-end gap-4">
-							<Button size="md" variant="secondary" type="reset">
-								Reset
-							</Button>
-							<Button
-								size="md"
-								variant="primary"
-								status={
-									educationEditorFetcher.state === 'submitting'
-										? 'pending'
-										: educationEditorFetcher.data?.status ?? 'idle'
-								}
-								type="submit"
-								disabled={educationEditorFetcher.state !== 'idle'}
-							>
-								Save
-							</Button>
-						</div>
-					</educationEditorFetcher.Form>
-				</Dialog.Content>
-			</Dialog.Portal>
-		</Dialog.Root>
+						Save
+					</Button>
+				</div>
+			</educationEditorFetcher.Form>
+		</>
 	)
 }

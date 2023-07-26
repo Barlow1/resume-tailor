@@ -1,11 +1,11 @@
 import { type Password, type User } from '@prisma/client'
+import { redirect } from '@remix-run/node'
 import bcrypt from 'bcryptjs'
 import { Authenticator } from 'remix-auth'
 import { FormStrategy } from 'remix-auth-form'
-import invariant from 'tiny-invariant'
 import { prisma } from '~/utils/db.server.ts'
+import { invariant } from './misc.ts'
 import { sessionStorage } from './session.server.ts'
-import { redirect } from '@remix-run/node'
 
 export type { User }
 
@@ -26,7 +26,7 @@ authenticator.use(
 		invariant(typeof password === 'string', 'password must be a string')
 		invariant(password.length > 0, 'password must not be empty')
 
-		const user = await verifyLogin(username, password)
+		const user = await verifyUserPassword({ username }, password)
 		if (!user) {
 			throw new Error('Invalid username or password')
 		}
@@ -78,7 +78,11 @@ export async function getUserId(request: Request) {
 		where: { id: sessionId },
 		select: { userId: true },
 	})
-	if (!session) return null
+	if (!session) {
+		// Perhaps their session was deleted?
+		await authenticator.logout(request, { redirectTo: '/' })
+		return null
+	}
 	return session.userId
 }
 
@@ -120,21 +124,20 @@ export async function signup({
 	password: string
 }) {
 	const hashedPassword = await getPasswordHash(password)
-	const caseInsensitiveUsername = username.toLowerCase()
 
 	const session = await prisma.session.create({
 		data: {
 			expirationDate: new Date(Date.now() + SESSION_EXPIRATION_TIME),
 			user: {
 				create: {
-					email,
+					email: email.toLowerCase(),
+					username: username.toLowerCase(),
 					name,
 					password: {
 						create: {
 							hash: hashedPassword,
 						},
 					},
-					username: caseInsensitiveUsername,
 				},
 			},
 		},
@@ -148,13 +151,12 @@ export async function getPasswordHash(password: string) {
 	return hash
 }
 
-export async function verifyLogin(
-	username: User['username'],
+export async function verifyUserPassword(
+	where: Pick<User, 'username'> | Pick<User, 'id'>,
 	password: Password['hash'],
 ) {
-	const caseInsensitiveUsername = username.toLowerCase()
 	const userWithPassword = await prisma.user.findUnique({
-		where: { username: caseInsensitiveUsername },
+		where,
 		select: { id: true, password: { select: { hash: true } } },
 	})
 

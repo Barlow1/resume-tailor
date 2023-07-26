@@ -4,9 +4,10 @@ import { type Skill, type Education, type Experience } from '@prisma/client'
 import { json, redirect, type DataFunctionArgs } from '@remix-run/node'
 import { Link, useFetcher } from '@remix-run/react'
 import { z } from 'zod'
+import { ErrorList } from '~/components/forms.tsx'
+import { Button } from '~/components/ui/button.tsx'
 import { requireUserId } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
-import { Button, ErrorList } from '~/utils/forms.tsx'
 import { type Stringify } from '~/utils/misc.ts'
 
 export const ResumeEditorSchema = z.object({
@@ -198,6 +199,7 @@ export function ResumeEditor({
 							? resume.experience.map(experience => (
 									<div key={experience.id}>
 										<Link
+											// eslint-disable-next-line remix-react-routes/require-valid-paths
 											to={`experiences/${experience.id}/edit`}
 											preventScrollReset
 										>
@@ -218,7 +220,7 @@ export function ResumeEditor({
 							: null}
 					</div>
 					<Button
-						size="xs"
+						size="pill"
 						variant="secondary"
 						type="submit"
 						className="mt-2"
@@ -234,6 +236,7 @@ export function ResumeEditor({
 						{resume?.skills.length
 							? resume.skills.map(skills => (
 									<div key={skills.id}>
+										{/* eslint-disable-next-line remix-react-routes/require-valid-paths */}										
 										<Link to={`skills/${skills.id}/edit`} preventScrollReset>
 											<li className="list-none rounded-lg border border-gray-200 p-5 dark:border-gray-400">
 												{skills.name}
@@ -252,7 +255,7 @@ export function ResumeEditor({
 							: null}
 					</div>
 					<Button
-						size="xs"
+						size="pill"
 						variant="secondary"
 						type="submit"
 						className="mt-2"
@@ -361,12 +364,11 @@ export function ResumeEditor({
 			</Button> */}
 			<ErrorList errors={form.errors} id={form.errorId} />
 			<div className="flex justify-end gap-4">
-				<Button size="md" variant="secondary" type="reset">
+				<Button variant="secondary" type="reset">
 					Reset
 				</Button>
 				<Button
-					size="md"
-					variant="primary"
+					size="pill"
 					status={
 						resumeEditorFetcher.state === 'submitting'
 							? 'pending'
