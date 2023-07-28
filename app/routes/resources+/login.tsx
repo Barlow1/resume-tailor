@@ -84,6 +84,16 @@ export async function action({ request }: DataFunctionArgs) {
 	const cookieToSet = user2FA ? unverifiedSessionKey : authenticator.sessionKey
 	cookieSession.set(cookieToSet, sessionId)
 	const { remember, redirectTo } = submission.value
+	const userId = session?.userId
+	let user
+	if (userId) {
+		user = await prisma.user.findUnique({
+			where: {
+				id: userId,
+			},
+		})
+	}
+
 	const responseInit = {
 		headers: {
 			'Set-Cookie': await commitSession(cookieSession, {
@@ -98,6 +108,8 @@ export async function action({ request }: DataFunctionArgs) {
 			{ status: '2fa-required', submission, userId: session.userId } as const,
 			responseInit,
 		)
+	} else if (user?.username) {
+		throw redirect(safeRedirect(`/users/${user?.username}/jobs/new`), responseInit)
 	} else if (!redirectTo) {
 		return json({ status: 'success', submission } as const, responseInit)
 	} else {
