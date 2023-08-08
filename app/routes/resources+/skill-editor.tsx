@@ -1,7 +1,7 @@
 import { conform, useForm } from '@conform-to/react'
 import { getFieldsetConstraint, parse } from '@conform-to/zod'
 import { json, redirect, type DataFunctionArgs } from '@remix-run/node'
-import { useFetcher, useRouteLoaderData } from '@remix-run/react'
+import { useFetcher } from '@remix-run/react'
 import { z } from 'zod'
 import { Field, ErrorList } from '~/components/forms.tsx'
 import { Button } from '~/components/ui/button.tsx'
@@ -77,16 +77,17 @@ export async function action({ request }: DataFunctionArgs) {
 
 export function SkillEditor({
 	skill,
+	resume,
 }: {
 	skill?: {
 		id: string
 		name: string
 	}
+	resume: {
+		id: string
+	}
 }) {
 	const skillEditorFetcher = useFetcher<typeof action>()
-	const editData = useRouteLoaderData(
-		'routes/users+/$username_+/resume+/edit',
-	) as { resume: any }
 
 	const [form, fields] = useForm({
 		id: 'skill-editor',
@@ -112,7 +113,7 @@ export function SkillEditor({
 				{...form.props}
 			>
 				<input name="id" type="hidden" value={skill?.id} />
-				<input name="resumeId" type="hidden" value={editData?.resume?.id} />
+				<input name="resumeId" type="hidden" value={resume.id} />
 				<div>
 					<Field
 						labelProps={{
