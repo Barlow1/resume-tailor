@@ -52,11 +52,11 @@ export function ExperienceTailor({
 		id: string
 		employer: string
 		role: string
-		startDate: string
-		endDate: string
-		city: string
-		state: string
-		country: string
+		startDate: string | null
+		endDate: string | null
+		city: string | null
+		state: string | null
+		country: string | null
 		responsibilities: string
 	}
 }) {
