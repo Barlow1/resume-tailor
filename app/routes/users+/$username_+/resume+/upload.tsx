@@ -133,8 +133,8 @@ export async function action({ request }: DataFunctionArgs) {
 						update: {
 							employer: ex.company ?? NOT_FOUND,
 							role: ex.title ?? NOT_FOUND,
-							startDate: new Date(ex.date_start),
-							endDate: new Date(ex.date_end),
+							startDate: ex.date_start,
+							endDate: ex.date_end,
 							city: ex.location.fields.city ?? NOT_FOUND,
 							state: ex.location.fields.state ?? NOT_FOUND,
 							country: ex.location.fields.country ?? NOT_FOUND,
@@ -143,8 +143,8 @@ export async function action({ request }: DataFunctionArgs) {
 						create: {
 							employer: ex.company ?? NOT_FOUND,
 							role: ex.title ?? NOT_FOUND,
-							startDate: new Date(ex.date_start),
-							endDate: new Date(ex.date_end),
+							startDate: ex.date_start,
+							endDate: ex.date_end,
 							city: ex.location.fields.city ?? NOT_FOUND,
 							state: ex.location.fields.state ?? NOT_FOUND,
 							country: ex.location.fields.country ?? NOT_FOUND,
@@ -253,8 +253,8 @@ export async function action({ request }: DataFunctionArgs) {
 					return {
 						employer: ex.company ?? NOT_FOUND,
 						role: ex.title ?? NOT_FOUND,
-						startDate: new Date(ex.date_start),
-						endDate: new Date(ex.date_end),
+						startDate: ex.date_start,
+						endDate: ex.date_end,
 						city: ex.location.fields.city ?? NOT_FOUND,
 						state: ex.location.fields.state ?? NOT_FOUND,
 						country: ex.location.fields.country ?? NOT_FOUND,
