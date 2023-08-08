@@ -275,7 +275,7 @@ export function useDebounce<
 }
 
 export type Stringify<T> = {
-	[K in keyof T]: string
+	[K in keyof T]: string | null
 }
 
 export function bytesToMB(bytes: number) {
