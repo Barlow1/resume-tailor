@@ -23,7 +23,7 @@ export const getExperienceResponse = async ({
 	jobDescription: string
 	user: Partial<User>
 }) => {
-	const name = user.name ?? user.username
+	const name = user.name ? user.name.replace(/ /g, '_') : user.username
 
 	const messages: Array<ChatCompletionRequestMessage> | null =
 		jobTitle && jobDescription

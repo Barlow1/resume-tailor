@@ -1,7 +1,7 @@
 import { conform, useForm } from '@conform-to/react'
 import { getFieldsetConstraint, parse } from '@conform-to/zod'
 import { json, redirect, type DataFunctionArgs } from '@remix-run/node'
-import { useFetcher, useRouteLoaderData } from '@remix-run/react'
+import { useFetcher } from '@remix-run/react'
 import { z } from 'zod'
 import { Field, TextareaField, ErrorList } from '~/components/forms.tsx'
 import { Button } from '~/components/ui/button.tsx'
@@ -13,11 +13,11 @@ export const ExperienceEditorSchema = z.object({
 	resumeId: z.string().min(1),
 	employer: z.string().min(1),
 	role: z.string().min(1),
-	startDate: z.string().min(1),
-	endDate: z.string().min(1),
-	city: z.string().min(1),
-	state: z.string().min(1),
-	country: z.string().min(1),
+	startDate: z.string().optional(),
+	endDate: z.string().optional(),
+	city: z.string().optional(),
+	state: z.string().optional(),
+	country: z.string().optional(),
 	responsibilities: z.string().min(1),
 })
 
@@ -56,8 +56,8 @@ export async function action({ request }: DataFunctionArgs) {
 
 	const data = {
 		resumeId,
-		startDate: new Date(startDate),
-		endDate: new Date(endDate),
+		startDate: startDate,
+		endDate: endDate,
 		employer,
 		role,
 		city,
@@ -102,23 +102,22 @@ export async function action({ request }: DataFunctionArgs) {
 
 export function ExperienceEditor({
 	experience,
+	resume,
 }: {
 	experience?: {
 		id: string
-		employer: string
-		role: string
-		startDate: string
-		endDate: string
-		city: string
-		state: string
-		country: string
-		responsibilities: string
+		employer: string | null
+		role: string | null
+		startDate: string | null
+		endDate: string | null
+		city: string | null
+		state: string | null
+		country: string | null
+		responsibilities: string | null
 	}
+	resume: { id: string }
 }) {
 	const experienceEditorFetcher = useFetcher<typeof action>()
-	const editData = useRouteLoaderData(
-		'routes/users+/$username_+/resume+/edit',
-	) as { resume: any }
 
 	const [form, fields] = useForm({
 		id: 'experience-editor',
@@ -145,13 +144,13 @@ export function ExperienceEditor({
 		<>
 			<h2 className="mb-2 text-h2">{experience ? 'Edit' : 'Add'} experience</h2>
 			<experienceEditorFetcher.Form
-				method="post"
+				method="POST"
 				action="/resources/experience-editor"
 				preventScrollReset
 				{...form.props}
 			>
 				<input name="id" type="hidden" value={experience?.id} />
-				<input name="resumeId" type="hidden" value={editData?.resume?.id} />
+				<input name="resumeId" type="hidden" value={resume?.id} />
 				<div className="grid grid-cols-2 gap-2">
 					<Field
 						labelProps={{
@@ -172,7 +171,7 @@ export function ExperienceEditor({
 						}}
 						errors={fields.role.errors}
 					/>
-					<Field
+					{/* <Field
 						labelProps={{
 							htmlFor: fields.startDate.id,
 							children: 'Start Date',
@@ -180,7 +179,7 @@ export function ExperienceEditor({
 						inputProps={{
 							...conform.input(fields.startDate),
 							autoComplete: 'startDate',
-							type: 'date',
+							type: 'month',
 						}}
 						errors={fields.startDate.errors}
 					/>
@@ -192,7 +191,7 @@ export function ExperienceEditor({
 						inputProps={{
 							...conform.input(fields.endDate),
 							autoComplete: 'endDate',
-							type: 'date',
+							type: 'month',
 						}}
 						errors={fields.endDate.errors}
 					/>
@@ -212,7 +211,6 @@ export function ExperienceEditor({
 						}}
 						errors={fields.state.errors}
 					/>
-				</div>
 				<Field
 					labelProps={{
 						htmlFor: fields.country.id,
@@ -223,7 +221,8 @@ export function ExperienceEditor({
 						autoComplete: 'country',
 					}}
 					errors={fields.country.errors}
-				/>
+				/> */}
+				</div>
 				<TextareaField
 					labelProps={{
 						htmlFor: fields.responsibilities.id,

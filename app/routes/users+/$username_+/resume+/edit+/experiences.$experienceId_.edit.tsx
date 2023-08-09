@@ -10,19 +10,29 @@ export const handle = {
 }
 
 export async function loader({ request, params }: DataFunctionArgs) {
-	await requireUserId(request)
+	const userId = await requireUserId(request)
 	const experience = await prisma.experience.findUnique({
 		where: {
 			id: params.experienceId,
 		},
 	})
-	if (!experience) {
+	const resume = await prisma.resume.findFirst({
+		where: {
+			ownerId: userId,
+		},
+		include: {
+			experience: true,
+			education: true,
+			skills: true,
+		},
+	})
+	if (!experience || !resume) {
 		throw new Response('Not found', { status: 404 })
 	}
-	return json({ experience })
+	return json({ experience , resume})
 }
 
 export default function EditExperienceRoute() {
 	const data = useLoaderData<typeof loader>()
-	return <ExperienceEditor experience={data.experience} />
+	return <ExperienceEditor experience={data.experience} resume={data.resume} />
 }
