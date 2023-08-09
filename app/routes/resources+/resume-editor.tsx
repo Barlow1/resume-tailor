@@ -363,7 +363,7 @@ export function ResumeEditor({
 				Add new education +
 			</Button> */}
 			<ErrorList errors={form.errors} id={form.errorId} />
-			<div className="flex justify-end gap-4">
+			{/* <div className="flex justify-end gap-4">
 				<Button variant="secondary" type="reset">
 					Reset
 				</Button>
@@ -379,7 +379,7 @@ export function ResumeEditor({
 				>
 					Save
 				</Button>
-			</div>
+			</div> */}
 		</resumeEditorFetcher.Form>
 	)
 }

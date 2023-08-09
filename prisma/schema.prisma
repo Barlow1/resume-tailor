@@ -130,11 +130,11 @@ model Experience {
   id               String   @id @unique @default(cuid())
   employer         String
   role             String
-  startDate        DateTime
-  endDate          DateTime
-  city             String
-  state            String
-  country          String
+  startDate        String?
+  endDate          String?
+  city             String?
+  state            String?
+  country          String?
   responsibilities String
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
