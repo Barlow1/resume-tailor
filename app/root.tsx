@@ -301,7 +301,7 @@ function UserDropdown() {
 					<DropdownMenuItem asChild>
 						<Link prefetch="intent" to={`/users/${user.username}/jobs`}>
 							<Icon className="text-body-md" name="pencil-2">
-								Tailor
+								Jobs
 							</Icon>
 						</Link>
 					</DropdownMenuItem>
@@ -311,7 +311,7 @@ function UserDropdown() {
 							to={`/users/${user.username}/resume/upload`}
 						>
 							<Icon className="text-body-md" name="upload">
-								Upload Resume
+								Resume
 							</Icon>
 						</Link>
 					</DropdownMenuItem>

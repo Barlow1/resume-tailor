@@ -55,6 +55,15 @@ export default function JobIdRoute() {
 					<Button asChild>
 						<Link
 							to={
+								data.resume ? 'generate' : `/users/${user.username}/resume/upload`
+							}
+						>
+							Generate Experience
+						</Link>
+					</Button>
+					<Button asChild>
+						<Link
+							to={
 								data.resume ? 'tailor' : `/users/${user.username}/resume/upload`
 							}
 						>

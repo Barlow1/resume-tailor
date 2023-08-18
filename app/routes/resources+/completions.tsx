@@ -2,7 +2,10 @@ import { type DataFunctionArgs } from '@remix-run/node'
 import { eventStream } from 'remix-utils'
 import { authenticator, requireUserId } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
-import { getExperienceResponse } from '~/utils/openai.server.ts'
+import {
+	getExperienceResponse,
+	getGeneratedExperienceResponse,
+} from '~/utils/openai.server.ts'
 
 export async function loader({ request }: DataFunctionArgs) {
 	const userId = await requireUserId(request)
@@ -20,12 +23,21 @@ export async function loader({ request }: DataFunctionArgs) {
 	const jobDescription = url.searchParams.get('jobDescription') ?? ''
 	const experience = url.searchParams.get('experience') ?? ''
 
-	const { response } = await getExperienceResponse({
-		experience,
-		jobDescription,
-		jobTitle,
-		user,
-	})
+	let response: any;
+	if (experience) {
+		;({ response } = await getExperienceResponse({
+			experience,
+			jobDescription,
+			jobTitle,
+			user,
+		}))
+	} else {
+		;({ response } = await getGeneratedExperienceResponse({
+			jobDescription,
+			jobTitle,
+			user,
+		}))
+	}
 
 	const controller = new AbortController()
 	request.signal.addEventListener('abort', () => {
@@ -33,7 +45,6 @@ export async function loader({ request }: DataFunctionArgs) {
 	})
 
 	return eventStream(controller.signal, function setup(send) {
-		// @ts-expect-error 🤷‍♂️
 		response.data.on('data', (data: any) => {
 			const lines = data
 				.toString()
@@ -59,12 +70,10 @@ export async function loader({ request }: DataFunctionArgs) {
 			}
 		})
 
-		// @ts-expect-error 🤷‍♂️
 		response.data.on('error', (error: any) => {
 			console.error('Stream error', error)
 		})
 
-		// @ts-expect-error 🤷‍♂️
 		response.data.on('end', () => {
 			controller.abort()
 		})
