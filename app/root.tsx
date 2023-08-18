@@ -16,11 +16,12 @@ import {
 	Scripts,
 	ScrollRestoration,
 	useLoaderData,
+	useLocation,
 	// useMatches,
 	useSubmit,
 } from '@remix-run/react'
 import { withSentry } from '@sentry/remix'
-import { lazy, useRef } from 'react'
+import { lazy, useEffect, useRef } from 'react'
 import { Confetti } from './components/confetti.tsx'
 import { GeneralErrorBoundary } from './components/error-boundary.tsx'
 // import { SearchBar } from './components/search-bar.tsx'
@@ -50,6 +51,8 @@ import { useToast } from './utils/useToast.tsx'
 import { useOptionalUser, useUser } from './utils/user.ts'
 import rdtStylesheetUrl from 'remix-development-tools/stylesheet.css'
 import OnboardingStepper from './routes/resources+/onboarding-stepper.tsx'
+import * as gtag from './utils/gtags.client.ts'
+
 const RemixDevTools =
 	process.env.NODE_ENV === 'development'
 		? lazy(() => import('remix-development-tools'))
@@ -178,10 +181,35 @@ function Document({
 	theme?: 'dark' | 'light'
 	env?: Record<string, string>
 }) {
+	const location = useLocation()
+	const gaTrackingId = 'G-8JBRTFQ8PR'
+	useEffect(() => {
+		if (gaTrackingId?.length) {
+			gtag.pageview(location.pathname, gaTrackingId)
+		}
+	}, [location])
 	return (
 		<html lang="en" className={`${theme} h-full overflow-x-hidden`}>
 			<head>
 				<ClientHintCheck nonce={nonce} />
+				<script
+					async
+					src={`https://www.googletagmanager.com/gtag/js?id=${gaTrackingId}`}
+				></script>
+				<script
+					async
+					id="gtag-init"
+					dangerouslySetInnerHTML={{
+						__html: `
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${gaTrackingId}', {
+                  page_path: window.location.pathname,
+                });
+              `,
+					}}
+				/>
 				<Meta />
 				<meta charSet="utf-8" />
 				<meta name="viewport" content="width=device-width,initial-scale=1" />
