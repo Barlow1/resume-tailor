@@ -70,3 +70,53 @@ export const getExperienceResponse = async ({
 
 	return { response }
 }
+
+export const getGeneratedExperienceResponse = async ({
+	jobTitle,
+	jobDescription,
+	user,
+}: {
+	jobTitle: string
+	jobDescription: string
+	user: Partial<User>
+}) => {
+	const name = user.name ? user.name.replace(/ /g, '_') : user.username
+
+	const messages: Array<ChatCompletionRequestMessage> | null =
+		jobTitle && jobDescription
+			? [
+					{
+						role: 'system',
+						content: `You are an expert resume writer with 20 years experience landing people ${jobTitle} roles. 
+ 
+                    Job Description: ${jobDescription}
+                    `,
+					},
+					{
+						role: 'user',
+						content: `Generate a JSON string array of experience options that someone with the experience and qualifications for this job description would have.
+                    required for this position.
+					A good example of an experience list for a Software Engineer is "created a react component library for reuse and readability".
+                    Keep the array limited to 10 items.
+                    Only supply the JSON string array in the response`,
+						name,
+					},
+			  ]
+			: null
+
+	invariant(messages, 'Must provide jobTitle and jobDescription')
+
+	const response = await openai.createChatCompletion(
+		{
+			model: 'gpt-4',
+			messages,
+			temperature: 0.2,
+			max_tokens: 1024,
+			stream: true,
+		},
+		{ responseType: 'stream' },
+	)
+
+	return { response }
+}
+

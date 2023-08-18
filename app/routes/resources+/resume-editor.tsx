@@ -9,6 +9,7 @@ import { Button } from '~/components/ui/button.tsx'
 import { requireUserId } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
 import { type Stringify } from '~/utils/misc.ts'
+import { useUser } from '~/utils/user.ts'
 
 export const ResumeEditorSchema = z.object({
 	id: z.string().optional(),
@@ -155,6 +156,7 @@ export function ResumeEditor({
 	} | null
 }) {
 	const resumeEditorFetcher = useFetcher<typeof action>()
+	const user = useUser()
 
 	const [form] = useForm({
 		id: 'resume-editor',
@@ -236,7 +238,7 @@ export function ResumeEditor({
 						{resume?.skills.length
 							? resume.skills.map(skills => (
 									<div key={skills.id}>
-										{/* eslint-disable-next-line remix-react-routes/require-valid-paths */}										
+										{/* eslint-disable-next-line remix-react-routes/require-valid-paths */}
 										<Link to={`skills/${skills.id}/edit`} preventScrollReset>
 											<li className="list-none rounded-lg border border-gray-200 p-5 dark:border-gray-400">
 												{skills.name}
@@ -263,6 +265,11 @@ export function ResumeEditor({
 						name="action"
 					>
 						Add new skill +
+					</Button>
+				</div>
+				<div className="flex justify-end gap-4">
+					<Button asChild className="mt-2">
+						<Link to={`/users/${user?.username}/jobs`}>View Jobs</Link>
 					</Button>
 				</div>
 			</div>
