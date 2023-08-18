@@ -184,7 +184,7 @@ function Document({
 	const location = useLocation()
 	const gaTrackingId = 'G-8JBRTFQ8PR'
 	useEffect(() => {
-		if (gaTrackingId?.length) {
+		if (gaTrackingId?.length && process.env.NODE_ENV === 'production') {
 			gtag.pageview(location.pathname, gaTrackingId)
 		}
 	}, [location])
