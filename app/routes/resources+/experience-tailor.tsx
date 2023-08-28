@@ -110,7 +110,7 @@ export function ExperienceTailor({
 							<TextareaField
 								labelProps={{
 									htmlFor: fields.experience.id,
-									"aria-label": 'Experience',
+									'aria-label': 'Experience',
 								}}
 								textareaProps={{
 									...conform.textarea(fields.experience),
@@ -130,7 +130,7 @@ export function ExperienceTailor({
 								<TextareaField
 									labelProps={{
 										htmlFor: fields.tailoredExperience.id,
-										"aria-label": 'Tailored Experience',
+										'aria-label': 'Tailored Experience',
 									}}
 									textareaProps={{
 										...conform.textarea(fields.tailoredExperience),
@@ -171,7 +171,6 @@ export function ExperienceTailor({
 
 							const jobTitle =
 								// @ts-expect-error we'll fix this later probably...
-
 								event.currentTarget.form.elements.jobTitle.value
 							const jobDescription =
 								// @ts-expect-error we'll fix this later probably...
@@ -179,10 +178,19 @@ export function ExperienceTailor({
 							const experience =
 								// @ts-expect-error we'll fix this later probably...
 								event.currentTarget.form.elements.experience.value
+							const currentJobTitle =
+								// @ts-expect-error we'll fix this later probably...
+
+								event.currentTarget.form.elements.currentJobTitle.value
+							const currentJobCompany =
+								// @ts-expect-error we'll fix this later probably...
+								event.currentTarget.form.elements.currentJobCompany.value
 							const sse = new EventSource(
 								`/resources/completions?${new URLSearchParams({
 									jobTitle,
 									jobDescription,
+									currentJobTitle,
+									currentJobCompany,
 									experience,
 								})}`,
 							)
