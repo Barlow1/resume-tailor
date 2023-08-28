@@ -21,19 +21,26 @@ export async function loader({ request }: DataFunctionArgs) {
 	const url = new URL(request.url)
 	const jobTitle = url.searchParams.get('jobTitle') ?? ''
 	const jobDescription = url.searchParams.get('jobDescription') ?? ''
+	const currentJobTitle = url.searchParams.get('currentJobTitle') ?? ''
+	const currentJobCompany = url.searchParams.get('currentJobCompany') ?? ''
+
 	const experience = url.searchParams.get('experience') ?? ''
 
-	let response: any;
+	let response: any
 	if (experience) {
 		;({ response } = await getExperienceResponse({
 			experience,
 			jobDescription,
 			jobTitle,
+			currentJobTitle,
+			currentJobCompany,
 			user,
 		}))
 	} else {
 		;({ response } = await getGeneratedExperienceResponse({
 			jobDescription,
+			currentJobTitle,
+			currentJobCompany,
 			jobTitle,
 			user,
 		}))
