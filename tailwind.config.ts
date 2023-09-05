@@ -58,6 +58,10 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))',
 				},
+				brand: {
+					'500': '#6B45FF',
+					'800': '#5430BB',
+				},
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -66,6 +70,7 @@ export default {
 			},
 			fontFamily: {
 				sans: ['var(--font-sans)', ...defaultTheme.fontFamily.sans],
+				rainbow: ['Over the Rainbow', ...defaultTheme.fontFamily.sans],
 			},
 			fontSize: {
 				// 1rem = 16px
