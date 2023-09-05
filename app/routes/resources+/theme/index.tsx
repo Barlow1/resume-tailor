@@ -10,6 +10,7 @@ import { Icon } from '~/components/ui/icon.tsx'
 import { useHints } from '~/utils/client-hints.tsx'
 import { useRequestInfo } from '~/utils/request-info.ts'
 import { setTheme } from './theme.server.ts'
+import clsx from 'clsx'
 
 const ROUTE_PATH = '/resources/theme'
 
@@ -44,8 +45,10 @@ export async function action({ request }: DataFunctionArgs) {
 
 export function ThemeSwitch({
 	userPreference,
+	className,
 }: {
 	userPreference?: 'light' | 'dark'
+	className?: string
 }) {
 	const requestInfo = useRequestInfo()
 	const fetcher = useFetcher()
@@ -96,7 +99,12 @@ export function ThemeSwitch({
 					<input type="hidden" name="redirectTo" value={requestInfo.path} />
 				)}
 				<input type="hidden" name="theme" value={nextMode} />
-				<button className="flex h-8 w-8 cursor-pointer items-center justify-center">
+				<button
+					className={clsx(
+						'flex h-8 w-8 cursor-pointer items-center justify-center',
+						className,
+					)}
+				>
 					{modeLabel[mode]}
 				</button>
 			</div>

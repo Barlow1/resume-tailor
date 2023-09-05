@@ -16,11 +16,15 @@ export const getExperienceResponse = async ({
 	experience,
 	jobTitle,
 	jobDescription,
+	currentJobTitle,
+	currentJobCompany,
 	user,
 }: {
 	experience: string
 	jobTitle: string
 	jobDescription: string
+	currentJobTitle: string
+	currentJobCompany: string
 	user: Partial<User>
 }) => {
 	const name = user.name ? user.name.replace(/ /g, '_') : user.username
@@ -45,7 +49,7 @@ export const getExperienceResponse = async ({
 						content: `Here are the current experiences listed in my resume: ${experience}.
 	
                     Modify the experience I gave you to the pain points, key skills, and responsibilities to emphasize and succinctly present the following key experiences
-                    required for this position. 
+                    required for this position for someone in a ${currentJobTitle} role at company ${currentJobCompany}
                     Ensure to merge similar experiences, remove redundant wording, and keep each skill description concise.
                     The modified experiences section should highlight these key experiences in a clear and brief single sentence that aligns with the requirements for the position.
                     Keep the list limited to 10 items.
@@ -74,10 +78,14 @@ export const getExperienceResponse = async ({
 export const getGeneratedExperienceResponse = async ({
 	jobTitle,
 	jobDescription,
+	currentJobTitle,
+	currentJobCompany,
 	user,
 }: {
 	jobTitle: string
 	jobDescription: string
+	currentJobTitle: string
+	currentJobCompany: string
 	user: Partial<User>
 }) => {
 	const name = user.name ? user.name.replace(/ /g, '_') : user.username
@@ -94,9 +102,7 @@ export const getGeneratedExperienceResponse = async ({
 					},
 					{
 						role: 'user',
-						content: `Generate a JSON string array of experience options that someone with the experience and qualifications for this job description would have.
-                    required for this position.
-					A good example of an experience list for a Software Engineer is "created a react component library for reuse and readability".
+						content: `Generate a JSON string array of resume bullet points that someone with the experience and achievements for this job description would have for a ${currentJobTitle} role at company ${currentJobCompany}.
                     Keep the array limited to 10 items.
                     Only supply the JSON string array in the response`,
 						name,
@@ -119,4 +125,3 @@ export const getGeneratedExperienceResponse = async ({
 
 	return { response }
 }
-
