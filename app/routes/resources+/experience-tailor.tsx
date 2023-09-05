@@ -104,6 +104,12 @@ export function ExperienceTailor({
 						<input name="id" type="hidden" value={experience?.id} />
 						<input hidden name="jobTitle" value={job.title} />
 						<input hidden name="jobDescription" value={job.content} />
+						<input hidden name="currentJobTitle" value={experience.role} />
+						<input
+							hidden
+							name="currentJobCompany"
+							value={experience.employer}
+						/>
 						<input name="resumeId" type="hidden" value={editData?.resume?.id} />
 
 						<div className="py-5">
@@ -180,7 +186,6 @@ export function ExperienceTailor({
 								event.currentTarget.form.elements.experience.value
 							const currentJobTitle =
 								// @ts-expect-error we'll fix this later probably...
-
 								event.currentTarget.form.elements.currentJobTitle.value
 							const currentJobCompany =
 								// @ts-expect-error we'll fix this later probably...
