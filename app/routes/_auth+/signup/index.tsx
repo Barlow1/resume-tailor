@@ -22,7 +22,7 @@ export const onboardingOTPQueryParam = 'code'
 export const onboardingEmailQueryParam = 'email'
 export const verificationType = 'onboarding'
 
-const SignupSchema = z.object({
+export const SignupSchema = z.object({
 	email: emailSchema,
 })
 

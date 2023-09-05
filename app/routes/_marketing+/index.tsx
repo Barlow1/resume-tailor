@@ -1,12 +1,34 @@
 import type { V2_MetaFunction } from '@remix-run/node'
 import { addJob, background, tailorJob, topCompanies } from './logos/logos.ts'
-import { Link } from '@remix-run/react'
+import { Link, useActionData, useFetcher } from '@remix-run/react'
 import { Button } from '~/components/ui/button.tsx'
-import { Input } from '~/components/ui/input.tsx'
+import { conform, useForm } from '@conform-to/react'
+import { getFieldsetConstraint, parse } from '@conform-to/zod'
+import {
+	SignupSchema,
+	type action as signupAction,
+} from '../_auth+/signup/index.tsx'
+import { ErrorList, Field } from '~/components/forms.tsx'
+import { useIsSubmitting } from '~/utils/misc.ts'
+import { StatusButton } from '~/components/ui/status-button.tsx'
 
 export const meta: V2_MetaFunction = () => [{ title: 'Resume Tailor' }]
 
 export default function Index() {
+	const actionData = useActionData<typeof signupAction>()
+
+	const onboardingFetcher = useFetcher()
+	const [form, fields] = useForm({
+		id: 'signup-form',
+		constraint: getFieldsetConstraint(SignupSchema),
+		lastSubmission: actionData?.submission,
+		onValidate({ formData }) {
+			const result = parse(formData, { schema: SignupSchema })
+			return result
+		},
+		shouldRevalidate: 'onBlur',
+	})
+	const isSubmitting = useIsSubmitting()
 	return (
 		<main className="min-h-screen pb-5">
 			<div>
@@ -234,10 +256,37 @@ export default function Index() {
 							</div>
 						</div>
 						<div className="flex w-full justify-center">
-							<div className="flex max-w-2xl space-x-5">
-								<Input className="pr-5" placeholder="enteryour@email.com" />
-								<Button className="whitespace-nowrap">Join the waitlist</Button>
-							</div>
+							<onboardingFetcher.Form
+								method="POST"
+								className="flex max-w-2xl space-x-5 align-middle"
+								action="/signup"
+								{...form.props}
+							>
+								<div>
+									<Field
+										labelProps={{
+											htmlFor: fields.email.id,
+											children: 'Email',
+										}}
+										inputProps={{
+											...conform.input(fields.email),
+											placeholder: 'enteryour@email.com',
+										}}
+										errors={fields.email.errors}
+									/>
+									<ErrorList errors={form.errors} id={form.errorId} />
+								</div>
+								<StatusButton
+									className="my-auto whitespace-nowrap"
+									status={
+										isSubmitting ? 'pending' : actionData?.status ?? 'idle'
+									}
+									type="submit"
+									disabled={isSubmitting}
+								>
+									Join the waitlist
+								</StatusButton>
+							</onboardingFetcher.Form>
 						</div>
 					</div>
 				</div>
