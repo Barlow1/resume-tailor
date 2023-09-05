@@ -17,6 +17,7 @@ import {
 	ScrollRestoration,
 	useLoaderData,
 	useLocation,
+	useMatches,
 	// useMatches,
 	useSubmit,
 } from '@remix-run/react'
@@ -52,6 +53,7 @@ import { useOptionalUser, useUser } from './utils/user.ts'
 import rdtStylesheetUrl from 'remix-development-tools/stylesheet.css'
 import OnboardingStepper from './routes/resources+/onboarding-stepper.tsx'
 import * as gtag from './utils/gtags.client.ts'
+import clsx from 'clsx'
 
 const RemixDevTools =
 	process.env.NODE_ENV === 'development'
@@ -236,8 +238,10 @@ function App() {
 	const nonce = useNonce()
 	const user = useOptionalUser()
 	const theme = useTheme()
-	// const matches = useMatches()
-	// const isOnSearchPage = matches.find(m => m.id === 'routes/users+/index')
+	const matches = useMatches()
+	const isOnLandingPage = Boolean(
+		matches.find(m => m.id === 'routes/_marketing+/index'),
+	)
 	useToast(data.flash?.toast)
 
 	return (
@@ -246,8 +250,14 @@ function App() {
 				<header className="container py-6">
 					<nav className="flex items-center justify-between">
 						<Link to="/">
-							<div className="font-light">Resume</div>
-							<div className="font-bold">Tailor</div>
+							<div
+								className={clsx(
+									'text-center text-xl font-extrabold text-primary md:text-3xl lg:text-6xl',
+									{ 'text-white': isOnLandingPage },
+								)}
+							>
+								RESUME TAILOR
+							</div>
 						</Link>
 						{/* {isOnSearchPage ? null : (
 							<div className="ml-auto max-w-sm flex-1 pr-10">
@@ -255,12 +265,19 @@ function App() {
 							</div>
 						)} */}
 						<div className="flex items-center gap-10">
-							<ThemeSwitch userPreference={data.requestInfo.userPrefs.theme} />
+							<ThemeSwitch
+								className={isOnLandingPage ? 'text-white' : undefined}
+								userPreference={data.requestInfo.userPrefs.theme}
+							/>
 							<div className="flex items-center gap-10">
 								{user ? (
-									<UserDropdown />
+									<UserDropdown isOnLandingPage={isOnLandingPage ?? false} />
 								) : (
-									<Button asChild variant="default" size="sm">
+									<Button
+										asChild
+										variant={isOnLandingPage ? 'always-light' : 'default'}
+										size="sm"
+									>
 										<Link to="/login">Log In</Link>
 									</Button>
 								)}
@@ -292,14 +309,17 @@ function App() {
 }
 export default withSentry(App)
 
-function UserDropdown() {
+function UserDropdown({ isOnLandingPage }: { isOnLandingPage: boolean }) {
 	const user = useUser()
 	const submit = useSubmit()
 	const formRef = useRef<HTMLFormElement>(null)
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
-				<Button asChild variant="secondary">
+				<Button
+					asChild
+					variant={isOnLandingPage ? 'always-light' : 'secondary'}
+				>
 					<Link
 						to={`/users/${user.username}`}
 						// this is for progressive enhancement

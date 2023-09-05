@@ -109,9 +109,15 @@ export function ExperienceGenerator({
 						) : null}
 					</div>
 					<div>
-						<input name="id" type="hidden" value={experience?.id} />
+						<input name="id" type="hidden" value={experience.id} />
 						<input hidden name="jobTitle" value={job.title} />
 						<input hidden name="jobDescription" value={job.content} />
+						<input hidden name="currentJobTitle" value={experience.role} />
+						<input
+							hidden
+							name="currentJobCompany"
+							value={experience.employer}
+						/>
 						<input name="resumeId" type="hidden" value={editData?.resume?.id} />
 
 						<div className="py-5">
@@ -162,10 +168,20 @@ export function ExperienceGenerator({
 											const jobDescription =
 												// @ts-expect-error we'll fix this later probably...
 												event.currentTarget.form.elements.jobDescription.value
+
+											const currentJobTitle =
+												// @ts-expect-error we'll fix this later probably...
+
+												event.currentTarget.form.elements.currentJobTitle.value
+											const currentJobCompany =
+												// @ts-expect-error we'll fix this later probably...
+												event.currentTarget.form.elements.currentJobCompany.value
 											const sse = new EventSource(
 												`/resources/completions?${new URLSearchParams({
 													jobTitle,
 													jobDescription,
+													currentJobTitle,
+													currentJobCompany,
 												})}`,
 											)
 
@@ -205,9 +221,7 @@ export function ExperienceGenerator({
 									autoComplete: 'generateedExperience',
 									value: selectedExperiences,
 									onChange: e => {
-										setSelectedExperiences(
-											e.target.value
-										)
+										setSelectedExperiences(e.target.value)
 									},
 								}}
 								errors={fields.generateedExperience.errors}
