@@ -43,74 +43,72 @@ export default function Index() {
 							<span>Tailor your resume to each job using AI</span>
 						</Link>
 					</h1>
-					<p className="mt-6 max-w-lg text-xl text-white sm:max-w-2xl md:text-2xl">
-						Tired of tailoring your resume to each job description? Upload your
-						resume and let AI tailor your resume for you.
+					<p className="mt-16 max-w-5xl text-3xl text-white">
+						Tired of tailoring your resume to each job description? Upload
+						<br /> your resume and let AI tailor your resume for you.
 					</p>
 					<div className="flex justify-center p-10">
 						<Button
-							variant={'always-light'}
 							className="whitespace-nowrap"
 							size={'wide'}
+							variant="primary"
 							asChild
 						>
 							<Link to="/signup">Upload a Resume</Link>
 						</Button>
 					</div>
-					<div className="flex flex-col space-y-16 pt-16 md:pt-24">
-						<div className="flex flex-col space-y-10">
+					<div className="flex flex-col space-y-24 pt-32">
+						<div className="flex flex-col space-y-12">
 							<div className="relative">
-								<span className="text-3xl font-bold text-brand-800 sm:text-6xl">
+								<span className="text-6xl font-bold italic  text-brand-800">
 									Nobody
 								</span>
 								<span className="align-top text-2xl font-bold text-brand-800">
 									{' '}
 									^
 								</span>
-								<span className="absolute left-20 top-[-1.5rem] -rotate-6 font-rainbow text-xl font-normal text-brand-800 sm:left-48 lg:float-none">
+								<span className="absolute left-20 top-[-1.5rem] -rotate-6 font-rainbow text-3xl font-normal text-brand-800 sm:left-48 lg:float-none">
 									{' '}
 									(we swear)
 								</span>
-								<span className="text-3xl font-bold text-primary sm:text-6xl">
+								<span className="text-6xl font-bold text-black dark:text-white ">
 									{' '}
 									likes tailoring resumes to job descriptions.{' '}
 								</span>
-								<span className="text-3xl font-bold text-brand-800 sm:text-6xl">
+								<span className="text-6xl font-bold text-brand-800 ">
 									Let AI do it for you.
 								</span>
 							</div>
 							<div>
-								<span className="text-xl font-bold  text-primary sm:text-3xl">
+								<span className="text-3xl font-bold  text-black dark:text-white ">
 									No more{' '}
 								</span>
-								<span className="text-xl font-bold  text-brand-800 sm:text-3xl">
+								<span className="text-3xl font-bold  text-brand-800 ">
 									copying
 								</span>
-								<span className="text-xl font-bold  text-primary sm:text-3xl">
+								<span className="text-3xl font-bold  text-black dark:text-white ">
 									{' '}
 									monotonous job descriptions,{' '}
 								</span>
-								<span className="text-xl font-bold  text-brand-800 sm:text-3xl">
+								<span className="text-3xl font-bold  text-brand-800 ">
 									editing
 								</span>
-								<span className="text-xl font-bold  text-primary sm:text-3xl">
+								<span className="text-3xl font-bold  text-black dark:text-white ">
 									{' '}
 									62 resumes,{' '}
 								</span>
-								<span className="text-xl font-bold  text-brand-800 sm:text-3xl">
-									or
-								</span>
-								<span className="text-xl font-bold  text-primary sm:text-3xl">
+								<span className="text-3xl font-bold  text-brand-800 ">or</span>
+								<span className="text-3xl font-bold  text-black dark:text-white ">
 									{' '}
 								</span>
-								<span className="text-xl font-bold  text-brand-800 sm:text-3xl">
+								<span className="text-3xl font-bold  text-brand-800 ">
 									submitting the wrong one
 								</span>
-								<span className="text-xl font-bold  text-primary sm:text-3xl">
+								<span className="text-3xl font-bold  text-black dark:text-white ">
 									{' '}
 									for the job
 								</span>
-								<span className="float-right font-rainbow text-xl font-normal text-brand-800 lg:float-none">
+								<span className="float-right font-rainbow text-3xl font-normal text-brand-800 lg:float-none">
 									{' '}
 									(we've done that too)
 								</span>
@@ -118,14 +116,14 @@ export default function Index() {
 							<div>
 								<div className="rounded-lg p-5 shadow-2xl">
 									<div>
-										<div className="w-full text-xl font-bold text-brand-800 sm:text-4xl">
+										<div className="w-full text-3xl font-bold text-brand-800 ">
 											Monotonous Job Description
 										</div>
-										<div className="text-right font-rainbow text-xl font-normal text-brand-800 md:text-center lg:float-none">
+										<div className="text-right font-rainbow text-3xl font-normal text-brand-800 md:text-center lg:float-none">
 											{' '}
 											(you really like reading these?)
 										</div>
-										<div className="line-clamp-6 text-base font-normal text-primary sm:text-2xl">
+										<div className="line-clamp-6 text-base font-normal text-black dark:text-white ">
 											We are seeking a highly skilled and experienced Senior
 											Product Designer with experience designing complex systems
 											and workflows. As a Senior Product Designer, you will play
@@ -150,8 +148,8 @@ export default function Index() {
 								</div>
 							</div>
 						</div>
-						<div className="flex flex-col space-y-10">
-							<div className="text-center  text-2xl font-bold text-brand-800 sm:text-4xl">
+						<div className="flex flex-col space-y-12">
+							<div className="text-center  text-2xl font-bold text-brand-800 ">
 								Trusted by employees at top companies
 							</div>
 							<img
@@ -160,25 +158,25 @@ export default function Index() {
 								src={topCompanies}
 							/>
 						</div>
-						<div className="flex flex-col space-y-10">
+						<div className="flex flex-col space-y-12">
 							<div>
-								<div className=" text-center text-3xl font-bold text-brand-800 sm:text-6xl">
+								<div className=" text-center text-6xl font-bold text-brand-800 ">
 									Copy the job description
 								</div>
-								<div className="text-right font-rainbow text-xl font-normal text-brand-800 lg:mr-32">
+								<div className="text-right font-rainbow text-3xl font-normal text-brand-800 lg:mr-32">
 									(Command + C)
 								</div>
 							</div>
-							<div className="text-center text-xl font-bold text-primary sm:text-3xl">
+							<div className="text-center text-3xl font-bold text-black dark:text-white ">
 								Head over to the job board where you've been hunting. Once
 								there, select and copy everything on the job posting.
 							</div>
 
 							<div className="rounded-lg p-5 shadow-2xl">
-								<div className="text-xl font-bold text-brand-800 sm:text-4xl">
+								<div className="text-3xl font-bold text-brand-800 ">
 									Monotonous Job Description
 								</div>
-								<div className="line-clamp-6 pt-5 text-base font-normal text-primary sm:text-2xl">
+								<div className="line-clamp-6 pt-5 text-base font-normal text-black dark:text-white ">
 									<mark className="bg-blue-200 leading-10">
 										We are seeking a highly skilled and experienced Senior
 										Product Designer with experience designing complex systems
@@ -202,16 +200,16 @@ export default function Index() {
 								</div>
 							</div>
 						</div>
-						<div className="flex flex-col space-y-10">
+						<div className="flex flex-col space-y-12">
 							<div>
-								<div className="text-center text-3xl font-bold text-brand-800 sm:text-6xl">
+								<div className="text-center text-6xl font-bold text-brand-800 ">
 									Paste the job description
 								</div>
-								<div className="text-right font-rainbow text-xl font-normal text-brand-800 lg:mr-32">
+								<div className="text-right font-rainbow text-3xl font-normal text-brand-800 lg:mr-32">
 									(Command + V)
 								</div>
 							</div>
-							<div className="text-center text-xl font-bold text-primary sm:text-4xl">
+							<div className="text-center text-3xl font-bold text-black dark:text-white ">
 								Paste the job description that you copied into Resume Tailor so
 								you can easily tailor your job experiences to match the job
 								requirements.
@@ -222,16 +220,16 @@ export default function Index() {
 								src={addJob}
 							/>
 						</div>
-						<div className="flex flex-col space-y-10">
+						<div className="flex flex-col space-y-12">
 							<div>
-								<div className="text-center text-3xl font-bold text-brand-800 sm:text-6xl">
+								<div className="text-center text-6xl font-bold text-brand-800 ">
 									Tailor your job experience with AI
 								</div>
-								<div className="text-right font-rainbow text-xl font-normal text-brand-800 lg:mr-32">
+								<div className="text-right font-rainbow text-3xl font-normal text-brand-800 lg:mr-32">
 									(Click)
 								</div>
 							</div>
-							<div className="text-center text-xl font-bold text-primary sm:text-4xl">
+							<div className="text-center text-3xl font-bold text-black dark:text-white">
 								Let AI do the boring, monotonous editing. Once you have tailored
 								results, copy and paste them into your resume.
 							</div>
@@ -241,18 +239,19 @@ export default function Index() {
 								src={tailorJob}
 							/>
 						</div>
-						<div className="flex flex-col space-y-10">
+						<div className="flex flex-col space-y-12">
 							<div>
-								<div className="text-center text-3xl font-bold text-brand-800 sm:text-6xl">
+								<div className="text-center text-6xl font-bold text-brand-800">
 									Stoked to give it a shot?
 								</div>
-								<div className="text-right font-rainbow text-xl font-normal text-brand-800 lg:mr-32">
+								<div className="text-right font-rainbow text-3xl font-normal text-brand-800 lg:mr-32">
 									(damn right you are)
 								</div>
 							</div>
-							<div className="text-center text-xl font-bold text-primary sm:text-4xl">
-								We're stoked to give you access. Provide us with your info below
-								and we'll be in touch soon!
+							<div className="mx-auto max-w-2xl text-center text-3xl font-bold text-black dark:text-white">
+								We're <span className="text-brand-800">stoked</span> to give you
+								access. Provide us with your info below and we'll be in touch
+								soon!
 							</div>
 						</div>
 						<div className="flex w-full justify-center">
@@ -271,6 +270,7 @@ export default function Index() {
 										inputProps={{
 											...conform.input(fields.email),
 											placeholder: 'enteryour@email.com',
+											className: 'w-[27rem]',
 										}}
 										errors={fields.email.errors}
 									/>
@@ -281,6 +281,7 @@ export default function Index() {
 									status={
 										isSubmitting ? 'pending' : actionData?.status ?? 'idle'
 									}
+									variant={'primary'}
 									type="submit"
 									disabled={isSubmitting}
 								>

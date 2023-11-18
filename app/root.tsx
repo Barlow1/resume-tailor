@@ -275,7 +275,7 @@ function App() {
 								) : (
 									<Button
 										asChild
-										variant={isOnLandingPage ? 'always-light' : 'default'}
+										variant={'primary'}
 										size="sm"
 									>
 										<Link to="/login">Log In</Link>
@@ -318,7 +318,7 @@ function UserDropdown({ isOnLandingPage }: { isOnLandingPage: boolean }) {
 			<DropdownMenuTrigger asChild>
 				<Button
 					asChild
-					variant={isOnLandingPage ? 'always-light' : 'secondary'}
+					variant={'primary'}
 				>
 					<Link
 						to={`/users/${user.username}`}
