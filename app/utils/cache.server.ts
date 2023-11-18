@@ -1,5 +1,3 @@
-import type BetterSqlite3 from 'better-sqlite3'
-import Database from 'better-sqlite3'
 import {
 	cachified as baseCachified,
 	lruCacheAdapter,
@@ -16,12 +14,14 @@ import { z } from 'zod'
 import { updatePrimaryCacheValue } from '~/routes/admin+/cache_.sqlite.tsx'
 import { cachifiedTimingReporter, type Timings } from './timing.server.ts'
 import { singleton } from './singleton.server.ts'
+// @ts-ignore
+import Database from 'bun:sqlite'
 
 const CACHE_DATABASE_PATH = process.env.CACHE_DATABASE_PATH
 
 const cacheDb = singleton('cacheDb', createDatabase)
 
-function createDatabase(tryAgain = true): BetterSqlite3.Database {
+function createDatabase(tryAgain = true): any {
 	const db = new Database(CACHE_DATABASE_PATH)
 	const { currentIsPrimary } = getInstanceInfoSync()
 	if (!currentIsPrimary) return db
@@ -139,7 +139,7 @@ export async function getAllCacheKeys(limit: number) {
 		sqlite: cacheDb
 			.prepare('SELECT key FROM cache LIMIT ?')
 			.all(limit)
-			.map(row => (row as { key: string }).key),
+			.map((row: { key: string }) => (row as { key: string }).key),
 		lru: [...lru.keys()],
 	}
 }
@@ -149,7 +149,7 @@ export async function searchCacheKeys(search: string, limit: number) {
 		sqlite: cacheDb
 			.prepare('SELECT key FROM cache WHERE key LIKE ? LIMIT ?')
 			.all(`%${search}%`, limit)
-			.map(row => (row as { key: string }).key),
+			.map((row: { key: string }) => (row as { key: string }).key),
 		lru: [...lru.keys()].filter(key => key.includes(search)),
 	}
 }

@@ -2,13 +2,10 @@ import { Response, type HandleDocumentRequestFunction } from '@remix-run/node'
 import { RemixServer } from '@remix-run/react'
 import isbot from 'isbot'
 import { getInstanceInfo } from 'litefs-js'
-import { renderToPipeableStream } from 'react-dom/server'
-import { PassThrough } from 'stream'
+import rds from 'react-dom/server'
 import { getEnv, init } from './utils/env.server.ts'
 import { NonceProvider } from './utils/nonce-provider.ts'
-import { makeTimings } from './utils/timing.server.ts'
-
-const ABORT_DELAY = 5000
+const { renderToReadableStream } = rds
 
 init()
 global.ENV = getEnv()
@@ -20,7 +17,7 @@ if (ENV.MODE === 'production' && ENV.SENTRY_DSN) {
 type DocRequestArgs = Parameters<HandleDocumentRequestFunction>
 
 export default async function handleRequest(...args: DocRequestArgs) {
-	const [
+	let [
 		request,
 		responseStatusCode,
 		responseHeaders,
@@ -33,47 +30,27 @@ export default async function handleRequest(...args: DocRequestArgs) {
 	responseHeaders.set('fly-primary-instance', primaryInstance)
 	responseHeaders.set('fly-instance', currentInstance)
 
-	const callbackName = isbot(request.headers.get('user-agent'))
-		? 'onAllReady'
-		: 'onShellReady'
-
 	const nonce = String(loadContext.cspNonce) ?? undefined
-	return new Promise((resolve, reject) => {
-		let didError = false
-
-		// NOTE: this timing will only include things that are rendered in the shell
-		// and will not include suspended components and deferred loaders
-		const timings = makeTimings('render', 'renderToPipeableStream')
-
-		const { pipe, abort } = renderToPipeableStream(
-			<NonceProvider value={nonce}>
-				<RemixServer context={remixContext} url={request.url} />
-			</NonceProvider>,
-			{
-				[callbackName]: () => {
-					const body = new PassThrough()
-					responseHeaders.set('Content-Type', 'text/html')
-					responseHeaders.append('Server-Timing', timings.toString())
-					resolve(
-						new Response(body, {
-							headers: responseHeaders,
-							status: didError ? 500 : responseStatusCode,
-						}),
-					)
-					pipe(body)
-				},
-				onShellError: (err: unknown) => {
-					reject(err)
-				},
-				onError: (error: unknown) => {
-					didError = true
-
-					console.error(error)
-				},
+	const stream = await renderToReadableStream(
+		<NonceProvider value={nonce}>
+			<RemixServer context={remixContext} url={request.url} />
+		</NonceProvider>,
+		{
+			onError: (error: unknown) => {
+				responseStatusCode = 500
+				console.error(error)
 			},
-		)
+		},
+	)
+	if (isbot(request.headers.get('user-agent'))) {
+		await stream.allReady
+	}
 
-		setTimeout(abort, ABORT_DELAY)
+	const headers = new Headers(responseHeaders)
+	headers.set('Content-Type', 'text/html')
+	return new Response(stream, {
+		headers,
+		status: responseStatusCode,
 	})
 }
 

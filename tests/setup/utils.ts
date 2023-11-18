@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import Database from 'better-sqlite3'
-
+// @ts-ignore
+import Database from 'bun:sqlite'
 /**
  * Deletes all data from all tables in the database, (except for the
  * _prisma_migrations table). This function ensures that the tables are deleted
