@@ -34,25 +34,17 @@ export const getExperienceResponse = async ({
 			? [
 					{
 						role: 'system',
-						content: `You are an expert resume writer with 20 years experience landing people ${jobTitle} roles. I want you to provide me a list of pain points, key skills, and responsibilities an applicant must have to get a first interview with the hiring manager.
+						content: `You are an expert resume writer with 20 years experience landing people ${jobTitle} roles.
  
                     Job Description: ${jobDescription}
                     `,
 					},
 					{
 						role: 'user',
-						content: `Expert Resume Writer: This is a list of pain points, key skills, and responsibilities an applicant must have to get a first interview with the hiring manager for the above job description:`,
-						name,
-					},
-					{
-						role: 'user',
 						content: `Here are the current experiences listed in my resume: ${experience}.
 	
-                    Modify the experience I gave you to the pain points, key skills, and responsibilities to emphasize and succinctly present the following key experiences
-                    required for this position for someone in a ${currentJobTitle} role at company ${currentJobCompany}
-                    Ensure to merge similar experiences, remove redundant wording, and keep each skill description concise.
-                    The modified experiences section should highlight these key experiences in a clear and brief single sentence that aligns with the requirements for the position.
-                    Keep the list limited to 10 items.
+                    Create a list of resume experience items combined with the experience list I gave you with the with the experience and achievements for this job description would have for a ${currentJobTitle} role at company ${currentJobCompany}
+                    Keep the list limited to 10 items. Only 5 should have outcomes.
                     Modified Experience List:`,
 						name,
 					},
@@ -65,7 +57,7 @@ export const getExperienceResponse = async ({
 		{
 			model: 'gpt-4',
 			messages,
-			temperature: 0,
+			temperature: 0.2,
 			max_tokens: 1024,
 			stream: true,
 		},
@@ -103,7 +95,7 @@ export const getGeneratedExperienceResponse = async ({
 					{
 						role: 'user',
 						content: `Generate a JSON string array of resume bullet points that someone with the experience and achievements for this job description would have for a ${currentJobTitle} role at company ${currentJobCompany}.
-                    Keep the array limited to 10 items.
+                    Keep the array limited to 10 items. Only 5 should have outcomes.
                     Only supply the JSON string array in the response`,
 						name,
 					},
