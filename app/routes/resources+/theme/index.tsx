@@ -1,4 +1,4 @@
-import { useForm } from '@conform-to/react'
+import { type Submission, useForm } from '@conform-to/react'
 import { parse } from '@conform-to/zod'
 import { json, redirect, type DataFunctionArgs } from '@remix-run/node'
 import { useFetcher, useFetchers } from '@remix-run/react'
@@ -51,7 +51,12 @@ export function ThemeSwitch({
 	className?: string
 }) {
 	const requestInfo = useRequestInfo()
-	const fetcher = useFetcher()
+	const fetcher = useFetcher<{
+		submission: Submission<{
+			theme: 'system' | 'light' | 'dark'
+			redirectTo?: string | undefined
+		}>
+	}>()
 	const [isHydrated, setIsHydrated] = React.useState(false)
 
 	React.useEffect(() => {
