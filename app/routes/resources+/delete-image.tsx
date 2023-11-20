@@ -1,6 +1,6 @@
 import { parse } from '@conform-to/zod'
 import { json, type DataFunctionArgs, redirect } from '@remix-run/node'
-import { safeRedirect } from 'remix-utils'
+import { safeRedirect } from 'remix-utils/safe-redirect'
 import { z } from 'zod'
 import { requireUserId } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'

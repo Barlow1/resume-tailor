@@ -4,7 +4,7 @@ import {
 	json,
 	redirect,
 	type DataFunctionArgs,
-	type V2_MetaFunction,
+	type MetaFunction,
 } from '@remix-run/node'
 import {
 	Form,
@@ -14,7 +14,7 @@ import {
 	useNavigation,
 	useSearchParams,
 } from '@remix-run/react'
-import { safeRedirect } from 'remix-utils'
+import { safeRedirect } from 'remix-utils/safe-redirect'
 import { z } from 'zod'
 import { Spacer } from '~/components/spacer.tsx'
 import { StatusButton } from '~/components/ui/status-button.tsx'
@@ -143,7 +143,7 @@ export async function action({ request }: DataFunctionArgs) {
 	})
 }
 
-export const meta: V2_MetaFunction = () => {
+export const meta: MetaFunction = () => {
 	return [{ title: 'Setup Resume Tailor Account' }]
 }
 

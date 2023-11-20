@@ -18,7 +18,7 @@ import { resetPasswordUsernameSessionKey } from '../_auth+/reset-password.tsx'
 import { unverifiedSessionKey } from './login.tsx'
 import { redirectWithToast } from '~/utils/flash-session.server.ts'
 import { authenticator } from '~/utils/auth.server.ts'
-import { safeRedirect } from 'remix-utils'
+import { safeRedirect } from 'remix-utils/safe-redirect'
 
 export const ROUTE_PATH = '/resources/verify'
 

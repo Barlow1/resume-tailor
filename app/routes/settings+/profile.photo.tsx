@@ -14,7 +14,6 @@ import {
 	useLoaderData,
 } from '@remix-run/react'
 import { useState } from 'react'
-import { ServerOnly } from 'remix-utils'
 import { z } from 'zod'
 import { ErrorList } from '~/components/forms.tsx'
 import { Button } from '~/components/ui/button.tsx'
@@ -47,7 +46,7 @@ export async function loader({ request }: DataFunctionArgs) {
 		select: { imageId: true, name: true, username: true },
 	})
 	if (!user) {
-		throw await authenticator.logout(request, { redirectTo: '/' })
+		throw await authenticator.logout(request, { redirectTo: '/settings/profile' })
 	}
 	return json({ user })
 }
@@ -184,16 +183,10 @@ export default function PhotoRoute() {
 							</label>
 						</Button>
 
-						{/* This is here for progressive enhancement. If the client doesn't
-						hydrate (or hasn't yet) this button will be available to submit the
-						selected photo. */}
-						<ServerOnly>
-							{() => (
-								<Button type="submit" className="server-only">
-									Save Photo
-								</Button>
-							)}
-						</ServerOnly>
+						<Button type="submit" className="server-only">
+							Save Photo
+						</Button>
+
 						{data.user?.imageId ? (
 							<Button
 								variant="destructive"
@@ -219,15 +212,7 @@ export default function PhotoRoute() {
 				action={deleteImageRoute.ROUTE_PATH}
 				onSubmit={() => setNewImageSrc(null)}
 			>
-				<ServerOnly>
-					{() => (
-						<input
-							name="redirectTo"
-							value="/settings/profile/photo"
-							type="hidden"
-						/>
-					)}
-				</ServerOnly>
+
 				<input name="intent" type="hidden" value="submit" />
 				<input name="imageId" type="hidden" value={data.user?.imageId ?? ''} />
 			</deleteImageFetcher.Form>
