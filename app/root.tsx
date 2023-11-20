@@ -4,7 +4,7 @@ import {
 	type DataFunctionArgs,
 	type HeadersFunction,
 	type LinksFunction,
-	type V2_MetaFunction,
+	type MetaFunction,
 } from '@remix-run/node'
 import {
 	Form,
@@ -22,7 +22,7 @@ import {
 	useSubmit,
 } from '@remix-run/react'
 import { withSentry } from '@sentry/remix'
-import { lazy, useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { Confetti } from './components/confetti.tsx'
 import { GeneralErrorBoundary } from './components/error-boundary.tsx'
 // import { SearchBar } from './components/search-bar.tsx'
@@ -54,11 +54,6 @@ import rdtStylesheetUrl from 'remix-development-tools/stylesheet.css'
 import OnboardingStepper from './routes/resources+/onboarding-stepper.tsx'
 import * as gtag from './utils/gtags.client.ts'
 import clsx from 'clsx'
-
-const RemixDevTools =
-	process.env.NODE_ENV === 'development'
-		? lazy(() => import('remix-development-tools'))
-		: undefined
 
 export const links: LinksFunction = () => {
 	return [
@@ -94,7 +89,7 @@ export const links: LinksFunction = () => {
 	].filter(Boolean)
 }
 
-export const meta: V2_MetaFunction<typeof loader> = ({ data }) => {
+export const meta: MetaFunction<typeof loader> = ({ data }) => {
 	return [
 		{ title: data ? 'Resume Tailor' : 'Error | Resume Tailor' },
 		{ name: 'description', content: `Your own captain's log` },
@@ -303,7 +298,6 @@ function App() {
 			</div>
 			<Confetti confetti={data.flash?.confetti} />
 			<Toaster />
-			{RemixDevTools && <RemixDevTools showRouteBoundaries />}
 		</Document>
 	)
 }

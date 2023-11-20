@@ -1,4 +1,4 @@
-import type { V2_MetaFunction } from '@remix-run/node'
+import type { MetaFunction } from '@remix-run/node'
 import { addJob, background, tailorJob, topCompanies } from './logos/logos.ts'
 import { Link, useActionData, useFetcher } from '@remix-run/react'
 import { Button } from '~/components/ui/button.tsx'
@@ -12,7 +12,7 @@ import { ErrorList, Field } from '~/components/forms.tsx'
 import { useIsSubmitting } from '~/utils/misc.ts'
 import { StatusButton } from '~/components/ui/status-button.tsx'
 
-export const meta: V2_MetaFunction = () => [{ title: 'Resume Tailor' }]
+export const meta: MetaFunction = () => [{ title: 'Resume Tailor' }]
 
 export default function Index() {
 	const actionData = useActionData<typeof signupAction>()

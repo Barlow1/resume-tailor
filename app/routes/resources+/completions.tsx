@@ -1,5 +1,5 @@
 import { type DataFunctionArgs } from '@remix-run/node'
-import { eventStream } from 'remix-utils'
+import { eventStream } from 'remix-utils/sse/server'
 import { authenticator, requireUserId } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
 import {
