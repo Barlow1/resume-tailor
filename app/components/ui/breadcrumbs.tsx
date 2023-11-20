@@ -1,12 +1,13 @@
-import { useMatches, Link } from '@remix-run/react'
+import { useMatches, Link, type UIMatch } from '@remix-run/react'
 import { cn } from '~/utils/misc.ts'
 
-export default function Breadcrumbs({
-	origin,
-}: {
-	origin: { pathname: string; breadcrumb: string }
-}) {
-	const matches = useMatches()
+interface Breadcrumb {
+	pathname: string
+	breadcrumb: string
+}
+
+export default function Breadcrumbs({ origin }: { origin: Breadcrumb }) {
+	const matches = useMatches() as UIMatch<{}, Breadcrumb>[]
 	const breadcrumbs = matches
 		.map(m =>
 			m.handle?.breadcrumb ? (
