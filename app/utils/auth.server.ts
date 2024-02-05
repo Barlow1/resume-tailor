@@ -6,6 +6,8 @@ import { FormStrategy } from 'remix-auth-form'
 import { prisma } from '~/utils/db.server.ts'
 import { invariant } from './misc.ts'
 import { sessionStorage } from './session.server.ts'
+import StripeHelper from './stripe.server.ts'
+import { createSubscription } from './subscription.server.ts'
 
 export type { User }
 
@@ -69,6 +71,58 @@ export async function requireUserId(
 		throw redirect(failureRedirect)
 	}
 	return session.userId
+}
+
+export async function requireStripeSubscription(
+	userId: string,
+	successUrl: string,
+	cancelUrl: string
+) {
+	const subscription = await prisma.subscription.findFirst({
+		where: {
+			ownerId: userId,
+			active: true,
+		},
+	})
+	if (!subscription) {
+		const user = await prisma.user.findUnique({
+			where: { id: userId },
+			select: { email: true, name: true },
+		})
+
+		if (!user) {
+			throw redirect('/login')
+		}
+
+		const stripe = new StripeHelper()
+
+		// create a customer
+		const customer = await stripe.createCustomer({
+			email: user.email,
+			name: user.name ?? 'Anonymous User',
+		})
+
+		// create subscription
+		const subscription = await createSubscription({
+			userId,
+			stripeCustomerId: customer.id,
+			name: 'Resume Tailor Pro',
+			stripeProductId: process.env.STRIPE_PRODUCT_ID as string,
+			stripePriceId: process.env.STRIPE_PRICE_ID as string,
+		})
+
+		// create a checkout link
+		const paymentLink = await stripe.createCheckoutSessionLink({
+			priceId: process.env.STRIPE_PRICE_ID as string,
+			customer: customer.id,
+			successUrl:successUrl,
+			subscriptionId: subscription.id,
+			cancelUrl: cancelUrl,
+		});
+
+		throw redirect(paymentLink.url ?? '/login')
+	}
+	return subscription;
 }
 
 export async function getUserId(request: Request) {

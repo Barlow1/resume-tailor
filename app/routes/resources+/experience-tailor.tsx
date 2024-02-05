@@ -29,10 +29,12 @@ export async function action({ request }: DataFunctionArgs) {
 				hasSavedResume: false,
 				hasGeneratedResume: false,
 				hasTailoredResume: true,
+				tailorCount: 1,
 				ownerId: userId,
 			},
 			update: {
 				hasTailoredResume: true,
+				tailorCount: { increment: 1 },
 			},
 			where: {
 				ownerId: userId,
