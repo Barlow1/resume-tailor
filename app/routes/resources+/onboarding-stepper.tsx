@@ -48,7 +48,7 @@ export default function OnboardingStepper({
 	gettingStartedProgress,
 }: {
 	firstJob: Stringify<Job> | null
-	gettingStartedProgress: GettingStartedProgress | null
+	gettingStartedProgress: Stringify<GettingStartedProgress> | null
 }) {
 	const isGettingStartedCompleted =
 		gettingStartedProgress?.hasSavedJob &&
