@@ -3,7 +3,9 @@ import { getFieldsetConstraint, parse } from '@conform-to/zod'
 import { json, type DataFunctionArgs } from '@remix-run/node'
 import { useFetcher, useRouteLoaderData } from '@remix-run/react'
 import { z } from 'zod'
-import { requireUserId } from '~/utils/auth.server.ts'
+import {
+	requireUserId,
+} from '~/utils/auth.server.ts'
 import { type Stringify } from '~/utils/misc.ts'
 import { type Job } from '@prisma/client'
 import { prisma } from '~/utils/db.server.ts'
@@ -29,10 +31,12 @@ export async function action({ request }: DataFunctionArgs) {
 				hasSavedResume: false,
 				hasGeneratedResume: true,
 				hasTailoredResume: false,
+				generateCount: 1,
 				ownerId: userId,
 			},
 			update: {
 				hasGeneratedResume: true,
+				generateCount: { increment: 1 },
 			},
 			where: {
 				ownerId: userId,
@@ -175,7 +179,8 @@ export function ExperienceGenerator({
 												event.currentTarget.form.elements.currentJobTitle.value
 											const currentJobCompany =
 												// @ts-expect-error we'll fix this later probably...
-												event.currentTarget.form.elements.currentJobCompany.value
+												event.currentTarget.form.elements.currentJobCompany
+													.value
 											const sse = new EventSource(
 												`/resources/completions?${new URLSearchParams({
 													jobTitle,

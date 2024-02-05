@@ -66,6 +66,11 @@ export default function OnboardingStepper({
 		return <></>
 	}
 
+	const isLocal =
+		typeof window === 'undefined'
+			? process.env.NODE_ENV === 'development'
+			: window.location.hostname === 'localhost'
+
 	return (
 		<>
 			<div className="container flex justify-end">
@@ -74,7 +79,7 @@ export default function OnboardingStepper({
 					action="/resources/onboarding-stepper"
 					preventScrollReset
 				>
-					{isGettingStartedCompleted ? (
+					{isGettingStartedCompleted && isLocal ? (
 						<Button
 							className="fixed bottom-10 right-10"
 							type="submit"
@@ -148,7 +153,7 @@ export default function OnboardingStepper({
 								<div className="overflow-y-auto py-4">
 									<ol
 										onClick={dismissModal}
-										className="dark:border-night-400 relative ml-5 border-l border-gray-500 dark:border-gray-200 text-gray-500 dark:text-gray-400"
+										className="dark:border-night-400 relative ml-5 border-l border-gray-500 text-gray-500 dark:border-gray-200 dark:text-gray-400"
 									>
 										<Link to={`/users/${user?.username}/resume/upload`}>
 											<li className="mb-10 ml-6">
@@ -221,7 +226,9 @@ export default function OnboardingStepper({
 													</span>
 												)}
 												<h3 className="font-medium leading-tight">Tailor</h3>
-												<p className="text-sm">Tailor or generate your experience</p>
+												<p className="text-sm">
+													Tailor or generate your experience
+												</p>
 											</li>
 										</Link>
 									</ol>
