@@ -5,6 +5,8 @@ import { z } from 'zod'
 import Breadcrumbs from '~/components/ui/breadcrumbs.tsx'
 import { Spacer } from '~/components/spacer.tsx'
 import { useUser } from '~/utils/user.ts'
+import { prisma } from '~/utils/db.server.ts'
+import { requireStripeSubscription, requireUserId } from '~/utils/auth.server.ts'
 
 export const JobEditorSchema = z.object({
 	experience: z.string().min(1),
@@ -12,7 +14,22 @@ export const JobEditorSchema = z.object({
 	jobDescription: z.string().min(1),
 })
 
-export async function loader({ params }: DataFunctionArgs) {
+export async function loader({ params, request }: DataFunctionArgs) {
+	const userId = await requireUserId(request)
+	const gettingStartedProgress = await prisma.gettingStartedProgress.findUnique(
+		{
+			where: {
+				ownerId: userId,
+			},
+		},
+	)
+
+	if (gettingStartedProgress && gettingStartedProgress?.generateCount > 1) {
+		const successUrl = request.url;
+		const cancelUrl = request.url.split('/generate')[0];
+		await requireStripeSubscription(userId, successUrl, cancelUrl)
+	}
+
 	return json({ jobId: params.jobId })
 }
 

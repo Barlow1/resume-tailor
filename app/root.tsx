@@ -268,11 +268,7 @@ function App() {
 								{user ? (
 									<UserDropdown isOnLandingPage={isOnLandingPage ?? false} />
 								) : (
-									<Button
-										asChild
-										variant={'primary'}
-										size="sm"
-									>
+									<Button asChild variant={'primary'} size="sm">
 										<Link to="/login">Log In</Link>
 									</Button>
 								)}
@@ -307,13 +303,13 @@ function UserDropdown({ isOnLandingPage }: { isOnLandingPage: boolean }) {
 	const user = useUser()
 	const submit = useSubmit()
 	const formRef = useRef<HTMLFormElement>(null)
+	const manageSubFormRef = useRef<HTMLFormElement>(null)
+	const path = useLocation().pathname
+
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
-				<Button
-					asChild
-					variant={'primary'}
-				>
+				<Button asChild variant={'primary'}>
 					<Link
 						to={`/users/${user.username}`}
 						// this is for progressive enhancement
@@ -356,6 +352,27 @@ function UserDropdown({ isOnLandingPage }: { isOnLandingPage: boolean }) {
 								Resume
 							</Icon>
 						</Link>
+					</DropdownMenuItem>
+					<DropdownMenuItem
+						asChild
+						// this prevents the menu from closing before the form submission is completed
+						onSelect={event => {
+							event.preventDefault()
+							submit(manageSubFormRef.current)
+						}}
+					>
+						<Form
+							action={`/resources/stripe/manage-subscription?redirectTo=${encodeURIComponent(
+								path,
+							)}`}
+							method="POST"
+							ref={manageSubFormRef}
+						>
+							<input hidden name="userId" value={user.id} />
+							<Icon className="text-body-md" name="exit">
+								<button type="submit">Manage Subscription</button>
+							</Icon>
+						</Form>
 					</DropdownMenuItem>
 					<DropdownMenuItem
 						asChild
