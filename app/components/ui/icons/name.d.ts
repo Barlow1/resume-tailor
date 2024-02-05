@@ -10,6 +10,7 @@ export type IconName =
 	| "cross-1"
 	| "exit"
 	| "file-text"
+	| "gear"
 	| "laptop"
 	| "lock-closed"
 	| "lock-open-1"
