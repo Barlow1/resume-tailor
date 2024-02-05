@@ -369,7 +369,7 @@ function UserDropdown({ isOnLandingPage }: { isOnLandingPage: boolean }) {
 							ref={manageSubFormRef}
 						>
 							<input hidden name="userId" value={user.id} />
-							<Icon className="text-body-md" name="exit">
+							<Icon className="text-body-md" name="gear">
 								<button type="submit">Manage Subscription</button>
 							</Icon>
 						</Form>
