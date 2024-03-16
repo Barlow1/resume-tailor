@@ -42,6 +42,9 @@ export default class StripeHelper {
 			success_url: successUrl,
 			cancel_url: cancelUrl,
 			mode: 'subscription',
+			subscription_data: {
+				trial_period_days: 3,
+			},
 			metadata: {
 				subscriptionId,
 			},

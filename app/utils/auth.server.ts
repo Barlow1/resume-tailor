@@ -8,6 +8,7 @@ import { invariant } from './misc.ts'
 import { sessionStorage } from './session.server.ts'
 import StripeHelper from './stripe.server.ts'
 import { createSubscription } from './subscription.server.ts'
+import { createHubspotContact } from './hubspot.server.ts'
 
 export type { User }
 
@@ -197,6 +198,15 @@ export async function signup({
 		},
 		select: { id: true, expirationDate: true },
 	})
+
+	let firstName = '';
+	let lastName = '';
+	if (name) {
+		firstName = name.split(' ')[0];
+		lastName = name.split(' ')[1];
+	}
+
+	await createHubspotContact({ email, firstName, lastName })
 	return session
 }
 
