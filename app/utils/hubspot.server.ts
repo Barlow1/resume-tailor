@@ -1,5 +1,6 @@
 import { Client } from '@hubspot/api-client'
-const hubspotClient = new Client({ accessToken: process.env.HUBSPOT_API_KEY })
+
+const hubspotClient = new Client({ accessToken: process.env.MOCKS ? 'mock-hubapi-key' : process.env.HUBSPOT_API_KEY })
 
 export async function createHubspotContact({
 	email,
