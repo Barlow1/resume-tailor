@@ -30,6 +30,63 @@ const handlers = [
 				)
 		  })
 		: null,
+		rest.post(`https://api.hubapi.com/crm/v3/objects/contacts`, async (req, res, ctx) => {
+				requiredHeader(req.headers, 'Authorization')
+				const body = await req.json()
+				console.info('🔶 mocked hubapi contents:', body)
+
+				return res(
+					ctx.status(201),
+					ctx.json({
+						"createdAt": "2024-03-17T01:09:50.187Z",
+						"archived": false,
+						"archivedAt": "2024-03-17T01:09:50.187Z",
+						"propertiesWithHistory": {
+						  "additionalProp1": [
+							{
+							  "sourceId": "string",
+							  "sourceType": "string",
+							  "sourceLabel": "string",
+							  "updatedByUserId": 0,
+							  "value": "string",
+							  "timestamp": "2024-03-17T01:09:50.187Z"
+							}
+						  ],
+						  "additionalProp2": [
+							{
+							  "sourceId": "string",
+							  "sourceType": "string",
+							  "sourceLabel": "string",
+							  "updatedByUserId": 0,
+							  "value": "string",
+							  "timestamp": "2024-03-17T01:09:50.187Z"
+							}
+						  ],
+						  "additionalProp3": [
+							{
+							  "sourceId": "string",
+							  "sourceType": "string",
+							  "sourceLabel": "string",
+							  "updatedByUserId": 0,
+							  "value": "string",
+							  "timestamp": "2024-03-17T01:09:50.187Z"
+							}
+						  ]
+						},
+						"id": "512",
+						"properties": {
+						  "property_date": "1572480000000",
+						  "property_radio": "option_1",
+						  "property_number": "17",
+						  "property_string": "value",
+						  "property_checkbox": "false",
+						  "property_dropdown": "choice_b",
+						  "property_multiple_checkboxes": "chocolate;strawberry"
+						},
+						"updatedAt": "2024-03-17T01:09:50.187Z"
+					  }),
+				)
+		  })
 ].filter(Boolean)
 
 const server = setupServer(...handlers)
