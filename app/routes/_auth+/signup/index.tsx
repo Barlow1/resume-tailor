@@ -75,7 +75,13 @@ export async function action({ request }: DataFunctionArgs) {
 }
 
 export const meta: MetaFunction = () => {
-	return [{ title: 'Sign Up | Resume Tailor' }]
+	return [
+		{ title: 'Sign Up | Resume Tailor' },
+		{
+			name: 'description',
+			content: 'Land more job interviews.',
+		},
+	]
 }
 
 export default function SignupRoute() {
