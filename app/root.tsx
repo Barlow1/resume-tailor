@@ -54,6 +54,7 @@ import rdtStylesheetUrl from 'remix-development-tools/stylesheet.css'
 import OnboardingStepper from './routes/resources+/onboarding-stepper.tsx'
 import * as gtag from './utils/gtags.client.ts'
 import clsx from 'clsx'
+import LogRocket from 'logrocket'
 
 export const links: LinksFunction = () => {
 	return [
@@ -109,7 +110,7 @@ export async function loader({ request }: DataFunctionArgs) {
 				() =>
 					prisma.user.findUnique({
 						where: { id: userId },
-						select: { id: true, name: true, username: true, imageId: true },
+						select: { id: true, name: true, username: true, imageId: true, email: true },
 					}),
 				{ timings, type: 'find user', desc: 'find user in root' },
 		  )
@@ -238,6 +239,18 @@ function App() {
 		matches.find(m => m.id === 'routes/_marketing+/index'),
 	)
 	useToast(data.flash?.toast)
+
+	useEffect(() => {
+		if (user) {
+			LogRocket.identify(user.id, {
+				name: user.name ?? user.email,
+				email: user.email,
+
+				// Add your own custom user variables here, ie:
+				subscriptionType: 'pro',
+			})
+		}
+	}, [user])
 
 	return (
 		<Document nonce={nonce} theme={theme} env={data.ENV}>
