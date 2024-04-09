@@ -11,7 +11,7 @@ if (ENV.MODE === 'production' && ENV.SENTRY_DSN) {
 	import('~/utils/monitoring.client.tsx').then(({ init }) => init())
 }
 
-if (ENV.MODE === 'production' && typeof window !== 'undefined') {
+if (!ENV.CI && ENV.MODE === 'production' && typeof window !== 'undefined') {
 	LogRocket.init('cnp1eb/resume-tailor')
 	setupLogRocketReact(LogRocket)
 }
