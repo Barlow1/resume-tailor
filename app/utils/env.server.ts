@@ -7,7 +7,7 @@ const schema = z.object({
 	SESSION_SECRET: z.string(),
 	INTERNAL_COMMAND_TOKEN: z.string(),
 	CACHE_DATABASE_PATH: z.string(),
-	CI: z.string(),
+	CI: z.string().optional(),
 	// If you plan on using Sentry, uncomment this line
 	// SENTRY_DSN: z.string(),
 	// If you plan to use Resend, uncomment this line
