@@ -1,8 +1,4 @@
-import {
-	json,
-	type DataFunctionArgs,
-	type MetaFunction,
-} from '@remix-run/node'
+import { json, type DataFunctionArgs, type MetaFunction } from '@remix-run/node'
 import { useLoaderData, useSearchParams } from '@remix-run/react'
 import { GeneralErrorBoundary } from '~/components/error-boundary.tsx'
 import { Spacer } from '~/components/spacer.tsx'
@@ -25,7 +21,13 @@ export async function loader({ request }: DataFunctionArgs) {
 }
 
 export const meta: MetaFunction = () => {
-	return [{ title: 'Login to Resume Tailor' }]
+	return [
+		{ title: 'Login to Resume Tailor' },
+		{
+			name: 'description',
+			content: 'Land more job interviews.',
+		},
+	]
 }
 
 export default function LoginPage() {
