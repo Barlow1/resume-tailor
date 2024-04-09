@@ -85,7 +85,7 @@ export async function requireStripeSubscription(
 			active: true,
 		},
 	})
-	if (!subscription) {
+	if (!subscription && ENV.MODE !== 'development') {
 		const user = await prisma.user.findUnique({
 			where: { id: userId },
 			select: { email: true, name: true },
