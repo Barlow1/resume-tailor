@@ -550,7 +550,7 @@ function App() {
 								</div>
 							</div>
 
-							<main className="py-10">
+							<div className="py-10">
 								<div className="px-4 sm:px-6 lg:px-8">
 									<Outlet />
 									<OnboardingStepper
@@ -558,7 +558,7 @@ function App() {
 										gettingStartedProgress={data.gettingStartedProgress}
 									/>
 								</div>
-							</main>
+							</div>
 						</div>
 					</div>
 				</>
