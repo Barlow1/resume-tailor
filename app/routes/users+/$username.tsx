@@ -1,9 +1,6 @@
-import {
-	json,
-	type DataFunctionArgs,
-	type MetaFunction,
-} from '@remix-run/node'
-import { Link, useLoaderData } from '@remix-run/react'
+import { json, type DataFunctionArgs, type MetaFunction } from '@remix-run/node'
+import { Form, Link, useLoaderData, useLocation, useSubmit } from '@remix-run/react'
+import { useRef } from 'react'
 import { GeneralErrorBoundary } from '~/components/error-boundary.tsx'
 import { Spacer } from '~/components/spacer.tsx'
 import { Button } from '~/components/ui/button.tsx'
@@ -35,6 +32,9 @@ export default function UsernameIndex() {
 	const userDisplayName = user.name ?? user.username
 	const loggedInUser = useOptionalUser()
 	const isLoggedInUser = data.user.id === loggedInUser?.id
+	const manageSubFormRef = useRef<HTMLFormElement>(null)
+	const submit = useSubmit()
+	const path = useLocation().pathname
 
 	return (
 		<div className="container mx-auto mb-48 mt-36 flex flex-col items-center justify-center">
@@ -59,16 +59,29 @@ export default function UsernameIndex() {
 					<div className="flex flex-wrap items-center justify-center gap-4">
 						<h1 className="text-center text-h2">{userDisplayName}</h1>
 					</div>
-					<p className="text-accent mt-2 text-center">
+					<p className="mt-2 text-center text-accent-foreground">
 						Joined {data.userJoinedDisplay}
 					</p>
 					<div className="mt-10 flex gap-4">
 						{isLoggedInUser ? (
 							<>
-								<Button asChild>
-									<Link prefetch="intent" to="jobs">
-										My jobs
-									</Link>
+								<Button
+									asChild
+									onClick={event => {
+										event.preventDefault()
+										submit(manageSubFormRef.current)
+									}}
+								>
+									<Form
+										action={`/resources/stripe/manage-subscription?redirectTo=${encodeURIComponent(
+											path,
+										)}`}
+										method="POST"
+										ref={manageSubFormRef}
+									>
+										<input hidden name="userId" value={user.id} />
+										<button type="submit">Manage subscription</button>
+									</Form>
 								</Button>
 								<Button asChild>
 									<Link prefetch="intent" to="/settings/profile">
@@ -77,7 +90,7 @@ export default function UsernameIndex() {
 								</Button>
 								<Button asChild>
 									<Link prefetch="intent" to="resume/edit">
-										Edit Resume
+										Edit resume
 									</Link>
 								</Button>
 							</>

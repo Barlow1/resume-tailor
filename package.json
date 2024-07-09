@@ -37,6 +37,8 @@
   "dependencies": {
     "@conform-to/react": "^0.7.4",
     "@conform-to/zod": "^0.7.4",
+    "@headlessui/react": "^2.1.1",
+    "@heroicons/react": "^2.1.4",
     "@hubspot/api-client": "^11.1.0",
     "@prisma/client": "^5.1.1",
     "@radix-ui/react-checkbox": "^1.0.4",
