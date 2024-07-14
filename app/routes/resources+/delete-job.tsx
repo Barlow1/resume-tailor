@@ -72,7 +72,7 @@ export function DeleteJob({ id }: { id: string }) {
 			<input type="hidden" name="jobid" value={id} />
 			<Button
 				type="submit"
-				variant="secondary"
+				variant="danger"
 				status={
 					jobDeleteFetcher.state === 'submitting'
 						? 'pending'
