@@ -46,36 +46,40 @@ export default function JobIdRoute() {
 		<div className="flex h-full flex-col">
 			<div className="flex-grow">
 				<h2 className="mb-2 text-h2 lg:mb-6">{data.job.title}</h2>
+				{data.isOwner ? (
+					<div className="flex justify-end gap-4 py-5">
+						<Button asChild>
+							<Link
+								to={
+									data.resume
+										? 'generate'
+										: `/users/${user.username}/resume/upload`
+								}
+							>
+								Generate Experience
+							</Link>
+						</Button>
+						<Button asChild>
+							<Link
+								to={
+									data.resume
+										? 'tailor'
+										: `/users/${user.username}/resume/upload`
+								}
+							>
+								Tailor Resume
+							</Link>
+						</Button>
+						<Button variant="secondary" asChild>
+							<Link to="edit">Edit</Link>
+						</Button>
+						<DeleteJob id={data.job.id} />
+						<input hidden name="jobTitle" value={data.job.title} />
+						<input hidden name="jobDescription" value={data.job.content} />
+					</div>
+				) : null}
 				<p className="text-sm md:text-lg">{data.job.content}</p>
 			</div>
-			{data.isOwner ? (
-				<div className="flex justify-end gap-4 py-5">
-					<input hidden name="jobTitle" value={data.job.title} />
-					<input hidden name="jobDescription" value={data.job.content} />
-					<Button asChild>
-						<Link
-							to={
-								data.resume ? 'generate' : `/users/${user.username}/resume/upload`
-							}
-						>
-							Generate Experience
-						</Link>
-					</Button>
-					<Button asChild>
-						<Link
-							to={
-								data.resume ? 'tailor' : `/users/${user.username}/resume/upload`
-							}
-						>
-							Tailor Resume
-						</Link>
-					</Button>
-					<Button variant="secondary" asChild>
-						<Link to="edit">Edit</Link>
-					</Button>
-					<DeleteJob id={data.job.id} />
-				</div>
-			) : null}
 		</div>
 	)
 }
