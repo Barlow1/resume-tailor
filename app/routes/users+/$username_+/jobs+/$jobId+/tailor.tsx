@@ -1,12 +1,20 @@
 import { json, type DataFunctionArgs } from '@remix-run/node'
-import { Outlet, useLoaderData } from '@remix-run/react'
+import { Outlet } from '@remix-run/react'
 import { GeneralErrorBoundary } from '~/components/error-boundary.tsx'
 import { z } from 'zod'
-import Breadcrumbs from '~/components/ui/breadcrumbs.tsx'
-import { Spacer } from '~/components/spacer.tsx'
-import { useUser } from '~/utils/user.ts'
+import {
+	requireStripeSubscription,
+	requireUserId,
+} from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
-import { requireStripeSubscription, requireUserId } from '~/utils/auth.server.ts'
+
+
+export const handle = {
+	breadcrumb: (data: FromLoader<typeof loader>) => (
+		'Tailor'
+	),
+}
+
 
 export const JobEditorSchema = z.object({
 	experience: z.string().min(1),
@@ -24,9 +32,9 @@ export async function loader({ params, request }: DataFunctionArgs) {
 		},
 	)
 
-	if (gettingStartedProgress && gettingStartedProgress?.generateCount > 1) {
-		const successUrl = request.url;
-		const cancelUrl = request.url.split('/generate')[0];
+	if (gettingStartedProgress && gettingStartedProgress?.tailorCount > 1) {
+		const successUrl = request.url
+		const cancelUrl = request.url.split('/tailor')[0]
 		await requireStripeSubscription(userId, successUrl, cancelUrl)
 	}
 
@@ -34,18 +42,9 @@ export async function loader({ params, request }: DataFunctionArgs) {
 }
 
 export default function ResumeTailorRoute() {
-	const user = useUser()
-	const data = useLoaderData<typeof loader>()
 
 	return (
-		<div className="container m-auto mb-36 max-w-3xl">
-			<Breadcrumbs
-				origin={{
-					breadcrumb: 'Generate',
-					pathname: `/users/${user.username}/jobs/${data.jobId}/generate`,
-				}}
-			/>
-			<Spacer size="xs" />
+		<div className="md:container m-auto mb-36 max-w-3xl">
 			<main>
 				<Outlet />
 			</main>

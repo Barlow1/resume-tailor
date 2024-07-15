@@ -1,0 +1,1 @@
+declare type FromLoader<T> = Awaited<ReturnType<Awaited<ReturnType<T>>['json']>>

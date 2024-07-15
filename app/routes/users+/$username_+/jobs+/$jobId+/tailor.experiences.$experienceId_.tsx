@@ -1,11 +1,11 @@
 import { json, type DataFunctionArgs } from '@remix-run/node'
 import { useLoaderData } from '@remix-run/react'
-import { Icon } from '~/components/ui/icon.tsx'
 import { ExperienceTailor } from '~/routes/resources+/experience-tailor.tsx'
 import { prisma } from '~/utils/db.server.ts'
 
 export const handle = {
-	breadcrumb: <Icon name="pencil-2">Experience</Icon>,
+	breadcrumb: (data: FromLoader<typeof loader>) =>
+		`${data.experience.employer} - ${data.experience.role}`,
 }
 
 export async function loader({ params }: DataFunctionArgs) {
