@@ -1,54 +1,38 @@
-<div align="center">
-  <h1 align="center"><a href="https://www.epicweb.dev/epic-stack">The Resume Tailor 🚀</a></h1>
-  <strong align="center">
-    Ditch analysis paralysis and start shipping Resume Web apps.
-  </strong>
-  <p>
-    This is an opinionated project starter and reference that allows teams to
-    ship their ideas to production faster and on a more stable foundation based
-    on the experience of <a href="https://kentcdodds.com">Kent C. Dodds</a> and
-    <a href="https://github.com/epicweb-dev/epic-stack/graphs/contributors">contributors</a>.
-  </p>
-</div>
+# Resume Tailor
+## Development
 
-```sh
-npx create-remix@latest --typescript --install --template epicweb-dev/epic-stack
-```
+- Install Dependencies
 
-[![The Resume Tailor](https://github-production-user-asset-6210df.s3.amazonaws.com/1500684/246885449-1b00286c-aa3d-44b2-9ef2-04f694eb3592.png)](https://www.epicweb.dev/epic-stack)
+  ```sh
+  npm install
+  ```
 
-[The Resume Tailor](https://www.epicweb.dev/epic-stack)
+- Initial setup:
 
-<hr />
+  ```sh
+  npm run setup
+  ```
 
-## Watch Kent's Introduction to The Resume Tailor
+- Start dev server:
 
-[![screenshot of a YouTube video](https://github-production-user-asset-6210df.s3.amazonaws.com/1500684/242088051-6beafa78-41c6-47e1-b999-08d3d3e5cb57.png)](https://www.youtube.com/watch?v=yMK5SVRASxM)
+  ```sh
+  npm run dev
+  ```
 
-["The Resume Tailor" by Kent C. Dodds at #RemixConf 2023 💿](https://www.youtube.com/watch?v=yMK5SVRASxM)
+This starts your app in development mode, rebuilding assets on file changes.
 
-## Docs
+The database seed script creates a new user with some data you can use to get
+started:
 
-[Read the docs](https://github.com/epicweb-dev/epic-stack/blob/main/docs)
-(please 🙏).
+- Username: `kody`
+- Password: `kodylovesyou`
 
-## Support
+### Stripe Development
 
-- 🆘 Join the
-  [discussion on GitHub](https://github.com/epicweb-dev/epic-stack/discussions)
-  and the [KCD Community on Discord](https://kcd.im/discord).
-- 💡 Create an
-  [idea discussion](https://github.com/epicweb-dev/epic-stack/discussions/new?category=ideas)
-  for suggestions.
-- 🐛 Open a [GitHub issue](https://github.com/epicweb-dev/epic-stack/issues) to
-  report a bug.
+If you need to test any changes with stripe, you'll need to start the stripe cli
 
-## Branding
+- Start stripe CLI
 
-Want to talk about the Resume Tailor in a blog post or talk? Great! Here are some
-assets you can use in your material:
-[EpicWeb.dev/brand](https://epicweb.dev/brand)
-
-## Thanks
-
-You rock 🪨
+  ```sh
+    npm run stripe listen
+  ```
