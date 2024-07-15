@@ -34,5 +34,5 @@ If you need to test any changes with stripe, you'll need to start the stripe cli
 - Start stripe CLI
 
   ```sh
-    npm run stripe listen
+    npm run stripe-listen
   ```
