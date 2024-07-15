@@ -37,10 +37,10 @@ export default function UsernameIndex() {
 	const path = useLocation().pathname
 
 	return (
-		<div className="container mx-auto mb-48 mt-36 flex flex-col items-center justify-center">
+		<div className="md:container mx-auto mb-48 mt-36 flex flex-col items-center justify-center">
 			<Spacer size="4xs" />
 
-			<div className="bg-night-500 container mx-auto flex flex-col items-center rounded-3xl p-12">
+			<div className="bg-night-500 md:container mx-auto flex flex-col items-center rounded-3xl p-12">
 				<div className="relative w-52">
 					<div className="absolute -top-40">
 						<div className="relative">

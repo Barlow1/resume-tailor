@@ -64,7 +64,7 @@ export function ExperienceTailor({
 }) {
 	const experienceTailorFetcher = useFetcher<typeof action>()
 	const editData = useRouteLoaderData(
-		'routes/users+/$username_+/jobs+/$jobId_+/tailor',
+		'routes/users+/$username_+/jobs+/$jobId+/tailor',
 	) as { resume: any }
 
 	const [form, fields] = useForm({

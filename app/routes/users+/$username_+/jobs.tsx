@@ -1,86 +1,23 @@
-import { useLoaderData, Outlet, NavLink, Link } from '@remix-run/react'
-import { json, type DataFunctionArgs } from '@remix-run/node'
-import { prisma } from '~/utils/db.server.ts'
+import { Outlet } from '@remix-run/react'
 import { GeneralErrorBoundary } from '~/components/error-boundary.tsx'
-import { cn, getUserImgSrc } from '~/utils/misc.ts'
-import { requireUserId } from '~/utils/auth.server.ts'
-
-export async function loader({ params, request }: DataFunctionArgs) {
-	await requireUserId(request, { redirectTo: null })
-	const owner = await prisma.user.findUnique({
-		where: {
-			username: params.username,
-		},
-		select: {
-			id: true,
-			username: true,
-			name: true,
-			imageId: true,
-		},
-	})
-	if (!owner) {
-		throw new Response('Not found', { status: 404 })
-	}
-	const jobs = await prisma.job.findMany({
-		where: {
-			ownerId: owner.id,
-		},
-		select: {
-			id: true,
-			title: true,
-		},
-	})
-	return json({ owner, jobs })
-}
+import { Spacer } from '~/components/spacer.tsx'
+import Breadcrumbs from '~/components/ui/breadcrumbs.tsx'
+import { useUser } from '~/utils/user.ts'
 
 export default function JobsRoute() {
-	const data = useLoaderData<typeof loader>()
-	const ownerDisplayName = data.owner.name ?? data.owner.username
-	const navLinkDefaultClassName =
-		'line-clamp-2 block rounded-l-full py-2 pl-8 pr-6 text-base lg:text-xl'
+	const user = useUser()
+
 	return (
 		<div className="flex h-full pb-12">
-			<div className="bg-night-500 mx-auto grid w-full flex-grow grid-cols-4 pl-2 md:container md:rounded-3xl">
-				<div className="col-span-1 py-12">
-					<Link
-						to={`/users/${data.owner.username}`}
-						className="mb-4 flex flex-col items-center justify-center gap-2 pl-8 pr-4 lg:flex-row lg:justify-start lg:gap-4"
-					>
-						<img
-							src={getUserImgSrc(data.owner.imageId)}
-							alt={ownerDisplayName}
-							className="h-16 w-16 rounded-full object-cover lg:h-24 lg:w-24"
-						/>
-						<h1 className="text-center text-base font-bold md:text-lg lg:text-left lg:text-2xl">
-							{ownerDisplayName}'s Jobs
-						</h1>
-					</Link>
-					<ul>
-						<li>
-							<NavLink
-								to="new"
-								className={({ isActive }) =>
-									cn(navLinkDefaultClassName, isActive && 'bg-accent')
-								}
-							>
-								+ New Job
-							</NavLink>
-						</li>
-						{data.jobs.map(job => (
-							<li key={job.id}>
-								<NavLink
-									to={job.id}
-									className={({ isActive }) =>
-										cn(navLinkDefaultClassName, isActive && 'bg-accent')
-									}
-								>
-									{job.title}
-								</NavLink>
-							</li>
-						))}
-					</ul>
-				</div>
-				<main className="bg-night-400 col-span-3 px-10 py-12 md:rounded-r-3xl">
+			<div className="md:container m-auto max-w-3xl">
+				<Breadcrumbs
+					origin={{
+						breadcrumb: 'Jobs',
+						pathname: `/users/${user.username}/jobs`,
+					}}
+				/>
+				<Spacer size="xs" />
+				<main>
 					<Outlet />
 				</main>
 			</div>

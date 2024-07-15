@@ -25,7 +25,7 @@ export default function EditResume() {
 	const user = useUser()
 
 	return (
-		<div className="container m-auto mb-36 max-w-3xl">
+		<div className="md:container m-auto mb-36 max-w-3xl">
 			<Breadcrumbs
 				origin={{
 					breadcrumb: 'Edit',

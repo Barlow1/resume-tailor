@@ -73,7 +73,7 @@ export default function OnboardingStepper({
 
 	return (
 		<>
-			<div className="container flex justify-end">
+			<div className="md:container flex justify-end">
 				<resetStepperFetcher.Form
 					method="post"
 					action="/resources/onboarding-stepper"

@@ -30,7 +30,7 @@ export default function ProfileIndex() {
 	const user = useUser()
 
 	return (
-		<div className="container m-auto mb-36 mt-16 max-w-3xl">
+		<div className="md:container m-auto mb-36 mt-16 max-w-3xl">
 			<Breadcrumbs
 				origin={{
 					breadcrumb: 'Profile',

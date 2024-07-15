@@ -66,7 +66,7 @@ export function ExperienceGenerator({
 }) {
 	const experienceGeneratorFetcher = useFetcher<typeof action>()
 	const editData = useRouteLoaderData(
-		'routes/users+/$username_+/jobs+/$jobId_+/generate',
+		'routes/users+/$username_+/jobs+/$jobId+/generate',
 	) as { resume: any }
 
 	const [form, fields] = useForm({
