@@ -60,8 +60,9 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  image   Image?  @relation(fields: [imageId], references: [fileId])
-  imageId String? @unique
+  image            Image?  @relation(fields: [imageId], references: [fileId])
+  imageId          String? @unique
+  stripeCustomerId String?
 
   password               Password?
   jobs                   Job[]
