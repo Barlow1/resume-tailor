@@ -11,7 +11,7 @@ import {
 import { ErrorList, Field } from '~/components/forms.tsx'
 import { useIsSubmitting } from '~/utils/misc.ts'
 import { StatusButton } from '~/components/ui/status-button.tsx'
-import FAQ  from '~/components/faq.tsx'
+import { FAQ }  from '~/components/ui/faq.tsx'
 
 export const meta: MetaFunction = () => [
 	{ title: 'Resume Tailor' },
