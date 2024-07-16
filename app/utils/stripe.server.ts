@@ -1,4 +1,5 @@
 import Stripe from 'stripe'
+import { prisma } from './db.server.ts'
 
 export default class StripeHelper {
 	private stripe: Stripe
@@ -13,9 +14,30 @@ export default class StripeHelper {
 		}
 	}
 
-	async createCustomer({ email, name }: { email: string; name: string }) {
+	async createCustomer({
+		userId,
+		email,
+		name,
+	}: {
+		userId: string
+		email: string
+		name: string
+	}) {
+		const existingCustomer = await prisma.user.findUnique({
+			where: { id: userId },
+			select: { stripeCustomerId: true, id: true },
+		})
+		if (existingCustomer?.stripeCustomerId) {
+			return existingCustomer.stripeCustomerId
+		}
 		const customer = await this.stripe.customers.create({ email, name })
-		return customer
+		await prisma.user.update({
+			where: { id: userId },
+			data: {
+				stripeCustomerId: customer.id,
+			},
+		})
+		return customer.id
 	}
 
 	async createCheckoutSessionLink({
@@ -61,13 +83,11 @@ export default class StripeHelper {
 		customerId: string
 		returnUrl: string
 	}) {
-		const session = await this.stripe.billingPortal.sessions.create(
-			{
-				customer: customerId,
-				return_url: returnUrl,
-			},
-		)
-		return session.url;
+		const session = await this.stripe.billingPortal.sessions.create({
+			customer: customerId,
+			return_url: returnUrl,
+		})
+		return session.url
 	}
 
 	async cancelSubscription({ subscriptionId }: { subscriptionId: string }) {
