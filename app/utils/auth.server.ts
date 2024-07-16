@@ -88,7 +88,7 @@ export async function requireStripeSubscription(
 	if (!subscription) {
 		const user = await prisma.user.findUnique({
 			where: { id: userId },
-			select: { email: true, name: true },
+			select: { email: true, name: true, id: true },
 		})
 
 		if (!user) {
@@ -99,6 +99,7 @@ export async function requireStripeSubscription(
 
 		// create a customer
 		const customer = await stripe.createCustomer({
+			userId: user.id,
 			email: user.email,
 			name: user.name ?? 'Anonymous User',
 		})
@@ -106,7 +107,7 @@ export async function requireStripeSubscription(
 		// create subscription
 		const subscription = await createSubscription({
 			userId,
-			stripeCustomerId: customer.id,
+			stripeCustomerId: customer,
 			name: 'Resume Tailor Pro',
 			stripeProductId: process.env.STRIPE_PRODUCT_ID as string,
 			stripePriceId: process.env.STRIPE_PRICE_ID as string,
@@ -115,7 +116,7 @@ export async function requireStripeSubscription(
 		// create a checkout link
 		const paymentLink = await stripe.createCheckoutSessionLink({
 			priceId: process.env.STRIPE_PRICE_ID as string,
-			customer: customer.id,
+			customer: customer,
 			successUrl:successUrl,
 			subscriptionId: subscription.id,
 			cancelUrl: cancelUrl,

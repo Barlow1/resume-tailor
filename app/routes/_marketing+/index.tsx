@@ -249,7 +249,7 @@ export default function Index() {
 								src={tailorJob}
 							/>
 						</div>
-						{/* <div className="flex flex-col space-y-12">
+						<div className="flex flex-col space-y-12">
 							<div>
 								<div className="text-center text-3xl font-bold text-brand-800 md:text-6xl">
 									Stoked to give it a shot?
@@ -263,8 +263,8 @@ export default function Index() {
 								access. Provide us with your info below and we'll be in touch
 								soon!
 							</div>
-						</div> */}
-						{/* <div className="flex w-full justify-center">
+						</div>
+						<div className="flex w-full justify-center">
 							<onboardingFetcher.Form
 								method="POST"
 								className="flex max-w-2xl space-x-5 align-middle"
@@ -298,8 +298,7 @@ export default function Index() {
 									Join the waitlist
 								</StatusButton>
 							</onboardingFetcher.Form>
-						</div> */}
-						<FAQ />
+						</div>
 					</div>
 				</div>
 			</div>
