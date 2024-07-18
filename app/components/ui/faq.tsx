@@ -8,7 +8,7 @@ interface AccordionState {
 
 const useAccordionStore = create<AccordionState>((set) => ({
   tab: 0,
-  setTab: (tab: number) => set(() => ({ tab })),
+  setTab: (tab: number) => set({ tab }),
 }));
 
 const FAQ: React.FC = () => {
