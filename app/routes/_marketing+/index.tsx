@@ -1,16 +1,8 @@
 import type { MetaFunction } from '@remix-run/node'
 import { addJob, background, tailorJob, topCompanies } from './logos/logos.ts'
-import { Link, useActionData, useFetcher } from '@remix-run/react'
+import { Link } from '@remix-run/react'
 import { Button } from '~/components/ui/button.tsx'
-import { conform, useForm } from '@conform-to/react'
-import { getFieldsetConstraint, parse } from '@conform-to/zod'
-import {
-	SignupSchema,
-	type action as signupAction,
-} from '../_auth+/signup/index.tsx'
-import { ErrorList, Field } from '~/components/forms.tsx'
-import { useIsSubmitting } from '~/utils/misc.ts'
-import { StatusButton } from '~/components/ui/status-button.tsx'
+import { FAQ } from '~/components/ui/faq.tsx'
 
 export const meta: MetaFunction = () => [
 	{ title: 'Resume Tailor' },
@@ -22,20 +14,6 @@ export const meta: MetaFunction = () => [
 ]
 
 export default function Index() {
-	const actionData = useActionData<typeof signupAction>()
-
-	const onboardingFetcher = useFetcher()
-	const [form, fields] = useForm({
-		id: 'signup-form',
-		constraint: getFieldsetConstraint(SignupSchema),
-		lastSubmission: actionData?.submission,
-		onValidate({ formData }) {
-			const result = parse(formData, { schema: SignupSchema })
-			return result
-		},
-		shouldRevalidate: 'onBlur',
-	})
-	const isSubmitting = useIsSubmitting()
 	return (
 		<main className="min-h-screen pb-5">
 			<div>
@@ -248,56 +226,7 @@ export default function Index() {
 								src={tailorJob}
 							/>
 						</div>
-						<div className="flex flex-col space-y-12">
-							<div>
-								<div className="text-center text-3xl font-bold text-brand-800 md:text-6xl">
-									Stoked to give it a shot?
-								</div>
-								<div className="text-right font-rainbow text-xl font-normal text-brand-800 md:text-3xl lg:mr-32">
-									(damn right you are)
-								</div>
-							</div>
-							<div className="mx-auto max-w-2xl text-center text-xl font-bold text-black dark:text-white md:text-3xl">
-								We're <span className="text-brand-800">stoked</span> to give you
-								access. Provide us with your info below and we'll be in touch
-								soon!
-							</div>
-						</div>
-						<div className="flex w-full justify-center">
-							<onboardingFetcher.Form
-								method="POST"
-								className="flex max-w-2xl space-x-5 align-middle"
-								action="/signup"
-								{...form.props}
-							>
-								<div>
-									<Field
-										labelProps={{
-											htmlFor: fields.email.id,
-											children: 'Email',
-										}}
-										inputProps={{
-											...conform.input(fields.email),
-											placeholder: 'enteryour@email.com',
-											className: 'w-[10rem] md:w-[27rem]',
-										}}
-										errors={fields.email.errors}
-									/>
-									<ErrorList errors={form.errors} id={form.errorId} />
-								</div>
-								<StatusButton
-									className="my-auto whitespace-nowrap"
-									status={
-										isSubmitting ? 'pending' : actionData?.status ?? 'idle'
-									}
-									variant={'primary'}
-									type="submit"
-									disabled={isSubmitting}
-								>
-									Join the waitlist
-								</StatusButton>
-							</onboardingFetcher.Form>
-						</div>
+						<FAQ />
 					</div>
 				</div>
 			</div>
