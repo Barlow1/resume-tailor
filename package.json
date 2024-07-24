@@ -58,6 +58,7 @@
     "@sentry/remix": "^7.59.2",
     "address": "^2.0.1",
     "autoprefixer": "^10.4.14",
+    "axios": "^1.7.2",
     "bcryptjs": "^2.4.3",
     "better-sqlite3": "^8.4.0",
     "cachified": "^3.5.4",
