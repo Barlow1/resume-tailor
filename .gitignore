@@ -5,6 +5,7 @@ node_modules
 /public/build
 /server-build
 .env
+.env.example
 
 /prisma/data.db
 /prisma/data.db-journal
