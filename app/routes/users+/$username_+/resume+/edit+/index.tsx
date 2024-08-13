@@ -1,6 +1,6 @@
 import { useLoaderData } from '@remix-run/react'
 import { json, type DataFunctionArgs } from '@remix-run/server-runtime'
-import { ResumeEditor } from '~/routes/resources+/resume-editor.tsx'
+import { ResumeEditor, action as resumeEditorAction} from '~/routes/resources+/resume-editor.tsx'
 import { requireUserId } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
 
@@ -28,3 +28,7 @@ export default function EditResumeRoute() {
 		</>
 	)
 }
+
+export async function action(args: DataFunctionArgs) {
+	return resumeEditorAction(args)
+  }

@@ -1,18 +1,34 @@
 import { useForm } from '@conform-to/react'
 import { getFieldsetConstraint, parse } from '@conform-to/zod'
-import { type Skill, type Education, type Experience } from '@prisma/client'
-import { json, redirect, type DataFunctionArgs } from '@remix-run/node'
+// import { type Skill, type Education, type Experience } from '@prisma/client'
+import { json, type DataFunctionArgs } from '@remix-run/node'
 import { Link, useFetcher } from '@remix-run/react'
+import { useState } from 'react'
 import { z } from 'zod'
 import { ErrorList } from '~/components/forms.tsx'
 import { Button } from '~/components/ui/button.tsx'
-import { requireUserId } from '~/utils/auth.server.ts'
+// import { requireUserId } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
-import { type Stringify } from '~/utils/misc.ts'
+// import { type Stringify } from '~/utils/misc.ts'
 import { useUser } from '~/utils/user.ts'
+
+
+type ActionData = {
+	status: 'idle' | 'error' | 'success';
+	submission?: {
+	  intent: string;
+	  payload: Record<string, unknown>;
+	  error: Record<string, string>;
+	};
+	message?: string;
+  };
 
 export const ResumeEditorSchema = z.object({
 	id: z.string().optional(),
+	action: z.enum(['updateExperience', 'updateSkill', 'addExperience', 'addSkill']).optional(),
+	experienceId: z.string().optional(),
+	skillId: z.string().optional(),
+	value: z.string().optional(),
 	// title: z.string().min(1),
 	// summary: z.string().min(1),
 	// firstName: z.string().min(1),
@@ -24,369 +40,260 @@ export const ResumeEditorSchema = z.object({
 	// country: z.string().min(1),
 })
 
+
+
+
 export async function action({ request }: DataFunctionArgs) {
-	const userId = await requireUserId(request)
+	// const userId = await requireUserId(request)
 	const formData = await request.formData()
 	const submission = parse(formData, {
-		schema: ResumeEditorSchema,
-		acceptMultipleErrors: () => true,
+	  schema: ResumeEditorSchema,
+	  acceptMultipleErrors: () => true,
 	})
+
 	if (submission.intent !== 'submit') {
-		return json({ status: 'idle', submission } as const)
+	  return json({ status: 'idle', submission } as const)
 	}
+  
 	if (!submission.value) {
-		return json(
-			{
-				status: 'error',
-				submission,
-			} as const,
-			{ status: 400 },
-		)
+	  return json({ status: 'error', submission } as const, { status: 400 })
 	}
-	let resume: { id: string; owner: { username: string } }
-
-	const {
-		// title,
-		// summary,
-		id,
-		// firstName,
-		// lastName,
-		// email,
-		// phone,
-		// city,
-		// state,
-		// country,
-	} = submission.value
-
-	const data = {
-		ownerId: userId,
-		// title,
-		// summary,
-		// firstName,
-		// lastName,
-		// email,
-		// phone,
-		// city,
-		// state,
-		// country,
-	}
-
-	const select = {
-		id: true,
-		owner: {
-			select: {
-				username: true,
-			},
-		},
-	}
-	if (id) {
-		const existingResume = await prisma.resume.findFirst({
-			where: { id, ownerId: userId },
-			select: { id: true },
-		})
-		if (!existingResume) {
-			return json(
-				{
-					status: 'error',
-					submission,
-				} as const,
-				{ status: 404 },
-			)
+  
+	const { id, action, experienceId, skillId, value } = submission.value
+  
+	try {
+		let resume: { id: string; owner: { username: string }; experience: any[]; skills: any[] }
+	  
+		switch (action) {
+		  case 'updateExperience':
+			if (experienceId && value) {
+			  const [employer, role] = value.split(' - ')
+			  await prisma.experience.update({
+				where: { id: experienceId },
+				data: { employer, role },
+			  })
+			}
+			break
+		  case 'updateSkill':
+			if (skillId && value) {
+			  await prisma.skill.update({
+				where: { id: skillId },
+				data: { name: value },
+			  })
+			}
+			break
+		  case 'addExperience':
+			if (id) {
+			  await prisma.experience.create({
+				data: {
+				  resumeId: id,
+				  employer: 'New Employer',
+				  role: 'New Role',
+				  responsibilities: '',
+				},
+			  })
+			} else {
+			  throw new Error("Resume ID is required to add experience.")
+			}
+			break
+		  case 'addSkill':
+			if (id) {
+			  await prisma.skill.create({
+				data: {
+				  resumeId: id,
+				  name: 'New Skill',
+				},
+			  })
+			} else {
+			  throw new Error("Resume ID is required to add skill.")
+			}
+			break
 		}
-		resume = await prisma.resume.update({
-			where: { id },
-			data,
-			select,
-		})
-	} else {
-		resume = await prisma.resume.create({ data, select })
+	  
+	  resume = await prisma.resume.findUniqueOrThrow({
+		where: { id },
+		select: {
+		  id: true,
+		  owner: { select: { username: true } },
+		  experience: true,
+		  skills: true,
+		},
+	  })
+  
+	  return json({ status: 'success', resume })
+	} catch (error) {
+	  console.error('Error in resume action:', error)
+	  return json({ status: 'error', submission } as const, { status: 500 })
 	}
-	await prisma.gettingStartedProgress.upsert({
-		create: {
-			hasSavedJob: false,
-			hasSavedResume: true,
-			hasGeneratedResume: false,
-			hasTailoredResume: false,
-			ownerId: userId,
-		},
-		update: {
-			hasSavedResume: true,
-		},
-		where: {
-			ownerId: userId,
-		},
-	})
-
-	const formAction = formData.get('action')
-
-	switch (formAction) {
-		case 'experience':
-			return redirect(
-				`/users/${resume.owner.username}/resume/edit/experiences/new`,
-			)
-		case 'education':
-			return redirect(
-				`/users/${resume.owner.username}/resume/edit/education/new`,
-			)
-		case 'skill':
-			return redirect(`/users/${resume.owner.username}/resume/edit/skills/new`)
-		default:
-			return redirect(`/users/${resume.owner.username}/resume/edit`)
-	}
-}
+  }
 
 export function ResumeEditor({
 	resume,
-}: {
+  }: {
 	resume?: {
+	  id: string
+	  experience: Array<{
 		id: string
-		title: string | null
-		summary: string | null
-		firstName: string | null
-		lastName: string | null
-		email: string | null
-		phone: string | null
-		city: string | null
-		state: string | null
-		fileId: string | null
-		country: string | null
-		experience: Stringify<Experience>[]
-		education: Stringify<Education>[]
-		skills: Stringify<Skill>[]
+		employer: string
+		role: string
+	  }>
+	  skills: Array<{
+		id: string
+		name: string
+	  }>
 	} | null
-}) {
-	const resumeEditorFetcher = useFetcher<typeof action>()
+  }) {
+	const [editingExperienceId, setEditingExperienceId] = useState<string | null>(null)
+	const [editingSkillId, setEditingSkillId] = useState<string | null>(null)
+	const resumeEditorFetcher = useFetcher<ActionData>()
 	const user = useUser()
 
+	const handleEnterPress = (
+		event: React.KeyboardEvent<HTMLInputElement>,
+		id: string,
+		value: string,
+		setEditingId: React.Dispatch<React.SetStateAction<string | null>>,
+		handleSubmit: (id: string, value: string) => void
+	  ) => {
+		if (event.key === 'Enter') {
+		  event.preventDefault();
+		  handleSubmit(id, value);
+		  setEditingId(null);
+		}
+	  }
+  
 	const [form] = useForm({
-		id: 'resume-editor',
-		constraint: getFieldsetConstraint(ResumeEditorSchema),
-		lastSubmission: resumeEditorFetcher.data?.submission,
-		onValidate({ formData }) {
-			return parse(formData, { schema: ResumeEditorSchema })
-		},
-		defaultValue: {
-			// title: resume?.title ?? undefined,
-			// summary: resume?.summary ?? undefined,
-			// firstName: resume?.firstName ?? undefined,
-			// lastName: resume?.lastName ?? undefined,
-			// email: resume?.email ?? undefined,
-			// phone: resume?.phone ?? undefined,
-			// city: resume?.city ?? undefined,
-			// state: resume?.state ?? undefined,
-			// country: resume?.country ?? undefined,
-		},
-		shouldRevalidate: 'onBlur',
+	  id: 'resume-editor',
+	  constraint: getFieldsetConstraint(ResumeEditorSchema),
+	  lastSubmission: resumeEditorFetcher.data?.submission,
+	  onValidate({ formData }) {
+		return parse(formData, { schema: ResumeEditorSchema })
+	  },
+	  shouldRevalidate: 'onBlur',
 	})
-
+  
+	const handleExperienceEdit = (id: string, value: string) => {
+	  const formData = new FormData()
+	  formData.append('id', resume?.id ?? '')
+	  formData.append('experienceId', id)
+	  formData.append('value', value)
+	  formData.append('action', 'updateExperience')
+	  
+	  resumeEditorFetcher.submit(formData, { method: 'post' })
+	  setEditingExperienceId(null)
+	}
+  
+	const handleSkillEdit = (id: string, value: string) => {
+	  const formData = new FormData()
+	  formData.append('id', resume?.id ?? '')
+	  formData.append('skillId', id)
+	  formData.append('value', value)
+	  formData.append('action', 'updateSkill')
+	  
+	  resumeEditorFetcher.submit(formData, { method: 'post' })
+	  setEditingSkillId(null)
+	}
+  
+	const handleAddExperience = () => {
+	  const formData = new FormData()
+	  formData.append('id', resume?.id ?? '')
+	  formData.append('action', 'addExperience')
+	  resumeEditorFetcher.submit(formData, { method: 'post' })
+	}
+  
+	const handleAddSkill = () => {
+	  const formData = new FormData()
+	  formData.append('id', resume?.id ?? '')
+	  formData.append('action', 'addSkill')
+	  resumeEditorFetcher.submit(formData, { method: 'post' })
+	}
+  
 	return (
-		<resumeEditorFetcher.Form
-			method="post"
-			action="/resources/resume-editor"
-			preventScrollReset
-			{...form.props}
-		>
-			<input name="id" type="hidden" value={resume?.id} />
-			<div className="space-y-5">
-				<div>
-					<h2 className="mb-2 text-h2">Edit Resume</h2>
-					<p className="mb-2 text-gray-300">
-						Add the experience and skills you want to tailor
-					</p>
+	  <resumeEditorFetcher.Form method="post" preventScrollReset {...form.props}>
+		<input name="id" type="hidden" value={resume?.id} />
+		<div className="space-y-5">
+		  <div>
+			<h2 className="mb-2 text-h2">Edit Resume</h2>
+			<p className="mb-2 text-gray-300">
+			  Add or edit your experience and skills
+			</p>
+		  </div>
+		  <div>
+			<h2 className="mb-2 text-h5">Experience</h2>
+			<div className="space-y-3">
+			  {resume?.experience.map((experience) => (
+				<div key={experience.id} className="flex items-center space-x-2">
+				  {editingExperienceId === experience.id ? (
+					<input
+					  defaultValue={`${experience.employer} - ${experience.role}`}
+					  onBlur={(e) => handleExperienceEdit(experience.id, e.target.value)}
+					  autoFocus
+					  onKeyDown={(e) => handleEnterPress(e, experience.id, e.currentTarget.value, setEditingExperienceId, handleExperienceEdit)}
+					  />
+				  ) : (
+					<>
+					  <span>{experience.employer} - {experience.role}</span>
+					  <button type="button" onClick={() => setEditingExperienceId(experience.id)}>
+						<svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
+						  <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+						</svg>
+					  </button>
+					</>
+				  )}
 				</div>
-				<div>
-					<h2 className="mb-2 text-h5">Experience</h2>
-					<div className="space-y-3">
-						{resume?.experience.length
-							? resume.experience.map(experience => (
-									<div key={experience.id}>
-										<Link
-											// eslint-disable-next-line remix-react-routes/require-valid-paths
-											to={`experiences/${experience.id}/edit`}
-											preventScrollReset
-										>
-											<li className="list-none rounded-lg border border-gray-200 p-5 dark:border-gray-400">
-												{experience.employer} - {experience.role}
-												<svg
-													className="float-right fill-gray-200 dark:fill-gray-400"
-													xmlns="http://www.w3.org/2000/svg"
-													height="1em"
-													viewBox="0 0 512 512"
-												>
-													<path d="M410.3 231l11.3-11.3-33.9-33.9-62.1-62.1L291.7 89.8l-11.3 11.3-22.6 22.6L58.6 322.9c-10.4 10.4-18 23.3-22.2 37.4L1 480.7c-2.5 8.4-.2 17.5 6.1 23.7s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L387.7 253.7 410.3 231zM160 399.4l-9.1 22.7c-4 3.1-8.5 5.4-13.3 6.9L59.4 452l23-78.1c1.4-4.9 3.8-9.4 6.9-13.3l22.7-9.1v32c0 8.8 7.2 16 16 16h32zM362.7 18.7L348.3 33.2 325.7 55.8 314.3 67.1l33.9 33.9 62.1 62.1 33.9 33.9 11.3-11.3 22.6-22.6 14.5-14.5c25-25 25-65.5 0-90.5L453.3 18.7c-25-25-65.5-25-90.5 0zm-47.4 168l-144 144c-6.2 6.2-16.4 6.2-22.6 0s-6.2-16.4 0-22.6l144-144c6.2-6.2 16.4-6.2 22.6 0s6.2 16.4 0 22.6z" />
-												</svg>
-											</li>
-										</Link>
-									</div>
-							  ))
-							: null}
-					</div>
-					<Button
-						size="pill"
-						variant="secondary"
-						type="submit"
-						className="mt-2"
-						value={'experience'}
-						name="action"
-					>
-						Add new experience +
-					</Button>
-				</div>
-				<div>
-					<h2 className="mb-2 text-h5">Skills</h2>
-					<div className="space-y-3">
-						{resume?.skills.length
-							? resume.skills.map(skills => (
-									<div key={skills.id}>
-										{/* eslint-disable-next-line remix-react-routes/require-valid-paths */}
-										<Link to={`skills/${skills.id}/edit`} preventScrollReset>
-											<li className="list-none rounded-lg border border-gray-200 p-5 dark:border-gray-400">
-												{skills.name}
-												<svg
-													className="float-right fill-gray-200 dark:fill-gray-400"
-													xmlns="http://www.w3.org/2000/svg"
-													height="1em"
-													viewBox="0 0 512 512"
-												>
-													<path d="M410.3 231l11.3-11.3-33.9-33.9-62.1-62.1L291.7 89.8l-11.3 11.3-22.6 22.6L58.6 322.9c-10.4 10.4-18 23.3-22.2 37.4L1 480.7c-2.5 8.4-.2 17.5 6.1 23.7s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L387.7 253.7 410.3 231zM160 399.4l-9.1 22.7c-4 3.1-8.5 5.4-13.3 6.9L59.4 452l23-78.1c1.4-4.9 3.8-9.4 6.9-13.3l22.7-9.1v32c0 8.8 7.2 16 16 16h32zM362.7 18.7L348.3 33.2 325.7 55.8 314.3 67.1l33.9 33.9 62.1 62.1 33.9 33.9 11.3-11.3 22.6-22.6 14.5-14.5c25-25 25-65.5 0-90.5L453.3 18.7c-25-25-65.5-25-90.5 0zm-47.4 168l-144 144c-6.2 6.2-16.4 6.2-22.6 0s-6.2-16.4 0-22.6l144-144c6.2-6.2 16.4-6.2 22.6 0s6.2 16.4 0 22.6z" />
-												</svg>
-											</li>
-										</Link>
-									</div>
-							  ))
-							: null}
-					</div>
-					<Button
-						size="pill"
-						variant="secondary"
-						type="submit"
-						className="mt-2"
-						value={'skill'}
-						name="action"
-					>
-						Add new skill +
-					</Button>
-				</div>
-				<div className="flex justify-end gap-4">
-					<Button asChild className="mt-2">
-						<Link to={`/users/${user?.username}/jobs`}>View Jobs</Link>
-					</Button>
-				</div>
+			  ))}
 			</div>
-			{/* <Field
-				labelProps={{ htmlFor: fields.title.id, children: 'Title' }}
-				inputProps={{
-					...conform.input(fields.title),
-					autoComplete: 'title',
-				}}
-				errors={fields.title.errors}
-			/>
-			<TextareaField
-				labelProps={{ htmlFor: fields.summary.id, children: 'Summary' }}
-				textareaProps={{
-					...conform.textarea(fields.summary),
-					autoComplete: 'summary',
-				}}
-				errors={fields.summary.errors}
-			/>
-			<h2 className="mb-2 text-h2">Contact</h2>
-			<div className="grid grid-cols-2 gap-2">
-				<Field
-					labelProps={{ htmlFor: fields.firstName.id, children: 'First Name' }}
-					inputProps={{
-						...conform.input(fields.firstName),
-						autoComplete: 'firstName',
-					}}
-					errors={fields.firstName.errors}
-				/>
-				<Field
-					labelProps={{ htmlFor: fields.lastName.id, children: 'Last Name' }}
-					inputProps={{
-						...conform.input(fields.lastName),
-						autoComplete: 'lastName',
-					}}
-					errors={fields.lastName.errors}
-				/>
-				<Field
-					labelProps={{ htmlFor: fields.email.id, children: 'Email' }}
-					inputProps={{
-						...conform.input(fields.email),
-						autoComplete: 'email',
-					}}
-					errors={fields.email.errors}
-				/>
-				<Field
-					labelProps={{ htmlFor: fields.phone.id, children: 'Phone Number' }}
-					inputProps={{
-						...conform.input(fields.phone),
-						autoComplete: 'phone',
-					}}
-					errors={fields.phone.errors}
-				/>
-				<Field
-					labelProps={{ htmlFor: fields.city.id, children: 'City' }}
-					inputProps={{
-						...conform.input(fields.city),
-						autoComplete: 'city',
-					}}
-					errors={fields.city.errors}
-				/>
-				<Field
-					labelProps={{ htmlFor: fields.state.id, children: 'State' }}
-					inputProps={{
-						...conform.input(fields.state),
-						autoComplete: 'state',
-					}}
-					errors={fields.state.errors}
-				/>
-			</div>
-			<Field
-				labelProps={{ htmlFor: fields.country.id, children: 'Country' }}
-				inputProps={{
-					...conform.input(fields.country),
-					autoComplete: 'country',
-				}}
-				errors={fields.country.errors}
-			/> */}
-
-			{/* <h2 className="mb-2 text-h2">Education</h2>
-			{resume?.education.length
-				? resume.education.map(education => (
-						<div key={education.id}>
-							<Link key={education.id} to={`education/${education.id}/edit`}>
-								{education.school} - {education.field}
-							</Link>
-						</div>
-				  ))
-				: null}
 			<Button
-				size="xs"
-				variant="secondary"
-				type="submit"
-				className="mt-2"
-				value={'education'}
-				name="action"
+			  size="pill"
+			  variant="secondary"
+			  type="button"
+			  className="mt-2"
+			  onClick={handleAddExperience}
 			>
-				Add new education +
-			</Button> */}
-			<ErrorList errors={form.errors} id={form.errorId} />
-			{/* <div className="flex justify-end gap-4">
-				<Button variant="secondary" type="reset">
-					Reset
-				</Button>
-				<Button
-					size="pill"
-					status={
-						resumeEditorFetcher.state === 'submitting'
-							? 'pending'
-							: resumeEditorFetcher.data?.status ?? 'idle'
-					}
-					type="submit"
-					disabled={resumeEditorFetcher.state !== 'idle'}
-				>
-					Save
-				</Button>
-			</div> */}
-		</resumeEditorFetcher.Form>
+			  Add new experience +
+			</Button>
+		  </div>
+		  <div>
+			<h2 className="mb-2 text-h5">Skills</h2>
+			<div className="space-y-3">
+			  {resume?.skills.map((skill) => (
+				<div key={skill.id} className="flex items-center space-x-2">
+				  {editingSkillId === skill.id ? (
+					<input
+					  defaultValue={skill.name}
+					  onBlur={(e) => handleSkillEdit(skill.id, e.target.value)}
+					  autoFocus
+					/>
+				  ) : (
+					<>
+					  <span>{skill.name}</span>
+					  <button type="button" onClick={() => setEditingSkillId(skill.id)}>
+						<svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
+						  <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+						</svg>
+					  </button>
+					</>
+				  )}
+				</div>
+			  ))}
+			</div>
+			<Button
+			  size="pill"
+			  variant="secondary"
+			  type="button"
+			  className="mt-2"
+			  onClick={handleAddSkill}
+			>
+			  Add new skill +
+			</Button>
+		  </div>
+		  <div className="flex justify-end gap-4">
+			<Button asChild className="mt-2">
+			  <Link to={`/users/${user?.username}/jobs`}>View Jobs</Link>
+			</Button>
+		  </div>
+		</div>
+		<ErrorList errors={form.errors} id={form.errorId} />
+	  </resumeEditorFetcher.Form>
 	)
-}
+  }
