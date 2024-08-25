@@ -66,6 +66,7 @@ import {
 	DocumentTextIcon,
 } from '@heroicons/react/24/outline'
 import { redirect } from '@remix-run/router'
+import { Crisp } from 'crisp-sdk-web'
 
 export const links: LinksFunction = () => {
 	return [
@@ -285,8 +286,18 @@ function App() {
 				// Add your own custom user variables here, ie:
 				subscriptionType: 'pro',
 			})
+			Crisp.user.setEmail(user.email)
+			if (user.name) {
+				Crisp.user.setNickname(user.name)
+			}
 		}
 	}, [user])
+
+	useEffect(() => {
+		if (typeof window !== 'undefined') {
+			Crisp.configure('d2a311b1-5815-4ced-8d94-0376198c598c')
+		}
+	}, [])
 
 	const [sidebarOpen, setSidebarOpen] = useState(false)
 

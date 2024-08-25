@@ -68,6 +68,7 @@
     "clsx": "^2.0.0",
     "compression": "^1.7.4",
     "confetti-react": "^2.5.0",
+    "crisp-sdk-web": "^1.0.25",
     "cross-env": "^7.0.3",
     "date-fns": "^2.30.0",
     "dotenv": "^16.3.1",
