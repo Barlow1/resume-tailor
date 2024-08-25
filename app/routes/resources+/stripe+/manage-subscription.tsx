@@ -19,6 +19,11 @@ export async function action(args: DataFunctionArgs) {
 
 	const stripe = new StripeHelper()
 
+	if (!subscription) {
+		throw redirect('/')
+	}
+
+
 	const billingPortalUrl = await stripe.createBillingPortalSession({
 		customerId: subscription.stripeCustomerId,
 		returnUrl: returnUrl,
