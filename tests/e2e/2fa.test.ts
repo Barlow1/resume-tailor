@@ -10,7 +10,6 @@ test('Users can add 2FA to their account and use it when logging in', async ({
 	const user = await insertNewUser({ password })
 	await login(user)
 	await page.goto('/settings/profile')
-	await page.getByRole('button', { name: 'close' }).click()
 
 	await page.getByRole('link', { name: /enable 2fa/i }).click()
 
@@ -47,8 +46,6 @@ test('Users can add 2FA to their account and use it when logging in', async ({
 		.fill(generateTOTP(options).otp)
 
 	await page.getByRole('button', { name: /confirm/i }).click()
-
-	await page.getByRole('button', { name: 'close' }).click()
 
 	await expect(
 		page.getByRole('link', { name: `${user.name ?? user.username} ${user.name ?? user.username}`, exact: true }),
