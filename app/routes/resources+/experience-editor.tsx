@@ -1,16 +1,17 @@
 import { conform, useForm } from '@conform-to/react'
 import { getFieldsetConstraint, parse } from '@conform-to/zod'
+import { User } from '@prisma/client'
 import { json, redirect, type DataFunctionArgs } from '@remix-run/node'
 import { useFetcher } from '@remix-run/react'
 import { z } from 'zod'
 import { Field, TextareaField, ErrorList } from '~/components/forms.tsx'
 import { Button } from '~/components/ui/button.tsx'
-import { type User } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
 
 export const ExperienceEditorSchema = z.object({
 	id: z.string().optional(),
 	resumeId: z.string().min(1),
+	redirectTo: z.string().optional(),
 	employer: z.string().min(1),
 	role: z.string().min(1),
 	startDate: z.string().optional(),
@@ -52,6 +53,7 @@ export async function action({ request }: DataFunctionArgs) {
 		responsibilities,
 		id,
 		resumeId,
+		redirectTo,
 	} = submission.value
 
 	const data = {
@@ -97,12 +99,13 @@ export async function action({ request }: DataFunctionArgs) {
 	} else {
 		experience = await prisma.experience.create({ data, select })
 	}
-	return redirect(`/users/${experience.resume.owner.username}/resume/edit`)
+	return redirect( redirectTo || `/users/${experience.resume.owner.username}/resume/edit`)
 }
 
 export function ExperienceEditor({
 	experience,
 	resume,
+	redirectTo,
 }: {
 	experience?: {
 		id: string
@@ -116,6 +119,7 @@ export function ExperienceEditor({
 		responsibilities: string | null
 	}
 	resume: { id: string }
+	redirectTo?: string;
 }) {
 	const experienceEditorFetcher = useFetcher<typeof action>()
 
@@ -151,6 +155,11 @@ export function ExperienceEditor({
 			>
 				<input name="id" type="hidden" value={experience?.id} />
 				<input name="resumeId" type="hidden" value={resume?.id} />
+				<input
+					name="redirectTo"
+					type="hidden"
+					value={redirectTo}
+				/>
 				<div className="grid grid-cols-2 gap-2">
 					<Field
 						labelProps={{
@@ -160,6 +169,7 @@ export function ExperienceEditor({
 						inputProps={{
 							...conform.input(fields.employer),
 							autoComplete: 'employer',
+							autoFocus: true,
 						}}
 						errors={fields.employer.errors}
 					/>

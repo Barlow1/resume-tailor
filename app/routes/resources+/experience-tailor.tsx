@@ -217,7 +217,7 @@ export function ExperienceTailor({
 						}}
 						disabled={loading}
 					>
-						{loading ? 'Generating...' : 'Generate Experience'}
+						{loading ? 'Tailoring...' : 'Tailor Experience'}
 					</Button>
 				</div>
 			</experienceTailorFetcher.Form>

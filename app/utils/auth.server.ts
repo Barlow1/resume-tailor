@@ -9,6 +9,7 @@ import { sessionStorage } from './session.server.ts'
 import StripeHelper from './stripe.server.ts'
 import { createSubscription } from './subscription.server.ts'
 import { createHubspotContact } from './hubspot.server.ts'
+import { env } from 'node:process'
 
 export type { User }
 
@@ -85,7 +86,7 @@ export async function requireStripeSubscription(
 			active: true,
 		},
 	})
-	if (!subscription) {
+	if (!subscription && env.NODE_ENV !== 'development') {
 		const user = await prisma.user.findUnique({
 			where: { id: userId },
 			select: { email: true, name: true, id: true },

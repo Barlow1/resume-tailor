@@ -134,7 +134,7 @@ export async function action({ request }: DataFunctionArgs) {
 		})
 	}
 	if (user?.username) {
-		throw redirect(safeRedirect(`/users/${user?.username}/jobs/new`), {
+		throw redirect(safeRedirect(`/gettingstarted`), {
 			headers: { 'Set-Cookie': newCookie },
 		})
 	}

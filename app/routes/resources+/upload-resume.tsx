@@ -3,24 +3,20 @@ import { getFieldsetConstraint, parse } from '@conform-to/zod'
 import {
 	type DataFunctionArgs,
 	json,
-	redirect,
 	unstable_createMemoryUploadHandler,
 	unstable_parseMultipartFormData,
 } from '@remix-run/node'
 import {
-	Form,
 	Outlet,
-	useActionData,
 	useFetcher,
-	useLoaderData,
-	useNavigation,
 } from '@remix-run/react'
+import React from 'react'
 import { useReducer } from 'react'
 import { z } from 'zod'
 import { ErrorList } from '~/components/forms.tsx'
 import { Button } from '~/components/ui/button.tsx'
 import * as deleteFileRoute from '~/routes/resources+/delete-file.tsx'
-import { authenticator, requireUserId } from '~/utils/auth.server.ts'
+import { requireUserId } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
 import { parseResume } from '~/utils/hrflowai.server.ts'
 import { bytesToMB, invariant } from '~/utils/misc.ts'
@@ -46,24 +42,6 @@ const ResumeFormSchema = z.object({
 	),
 	resumeId: z.string().optional(),
 })
-
-export async function loader({ request }: DataFunctionArgs) {
-	const userId = await requireUserId(request)
-	const userPromise = prisma.user.findUnique({
-		where: { id: userId },
-		select: { name: true, username: true },
-	})
-	const resumePromise = prisma.resume.findFirst({
-		where: { ownerId: userId },
-		include: { file: true },
-	})
-
-	const [user, resume] = await Promise.all([userPromise, resumePromise])
-	if (!user) {
-		throw await authenticator.logout(request, { redirectTo: '/' })
-	}
-	return json({ user, resume })
-}
 
 export async function action({ request }: DataFunctionArgs) {
 	const userId = await requireUserId(request)
@@ -107,8 +85,7 @@ export async function action({ request }: DataFunctionArgs) {
 		select: { fileId: true },
 	})
 
-	await prisma.resume.upsert({
-		select: { id: true },
+	const resume = await prisma.resume.upsert({
 		where: { id: resumeId },
 		update: {
 			title: parsedResume.parsing.experiences[0]?.title ?? NOT_FOUND,
@@ -294,7 +271,7 @@ export async function action({ request }: DataFunctionArgs) {
 			.catch(() => {}) // ignore the error, maybe it never existed?
 	}
 
-	return redirect('../edit')
+	return json({ resume, status: 'success', submission } as const)
 }
 
 type FileReducerState = {
@@ -328,15 +305,22 @@ function newFileReducer(
 	throw Error('Unknown action.')
 }
 
-export default function FileUploaderModal() {
-	const data = useLoaderData<typeof loader>()
+export default function ResumeUploader(props: {
+	resume: any
+	user: {
+		name: string | null
+		username: string
+	}
+}) {
+	const data = props
 
 	const [{ newFileSrc, newFileName, newFilSize }, dispatch] = useReducer(
 		newFileReducer,
 		{},
 	)
 	const deleteFileFetcher = useFetcher<typeof deleteFileRoute.action>()
-	const actionData = useActionData<typeof action>()
+	const uploader = useFetcher<typeof action>()
+	const actionData = uploader.data
 	const [form, { resumeFile }] = useForm({
 		id: 'profile-resume',
 		constraint: getFieldsetConstraint(ResumeFormSchema),
@@ -346,9 +330,6 @@ export default function FileUploaderModal() {
 		},
 		shouldRevalidate: 'onBlur',
 	})
-
-	const transition = useNavigation()
-
 	// useEffect(() => {
 	// 	function preventDefault(e: any) {
 	// 		e = e || event
@@ -410,14 +391,33 @@ export default function FileUploaderModal() {
 	}
 
 	const deleteProfileResumeFormId = 'delete-profile-resume'
+
+	const resume =
+		actionData && 'resume' in actionData ? actionData.resume : data.resume
+
+	React.useEffect(
+		function resetFormOnSuccess() {
+			if (
+				uploader.state === 'idle' &&
+				actionData &&
+				'resume' in actionData &&
+				actionData?.resume
+			) {
+				dispatch({ type: 'reset' })
+			}
+		},
+		[actionData, uploader.state],
+	)
+
 	return (
 		<>
 			<>
 				<h2 className="text-h2">Upload Resume</h2>
-				<Form
+				<uploader.Form
 					method="POST"
 					encType="multipart/form-data"
 					className="mt-8 flex flex-col items-center justify-center gap-10"
+					action={'/resources/upload-resume'}
 					onReset={() => dispatch({ type: 'reset' })}
 					{...form.props}
 				>
@@ -482,14 +482,14 @@ export default function FileUploaderModal() {
 						<div className="flex gap-4">
 							<Button
 								type="submit"
-								disabled={transition.state === 'submitting'}
+								disabled={uploader.state === 'submitting'}
 								status={
-									transition.state === 'submitting'
+									uploader.state === 'submitting'
 										? 'pending'
 										: actionData?.status ?? 'idle'
 								}
 							>
-								{transition.state === 'submitting'
+								{uploader.state === 'submitting'
 									? 'Parsing...'
 									: actionData?.status ?? 'Save Resume'}
 							</Button>
@@ -499,7 +499,7 @@ export default function FileUploaderModal() {
 						</div>
 					) : (
 						<div className="flex gap-4">
-							{data.resume?.fileId ? (
+							{resume?.fileId ? (
 								<Button
 									variant="secondary"
 									type="submit"
@@ -511,7 +511,7 @@ export default function FileUploaderModal() {
 						</div>
 					)}
 					<ErrorList errors={form.errors} />
-				</Form>
+				</uploader.Form>
 				<deleteFileFetcher.Form
 					method="POST"
 					id={deleteProfileResumeFormId}

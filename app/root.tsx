@@ -49,7 +49,6 @@ import { makeTimings, time } from './utils/timing.server.ts'
 import { useToast } from './utils/useToast.tsx'
 import { useOptionalUser, useUser } from './utils/user.ts'
 import rdtStylesheetUrl from 'remix-development-tools/stylesheet.css'
-import OnboardingStepper from './routes/resources+/onboarding-stepper.tsx'
 import * as gtag from './utils/gtags.client.ts'
 import clsx from 'clsx'
 import LogRocket from 'logrocket'
@@ -63,8 +62,8 @@ import {
 	Bars3Icon,
 	Cog6ToothIcon,
 	XMarkIcon,
-	ArrowUpTrayIcon,
-	PencilSquareIcon,
+	BriefcaseIcon,
+	DocumentTextIcon,
 } from '@heroicons/react/24/outline'
 import { redirect } from '@remix-run/router'
 
@@ -293,15 +292,15 @@ function App() {
 
 	const navigation = [
 		{
-			name: 'Tailor',
+			name: 'Jobs',
 			href: `/users/${user?.username}/jobs`,
-			icon: PencilSquareIcon,
+			icon: BriefcaseIcon,
 			current: path?.includes('jobs'),
 		},
 		{
 			name: 'Resume',
 			href: `/users/${user?.username}/resume/upload`,
-			icon: ArrowUpTrayIcon,
+			icon: DocumentTextIcon,
 			current: path?.includes('resume'),
 		},
 	]
@@ -556,10 +555,6 @@ function App() {
 							<div className="py-10">
 								<div className="px-4 sm:px-6 lg:px-8">
 									<Outlet />
-									<OnboardingStepper
-										firstJob={data.firstJob}
-										gettingStartedProgress={data.gettingStartedProgress}
-									/>
 								</div>
 							</div>
 						</div>

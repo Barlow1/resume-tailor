@@ -2,14 +2,13 @@ import { useForm } from '@conform-to/react'
 import { getFieldsetConstraint, parse } from '@conform-to/zod'
 import { type Skill, type Education, type Experience } from '@prisma/client'
 import { json, redirect, type DataFunctionArgs } from '@remix-run/node'
-import { Link, useFetcher } from '@remix-run/react'
+import { Link, useFetcher, useResolvedPath } from '@remix-run/react'
 import { z } from 'zod'
 import { ErrorList } from '~/components/forms.tsx'
 import { Button } from '~/components/ui/button.tsx'
 import { requireUserId } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
 import { type Stringify } from '~/utils/misc.ts'
-import { useUser } from '~/utils/user.ts'
 
 export const ResumeEditorSchema = z.object({
 	id: z.string().optional(),
@@ -22,6 +21,7 @@ export const ResumeEditorSchema = z.object({
 	// city: z.string().min(1),
 	// state: z.string().min(1),
 	// country: z.string().min(1),
+	currentRoute: z.string().min(1),
 })
 
 export async function action({ request }: DataFunctionArgs) {
@@ -43,7 +43,6 @@ export async function action({ request }: DataFunctionArgs) {
 			{ status: 400 },
 		)
 	}
-	let resume: { id: string; owner: { username: string } }
 
 	const {
 		// title,
@@ -56,6 +55,7 @@ export async function action({ request }: DataFunctionArgs) {
 		// city,
 		// state,
 		// country,
+		currentRoute,
 	} = submission.value
 
 	const data = {
@@ -93,45 +93,46 @@ export async function action({ request }: DataFunctionArgs) {
 				{ status: 404 },
 			)
 		}
-		resume = await prisma.resume.update({
+		await prisma.resume.update({
 			where: { id },
 			data,
 			select,
 		})
 	} else {
-		resume = await prisma.resume.create({ data, select })
+		await prisma.resume.create({ data, select })
 	}
-	await prisma.gettingStartedProgress.upsert({
-		create: {
-			hasSavedJob: false,
-			hasSavedResume: true,
-			hasGeneratedResume: false,
-			hasTailoredResume: false,
-			ownerId: userId,
-		},
-		update: {
-			hasSavedResume: true,
-		},
-		where: {
-			ownerId: userId,
-		},
-	})
 
 	const formAction = formData.get('action')
 
+	if (formAction === 'save') {
+		await prisma.gettingStartedProgress.upsert({
+			create: {
+				hasSavedJob: false,
+				hasSavedResume: true,
+				hasGeneratedResume: false,
+				hasTailoredResume: false,
+				ownerId: userId,
+			},
+			update: {
+				hasSavedResume: true,
+			},
+			where: {
+				ownerId: userId,
+			},
+		})
+	}
+
 	switch (formAction) {
 		case 'experience':
-			return redirect(
-				`/users/${resume.owner.username}/resume/edit/experiences/new`,
-			)
+			return redirect(`${currentRoute}/experiences/new`)
 		case 'education':
-			return redirect(
-				`/users/${resume.owner.username}/resume/edit/education/new`,
-			)
+			return redirect(`${currentRoute}/education/new`)
 		case 'skill':
-			return redirect(`/users/${resume.owner.username}/resume/edit/skills/new`)
+			return redirect(`${currentRoute}/skills/new`)
+		case 'save':
+			return redirect(`${currentRoute}`)
 		default:
-			return redirect(`/users/${resume.owner.username}/resume/edit`)
+			return redirect(`${currentRoute}`)
 	}
 }
 
@@ -156,7 +157,8 @@ export function ResumeEditor({
 	} | null
 }) {
 	const resumeEditorFetcher = useFetcher<typeof action>()
-	const user = useUser()
+
+	const currentRoute = useResolvedPath('.')
 
 	const [form] = useForm({
 		id: 'resume-editor',
@@ -187,9 +189,22 @@ export function ResumeEditor({
 			{...form.props}
 		>
 			<input name="id" type="hidden" value={resume?.id} />
+			<input name="currentRoute" type="hidden" value={currentRoute.pathname} />
 			<div className="space-y-5">
 				<div>
-					<h2 className="mb-2 text-h2">Edit Resume</h2>
+					<div className="flex justify-between">
+						<h2 className="mb-2 text-h2">Edit Resume</h2>
+						<div className="flex justify-end gap-4">
+							<Button
+								type="submit"
+								name="action"
+								value={'save'}
+								className="mt-2"
+							>
+								Save
+							</Button>
+						</div>
+					</div>
 					<p className="mb-2 text-gray-300">
 						Add the experience and skills you want to tailor
 					</p>
@@ -265,11 +280,6 @@ export function ResumeEditor({
 						name="action"
 					>
 						Add new skill +
-					</Button>
-				</div>
-				<div className="flex justify-end gap-4">
-					<Button asChild className="mt-2">
-						<Link to={`/users/${user?.username}/jobs`}>View Jobs</Link>
 					</Button>
 				</div>
 			</div>

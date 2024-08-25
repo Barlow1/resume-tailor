@@ -12,6 +12,7 @@ export const JobEditorSchema = z.object({
 	id: z.string().optional(),
 	title: z.string().min(1),
 	content: z.string().min(1),
+	redirectTo: z.string().optional(),
 })
 
 export async function action({ request }: DataFunctionArgs) {
@@ -35,7 +36,7 @@ export async function action({ request }: DataFunctionArgs) {
 	}
 	let job: { id: string; owner: { username: string } }
 
-	const { title, content, id } = submission.value
+	const { title, content, id, redirectTo } = submission.value
 
 	const data = {
 		ownerId: userId,
@@ -89,13 +90,19 @@ export async function action({ request }: DataFunctionArgs) {
 			},
 		})
 	}
-	return redirect(`/users/${job.owner.username}/jobs/${job.id}`)
+	return redirect(
+		`/users/${job.owner.username}/jobs/${job.id}${
+			redirectTo ? `/${redirectTo}` : ''
+		}`,
+	)
 }
 
 export function JobEditor({
 	job,
+	redirectTo,
 }: {
 	job?: { id: string; title: string; content: string }
+	redirectTo?: string
 }) {
 	const jobEditorFetcher = useFetcher<typeof action>()
 
@@ -124,6 +131,7 @@ export function JobEditor({
 				Copy and paste the job title & description your applying for
 			</p>
 			<input name="id" type="hidden" value={job?.id} />
+			<input name="redirectTo" type="hidden" value={redirectTo} />
 			<Field
 				labelProps={{ htmlFor: fields.title.id, children: 'Job Title' }}
 				inputProps={{

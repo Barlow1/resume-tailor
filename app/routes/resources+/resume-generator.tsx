@@ -11,6 +11,7 @@ import { Link, useFetcher } from '@remix-run/react'
 import { z } from 'zod'
 import { ErrorList } from '~/components/forms.tsx'
 import { Button } from '~/components/ui/button.tsx'
+import { Icon } from '~/components/ui/icon.tsx'
 import { requireUserId } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
 import { type Stringify } from '~/utils/misc.ts'
@@ -159,11 +160,16 @@ export function ResumeGenerator({
 			{...form.props}
 		>
 			<input name="id" type="hidden" value={resume?.id} />
-			<div className="mb-5">
-				<label className="text-accent text-body-xs">Summary</label>
-				<p>{resume?.summary}</p>
-			</div>
+			{resume?.summary && (
+				<div className="mb-5">
+					<label className="text-body-xs">Summary</label>
+					<p>{resume?.summary}</p>
+				</div>
+			)}
 			<h2 className="mb-2 text-h2">Experience</h2>
+			<p className="mb-2">
+				Select the experience you want to generate bullet points for
+			</p>
 			<div className="space-y-2">
 				{resume?.experience.length
 					? resume.experience.map(experience => (
@@ -171,7 +177,8 @@ export function ResumeGenerator({
 								<Button asChild size="sm" variant="secondary">
 									{/* eslint-disable-next-line remix-react-routes/require-valid-paths */}
 									<Link to={`experiences/${experience.id}`}>
-										Generate {experience.employer} - {experience.role}
+										{experience.employer} - {experience.role}
+										<Icon className="mx-2" name="arrow-right" />
 									</Link>
 								</Button>
 							</div>

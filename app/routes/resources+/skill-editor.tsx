@@ -12,6 +12,7 @@ export const SkillEditorSchema = z.object({
 	id: z.string().optional(),
 	name: z.string().min(1),
 	resumeId: z.string().min(1),
+	redirectTo: z.string().optional(),
 })
 
 export async function action({ request }: DataFunctionArgs) {
@@ -34,7 +35,7 @@ export async function action({ request }: DataFunctionArgs) {
 	}
 	let skill: { id: string; resume: { title: string | null; owner: User } }
 
-	const { id, name, resumeId } = submission.value
+	const { id, name, resumeId, redirectTo } = submission.value
 
 	const data = {
 		name,
@@ -72,12 +73,14 @@ export async function action({ request }: DataFunctionArgs) {
 	} else {
 		skill = await prisma.skill.create({ data, select })
 	}
-	return redirect(`/users/${skill.resume.owner.username}/resume/edit`)
+	console.log('redirectTo', redirectTo)
+	return redirect(redirectTo || `/users/${skill.resume.owner.username}/resume/edit`)
 }
 
 export function SkillEditor({
 	skill,
 	resume,
+	redirectTo,
 }: {
 	skill?: {
 		id: string
@@ -86,6 +89,7 @@ export function SkillEditor({
 	resume: {
 		id: string
 	}
+	redirectTo?: string;
 }) {
 	const skillEditorFetcher = useFetcher<typeof action>()
 
@@ -114,6 +118,7 @@ export function SkillEditor({
 			>
 				<input name="id" type="hidden" value={skill?.id} />
 				<input name="resumeId" type="hidden" value={resume.id} />
+				<input name="redirectTo" type="hidden" value={redirectTo} />
 				<div>
 					<Field
 						labelProps={{
@@ -123,6 +128,7 @@ export function SkillEditor({
 						inputProps={{
 							...conform.input(fields.name),
 							autoComplete: 'name',
+							autoFocus: true,
 						}}
 						errors={fields.name.errors}
 					/>
