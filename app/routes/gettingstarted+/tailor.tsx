@@ -80,7 +80,7 @@ export default function GettingStartedLayout() {
 
 	return (
 		<>
-			<div className="w-full">
+			<div className="w-full pb-20">
 				<Stepper steps={steps} />
 				<Outlet />
 			</div>
