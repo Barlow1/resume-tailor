@@ -78,7 +78,7 @@ async function sendUsernameEmail({
 
 	await sendEmail({
 		to: user.email,
-		subject: `Resume Tailor Username Reset`,
+		subject: `Resume Tailor Username`,
 		react: (
 			<ForgotUsernameEmail username={user.username} />
 		),
