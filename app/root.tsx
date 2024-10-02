@@ -259,6 +259,7 @@ const hideNavPages = [
 	'routes/_auth+/onboarding',
 	'routes/_auth+/verify',
 	'routes/_auth+/reset-password',
+	'routes/_auth+/forgot-username/index',
 ]
 
 function App() {

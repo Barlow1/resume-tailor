@@ -109,7 +109,10 @@ export async function action({ request }: DataFunctionArgs) {
 			responseInit,
 		)
 	} else if (user?.username) {
-		throw redirect(safeRedirect(`/users/${user?.username}/jobs/new`), responseInit)
+		throw redirect(
+			safeRedirect(`/users/${user?.username}/jobs/new`),
+			responseInit,
+		)
 	} else if (!redirectTo) {
 		return json({ status: 'success', submission } as const, responseInit)
 	} else {
@@ -164,6 +167,15 @@ export function InlineLogin({
 								}}
 								errors={fields.username.errors}
 							/>
+
+							<div className="flex justify-end">
+								<Link
+									to="/forgot-username"
+									className="text-body-xs font-semibold"
+								>
+									Forgot username?
+								</Link>
+							</div>
 
 							<Field
 								labelProps={{ children: 'Password' }}
