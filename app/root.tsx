@@ -290,6 +290,9 @@ function App() {
 			if (user.name) {
 				Crisp.user.setNickname(user.name)
 			}
+			if (user.username) {
+				Crisp.session.setData({ username: user.username })
+			}
 		}
 	}, [user])
 
