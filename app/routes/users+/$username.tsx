@@ -1,12 +1,21 @@
 import { json, type DataFunctionArgs, type MetaFunction } from '@remix-run/node'
-import { Form, Link, useLoaderData, useLocation, useSubmit } from '@remix-run/react'
+import {
+	Form,
+	Link,
+	useFetcher,
+	useLoaderData,
+	useLocation,
+	useSubmit,
+} from '@remix-run/react'
 import { useRef } from 'react'
 import { GeneralErrorBoundary } from '~/components/error-boundary.tsx'
 import { Spacer } from '~/components/spacer.tsx'
 import { Button } from '~/components/ui/button.tsx'
 import { prisma } from '~/utils/db.server.ts'
-import { getUserImgSrc, invariant } from '~/utils/misc.ts'
+import { getUserImgSrc, invariant, useDoubleCheck } from '~/utils/misc.ts'
 import { useOptionalUser } from '~/utils/user.ts'
+import * as deleteProfileRoute from '~/routes/resources+/delete-profile.tsx'
+import { Icon } from '~/components/ui/icon.tsx'
 
 export async function loader({ params }: DataFunctionArgs) {
 	invariant(params.username, 'Missing username')
@@ -36,11 +45,17 @@ export default function UsernameIndex() {
 	const submit = useSubmit()
 	const path = useLocation().pathname
 
+	const doubleCheckDeleteProfile = useDoubleCheck()
+
+	const deleteProfileFormId = 'delete-profile-form'
+
+	const deleteProfileFetcher = useFetcher<typeof deleteProfileRoute.action>()
+
 	return (
-		<div className="md:container mx-auto mb-48 mt-36 flex flex-col items-center justify-center">
+		<div className="mx-auto mb-48 mt-36 flex flex-col items-center justify-center md:container">
 			<Spacer size="4xs" />
 
-			<div className="bg-night-500 md:container mx-auto flex flex-col items-center rounded-3xl p-12">
+			<div className="bg-night-500 mx-auto flex flex-col items-center rounded-3xl p-12 md:container">
 				<div className="relative w-52">
 					<div className="absolute -top-40">
 						<div className="relative">
@@ -93,6 +108,21 @@ export default function UsernameIndex() {
 										Edit resume
 									</Link>
 								</Button>
+								<Button variant={'destructive'} asChild>
+									<Button
+										variant="destructive"
+										{...doubleCheckDeleteProfile.getButtonProps({
+											type: 'submit',
+											form: deleteProfileFormId,
+										})}
+									>
+										<Icon name="trash">
+											{doubleCheckDeleteProfile.doubleCheck
+												? 'Are you sure?'
+												: 'Delete Profile'}
+										</Icon>
+									</Button>
+								</Button>
 							</>
 						) : (
 							<Button asChild>
@@ -104,6 +134,11 @@ export default function UsernameIndex() {
 					</div>
 				</div>
 			</div>
+			<deleteProfileFetcher.Form
+				method="POST"
+				id={deleteProfileFormId}
+				action={deleteProfileRoute.ROUTE_PATH}
+			></deleteProfileFetcher.Form>
 		</div>
 	)
 }
