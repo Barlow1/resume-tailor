@@ -1,10 +1,10 @@
 // app/routes/login.tsx
 import { useFetcher } from '@remix-run/react'
-import { SocialsProvider } from 'remix-auth-socials'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faGithub, faLinkedin } from '@fortawesome/free-brands-svg-icons'
 import React from 'react'
 import clsx from 'clsx'
+import { SocialsProvider } from '~/utils/socials-provider.ts'
 
 interface SocialButtonProps {
 	provider: SocialsProvider

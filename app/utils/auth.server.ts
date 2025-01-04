@@ -10,13 +10,11 @@ import StripeHelper from './stripe.server.ts'
 import { createSubscription } from './subscription.server.ts'
 import { createHubspotContact } from './hubspot.server.ts'
 import { env } from 'node:process'
-import {
-	GoogleStrategy,
-	LinkedinStrategy,
-	SocialsProvider,
-} from 'remix-auth-socials'
+import { GoogleStrategy } from 'remix-auth-google'
+import { LinkedinStrategy } from 'remix-auth-linkedin'
 import { GitHubStrategy } from 'remix-auth-github'
 import { webcrypto } from 'node:crypto'
+import { SocialsProvider } from '~/utils/socials-provider.ts'
 export type { User }
 
 // Add this polyfill if crypto is not defined
