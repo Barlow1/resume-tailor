@@ -1,4 +1,4 @@
-import { type Password, type User } from '@prisma/client'
+import { PrismaClient, type Password, type User } from '@prisma/client'
 import { redirect } from '@remix-run/node'
 import bcrypt from 'bcryptjs'
 import { Authenticator } from 'remix-auth'
@@ -10,14 +10,27 @@ import StripeHelper from './stripe.server.ts'
 import { createSubscription } from './subscription.server.ts'
 import { createHubspotContact } from './hubspot.server.ts'
 import { env } from 'node:process'
-
+import {
+	GoogleStrategy,
+	LinkedinStrategy,
+	SocialsProvider,
+} from 'remix-auth-socials'
+import { GitHubStrategy } from 'remix-auth-github'
+import { webcrypto } from 'node:crypto'
 export type { User }
+
+// Add this polyfill if crypto is not defined
+if (!global.crypto) {
+	global.crypto = webcrypto as Crypto
+}
 
 export const authenticator = new Authenticator<string>(sessionStorage, {
 	sessionKey: 'sessionId',
 })
 
 const SESSION_EXPIRATION_TIME = 1000 * 60 * 60 * 24 * 30
+
+const getCallback = (provider: SocialsProvider) => `/auth/${provider}/callback`
 
 authenticator.use(
 	new FormStrategy(async ({ form }) => {
@@ -45,6 +58,94 @@ authenticator.use(
 		return session.id
 	}),
 	FormStrategy.name,
+)
+
+authenticator.use(
+	new GoogleStrategy(
+		{
+			clientID: process.env.GOOGLE_CLIENT_ID ?? '',
+			clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
+			callbackURL: getCallback(SocialsProvider.GOOGLE),
+		},
+		async ({ profile, context }) => {
+			const baseUrl = context?.baseUrl as string
+			const values = {
+				name: profile._json.name,
+				email: profile._json.email,
+				username: profile.displayName,
+				password: profile._json.email,
+			}
+
+			return oauth({
+				values,
+				request: {
+					headers: new Headers({
+						'X-Forwarded-Host': baseUrl,
+					}),
+				} as Request,
+			})
+		},
+	),
+)
+
+authenticator.use(
+	new GitHubStrategy(
+		{
+			clientID: process.env.GITHUB_CLIENT_ID ?? '',
+			clientSecret: process.env.GITHUB_CLIENT_SECRET ?? '',
+			callbackURL: getCallback(SocialsProvider.GITHUB),
+		},
+		async ({ profile, context }) => {
+			const baseUrl = context?.baseUrl as string
+
+			const values = {
+				name: profile._json.name,
+				email: profile._json.email,
+				username: profile.displayName,
+				password: profile._json.email,
+			}
+
+			return oauth({
+				values,
+				request: {
+					headers: new Headers({
+						'X-Forwarded-Host': baseUrl,
+					}),
+				} as Request,
+			})
+		},
+	),
+)
+
+authenticator.use(
+	new LinkedinStrategy(
+		{
+			clientID: process.env.LINKEDIN_CLIENT_ID ?? '',
+			clientSecret: process.env.LINKEDIN_CLIENT_SECRET ?? '',
+			// LinkedIn is expecting a full URL here, not a relative path
+			// see: https://learn.microsoft.com/en-us/linkedin/shared/authentication/authorization-code-flow?tabs=HTTPS1#step-1-configure-your-application
+			callbackURL: getCallback(SocialsProvider.LINKEDIN),
+		},
+		async ({ accessToken, refreshToken, extraParams, profile, context }) => {
+			const baseUrl = context?.baseUrl as string
+
+			const values = {
+				name: profile._json.name,
+				email: profile._json.email,
+				username: profile.displayName,
+				password: profile._json.email,
+			}
+
+			return oauth({
+				values,
+				request: {
+					headers: new Headers({
+						'X-Forwarded-Host': baseUrl,
+					}),
+				} as Request,
+			})
+		},
+	),
 )
 
 export async function requireUserId(
@@ -78,7 +179,7 @@ export async function requireUserId(
 export async function requireStripeSubscription(
 	userId: string,
 	successUrl: string,
-	cancelUrl: string
+	cancelUrl: string,
 ) {
 	const subscription = await prisma.subscription.findFirst({
 		where: {
@@ -118,14 +219,14 @@ export async function requireStripeSubscription(
 		const paymentLink = await stripe.createCheckoutSessionLink({
 			priceId: process.env.STRIPE_PRICE_ID as string,
 			customer: customer,
-			successUrl:successUrl,
+			successUrl: successUrl,
 			subscriptionId: subscription.id,
 			cancelUrl: cancelUrl,
-		});
+		})
 
 		throw redirect(paymentLink.url ?? '/login')
 	}
-	return subscription;
+	return subscription
 }
 
 export async function getUserId(request: Request) {
@@ -198,14 +299,14 @@ export async function signup({
 				},
 			},
 		},
-		select: { id: true, expirationDate: true },
+		include: { user: true },
 	})
 
-	let firstName = '';
-	let lastName = '';
+	let firstName = ''
+	let lastName = ''
 	if (name) {
-		firstName = name.split(' ')[0];
-		lastName = name.split(' ')[1];
+		firstName = name.split(' ')[0]
+		lastName = name.split(' ')[1]
 	}
 
 	await createHubspotContact({ email, firstName, lastName })
@@ -237,4 +338,53 @@ export async function verifyUserPassword(
 	}
 
 	return { id: userWithPassword.id }
+}
+
+export const oauth = async ({
+	values,
+	request,
+}: {
+	values: {
+		email: string
+		username: string
+		password: string
+		name: string
+	}
+	request: Request
+}) => {
+	const prisma = new PrismaClient()
+	await prisma
+		.$connect()
+		.catch(err => console.error('Failed to connect to db', err))
+	let profile: User | undefined
+
+	const foundUser = await prisma.user.findUnique({
+		where: {
+			email: values.email,
+		},
+	})
+
+	if (foundUser) {
+		profile = foundUser
+	} else {
+		const encrypted = await getPasswordHash(values.password)
+		const createdUserResponse = await signup({
+			email: values.email,
+			username: values.username,
+			name: values.name,
+			password: encrypted,
+		})
+		const createdUser = createdUserResponse.user
+		profile = createdUser
+	}
+
+	const session = await prisma.session.create({
+		data: {
+			expirationDate: new Date(Date.now() + SESSION_EXPIRATION_TIME),
+			userId: profile.id,
+		},
+		select: { id: true },
+	})
+
+	return session.id
 }

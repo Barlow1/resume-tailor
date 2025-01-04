@@ -15,6 +15,7 @@ import { commitSession, getSession } from '~/utils/session.server.ts'
 import { passwordSchema, usernameSchema } from '~/utils/user-validation.ts'
 import { checkboxSchema } from '~/utils/zod-extensions.ts'
 import { type VerificationTypes, Verify } from './verify.tsx'
+import SocialLogin from '~/components/social-login.tsx'
 
 const ROUTE_PATH = '/resources/login'
 export const unverifiedSessionKey = 'unverified-sessionId'
@@ -228,6 +229,7 @@ export function InlineLogin({
 								</StatusButton>
 							</div>
 						</loginFetcher.Form>
+						<SocialLogin />
 						<div className="flex items-center justify-center gap-2 pt-6">
 							<span className="text-muted-foreground">New here?</span>
 							<Link to="/signup">Create an account</Link>
