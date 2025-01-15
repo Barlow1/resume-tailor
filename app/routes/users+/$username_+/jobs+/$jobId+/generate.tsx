@@ -3,7 +3,10 @@ import { Outlet } from '@remix-run/react'
 import { GeneralErrorBoundary } from '~/components/error-boundary.tsx'
 import { z } from 'zod'
 import { prisma } from '~/utils/db.server.ts'
-import { requireStripeSubscription, requireUserId } from '~/utils/auth.server.ts'
+import {
+	requireStripeSubscription,
+	requireUserId,
+} from '~/utils/auth.server.ts'
 
 export const JobEditorSchema = z.object({
 	experience: z.string().min(1),
@@ -12,9 +15,7 @@ export const JobEditorSchema = z.object({
 })
 
 export const handle = {
-	breadcrumb: (data: FromLoader<typeof loader>) => (
-		'Generate'
-	),
+	breadcrumb: (data: FromLoader<typeof loader>) => 'Generate',
 }
 
 export async function loader({ params, request }: DataFunctionArgs) {
@@ -28,18 +29,17 @@ export async function loader({ params, request }: DataFunctionArgs) {
 	)
 
 	if (gettingStartedProgress && gettingStartedProgress?.generateCount > 1) {
-		const successUrl = request.url;
-		const cancelUrl = request.url.split('/generate')[0];
-		await requireStripeSubscription(userId, successUrl, cancelUrl)
+		const successUrl = request.url
+		const cancelUrl = request.url.split('/generate')[0]
+		await requireStripeSubscription({ userId, successUrl, cancelUrl })
 	}
 
 	return json({ jobId: params.jobId })
 }
 
 export default function ResumeTailorRoute() {
-
 	return (
-		<div className="md:container m-auto mb-36 max-w-3xl">
+		<div className="m-auto mb-36 max-w-3xl md:container">
 			<main>
 				<Outlet />
 			</main>

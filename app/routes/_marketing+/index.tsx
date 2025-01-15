@@ -29,8 +29,8 @@ export default function Index() {
 						</Link>
 					</h1>
 					<p className="mt-16 max-w-5xl text-3xl text-white">
-						Tired of tailoring your resume to each job description? Upload
-						<br /> your resume and let AI tailor your resume for you.
+						Tired of tailoring your resume to each job description?
+						<br /> Let AI tailor your resume for you.
 					</p>
 					<div className="flex justify-center p-10">
 						<Button
@@ -39,7 +39,7 @@ export default function Index() {
 							variant="primary"
 							asChild
 						>
-							<Link to="/signup">Upload a Resume</Link>
+							<Link to="/builder">Build a Resume</Link>
 						</Button>
 					</div>
 					<div className="flex flex-col space-y-24 pt-32">

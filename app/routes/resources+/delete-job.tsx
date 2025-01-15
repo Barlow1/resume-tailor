@@ -49,7 +49,7 @@ export async function action({ request }: DataFunctionArgs) {
 		where: { id: job.id },
 	})
 
-	return redirect(`/users/${job.owner.username}/jobs`)
+	return redirect(`/jobs`)
 }
 
 export function DeleteJob({ id }: { id: string }) {

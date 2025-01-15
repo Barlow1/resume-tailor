@@ -71,6 +71,7 @@ model User {
   Session                Session[]
   gettingStartedProgress GettingStartedProgress?
   subscriptions          Subscription[]
+  builderResumes           BuilderResume[]
 }
 
 model Password {
@@ -123,8 +124,9 @@ model Job {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  ownerId String
+  builderResumes BuilderResume[]
+  owner   User?   @relation(fields: [ownerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  ownerId String?
 }
 
 model Experience {
@@ -219,4 +221,96 @@ model Subscription {
   stripeProductId      String
   stripePriceId        String
   name                 String
+}
+
+model BuilderResume {
+  id          String   @id @default(cuid())
+  userId      String?
+  name        String?
+  role        String?
+  email       String?
+  phone       String?
+  location    String?
+  website     String?
+  about       String?
+  image       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  jobId       String?
+  nameColor   String?
+  job         Job?     @relation(fields: [jobId], references: [id])
+  user        User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  experiences BuilderExperience[]
+  education   BuilderEducation[]
+  skills      BuilderSkill[]
+  hobbies     BuilderHobby[]
+  headers     BuilderHeaders?
+
+  @@index([userId])
+}
+
+model BuilderExperience {
+  id          String   @id @default(cuid())
+  role        String?
+  company     String?
+  startDate   String?
+  endDate     String?
+  resumeId    String
+  resume      BuilderResume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  descriptions BuilderExperienceDescription[]
+
+  @@index([resumeId])
+}
+
+model BuilderExperienceDescription {
+  id          String   @id @default(cuid())
+  content     String?
+  order       Int
+  experienceId String
+  experience  BuilderExperience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+
+  @@index([experienceId])
+}
+
+model BuilderEducation {
+  id          String   @id @default(cuid())
+  school      String?
+  degree      String?
+  startDate   String?
+  endDate     String?
+  description String?
+  resumeId    String
+  resume      BuilderResume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@index([resumeId])
+}
+
+model BuilderSkill {
+  id       String  @id @default(cuid())
+  name     String?
+  resumeId String
+  resume   BuilderResume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@index([resumeId])
+}
+
+model BuilderHobby {
+  id       String  @id @default(cuid())
+  name     String?
+  resumeId String
+  resume   BuilderResume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@index([resumeId])
+}
+
+model BuilderHeaders {
+  id              String  @id @default(cuid())
+  experienceHeader String?
+  skillsHeader    String?
+  hobbiesHeader   String?
+  educationHeader String?
+  aboutHeader     String?
+  detailsHeader   String?
+  resumeId        String  @unique
+  resume          BuilderResume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
 }

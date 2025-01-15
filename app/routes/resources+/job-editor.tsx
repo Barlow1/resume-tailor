@@ -34,7 +34,7 @@ export async function action({ request }: DataFunctionArgs) {
 			{ status: 400 },
 		)
 	}
-	let job: { id: string; owner: { username: string } }
+	let job: { id: string; owner: { username: string | null } | null }
 
 	const { title, content, id, redirectTo } = submission.value
 
@@ -89,6 +89,12 @@ export async function action({ request }: DataFunctionArgs) {
 				ownerId: userId,
 			},
 		})
+	}
+	if (!job.owner) {
+		return json({
+			status: 'error',
+			submission,
+		} as const, { status: 404 })
 	}
 	return redirect(
 		`/users/${job.owner.username}/jobs/${job.id}${

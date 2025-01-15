@@ -9,7 +9,6 @@ import { sessionStorage } from './session.server.ts'
 import StripeHelper from './stripe.server.ts'
 import { createSubscription } from './subscription.server.ts'
 import { createHubspotContact } from './hubspot.server.ts'
-import { env } from 'node:process'
 import { GoogleStrategy } from 'remix-auth-google'
 import { LinkedinStrategy } from 'remix-auth-linkedin'
 import { GitHubStrategy } from 'remix-auth-github'
@@ -174,10 +173,30 @@ export async function requireUserId(
 	return session.userId
 }
 
+export async function getStripeSubscription(userId: string) {
+	const subscription = await prisma.subscription.findFirst({
+		where: {
+			ownerId: userId,
+			active: true,
+		},
+	})
+	return subscription
+}
+
 export async function requireStripeSubscription(
-	userId: string,
-	successUrl: string,
-	cancelUrl: string,
+	{
+		userId,
+		successUrl,
+		cancelUrl,
+		loginUrl = '/login',
+		frequency,
+	}: {
+		userId: string,
+		successUrl: string,
+		cancelUrl: string,
+		loginUrl?: string,
+		frequency?: string,
+	}
 ) {
 	const subscription = await prisma.subscription.findFirst({
 		where: {
@@ -185,14 +204,14 @@ export async function requireStripeSubscription(
 			active: true,
 		},
 	})
-	if (!subscription && env.NODE_ENV !== 'development') {
+	if (!subscription) {
 		const user = await prisma.user.findUnique({
 			where: { id: userId },
 			select: { email: true, name: true, id: true },
 		})
 
 		if (!user) {
-			throw redirect('/login')
+			throw redirect(loginUrl)
 		}
 
 		const stripe = new StripeHelper()
@@ -204,18 +223,28 @@ export async function requireStripeSubscription(
 			name: user.name ?? 'Anonymous User',
 		})
 
+		let stripePriceId: string
+		const stripeProductId = process.env.STRIPE_PRODUCT_ID as string
+		if (frequency === 'monthly') {
+			stripePriceId = process.env.STRIPE_PRICE_ID_MONTHLY as string
+		} else if (frequency === 'weekly') {
+			stripePriceId = process.env.STRIPE_PRICE_ID_WEEKLY as string
+		}
+		else {
+			stripePriceId = process.env.STRIPE_PRICE_ID_MONTHLY as string
+		}
 		// create subscription
 		const subscription = await createSubscription({
 			userId,
 			stripeCustomerId: customer,
 			name: 'Resume Tailor Pro',
-			stripeProductId: process.env.STRIPE_PRODUCT_ID as string,
-			stripePriceId: process.env.STRIPE_PRICE_ID as string,
+			stripeProductId,
+			stripePriceId,
 		})
 
 		// create a checkout link
 		const paymentLink = await stripe.createCheckoutSessionLink({
-			priceId: process.env.STRIPE_PRICE_ID as string,
+			priceId: stripePriceId,
 			customer: customer,
 			successUrl: successUrl,
 			subscriptionId: subscription.id,

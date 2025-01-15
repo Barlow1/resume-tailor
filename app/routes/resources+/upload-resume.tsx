@@ -10,8 +10,7 @@ import {
 	Outlet,
 	useFetcher,
 } from '@remix-run/react'
-import React from 'react'
-import { useReducer } from 'react'
+import React, { useReducer } from 'react'
 import { z } from 'zod'
 import { ErrorList } from '~/components/forms.tsx'
 import { Button } from '~/components/ui/button.tsx'

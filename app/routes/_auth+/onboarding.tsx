@@ -134,11 +134,20 @@ export async function action({ request }: DataFunctionArgs) {
 		})
 	}
 	if (user?.username) {
-		throw redirect(safeRedirect(`/gettingstarted`), {
-			headers: { 'Set-Cookie': newCookie },
-		})
+		const redirectTo = cookieSession.get('redirectTo')
+		if (redirectTo) {
+			cookieSession.unset('redirectTo');
+			return redirectWithConfetti(safeRedirect(redirectTo, '/builder'), {
+				headers: { 'Set-Cookie': newCookie },
+			})
+		} else {
+			return redirectWithConfetti(safeRedirect(`/builder`), {
+				headers: { 'Set-Cookie': newCookie },
+			})
+		}
 	}
-	return redirectWithConfetti(safeRedirect(redirectTo, '/'), {
+
+	return redirectWithConfetti(safeRedirect(redirectTo, '/builder'), {
 		headers: { 'Set-Cookie': newCookie },
 	})
 }

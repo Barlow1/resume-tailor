@@ -80,6 +80,12 @@
 
 		input[type=month] {
 			color-scheme: dark;
+		}	
+		div {
+			color-scheme: dark;
+		}
+		textarea {
+			color-scheme: dark;
 		}
 	}
 }
@@ -91,4 +97,17 @@
 	body {
 		@apply bg-background text-foreground;
 	}
+	img {
+		@apply inline-block;
+	  }
+}
+
+[contenteditable=true]:empty:before {
+    content: attr(placeholder);
+    display: block;
+}
+
+.animate-rainbow-text {
+  @apply bg-rainbow-text bg-clip-text text-fill-transparent;
+  background-size: 200% auto;
 }

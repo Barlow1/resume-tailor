@@ -1,0 +1,299 @@
+import { useState, useEffect } from 'react'
+import { Button } from '~/components/ui/button.tsx'
+import { CheckIcon } from '@heroicons/react/24/outline'
+import { cn } from '~/utils/misc.ts'
+import { type GettingStartedProgress, type Subscription } from '@prisma/client'
+import { SlideoutModal } from '~/components/ui/slideout-modal.tsx'
+import {
+	type BuilderExperience,
+	type BuilderJob,
+} from '~/utils/builder-resume.server.ts'
+import { type Jsonify } from '@remix-run/server-runtime/dist/jsonify.js'
+import { useNavigate } from '@remix-run/react'
+
+interface AIAssistantModalProps {
+	isOpen: boolean
+	onClose: () => void
+	onUpdate: (content: string) => void
+	onMultipleUpdate: (contents: string[]) => void
+	content?: string
+	experience?: BuilderExperience
+	job?: BuilderJob | null | undefined
+	subscription: Subscription | null
+	gettingStartedProgress: Jsonify<GettingStartedProgress> | null
+	setShowSubscribeModal: (show: boolean) => void
+}
+
+export function AIAssistantModal({
+	isOpen,
+	onClose,
+	onUpdate,
+	onMultipleUpdate,
+	content,
+	experience,
+	job,
+	subscription,
+	gettingStartedProgress,
+	setShowSubscribeModal,
+}: AIAssistantModalProps) {
+	const [activeTab, setActiveTab] = useState<'tailor' | 'generate'>('tailor')
+	const [rawContent, setRawContent] = useState('')
+	const [isLoading, setIsLoading] = useState(false)
+	const [selectedItems, setSelectedItems] = useState<number[]>([])
+	const navigate = useNavigate()
+
+	useEffect(() => {
+		if (!isOpen) {
+			setRawContent('')
+			setSelectedItems([])
+			setIsLoading(false)
+		}
+	}, [isOpen])
+
+	const resetState = () => {
+		setRawContent('')
+		setSelectedItems([])
+		setIsLoading(false)
+	}
+
+	const parsedOptions = rawContent
+		? (() => {
+				try {
+					return JSON.parse(rawContent) as string[]
+				} catch {
+					return []
+				}
+		  })()
+		: ([] as string[])
+
+	const handleCompletion = async (type: 'tailor' | 'generate') => {
+		if (!subscription) {
+			const MAX_AI_TRIAL_COUNT = 4
+			const currentCount =
+				(gettingStartedProgress?.generateCount ?? 0) +
+				(gettingStartedProgress?.tailorCount ?? 0)
+			if (currentCount >= MAX_AI_TRIAL_COUNT) {
+				setShowSubscribeModal(true)
+				return
+			}
+		}
+
+		setIsLoading(true)
+		setRawContent('')
+		setSelectedItems([])
+
+		const endpoint = type === 'tailor' ? 'experience' : 'generated-experience'
+
+		const sse = new EventSource(
+			`/resources/builder-completions?${new URLSearchParams({
+				jobTitle: job?.title ?? '',
+				jobDescription: job?.content ?? '',
+				currentJobTitle: experience?.role ?? '',
+				currentJobCompany: experience?.company ?? '',
+				...(activeTab === 'tailor' ? { experience: content } : {}),
+				type: endpoint,
+			})}`,
+		)
+
+		sse.addEventListener('redirect', event => {
+			const { url } = JSON.parse(event.data) as { url: string }
+			navigate(url)
+			sse.close()
+		})
+
+		sse.addEventListener('message', event => {
+			setRawContent(
+				prevContent => prevContent + event.data.replace(/__NEWLINE__/g, '\n'),
+			)
+		})
+
+		sse.addEventListener('error', event => {
+			setIsLoading(false)
+			console.log('error: ', event)
+			sse.close()
+		})
+
+		sse.addEventListener('done', () => {
+			setIsLoading(false)
+			sse.close()
+		})
+	}
+
+	const handleItemSelect = (index: number) => {
+		if (activeTab === 'tailor') {
+			setSelectedItems([index])
+		} else {
+			setSelectedItems(prev =>
+				prev.includes(index) ? prev.filter(i => i !== index) : [...prev, index],
+			)
+		}
+	}
+
+	const handleSave = () => {
+		const selectedContent = selectedItems
+			.sort((a, b) => a - b)
+			.map(index => parsedOptions[index])
+
+		if (activeTab === 'tailor') {
+			onUpdate(selectedContent[0])
+		} else {
+			onMultipleUpdate(selectedContent)
+		}
+
+		resetState()
+		onClose()
+	}
+
+	const handleClose = () => {
+		resetState()
+		onClose()
+	}
+
+	return (
+		<SlideoutModal
+			isOpen={isOpen}
+			onClose={handleClose}
+			title={
+				<h2
+					className={cn(
+						'text-xl font-semibold text-foreground transition-colors',
+						isLoading && 'animate-rainbow-text',
+					)}
+				>
+					AI Assistant
+				</h2>
+			}
+		>
+			<div className="border-b border-border">
+				<div className="flex px-4">
+					<button
+						className={`px-4 py-3 ${
+							activeTab === 'tailor'
+								? 'border-b-2 border-primary text-primary'
+								: 'text-muted-foreground'
+						}`}
+						onClick={() => {
+							setActiveTab('tailor')
+							setSelectedItems([])
+							resetState()
+						}}
+					>
+						Tailor
+					</button>
+					<button
+						className={`px-4 py-3 ${
+							activeTab === 'generate'
+								? 'border-b-2 border-primary text-primary'
+								: 'text-muted-foreground'
+						}`}
+						onClick={() => {
+							setActiveTab('generate')
+							setSelectedItems([])
+							resetState()
+						}}
+					>
+						Generate
+					</button>
+				</div>
+			</div>
+
+			<div className="flex flex-1 flex-col overflow-hidden">
+				<div className="flex-shrink-0 space-y-4 p-4">
+					<h3 className="font-medium text-foreground">Current Achievement</h3>
+					<div className="rounded-lg border border-border bg-muted p-4">
+						<p className="text-muted-foreground">{content}</p>
+					</div>
+				</div>
+
+				<div className="flex-1 space-y-4 overflow-y-auto p-4">
+					<div className="flex items-center justify-between">
+						<h3 className="font-medium text-foreground">
+							{activeTab === 'tailor'
+								? 'Tailored Options'
+								: 'Generated Options'}
+						</h3>
+						{selectedItems.length > 0 && (
+							<span className="text-sm text-muted-foreground">
+								{selectedItems.length} selected
+							</span>
+						)}
+					</div>
+
+					<div className="space-y-4">
+						{!job ? (
+							<div className="rounded-lg border border-border p-4">
+								<p className="text-sm text-muted-foreground">
+									Please select a job to get AI-powered suggestions.
+								</p>
+							</div>
+						) : (
+							<>
+								<div className="rounded-lg border border-border p-4">
+									<Button
+										onClick={() => handleCompletion(activeTab)}
+										disabled={isLoading}
+										className={cn(
+											'w-full',
+											isLoading && 'animate-rainbow-text font-semibold',
+										)}
+									>
+										{isLoading
+											? 'Loading...'
+											: activeTab === 'tailor'
+											? 'Tailor Achievement'
+											: 'Generate Achievements'}
+									</Button>
+								</div>
+								<div className="space-y-2">
+									{parsedOptions.length > 0 ? (
+										<div className="space-y-2">
+											{parsedOptions.map((option: string, index: number) => (
+												<div
+													key={index}
+													onClick={() => handleItemSelect(index)}
+													className={`group relative cursor-pointer rounded-lg border p-4 transition-all hover:border-primary ${
+														selectedItems.includes(index)
+															? 'border-primary bg-accent'
+															: 'border-border'
+													}`}
+												>
+													<p className="pr-8 text-muted-foreground">{option}</p>
+													{selectedItems.includes(index) && (
+														<CheckIcon className="absolute right-2 top-2 h-5 w-5 text-primary" />
+													)}
+												</div>
+											))}
+										</div>
+									) : (
+										<p className="text-sm text-muted-foreground">
+											Click "
+											{activeTab === 'tailor'
+												? 'Tailor Achievement'
+												: 'Generate Achievements'}
+											" to get AI-powered suggestions...
+										</p>
+									)}
+								</div>
+							</>
+						)}
+					</div>
+				</div>
+
+				<div className="flex-shrink-0 border-t border-border bg-muted p-4">
+					<div className="flex justify-start gap-2">
+						<Button variant="secondary" onClick={handleClose}>
+							Cancel
+						</Button>
+						{selectedItems.length > 0 && (
+							<Button onClick={handleSave}>
+								{activeTab === 'tailor'
+									? 'Use Selected'
+									: `Use ${selectedItems.length} Selected`}
+							</Button>
+						)}
+					</div>
+				</div>
+			</div>
+		</SlideoutModal>
+	)
+}

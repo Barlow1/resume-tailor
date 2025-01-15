@@ -229,7 +229,7 @@ export function InlineLogin({
 								</StatusButton>
 							</div>
 						</loginFetcher.Form>
-						<SocialLogin />
+						<SocialLogin redirectTo={redirectTo} />
 						<div className="flex items-center justify-center gap-2 pt-6">
 							<span className="text-muted-foreground">New here?</span>
 							<Link to="/signup">Create an account</Link>

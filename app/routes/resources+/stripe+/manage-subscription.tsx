@@ -11,11 +11,11 @@ export async function action(args: DataFunctionArgs) {
 	const baseUrl = new URL(args.request.url).origin
 	const returnUrl = `${baseUrl}${redirectTo}`
 	const userId = await requireUserId(args.request, { redirectTo })
-	const subscription = await requireStripeSubscription(
+	const subscription = await requireStripeSubscription({
 		userId,
-		returnUrl,
-		returnUrl,
-	)
+		successUrl: returnUrl,
+		cancelUrl: returnUrl,
+	})
 
 	const stripe = new StripeHelper()
 

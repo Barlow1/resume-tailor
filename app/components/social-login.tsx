@@ -10,6 +10,7 @@ interface SocialButtonProps {
 	provider: SocialsProvider
 	label: string
 	icon: JSX.Element
+	redirectTo?: string
 }
 
 function GoogleIcon(props: React.PropsWithChildren) {
@@ -76,10 +77,12 @@ function SocialButton({
 	provider,
 	label,
 	icon,
+	redirectTo,
 }: React.PropsWithChildren<SocialButtonProps>) {
 	const fetcher = useFetcher()
 	return (
 		<fetcher.Form action={`/auth/${provider}`} method="post">
+			<input type="hidden" name="redirectTo" value={redirectTo} />
 			<button
 				className={clsx(
 					'w-full justify-center drop-shadow-md',
@@ -95,22 +98,25 @@ function SocialButton({
 	)
 }
 
-export default function SocialLogin() {
+export default function SocialLogin({ redirectTo }: { redirectTo?: string }) {
 	return (
 		<div>
 			<Divider>Or continue with</Divider>
 			<div className="grid grid-cols-1 gap-4 md:grid-cols-3">
 				<SocialButton
+					redirectTo={redirectTo}
 					provider={SocialsProvider.GOOGLE}
 					label="Google"
 					icon={<GoogleIcon />}
 				/>
 				<SocialButton
+					redirectTo={redirectTo}
 					provider={SocialsProvider.GITHUB}
 					label="Github"
 					icon={<FontAwesomeIcon className="mr-2 h-5 w-5" icon={faGithub} />}
 				/>
 				<SocialButton
+					redirectTo={redirectTo}
 					provider={SocialsProvider.LINKEDIN}
 					label="LinkedIn"
 					icon={<FontAwesomeIcon className="mr-2 h-5 w-5" icon={faLinkedin} />}

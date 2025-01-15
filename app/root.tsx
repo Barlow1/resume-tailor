@@ -64,6 +64,8 @@ import {
 	XMarkIcon,
 	BriefcaseIcon,
 	DocumentTextIcon,
+	DocumentArrowUpIcon,
+	QueueListIcon,
 } from '@heroicons/react/24/outline'
 import { redirect } from '@remix-run/router'
 import { Crisp } from 'crisp-sdk-web'
@@ -260,6 +262,7 @@ const hideNavPages = [
 	'routes/_auth+/verify',
 	'routes/_auth+/reset-password',
 	'routes/_auth+/forgot-username/index',
+	'routes/pricing+/index',
 ]
 
 function App() {
@@ -307,16 +310,28 @@ function App() {
 
 	const navigation = [
 		{
+			name: 'Builder',
+			href: `/builder`,
+			icon: DocumentTextIcon,
+			current: path?.includes('builder'),
+		},
+		{
+			name: 'Resumes',
+			href: `/resumes`,
+			icon: QueueListIcon,
+			current: path?.includes('resumes'),
+		},
+		{
 			name: 'Jobs',
-			href: `/users/${user?.username}/jobs`,
+			href: `/jobs`,
 			icon: BriefcaseIcon,
 			current: path?.includes('jobs'),
 		},
 		{
-			name: 'Resume',
+			name: 'Upload Resume',
 			href: `/users/${user?.username}/resume/upload`,
-			icon: DocumentTextIcon,
-			current: path?.includes('resume'),
+			icon: DocumentArrowUpIcon,
+			current: path?.includes('resume') && !path?.includes('resumes'),
 		},
 	]
 
@@ -518,19 +533,28 @@ function App() {
 
 								<div className="flex flex-1 justify-between">
 									{shouldHideNav ? (
-										<div className="flex items-center">
+										<div className="flex items-center gap-x-4 lg:gap-x-6">
 											<Link to="/">
 												<div
 													className={clsx(
-														'text-center text-xl font-extrabold text-primary md:text-3xl lg:text-6xl',
+														'text-center text-xl font-extrabold text-primary md:text-3xl lg:text-4xl',
 														{ 'text-white': isOnLandingPage },
 													)}
 												>
 													RESUME TAILOR
 												</div>
 											</Link>
+											<div className="flex flex-1 items-center justify-end gap-x-4 self-stretch text-xl lg:gap-x-6">
+												<Link
+													to="/pricing"
+													className="text-primary hover:underline"
+												>
+													Pricing
+												</Link>
+											</div>
 										</div>
 									) : null}
+
 									<div className="flex flex-1 justify-end gap-x-4 self-stretch lg:gap-x-6">
 										<div className="flex items-center gap-x-4 lg:gap-x-6">
 											<button

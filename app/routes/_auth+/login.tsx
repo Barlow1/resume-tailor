@@ -10,10 +10,13 @@ export async function loader({ request }: DataFunctionArgs) {
 	await requireAnonymous(request)
 	const session = await getSession(request.headers.get('cookie'))
 	const error = session.get(authenticator.sessionErrorKey)
+	const redirectTo = new URL(request.url).searchParams.get('redirectTo')
+	session.set('redirectTo', redirectTo)
 	let errorMessage: string | null = null
 	if (typeof error?.message === 'string') {
 		errorMessage = error.message
 	}
+	
 	return json(
 		{ formError: errorMessage },
 		{ headers: { 'Set-Cookie': await commitSession(session) } },
@@ -40,9 +43,9 @@ export default function LoginPage() {
 		<div className="flex min-h-full flex-col justify-center pb-32 pt-20">
 			<div className="mx-auto w-full max-w-md">
 				<div className="flex flex-col gap-3 text-center">
-					<h1 className="text-h1">Welcome back!</h1>
+					<h1 className="text-h1">Login</h1>
 					<p className="text-body-md text-muted-foreground">
-						Please enter your details.
+						Please enter your details or sign up.
 					</p>
 				</div>
 				<Spacer size="xs" />

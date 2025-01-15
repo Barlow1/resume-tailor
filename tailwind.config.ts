@@ -118,12 +118,52 @@ export default {
 					from: { height: 'var(--radix-accordion-content-height)' },
 					to: { height: '0' },
 				},
+				rainbow: {
+					'0%': {
+						filter: 'hue-rotate(0deg) brightness(1)',
+					},
+					'50%': {
+						filter: 'hue-rotate(180deg) brightness(1.25)',
+					},
+					'100%': {
+						filter: 'hue-rotate(360deg) brightness(1)',
+					},
+				},
+				'rainbow-text': {
+					'0%, 100%': {
+						'background-size': '200% 200%',
+						'background-position': 'left center',
+					},
+					'50%': {
+						'background-size': '200% 200%',
+						'background-position': 'right center',
+					},
+				},
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
+				'rainbow-icon': 'rainbow 8s linear infinite',
+				'rainbow-text': 'rainbow-text 4s linear infinite',
+			},
+			backgroundImage: {
+				'rainbow-text': 'linear-gradient(to right, #6366f1, #ec4899, #6366f1)',
 			},
 		},
 	},
-	plugins: [animatePlugin, radixPlugin],
+	plugins: [
+		animatePlugin,
+		radixPlugin,
+		function ({ addUtilities }: { addUtilities: (utilities: Record<string, any>) => void }) {
+			addUtilities({
+				'.bg-clip-text': {
+					'-webkit-background-clip': 'text',
+					'background-clip': 'text',
+				},
+				'.text-fill-transparent': {
+					'-webkit-text-fill-color': 'transparent',
+				},
+			})
+		},
+	],
 } satisfies Config
