@@ -144,7 +144,7 @@ export async function loader({ request }: DataFunctionArgs) {
 	const { flash, headers: flashHeaders } = await getFlashSession(request)
 
 	if (request.url.endsWith('/') && user) {
-		throw redirect(`/users/${user?.username}/jobs`)
+		throw redirect(`/builder`)
 	}
 
 	let firstJob = null
