@@ -19,6 +19,8 @@ import { prisma } from '~/utils/db.server.ts'
 import { sendEmail } from '~/utils/email.server.ts'
 import { emailSchema, usernameSchema } from '~/utils/user-validation.ts'
 import { ForgotPasswordEmail } from './email.server.tsx'
+import { GoogleReCaptcha } from "react-google-recaptcha-v3"
+import { useState } from 'react'
 
 const ForgotPasswordSchema = z.object({
 	usernameOrEmail: z.union([emailSchema, usernameSchema]),
@@ -106,6 +108,10 @@ export const meta: MetaFunction = () => {
 
 export default function ForgotPasswordRoute() {
 	const forgotPassword = useFetcher<typeof action>()
+	const [token, setToken] = useState<string | null>(null)
+	const onVerify = (token: string) => {
+		setToken(token)
+	}
 
 	const [form, fields] = useForm({
 		id: 'forgot-password-form',
@@ -155,10 +161,11 @@ export default function ForgotPasswordRoute() {
 									: forgotPassword.data?.status ?? 'idle'
 							}
 							type="submit"
-							disabled={forgotPassword.state !== 'idle'}
+							disabled={forgotPassword.state !== 'idle' || !token}
 						>
 							Recover password
 						</StatusButton>
+						<GoogleReCaptcha onVerify={onVerify} />
 					</div>
 				</forgotPassword.Form>
 				<Link to="/login" className="mt-11 text-center text-body-sm font-bold">

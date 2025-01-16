@@ -5,17 +5,14 @@ import {
 	redirect,
 } from '@remix-run/node'
 import { Link, useFetcher, useLoaderData } from '@remix-run/react'
-import { getUserId } from '~/utils/auth.server.ts'
+import { requireUserId } from '~/utils/auth.server.ts'
 import { getUserBuilderResumes } from '~/utils/builder-resume.server.ts'
 import { resumeCookie } from '~/utils/resume-cookie.server.ts'
 import { Button } from '~/components/ui/button.tsx'
 import { Icon } from '~/components/ui/icon.tsx'
 
 export async function loader({ request }: LoaderFunctionArgs) {
-	const userId = await getUserId(request)
-	if (!userId) {
-		throw new Error('Not authenticated')
-	}
+	const userId = await requireUserId(request)
 
 	const resumes = await getUserBuilderResumes(userId)
 	return json({ resumes })

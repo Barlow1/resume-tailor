@@ -69,6 +69,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { redirect } from '@remix-run/router'
 import { Crisp } from 'crisp-sdk-web'
+import { GoogleReCaptchaProvider } from 'react-google-recaptcha-v3'
 
 export const links: LinksFunction = () => {
 	return [
@@ -341,267 +342,285 @@ function App() {
 
 	return (
 		<Document nonce={nonce} theme={theme} env={data.ENV}>
-			<div className="flex h-screen flex-col justify-between">
-				<>
-					<div>
-						{shouldHideNav ? null : (
-							<>
-								<Dialog
-									className="relative z-50 lg:hidden"
-									open={sidebarOpen}
-									onClose={setSidebarOpen}
-								>
-									<DialogBackdrop
-										transition
-										className="fixed inset-0 bg-gray-900/80 transition-opacity duration-300 ease-linear data-[closed]:opacity-0"
-									/>
-
-									<div className="fixed inset-0 flex">
-										<DialogPanel
+			<GoogleReCaptchaProvider
+				reCaptchaKey="6LcrBbkqAAAAAIjg4DrH75tQdU-Y0GdBdDvhr9rL"
+				container={{
+					element: 'recaptcha-container',
+					parameters: {
+						badge: 'bottomleft',
+						theme: theme === 'dark' ? 'dark' : 'light',
+					},
+				}}
+			>
+				<div className="flex h-screen flex-col justify-between">
+					<>
+						<div>
+							{shouldHideNav ? null : (
+								<>
+									<Dialog
+										className="relative z-50 lg:hidden"
+										open={sidebarOpen}
+										onClose={setSidebarOpen}
+									>
+										<DialogBackdrop
 											transition
-											className="relative mr-16 flex w-full max-w-xs flex-1 transform transition duration-300 ease-in-out data-[closed]:-translate-x-full"
-										>
-											<TransitionChild>
-												<div className="absolute left-full top-0 flex w-16 justify-center pt-5 duration-300 ease-in-out data-[closed]:opacity-0">
-													<button
-														type="button"
-														className="-m-2.5 p-2.5"
-														onClick={() => setSidebarOpen(false)}
-													>
-														<span className="sr-only">Close sidebar</span>
-														<XMarkIcon
-															className="h-6 w-6 text-white"
-															aria-hidden="true"
-														/>
-													</button>
-												</div>
-											</TransitionChild>
-											{/* Sidebar component, swap this element with another sidebar if you like */}
-											<div className="flex grow flex-col gap-y-5 overflow-y-auto bg-[#6B45FF] px-6 pb-4">
-												<div className="flex h-16 shrink-0 items-center">
-													<Link to="/">
-														<div
-															className={clsx(
-																'md:text-md text-center text-sm font-extrabold text-white lg:text-xl',
-																{ 'text-white': isOnLandingPage },
-															)}
+											className="fixed inset-0 bg-gray-900/80 transition-opacity duration-300 ease-linear data-[closed]:opacity-0"
+										/>
+
+										<div className="fixed inset-0 flex">
+											<DialogPanel
+												transition
+												className="relative mr-16 flex w-full max-w-xs flex-1 transform transition duration-300 ease-in-out data-[closed]:-translate-x-full"
+											>
+												<TransitionChild>
+													<div className="absolute left-full top-0 flex w-16 justify-center pt-5 duration-300 ease-in-out data-[closed]:opacity-0">
+														<button
+															type="button"
+															className="-m-2.5 p-2.5"
+															onClick={() => setSidebarOpen(false)}
 														>
-															RESUME TAILOR
-														</div>
-													</Link>
-												</div>
-												<nav className="flex flex-1 flex-col">
-													<ul className="flex flex-1 flex-col gap-y-7">
-														<li>
-															<ul className="-mx-2 space-y-1">
-																{navigation.map(item => (
-																	<li key={item.name}>
-																		<Link
-																			prefetch="intent"
-																			to={item.href}
-																			className={classNames(
-																				item.current
-																					? 'bg-brand-800 text-white'
-																					: 'text-purple-200 hover:bg-brand-800/50 hover:text-white',
-																				'group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6',
-																			)}
-																			onClick={() => setSidebarOpen(false)}
-																		>
-																			<item.icon
+															<span className="sr-only">Close sidebar</span>
+															<XMarkIcon
+																className="h-6 w-6 text-white"
+																aria-hidden="true"
+															/>
+														</button>
+													</div>
+												</TransitionChild>
+												{/* Sidebar component, swap this element with another sidebar if you like */}
+												<div className="flex grow flex-col gap-y-5 overflow-y-auto bg-[#6B45FF] px-6 pb-4">
+													<div className="flex h-16 shrink-0 items-center">
+														<Link to="/">
+															<div
+																className={clsx(
+																	'md:text-md text-center text-sm font-extrabold text-white lg:text-xl',
+																	{ 'text-white': isOnLandingPage },
+																)}
+															>
+																RESUME TAILOR
+															</div>
+														</Link>
+													</div>
+													<nav className="flex flex-1 flex-col">
+														<ul className="flex flex-1 flex-col gap-y-7">
+															<li>
+																<ul className="-mx-2 space-y-1">
+																	{navigation.map(item => (
+																		<li key={item.name}>
+																			<Link
+																				prefetch="intent"
+																				to={item.href}
 																				className={classNames(
 																					item.current
-																						? 'text-white'
-																						: 'text-purple-200 group-hover:text-white',
-																					'h-6 w-6 shrink-0',
+																						? 'bg-brand-800 text-white'
+																						: 'text-purple-200 hover:bg-brand-800/50 hover:text-white',
+																					'group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6',
 																				)}
-																				aria-hidden="true"
-																			/>
-																			{item.name}
-																		</Link>
-																	</li>
-																))}
-															</ul>
-														</li>
-														<li className="mt-auto">
-															<Link
-																to={`/users/${user?.username}`}
-																className="group -mx-2 flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-purple-200 hover:bg-brand-800/50 hover:text-white"
-															>
-																<Cog6ToothIcon
-																	className="h-6 w-6 shrink-0 text-purple-200 group-hover:text-white"
-																	aria-hidden="true"
-																/>
-																Settings
-															</Link>
-														</li>
-													</ul>
-												</nav>
-											</div>
-										</DialogPanel>
-									</div>
-								</Dialog>
-
-								{/* Static sidebar for desktop */}
-								<div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
-									{/* Sidebar component, swap this element with another sidebar if you like */}
-									<div className="flex grow flex-col gap-y-5 overflow-y-auto bg-[#6B45FF] px-6 pb-4">
-										<div className="flex h-16 shrink-0 items-center">
-											<Link to="/">
-												<div
-													className={clsx(
-														'md:text-md text-center text-sm font-extrabold text-white lg:text-xl',
-														{ 'text-white': isOnLandingPage },
-													)}
-												>
-													RESUME TAILOR
-												</div>
-											</Link>
-										</div>
-										<nav className="flex flex-1 flex-col">
-											<ul className="flex flex-1 flex-col gap-y-7">
-												<li>
-													<ul className="-mx-2 space-y-1">
-														{navigation.map(item => (
-															<li key={item.name}>
-																<a
-																	href={item.href}
-																	className={classNames(
-																		item.current
-																			? 'bg-brand-800 text-white'
-																			: 'text-purple-200 hover:bg-brand-800/50 hover:text-white',
-																		'group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6',
-																	)}
-																>
-																	<item.icon
-																		className={classNames(
-																			item.current
-																				? 'text-white'
-																				: 'text-purple-200 group-hover:text-white',
-																			'h-6 w-6 shrink-0',
-																		)}
-																		aria-hidden="true"
-																	/>
-																	{item.name}
-																</a>
+																				onClick={() => setSidebarOpen(false)}
+																			>
+																				<item.icon
+																					className={classNames(
+																						item.current
+																							? 'text-white'
+																							: 'text-purple-200 group-hover:text-white',
+																						'h-6 w-6 shrink-0',
+																					)}
+																					aria-hidden="true"
+																				/>
+																				{item.name}
+																			</Link>
+																		</li>
+																	))}
+																</ul>
 															</li>
-														))}
-													</ul>
-												</li>
-												<li className="mt-auto">
-													<Link
-														to={`/users/${user?.username}`}
-														className="group -mx-2 flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-purple-200 hover:bg-brand-800/50 hover:text-white"
-													>
-														<Cog6ToothIcon
-															className="h-6 w-6 shrink-0 text-purple-200 group-hover:text-white"
-															aria-hidden="true"
-														/>
-														Settings
-													</Link>
-												</li>
-											</ul>
-										</nav>
-									</div>
-								</div>
-							</>
-						)}
-
-						<div className={`${shouldHideNav ? '' : 'lg:pl-72'}`}>
-							<div
-								className={`${
-									shouldHideNav ? '' : 'sticky bg-background'
-								} top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 px-4 shadow-sm dark:shadow-gray-500/50 sm:gap-x-6 sm:px-6 lg:px-8`}
-							>
-								<button
-									type="button"
-									className={`-m-2.5 p-2.5 text-primary lg:hidden ${
-										shouldHideNav ? 'hidden' : ''
-									}`}
-									onClick={() => setSidebarOpen(true)}
-								>
-									<span className="sr-only">Open sidebar</span>
-									<Bars3Icon className="h-6 w-6" aria-hidden="true" />
-								</button>
-
-								{/* Separator */}
-								<div
-									className={`h-6 w-px bg-gray-900/10 dark:bg-gray-500/50 lg:hidden ${
-										shouldHideNav ? 'hidden' : ''
-									}`}
-									aria-hidden="true"
-								/>
-
-								<div className="flex flex-1 justify-between">
-									{shouldHideNav ? (
-										<div className="flex items-center gap-x-4 lg:gap-x-6">
-											<Link to="/">
-												<div
-													className={clsx(
-														'text-center text-xl font-extrabold text-primary md:text-3xl lg:text-4xl',
-														{ 'text-white': isOnLandingPage },
-													)}
-												>
-													RESUME TAILOR
+															{user ? (
+																<li className="mt-auto">
+																	<Link
+																		to={`/users/${user?.username}`}
+																		className="group -mx-2 flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-purple-200 hover:bg-brand-800/50 hover:text-white"
+																	>
+																		<Cog6ToothIcon
+																			className="h-6 w-6 shrink-0 text-purple-200 group-hover:text-white"
+																			aria-hidden="true"
+																		/>
+																		Settings
+																	</Link>
+																</li>
+															) : null}
+														</ul>
+													</nav>
 												</div>
-											</Link>
-											<div className="flex flex-1 items-center justify-end gap-x-4 self-stretch text-xl lg:gap-x-6">
-												<Link
-													to="/pricing"
-													className="text-primary hover:underline"
-												>
-													Pricing
+											</DialogPanel>
+										</div>
+									</Dialog>
+
+									{/* Static sidebar for desktop */}
+									<div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
+										{/* Sidebar component, swap this element with another sidebar if you like */}
+										<div className="flex grow flex-col gap-y-5 overflow-y-auto bg-[#6B45FF] px-6 pb-4">
+											<div className="flex h-16 shrink-0 items-center">
+												<Link to="/">
+													<div
+														className={clsx(
+															'md:text-md text-center text-sm font-extrabold text-white lg:text-xl',
+															{ 'text-white': isOnLandingPage },
+														)}
+													>
+														RESUME TAILOR
+													</div>
 												</Link>
 											</div>
+											<nav className="flex flex-1 flex-col">
+												<ul className="flex flex-1 flex-col gap-y-7">
+													<li>
+														<ul className="-mx-2 space-y-1">
+															{navigation.map(item => (
+																<li key={item.name}>
+																	<a
+																		href={item.href}
+																		className={classNames(
+																			item.current
+																				? 'bg-brand-800 text-white'
+																				: 'text-purple-200 hover:bg-brand-800/50 hover:text-white',
+																			'group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6',
+																		)}
+																	>
+																		<item.icon
+																			className={classNames(
+																				item.current
+																					? 'text-white'
+																					: 'text-purple-200 group-hover:text-white',
+																				'h-6 w-6 shrink-0',
+																			)}
+																			aria-hidden="true"
+																		/>
+																		{item.name}
+																	</a>
+																</li>
+															))}
+														</ul>
+													</li>
+													{user ? (
+													<li className="mt-auto">
+														<Link
+															to={`/users/${user?.username}`}
+															className="group -mx-2 flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-purple-200 hover:bg-brand-800/50 hover:text-white"
+														>
+															<Cog6ToothIcon
+																className="h-6 w-6 shrink-0 text-purple-200 group-hover:text-white"
+																aria-hidden="true"
+															/>
+															Settings
+															</Link>
+														</li>
+													) : null}
+												</ul>
+											</nav>
 										</div>
-									) : null}
+									</div>
+								</>
+							)}
 
-									<div className="flex flex-1 justify-end gap-x-4 self-stretch lg:gap-x-6">
-										<div className="flex items-center gap-x-4 lg:gap-x-6">
-											<button
-												type="button"
-												className="-m-2.5 p-2.5 text-primary hover:text-primary/50"
-											>
-												<span className="sr-only">Toggle Theme</span>
-												<ThemeSwitch
-													className={isOnLandingPage ? 'text-white' : undefined}
-													userPreference={data.requestInfo.userPrefs.theme}
-												/>
-											</button>
+							<div className={`${shouldHideNav ? '' : 'lg:pl-72'}`}>
+								<div
+									className={`${
+										shouldHideNav ? '' : 'sticky bg-background'
+									} top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 px-4 shadow-sm dark:shadow-gray-500/50 sm:gap-x-6 sm:px-6 lg:px-8`}
+								>
+									<button
+										type="button"
+										className={`-m-2.5 p-2.5 text-primary lg:hidden ${
+											shouldHideNav ? 'hidden' : ''
+										}`}
+										onClick={() => setSidebarOpen(true)}
+									>
+										<span className="sr-only">Open sidebar</span>
+										<Bars3Icon className="h-6 w-6" aria-hidden="true" />
+									</button>
 
-											{/* Separator */}
-											<div
-												className="hidden dark:bg-gray-500/50 lg:block lg:h-6 lg:w-px lg:bg-gray-900/10"
-												aria-hidden="true"
-											/>
+									{/* Separator */}
+									<div
+										className={`h-6 w-px bg-gray-900/10 dark:bg-gray-500/50 lg:hidden ${
+											shouldHideNav ? 'hidden' : ''
+										}`}
+										aria-hidden="true"
+									/>
 
-											{/* Profile dropdown */}
-											<div className="relative">
-												{user ? (
-													<UserDropdown
-														isOnLandingPage={isOnLandingPage ?? false}
+									<div className="flex flex-1 justify-between">
+										{shouldHideNav ? (
+											<div className="flex items-center gap-x-4 lg:gap-x-6">
+												<Link to="/">
+													<div
+														className={clsx(
+															'text-center text-xl font-extrabold text-primary md:text-3xl lg:text-4xl',
+															{ 'text-white': isOnLandingPage },
+														)}
+													>
+														RESUME TAILOR
+													</div>
+												</Link>
+												<div className="flex flex-1 items-center justify-end gap-x-4 self-stretch text-xl lg:gap-x-6">
+													<Link
+														to="/pricing"
+														className="text-primary hover:underline"
+													>
+														Pricing
+													</Link>
+												</div>
+											</div>
+										) : null}
+
+										<div className="flex flex-1 justify-end gap-x-4 self-stretch lg:gap-x-6">
+											<div className="flex items-center gap-x-4 lg:gap-x-6">
+												<button
+													type="button"
+													className="-m-2.5 p-2.5 text-primary hover:text-primary/50"
+												>
+													<span className="sr-only">Toggle Theme</span>
+													<ThemeSwitch
+														className={
+															isOnLandingPage ? 'text-white' : undefined
+														}
+														userPreference={data.requestInfo.userPrefs.theme}
 													/>
-												) : (
-													<Button asChild variant={'primary'} size="sm">
-														<Link to="/login">Log In</Link>
-													</Button>
-												)}
+												</button>
+
+												{/* Separator */}
+												<div
+													className="hidden dark:bg-gray-500/50 lg:block lg:h-6 lg:w-px lg:bg-gray-900/10"
+													aria-hidden="true"
+												/>
+
+												{/* Profile dropdown */}
+												<div className="relative">
+													{user ? (
+														<UserDropdown
+															isOnLandingPage={isOnLandingPage ?? false}
+														/>
+													) : (
+														<Button asChild variant={'primary'} size="sm">
+															<Link to="/login">Log In</Link>
+														</Button>
+													)}
+												</div>
 											</div>
 										</div>
 									</div>
 								</div>
-							</div>
 
-							<div className="py-10">
-								<div className="px-4 sm:px-6 lg:px-8">
-									<Outlet />
+								<div className="py-10">
+									<div className="px-4 sm:px-6 lg:px-8">
+										<Outlet />
+									</div>
 								</div>
 							</div>
 						</div>
-					</div>
-				</>
-			</div>
-			<Confetti confetti={data.flash?.confetti} />
-			<Toaster />
+					</>
+				</div>
+				<Confetti confetti={data.flash?.confetti} />
+				<Toaster />
+				<div id="recaptcha-container" />
+			</GoogleReCaptchaProvider>
 		</Document>
 	)
 }

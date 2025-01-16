@@ -17,6 +17,8 @@ import { sendEmail } from '~/utils/email.server.ts'
 import { useIsSubmitting } from '~/utils/misc.ts'
 import { emailSchema } from '~/utils/user-validation.ts'
 import { SignupEmail } from './email.server.tsx'
+import { GoogleReCaptcha } from "react-google-recaptcha-v3";
+import { useState } from 'react'
 
 export const onboardingOTPQueryParam = 'code'
 export const onboardingEmailQueryParam = 'email'
@@ -97,6 +99,10 @@ export default function SignupRoute() {
 		},
 		shouldRevalidate: 'onBlur',
 	})
+	const [token, setToken] = useState<string | null>(null)
+	const onVerify = (token: string) => {
+		setToken(token)
+	}
 
 	return (
 		<div className="md:container flex flex-col justify-center pb-32 pt-20">
@@ -124,11 +130,12 @@ export default function SignupRoute() {
 					className="w-full"
 					status={isSubmitting ? 'pending' : actionData?.status ?? 'idle'}
 					type="submit"
-					disabled={isSubmitting}
+					disabled={isSubmitting || !token}
 				>
 					Submit
 				</StatusButton>
 			</Form>
+			<GoogleReCaptcha onVerify={onVerify} />
 		</div>
 	)
 }

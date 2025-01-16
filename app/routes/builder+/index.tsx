@@ -137,8 +137,8 @@ const defaultFormData: ResumeData = {
 		skillsHeader: 'Skills & Expertise',
 		hobbiesHeader: 'Interests & Activities',
 		educationHeader: 'Education',
-		aboutHeader: 'About Me',
-		detailsHeader: 'Personal Details',
+	aboutHeader: 'About Me',
+	detailsHeader: 'Personal Details',
 	},
 }
 
@@ -256,20 +256,20 @@ export default function ResumeBuilder() {
 
 	const handlePDFDownloadRequested = useCallback(
 		({
-			downloadPDFRequested,
-			subscribe,
-		}: {
-			downloadPDFRequested: boolean
-			subscribe: boolean
-		}) => {
-			fetcher.submit(
-				{
-					formData: JSON.stringify(formData),
-					downloadPDFRequested,
-					subscribe,
-				},
-				{ method: 'post', action: '/resources/save-resume' },
-			)
+		downloadPDFRequested,
+		subscribe,
+	}: {
+		downloadPDFRequested: boolean
+		subscribe: boolean
+	}) => {
+		fetcher.submit(
+			{
+				formData: JSON.stringify(formData),
+				downloadPDFRequested,
+				subscribe,
+			},
+			{ method: 'post', action: '/resources/save-resume' },
+		)
 		},
 		[fetcher, formData],
 	)
@@ -1006,7 +1006,7 @@ export default function ResumeBuilder() {
 			return null
 		}
 
-		return (
+	return (
 			<div className="rounded-lg border bg-white shadow-lg">
 				{active.data.current.type === 'experience' ? (
 					formData.experiences ? (
@@ -1106,10 +1106,6 @@ export default function ResumeBuilder() {
 		debouncedSave(newFormData)
 	}
 
-	useEffect(() => {
-		
-	}, []) // Empty dependency array means this runs once when component mounts
-
 	return (
 		<DraggingContext.Provider value={{ isDraggingAny, setIsDraggingAny }}>
 			<DndContext
@@ -1130,14 +1126,14 @@ export default function ResumeBuilder() {
 						isModalDisplaying ? 'mr-[300px]' : ''
 					}`}
 				>
-					<div className="mx-auto max-w-7xl p-6">
-						<SubscribeModal
-							isOpen={showSubscribeModal}
-							onClose={() => setShowSubscribeModal(false)}
-							successUrl={`/builder`}
-							redirectTo={`/builder`}
-							cancelUrl={'/builder'}
-						/>
+		<div className="mx-auto max-w-7xl p-6">
+			<SubscribeModal
+				isOpen={showSubscribeModal}
+				onClose={() => setShowSubscribeModal(false)}
+				successUrl={`/builder`}
+				redirectTo={`/builder`}
+				cancelUrl={'/builder'}
+			/>
 
 						<AIAssistantModal
 							isOpen={showAIModal}
@@ -1170,9 +1166,9 @@ export default function ResumeBuilder() {
 									setSelectedJob={handleJobChange}
 								/>
 							</div>
-							<div className="flex gap-2">
+				<div className="flex gap-2">
 								<div className="relative">
-									<button
+					<button
 										title="Change Color"
 										onClick={() => setShowColorPicker(!showColorPicker)}
 										className="h-10 w-10 rounded-full border border-gray-300 shadow-sm"
@@ -1214,9 +1210,9 @@ export default function ResumeBuilder() {
 									New Resume
 								</Button>
 								<StatusButton
-									type="button"
-									onClick={handleClickDownloadPDF}
-									className="flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-200"
+						type="button"
+						onClick={handleClickDownloadPDF}
+						className="flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-200"
 									status={
 										pdfFetcher.state === 'submitting'
 											? 'pending'
@@ -1226,48 +1222,48 @@ export default function ResumeBuilder() {
 									}
 								>
 									<ArrowDownTrayIcon className="h-4 w-4" />
-									Download PDF
+						Download PDF
 								</StatusButton>
-							</div>
-						</div>
+				</div>
+			</div>
 
 						<Form key={`${formData.id}-${rerenderRef.current}`} method="post">
-							{/* Hidden inputs to store the actual form data */}
-							{Object.entries(formData)
-								.filter(([key]) => key !== 'experiences')
-								.map(([key, value]) => (
+				{/* Hidden inputs to store the actual form data */}
+				{Object.entries(formData)
+					.filter(([key]) => key !== 'experiences')
+					.map(([key, value]) => (
 									<input
 										key={key}
 										type="hidden"
 										name={key}
 										value={value as string}
 									/>
-								))}
-							<input
-								type="hidden"
-								name="experiences"
-								value={JSON.stringify(formData.experiences)}
-							/>
+					))}
+				<input
+					type="hidden"
+					name="experiences"
+					value={JSON.stringify(formData.experiences)}
+				/>
 
-							{/* Resume Paper with both panes inside */}
-							<div
-								id="resume-content"
+				{/* Resume Paper with both panes inside */}
+				<div
+					id="resume-content"
 								className={`min-h-[842px] rounded-lg border bg-white p-8 shadow-lg ${
 									isModalDisplaying ? 'scale-90' : ''
 								}`}
-							>
-								<div className="grid grid-cols-[250px_1fr] gap-8">
-									{/* Left Pane */}
-									<div className="space-y-6 pr-6">
-										{/* Image Upload */}
-										<div>
-											<input
-												type="file"
-												accept="image/*"
-												className="hidden"
-												onChange={handleImageUpload}
-												id="image-upload"
-											/>
+				>
+					<div className="grid grid-cols-[250px_1fr] gap-8">
+						{/* Left Pane */}
+						<div className="space-y-6 pr-6">
+							{/* Image Upload */}
+							<div>
+								<input
+									type="file"
+									accept="image/*"
+									className="hidden"
+									onChange={handleImageUpload}
+									id="image-upload"
+								/>
 											<label
 												htmlFor="image-upload"
 												className="block cursor-pointer"
@@ -1279,166 +1275,166 @@ export default function ResumeBuilder() {
 															: 'border-2 border-dashed border-gray-300 bg-gray-50 transition hover:bg-gray-100'
 													}`}
 												>
-													{formData.image ? (
-														<img
-															src={formData.image}
-															alt="Profile"
-															className="h-full w-full object-cover"
-														/>
-													) : (
-														<div className="flex h-full flex-col items-center justify-center gap-2 p-4">
-															<UserCircleIcon className="h-16 w-16 text-gray-400" />
-															<span className="text-sm text-gray-500">
-																Click to upload photo
-															</span>
-														</div>
-													)}
-												</div>
-											</label>
-										</div>
+										{formData.image ? (
+											<img
+												src={formData.image}
+												alt="Profile"
+												className="h-full w-full object-cover"
+											/>
+										) : (
+											<div className="flex h-full flex-col items-center justify-center gap-2 p-4">
+												<UserCircleIcon className="h-16 w-16 text-gray-400" />
+												<span className="text-sm text-gray-500">
+													Click to upload photo
+												</span>
+											</div>
+										)}
+									</div>
+								</label>
+							</div>
 
-										{/* About Me */}
-										<div className="rounded border-dashed border-gray-400 hover:border">
-											<EditableContent
+							{/* About Me */}
+							<div className="rounded border-dashed border-gray-400 hover:border">
+								<EditableContent
 												content={formData.headers?.aboutHeader}
-												onInput={e =>
+									onInput={e =>
 													handleHeaderEdit(
 														e.currentTarget.innerText,
 														'aboutHeader',
 													)
-												}
-												className="mb-2 font-semibold text-gray-700"
-												placeholder="About Me"
+									}
+									className="mb-2 font-semibold text-gray-700"
+									placeholder="About Me"
 												rerenderRef={rerenderRef}
-											/>
-											<EditableContent
-												multiline
-												content={formData.about}
-												onInput={e =>
-													handleAboutEdit(e.currentTarget.innerText, 'about')
-												}
-												className="min-h-[150px] p-3 text-sm text-gray-600"
-												placeholder="Write a brief introduction about yourself..."
+								/>
+								<EditableContent
+									multiline
+									content={formData.about}
+									onInput={e =>
+										handleAboutEdit(e.currentTarget.innerText, 'about')
+									}
+									className="min-h-[150px] p-3 text-sm text-gray-600"
+									placeholder="Write a brief introduction about yourself..."
 												rerenderRef={rerenderRef}
-											/>
-										</div>
+								/>
+							</div>
 
-										{/* Personal Details */}
-										<div>
-											<EditableContent
+							{/* Personal Details */}
+							<div>
+								<EditableContent
 												content={formData.headers?.detailsHeader}
-												onInput={e =>
+									onInput={e =>
 													handleHeaderEdit(
 														e.currentTarget.innerText,
 														'detailsHeader',
 													)
-												}
-												className="mb-2 font-semibold text-gray-700"
-												placeholder="Personal Details"
+									}
+									className="mb-2 font-semibold text-gray-700"
+									placeholder="Personal Details"
 												rerenderRef={rerenderRef}
-											/>
-											<div className="space-y-3">
-												<div className="flex items-center gap-2">
-													<MapPinIcon className="h-5 w-5 text-gray-400" />
-													<EditableContent
-														content={formData.location}
-														onInput={e =>
+								/>
+								<div className="space-y-3">
+									<div className="flex items-center gap-2">
+										<MapPinIcon className="h-5 w-5 text-gray-400" />
+										<EditableContent
+											content={formData.location}
+											onInput={e =>
 															handleFieldEdit(
 																e.currentTarget.innerText,
 																'location',
 															)
-														}
-														className="flex-1 rounded p-1 text-sm text-gray-600 outline-none transition"
-														placeholder="Location"
+											}
+											className="flex-1 rounded p-1 text-sm text-gray-600 outline-none transition"
+											placeholder="Location"
 														rerenderRef={rerenderRef}
-													/>
-												</div>
-												<div className="flex items-center gap-2">
-													<EnvelopeIcon className="h-5 w-5 text-gray-400" />
-													<EditableContent
-														content={formData.email}
-														onInput={e =>
+										/>
+									</div>
+									<div className="flex items-center gap-2">
+										<EnvelopeIcon className="h-5 w-5 text-gray-400" />
+										<EditableContent
+											content={formData.email}
+											onInput={e =>
 															handleFieldEdit(
 																e.currentTarget.innerText,
 																'email',
 															)
-														}
-														className="flex-1 rounded p-1 text-sm text-gray-600 outline-none transition"
-														placeholder="Email"
+											}
+											className="flex-1 rounded p-1 text-sm text-gray-600 outline-none transition"
+											placeholder="Email"
 														rerenderRef={rerenderRef}
-													/>
-												</div>
-												<div className="flex items-center gap-2">
-													<PhoneIcon className="h-5 w-5 text-gray-400" />
-													<EditableContent
-														content={formData.phone}
-														onInput={e =>
+										/>
+									</div>
+									<div className="flex items-center gap-2">
+										<PhoneIcon className="h-5 w-5 text-gray-400" />
+										<EditableContent
+											content={formData.phone}
+											onInput={e =>
 															handleFieldEdit(
 																e.currentTarget.innerText,
 																'phone',
 															)
-														}
-														className="flex-1 rounded p-1 text-sm text-gray-600 outline-none transition"
-														placeholder="Phone"
+											}
+											className="flex-1 rounded p-1 text-sm text-gray-600 outline-none transition"
+											placeholder="Phone"
 														rerenderRef={rerenderRef}
-													/>
-												</div>
-												<div className="flex items-center gap-2">
-													<LinkIcon className="h-5 w-5 text-gray-400" />
-													<EditableContent
-														content={formData.website}
-														onInput={e =>
+										/>
+									</div>
+									<div className="flex items-center gap-2">
+										<LinkIcon className="h-5 w-5 text-gray-400" />
+										<EditableContent
+											content={formData.website}
+											onInput={e =>
 															handleFieldEdit(
 																e.currentTarget.innerText,
 																'website',
 															)
-														}
-														className="flex-1 rounded p-1 text-sm text-gray-600 outline-none transition"
-														placeholder="Website"
-														rerenderRef={rerenderRef}
-													/>
-												</div>
-											</div>
-										</div>
-									</div>
-
-									{/* Right Pane */}
-									<div>
-										<EditableContent
-											content={formData.name}
-											onInput={e =>
-												handleFieldEdit(e.currentTarget.innerText, 'name')
 											}
+											className="flex-1 rounded p-1 text-sm text-gray-600 outline-none transition"
+											placeholder="Website"
+														rerenderRef={rerenderRef}
+										/>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						{/* Right Pane */}
+						<div>
+							<EditableContent
+								content={formData.name}
+								onInput={e =>
+									handleFieldEdit(e.currentTarget.innerText, 'name')
+								}
 											className={`mb-2 rounded p-1 text-3xl font-bold outline-none transition`}
-											placeholder="Your Name"
+								placeholder="Your Name"
 											rerenderRef={rerenderRef}
 											style={{ color: nameColor }}
-										/>
+							/>
 
-										<EditableContent
-											content={formData.role}
-											onInput={e =>
-												handleFieldEdit(e.currentTarget.innerText, 'role')
-											}
-											className="mb-4 rounded p-1 text-xl text-gray-600 outline-none transition"
-											placeholder="Your Role (e.g. Frontend Developer)"
+							<EditableContent
+								content={formData.role}
+								onInput={e =>
+									handleFieldEdit(e.currentTarget.innerText, 'role')
+								}
+								className="mb-4 rounded p-1 text-xl text-gray-600 outline-none transition"
+								placeholder="Your Role (e.g. Frontend Developer)"
 											rerenderRef={rerenderRef}
-										/>
+							/>
 
-										<div className="mb-6">
-											<EditableContent
+							<div className="mb-6">
+								<EditableContent
 												content={formData.headers?.experienceHeader}
-												onInput={e =>
+									onInput={e =>
 													handleHeaderEdit(
-														e.currentTarget.innerText,
-														'experienceHeader',
-													)
-												}
-												className="mb-4 text-xl font-semibold text-gray-700 outline-none"
-												placeholder="Professional Experience"
-											/>
+											e.currentTarget.innerText,
+											'experienceHeader',
+										)
+									}
+									className="mb-4 text-xl font-semibold text-gray-700 outline-none"
+									placeholder="Professional Experience"
+								/>
 
-											<div className="space-y-4">
+								<div className="space-y-4">
 												{formData.experiences ? (
 													<SortableContext
 														items={formData.experiences.map(exp => exp.id!)}
@@ -1460,27 +1456,27 @@ export default function ResumeBuilder() {
 														))}
 													</SortableContext>
 												) : null}
-											</div>
-										</div>
+								</div>
+							</div>
 
-										<div className="mb-6">
-											<EditableContent
+							<div className="mb-6">
+								<EditableContent
 												content={formData.headers?.educationHeader}
-												onInput={e =>
+									onInput={e =>
 													handleHeaderEdit(
-														e.currentTarget.innerText,
-														'educationHeader',
-													)
-												}
-												className="mb-4 text-xl font-semibold text-gray-700 outline-none"
-												placeholder="Education"
-											/>
-											<div className="space-y-4">
+											e.currentTarget.innerText,
+											'educationHeader',
+										)
+									}
+									className="mb-4 text-xl font-semibold text-gray-700 outline-none"
+									placeholder="Education"
+								/>
+								<div className="space-y-4">
 												{formData.education?.length === 0 ? (
-													<div className="rounded border border-dashed border-gray-300 p-4 text-center text-gray-500">
+										<div className="rounded border border-dashed border-gray-300 p-4 text-center text-gray-500">
 														Click "Add Education" to add your educational
 														background
-													</div>
+										</div>
 												) : formData.education ? (
 													<SortableContext
 														items={formData.education.map(edu => edu.id!)!}
@@ -1497,118 +1493,118 @@ export default function ResumeBuilder() {
 														))}
 													</SortableContext>
 												) : null}
-											</div>
-										</div>
+													</div>
+												</div>
 
 										<div className="mb-6">
-											<EditableContent
+												<EditableContent
 												content={formData.headers?.skillsHeader}
-												onInput={e =>
+													onInput={e =>
 													handleHeaderEdit(
-														e.currentTarget.innerText,
+															e.currentTarget.innerText,
 														'skillsHeader',
 													)
-												}
-												className="mb-4 text-xl font-semibold text-gray-700 outline-none"
-												placeholder="Skills & Expertise"
-											/>
+									}
+									className="mb-4 text-xl font-semibold text-gray-700 outline-none"
+									placeholder="Skills & Expertise"
+								/>
 
-											<div className="flex flex-wrap gap-2">
+								<div className="flex flex-wrap gap-2">
 												{formData.skills?.map(skill => (
-													<div
-														key={skill.id}
+										<div
+											key={skill.id}
 														className="group relative flex items-center rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-center"
-													>
-														<EditableContent
-															content={skill.name}
-															onInput={e =>
-																handleSkillEdit(
-																	e.currentTarget.innerText,
+										>
+											<EditableContent
+												content={skill.name}
+												onInput={e =>
+													handleSkillEdit(
+														e.currentTarget.innerText,
 																	skill.id!,
-																	'name',
-																)
-															}
+														'name',
+													)
+												}
 															onEnter={() => addSkill()}
-															className="text-sm text-gray-700 outline-none"
-															placeholder="Skill"
-															id={`skill-${skill.id}`}
-														/>
-														<button
-															type="button"
+												className="text-sm text-gray-700 outline-none"
+												placeholder="Skill"
+												id={`skill-${skill.id}`}
+											/>
+											<button
+												type="button"
 															onClick={() => removeSkill(skill.id!)}
-															className="ml-2 hidden text-gray-400 hover:text-gray-600 group-hover:block"
-														>
-															<TrashIcon className="h-3 w-3" />
-														</button>
-														<button
-															type="button"
+												className="ml-2 hidden text-gray-400 hover:text-gray-600 group-hover:block"
+											>
+												<TrashIcon className="h-3 w-3" />
+											</button>
+									<button
+										type="button"
 															onClick={() => addSkill()}
 															className="ml-2 hidden text-gray-400 hover:text-gray-600 group-hover:block"
-														>
-															<PlusIcon className="h-3 w-3" />
-														</button>
+									>
+										<PlusIcon className="h-3 w-3" />
+									</button>
 													</div>
 												))}
-											</div>
-										</div>
+								</div>
+							</div>
 
-										<div className="mb-6">
-											<EditableContent
+							<div className="mb-6">
+								<EditableContent
 												content={formData.headers?.hobbiesHeader}
-												onInput={e =>
+									onInput={e =>
 													handleHeaderEdit(
 														e.currentTarget.innerText,
 														'hobbiesHeader',
 													)
-												}
-												className="mb-4 text-xl font-semibold text-gray-700 outline-none"
-												placeholder="Interests & Activities"
+									}
+									className="mb-4 text-xl font-semibold text-gray-700 outline-none"
+									placeholder="Interests & Activities"
 												rerenderRef={rerenderRef}
-											/>
+								/>
 
-											<div className="flex flex-wrap gap-2">
+								<div className="flex flex-wrap gap-2">
 												{formData.hobbies?.map(hobby => (
-													<div
-														key={hobby.id}
+										<div
+											key={hobby.id}
 														className="group relative flex items-center rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-center"
-													>
-														<EditableContent
-															content={hobby.name}
-															onInput={e =>
-																handleHobbyEdit(
-																	e.currentTarget.innerText,
+										>
+											<EditableContent
+												content={hobby.name}
+												onInput={e =>
+													handleHobbyEdit(
+														e.currentTarget.innerText,
 																	hobby.id!,
-																	'name',
-																)
-															}
+														'name',
+													)
+												}
 															onEnter={() => addHobby()}
-															className="text-sm text-gray-700 outline-none"
-															placeholder="Hobby"
-															id={`hobby-${hobby.id}`}
-														/>
-														<button
-															type="button"
+												className="text-sm text-gray-700 outline-none"
+												placeholder="Hobby"
+												id={`hobby-${hobby.id}`}
+											/>
+											<button
+												type="button"
 															onClick={() => removeHobby(hobby.id!)}
-															className="ml-2 hidden text-gray-400 hover:text-gray-600 group-hover:block"
-														>
-															<TrashIcon className="h-3 w-3" />
-														</button>
-														<button
-															type="button"
+												className="ml-2 hidden text-gray-400 hover:text-gray-600 group-hover:block"
+											>
+												<TrashIcon className="h-3 w-3" />
+											</button>
+									<button
+										type="button"
 															onClick={() => addHobby()}
 															className="ml-2 hidden text-gray-400 hover:text-gray-600 group-hover:block"
-														>
-															<PlusIcon className="h-3 w-3" />
-														</button>
+									>
+										<PlusIcon className="h-3 w-3" />
+									</button>
 													</div>
 												))}
-											</div>
-										</div>
-									</div>
 								</div>
 							</div>
-						</Form>
+						</div>
 					</div>
+				</div>
+			</Form>
+		</div>
 				</div>
 				<DragOverlay dropAnimation={null}>
 					<DragOverlayContent />

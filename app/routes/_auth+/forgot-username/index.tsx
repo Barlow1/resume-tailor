@@ -15,6 +15,8 @@ import { prisma } from '~/utils/db.server.ts'
 import { sendEmail } from '~/utils/email.server.ts'
 import { emailSchema } from '~/utils/user-validation.ts'
 import { ForgotUsernameEmail } from './email.server.tsx'
+import { GoogleReCaptcha } from "react-google-recaptcha-v3"
+import { useState } from 'react'
 
 const ForgotUsernameSchema = z.object({
 	email: emailSchema,
@@ -92,6 +94,11 @@ export const meta: MetaFunction = () => {
 export default function ForgotUsernameRoute() {
 	const forgotUsername = useFetcher<typeof action>()
 
+	const [token, setToken] = useState<string | null>(null)
+	const onVerify = (token: string) => {
+		setToken(token)
+	}
+
 	const [form, fields] = useForm({
 		id: 'forgot-username-form',
 		constraint: getFieldsetConstraint(ForgotUsernameSchema),
@@ -140,10 +147,11 @@ export default function ForgotUsernameRoute() {
 									: forgotUsername.data?.status ?? 'idle'
 							}
 							type="submit"
-							disabled={forgotUsername.state !== 'idle'}
+							disabled={forgotUsername.state !== 'idle' || !token}
 						>
 							Recover username
 						</StatusButton>
+						<GoogleReCaptcha onVerify={onVerify} />
 					</div>
 				</forgotUsername.Form>
 				<Link to="/login" className="mt-11 text-center text-body-sm font-bold">

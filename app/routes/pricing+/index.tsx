@@ -15,7 +15,7 @@ export default function Pricing() {
 					</p>
 				</div>
 				<p className="text-pretty mx-auto mt-6 max-w-2xl text-center text-lg font-medium text-muted-foreground sm:text-xl/8">
-				  The most affordable plan and comprehensive solution for tailor your resume
+				  The most affordable plan and comprehensive solution for tailoring your resume
 				</p>
 				<PricingComponent successUrl={successUrl} cancelUrl={cancelUrl} />
 			</div>
