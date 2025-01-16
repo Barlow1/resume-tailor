@@ -7,7 +7,10 @@ FROM node:18-bookworm-slim as base
 ENV NODE_ENV production
 
 # Install openssl for Prisma
-RUN apt-get update && apt-get install -y fuse3 openssl sqlite3 ca-certificates
+RUN apt-get update && apt-get install -y fuse3 openssl sqlite3 ca-certificates chromium
+
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 # Install all node_modules, including dev dependencies
 FROM base as deps

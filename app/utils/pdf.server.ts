@@ -1,7 +1,10 @@
 import puppeteer from 'puppeteer'
 
 export async function getPdfFromHtml(html: string): Promise<Uint8Array> {
-	const browser = await puppeteer.launch({ headless: true })
+	const browser = await puppeteer.launch({
+		headless: true,
+		executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+	})
 
 	const page = await browser.newPage()
 	await page.setContent(html, {
