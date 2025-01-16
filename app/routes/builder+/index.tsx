@@ -78,7 +78,6 @@ import { getUserBuilderResumes } from '~/utils/builder-resume.server.ts'
 import { type Jsonify } from '@remix-run/server-runtime/dist/jsonify.js'
 import type { SubmitTarget } from 'react-router-dom/dist/dom.d.ts'
 import * as reactColor from 'react-color'
-import { flashMessage } from '~/utils/flash-session.server.ts'
 
 const { ChromePicker } = reactColor
 
@@ -196,29 +195,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 	const resumes = userId ? await getUserBuilderResumes(userId) : []
 
-	return json(
-		{
-			userId,
-			subscription,
-			savedData,
-			subscribe: subscribe === 'true',
-			downloadPDFRequested: downloadPDFRequested === 'true',
-			jobs,
-			gettingStartedProgress,
-			resumes,
-		},
-		{
-			headers: await flashMessage({
-				toast: {
-					title:
-						'Export to PDF experiencing technical difficulties',
-					description:
-						'We are experiencing technical difficulties regarding the builder export to pdf functionality. Thank you for your patience as we troubleshoot.',
-					variant: 'default',
-				},
-			}),
-		},
-	)
+	return json({
+		userId,
+		subscription,
+		savedData,
+		subscribe: subscribe === 'true',
+		downloadPDFRequested: downloadPDFRequested === 'true',
+		jobs,
+		gettingStartedProgress,
+		resumes,
+	})
 }
 
 export const DraggingContext = createContext<{
@@ -1119,6 +1105,10 @@ export default function ResumeBuilder() {
 		setFormData(newFormData)
 		debouncedSave(newFormData)
 	}
+
+	useEffect(() => {
+		
+	}, []) // Empty dependency array means this runs once when component mounts
 
 	return (
 		<DraggingContext.Provider value={{ isDraggingAny, setIsDraggingAny }}>
