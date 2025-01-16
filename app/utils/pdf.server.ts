@@ -4,6 +4,12 @@ export async function getPdfFromHtml(html: string): Promise<Uint8Array> {
 	const browser = await puppeteer.launch({
 		headless: true,
 		executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+		args: [
+			'--no-sandbox',
+			'--disable-setuid-sandbox',
+			'--disable-dev-shm-usage',
+			'--disable-gpu'
+		]
 	})
 
 	const page = await browser.newPage()
