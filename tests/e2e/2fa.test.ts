@@ -47,6 +47,9 @@ test('Users can add 2FA to their account and use it when logging in', async ({
 
 	await page.getByRole('button', { name: /confirm/i }).click()
 
+	// close resume creation modal
+	await page.getByRole('button', { name: /close/i }).click()
+	
 	await expect(
 		page.getByRole('link', { name: `${user.name ?? user.username} ${user.name ?? user.username}`, exact: true }),
 	).toBeVisible()

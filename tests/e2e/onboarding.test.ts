@@ -81,6 +81,9 @@ test('onboarding with link', async ({ page }) => {
 		`/builder`,
 	)
 
+	// close resume creation modal
+	await page.getByRole('button', { name: /close/i }).click()
+
 	await page.getByRole('link', { name: onboardingData.name }).first().click()
 	await page.getByRole('menuitem', { name: /profile/i }).click()
 
@@ -135,7 +138,10 @@ test('login as existing user', async ({ page }) => {
 	await page.getByRole('textbox', { name: /username/i }).fill(user.username)
 	await page.getByLabel(/^password$/i).fill(password)
 	await page.getByRole('button', { name: /log in/i }).click()
-	await expect(page).toHaveURL(`/users/${user.username.toLowerCase()}/jobs/new`)
+	await expect(page).toHaveURL(`/builder`)
+
+	// close resume creation modal
+	await page.getByRole('button', { name: /close/i }).click()
 
 	await expect(
 		page.getByRole('link', { name: user.name }).first(),
@@ -190,11 +196,15 @@ test('reset password with a link', async ({ page }) => {
 	await page.getByLabel(/^password$/i).fill(newPassword)
 	await page.getByRole('button', { name: /log in/i }).click()
 
-	await expect(page).toHaveURL(`/users/${user.username.toLowerCase()}/jobs/new`)
+	await expect(page).toHaveURL(`/builder`)
+
+	// close resume creation modal
+	await page.getByRole('button', { name: /close/i }).click()
 
 	await expect(
 		page.getByRole('link', { name: user.name }).first(),
 	).toBeVisible()
+
 })
 
 test('reset password with a short code', async ({ page }) => {

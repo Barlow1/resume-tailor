@@ -111,7 +111,7 @@ export async function action({ request }: DataFunctionArgs) {
 		)
 	} else if (user?.username) {
 		throw redirect(
-			safeRedirect(`/users/${user?.username}/jobs/new`),
+			safeRedirect(`/builder`),
 			responseInit,
 		)
 	} else if (!redirectTo) {

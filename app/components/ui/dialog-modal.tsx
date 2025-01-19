@@ -35,7 +35,9 @@ export function DialogModal({
             <Dialog.Title className="text-lg font-semibold">
               {title}
             </Dialog.Title>
-            <Button 
+            <Button
+              aria-label="close"
+              name="close"
               variant="ghost" 
               size="sm"
               onClick={onClose}
