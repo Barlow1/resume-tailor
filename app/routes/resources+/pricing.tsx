@@ -11,20 +11,24 @@ import { Radio, RadioGroup } from '@headlessui/react'
 import { cn } from '~/utils/misc.ts'
 
 const frequencies = [
-	{ value: 'monthly' as const, label: 'Monthly', priceSuffix: '/month' },
 	{ value: 'weekly' as const, label: 'Weekly', priceSuffix: '/week' },
+	{ value: 'monthly' as const, label: 'Monthly', priceSuffix: '/month' },
 ]
 const tiers = [
 	{
 		name: 'Free',
 		id: 'tier-free',
 		href: '#',
-		price: { monthly: 'FREE', weekly: 'FREE' },
+		price: {
+			monthly: 'FREE',
+			weekly: 'FREE',
+		},
 		description:
-			"Build your first resume and tailor it to any job you're applying to",
+			"Build your first resume and tailor it to any job you're applying to and export it to an ATS optimized PDF",
 		features: [
 			'6 tailored/generated experiences',
 			'48-hour support response time',
+			'Export to an ATS optimized PDF',
 		],
 		mostPopular: false,
 	},
@@ -32,7 +36,10 @@ const tiers = [
 		name: 'Pro',
 		id: 'tier-pro',
 		href: '#',
-		price: { monthly: '$7.99', weekly: '$2.99' },
+		price: {
+			monthly: { initial: '3 DAY FREE TRIAL', recurring: '$7.99' },
+			weekly: { initial: '3 DAY FREE TRIAL', recurring: '$2.99' },
+		},
 		description:
 			"Tailor unlimited resumes to all jobs you're applying to and download them in an ATS optimized PDF",
 		features: [
@@ -112,75 +119,102 @@ export function Pricing({
 				</RadioGroup>
 			</div>
 			<div className="isolate mx-auto mt-10 grid max-w-md grid-cols-1 gap-8 lg:mx-0 lg:max-w-none lg:grid-cols-2">
-				{tiers.map(tier => (
-					<div
-						key={tier.id}
-						className={cn(
-							tier.mostPopular ? 'ring-2 ring-brand-800' : 'ring-1 ring-border',
-							'rounded-3xl bg-background p-8 xl:p-10',
-						)}
-					>
-						<div className="flex items-center justify-between gap-x-4">
-							<h3
-								id={tier.id}
-								className={cn(
-									tier.mostPopular ? 'text-brand-800' : 'text-foreground',
-									'text-lg/8 font-semibold',
-								)}
-							>
-								{tier.name}
-							</h3>
-							{tier.mostPopular ? (
-								<p className="rounded-full bg-brand-800/10 px-2.5 py-1 text-xs/5 font-semibold text-brand-800 dark:bg-brand-800/20">
-									Most popular
-								</p>
-							) : null}
-						</div>
-						<p className="mt-4 text-sm/6 text-muted-foreground">
-							{tier.description}
-						</p>
-						<p className="mt-6 flex items-baseline gap-x-1">
-							<span className="text-4xl font-semibold tracking-tight text-foreground">
-								{tier.price[frequency.value]}
-							</span>
-							{tier.name === 'Free' ? null : (
-								<span className="text-sm/6 font-semibold text-muted-foreground">
-									{frequency.priceSuffix}
-								</span>
+				{tiers.map(tier => {
+					const price = tier.price[frequency.value]
+					const initalPrice = typeof price === 'string' ? price : price.initial
+					const recurringPrice =
+						typeof price === 'string' ? undefined : price.recurring
+					return (
+						<div
+							key={tier.id}
+							className={cn(
+								tier.mostPopular
+									? 'ring-2 ring-brand-800'
+									: 'ring-1 ring-border',
+								'rounded-3xl bg-background p-8 xl:p-10',
 							)}
-						</p>
-						{tier.name === 'Free' ? null : (
-							<Form method="post" action="/resources/pricing">
-								<input type="hidden" name="successUrl" value={successUrl} />
-								<input type="hidden" name="cancelUrl" value={cancelUrl} />
-								<input type="hidden" name="redirectTo" value={redirectTo} />
-								<input type="hidden" name="frequency" value={frequency.value} />
-								<Button
-									type="submit"
+						>
+							<div className="flex items-center justify-between gap-x-4">
+								<h3
+									id={tier.id}
 									className={cn(
-										tier.mostPopular
-											? 'bg-brand-800 text-primary-foreground hover:bg-brand-500'
-											: 'bg-background text-brand-800 ring-1 ring-inset ring-border hover:ring-brand-800/30',
-										'mt-6 block w-full',
+										tier.mostPopular ? 'text-brand-800' : 'text-foreground',
+										'text-lg/8 font-semibold',
 									)}
 								>
-									Buy plan
-								</Button>
-							</Form>
-						)}
-						<ul className="mt-8 space-y-3 text-sm/6 text-muted-foreground xl:mt-10">
-							{tier.features.map(feature => (
-								<li key={feature} className="flex gap-x-3">
-									<CheckIcon
-										aria-hidden="true"
-										className="h-6 w-5 flex-none text-brand-800"
+									{tier.name}
+								</h3>
+								{tier.mostPopular ? (
+									<p className="rounded-full bg-brand-800/10 px-2.5 py-1 text-xs/5 font-semibold text-brand-800 dark:bg-brand-800/20">
+										Most popular
+									</p>
+								) : null}
+							</div>
+							<p className="mt-4 text-sm/6 text-muted-foreground">
+								{tier.description}
+							</p>
+							<p className="mt-6 flex items-baseline gap-x-1">
+								<span className="text-4xl font-semibold tracking-tight text-foreground">
+									{initalPrice}
+								</span>
+								{tier.name === 'Free' || tier.name === 'Pro' ? null : (
+									<span className="text-sm/6 font-semibold text-muted-foreground">
+										{frequency.priceSuffix}
+									</span>
+								)}
+							</p>
+							{recurringPrice ? (
+								<p className="mt-6 flex items-baseline gap-x-1">
+									<span className="text-sm/6 font-semibold text-muted-foreground">
+										then
+									</span>
+									<span className="text-sm/6 font-semibold tracking-tight text-foreground">
+										{recurringPrice}
+									</span>
+									{tier.name === 'Free' ? null : (
+										<span className="text-sm/6 font-semibold text-muted-foreground">
+											{frequency.priceSuffix}
+										</span>
+									)}
+								</p>
+							) : null}
+							{tier.name === 'Free' ? null : (
+								<Form method="post" action="/resources/pricing">
+									<input type="hidden" name="successUrl" value={successUrl} />
+									<input type="hidden" name="cancelUrl" value={cancelUrl} />
+									<input type="hidden" name="redirectTo" value={redirectTo} />
+									<input
+										type="hidden"
+										name="frequency"
+										value={frequency.value}
 									/>
-									{feature}
-								</li>
-							))}
-						</ul>
-					</div>
-				))}
+									<Button
+										type="submit"
+										className={cn(
+											tier.mostPopular
+												? 'bg-brand-800 text-primary-foreground hover:bg-brand-500'
+												: 'bg-background text-brand-800 ring-1 ring-inset ring-border hover:ring-brand-800/30',
+											'mt-6 block w-full',
+										)}
+									>
+										Start free trial
+									</Button>
+								</Form>
+							)}
+							<ul className="mt-8 space-y-3 text-sm/6 text-muted-foreground xl:mt-10">
+								{tier.features.map(feature => (
+									<li key={feature} className="flex gap-x-3">
+										<CheckIcon
+											aria-hidden="true"
+											className="h-6 w-5 flex-none text-brand-800"
+										/>
+										{feature}
+									</li>
+								))}
+							</ul>
+						</div>
+					)
+				})}
 			</div>
 		</div>
 	)

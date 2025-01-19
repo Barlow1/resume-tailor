@@ -207,6 +207,7 @@ model GettingStartedProgress {
   hasGeneratedResume Boolean
   tailorCount        Int      @default(0)
   generateCount      Int      @default(0)
+  downloadCount      Int      @default(0)
   owner              User     @relation(fields: [ownerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   ownerId            String   @unique
 }

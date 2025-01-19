@@ -38,7 +38,7 @@ const FAQ: React.FC = () => {
     {
       question: 'How much does it cost to tailor my resume?',
       answer:
-        "Horizon's Resume Tailor allows you to tailor 2 resumes with AI support. For unlimited resume tailoring and additional features, you can upgrade to Resume Tailor Pro for $2.99/month.",
+        "Horizon's Resume Tailor allows you to tailor 1 ATS optimized resume with AI support. For unlimited resume tailoring and additional features, you can upgrade to Resume Tailor Pro with a 3-day free trial then $2.99/week or $7.99/month.",
     },
     {
       question: 'Why should I tailor my resume for every job I apply to?',

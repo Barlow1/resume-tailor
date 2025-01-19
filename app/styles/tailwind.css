@@ -111,3 +111,35 @@
   @apply bg-rainbow-text bg-clip-text text-fill-transparent;
   background-size: 200% auto;
 }
+
+.animate-rainbow-border {
+  @apply relative overflow-hidden inline-block w-full;
+  border-radius: 0.7rem;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.animate-rainbow-border::before {
+  content: '';
+  @apply absolute block;
+  /* rainbow gradient */	
+  background: linear-gradient(90deg, #6366f1 0%, #ec4899 100%);
+  height: 500px;
+  width: 500px;
+  position: absolute;
+  animation: rotate 8s linear infinite;
+  transform-origin: center center;
+  z-index: 0;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

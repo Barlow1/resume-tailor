@@ -46,7 +46,8 @@ export async function action({ request }: DataFunctionArgs) {
 				startDate: moment(exp.date_start).format('MMM YYYY'),
 				endDate: moment(exp.date_end).format('MMM YYYY'),
 				descriptions: exp.tasks.map((task, index) => ({
-					content: task.name,
+					// capitalize first letter of each task
+					content: capitalizeFirstLetter(task.name),
 					order: index,
 				})),
 			})),
@@ -144,4 +145,8 @@ export async function action({ request }: DataFunctionArgs) {
 	}
 
 	throw new Error('Invalid creation type')
+}
+
+function capitalizeFirstLetter(str: string) {
+	return str.charAt(0).toUpperCase() + str.slice(1)
 }

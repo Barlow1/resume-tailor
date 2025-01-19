@@ -40,14 +40,14 @@ export function SortableBulletPoint({
 		transition,
 		isDragging,
 	} = useSortable({
-        id,
-        data: {
-            type: 'bullet',
-            bullet: content,
-            experienceId: id.toString().split('_')[0],
-            bulletIndex: parseInt(id.toString().split('_')[1]),
-        }
-    })
+		id,
+		data: {
+			type: 'bullet',
+			bullet: content,
+			experienceId: id.toString().split('_')[0],
+			bulletIndex: parseInt(id.toString().split('_')[1]),
+		},
+	})
 
 	const style = {
 		transform: CSS.Transform.toString(transform),
@@ -89,7 +89,12 @@ export function SortableBulletPoint({
 					className="hidden group-focus-within/expItem:block group-hover/expItem:block"
 					title="AI Assistant"
 				>
-					<RainbowSparklesIcon className="h-5 w-5" id={id} />
+					<div className="flex items-center gap-1">
+						<span className="animate-rainbow-text text-sm text-gray-600">
+							AI Assistant
+						</span>
+						<RainbowSparklesIcon className="h-5 w-5" id={id} />
+					</div>
 				</button>
 				<button
 					type="button"

@@ -12,7 +12,7 @@ import {
 	type LoaderFunctionArgs,
 	type ActionFunctionArgs,
 } from '@remix-run/node'
-import { Form, useLoaderData, useFetcher } from '@remix-run/react'
+import { Form, useLoaderData, useFetcher, useNavigate } from '@remix-run/react'
 import {
 	EnvelopeIcon,
 	PhoneIcon,
@@ -78,6 +78,7 @@ import { getUserBuilderResumes } from '~/utils/builder-resume.server.ts'
 import { type Jsonify } from '@remix-run/server-runtime/dist/jsonify.js'
 import type { SubmitTarget } from 'react-router-dom/dist/dom.d.ts'
 import * as reactColor from 'react-color'
+import { type BuilderResume, type Job } from '@prisma/client'
 
 const { ChromePicker } = reactColor
 
@@ -183,17 +184,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		}
 	}
 
-	const gettingStartedProgress = userId
-		? await prisma.gettingStartedProgress.findUnique({
-				where: { ownerId: userId },
-		  })
-		: null
-
-	const subscription = userId ? await getStripeSubscription(userId) : null
-
-	const jobs = userId ? await getUserJobs(userId) : []
-
-	const resumes = userId ? await getUserBuilderResumes(userId) : []
+	const [gettingStartedProgress, subscription, jobs, resumes] = await Promise.all([
+		userId ? prisma.gettingStartedProgress.findUnique({
+			where: { ownerId: userId },
+		}) : null,
+		userId ? getStripeSubscription(userId) : null,
+		userId ? getUserJobs(userId) : [] as Jsonify<Job>[],
+		userId ? getUserBuilderResumes(userId) : [] as Jsonify<BuilderResume>[],
+	])
 
 	return json({
 		userId,
@@ -235,6 +233,8 @@ export default function ResumeBuilder() {
 
 	const fetcher = useFetcher<{ formData: Jsonify<ResumeData> }>()
 	const pdfFetcher = useFetcher<{ fileData: string; fileType: string }>()
+
+	const navigate = useNavigate()
 
 	// Debounced save function - will only fire after 1000ms of no changes
 	const debouncedSave = useDebouncedCallback(data => {
@@ -536,6 +536,10 @@ export default function ResumeBuilder() {
 	const [downloadClicked, setDownloadClicked] = useState(false)
 
 	const handleClickDownloadPDF = () => {
+		if(!userId) {
+			navigate('/login?redirectTo=/builder')
+			return
+		}
 		setDownloadClicked(true)
 		handlePDFDownloadRequested({
 			downloadPDFRequested: true,
@@ -545,7 +549,8 @@ export default function ResumeBuilder() {
 	}
 
 	const handleDownloadPDF = useCallback(async () => {
-		if (!subscription) {
+		const MAX_FREE_DOWNLOADS = 3
+		if (!subscription?.active && (gettingStartedProgress?.downloadCount ?? 0) >= MAX_FREE_DOWNLOADS) {
 			setShowSubscribeModal(true)
 			return
 		}
@@ -994,6 +999,18 @@ export default function ResumeBuilder() {
 		}
 	}
 
+	const handleUploadResume = () => {
+		if (!userId) {
+			navigate('/login?redirectTo=/builder')
+			return false
+		} else if (!subscription) {
+			setShowCreationModal(false)
+			setShowSubscribeModal(true)
+			return false
+		}
+		return true
+	}
+
 	const [isDraggingAny, setIsDraggingAny] = useState(false)
 	const [activeId, setActiveId] = useState<string | null>(null)
 
@@ -1090,7 +1107,7 @@ export default function ResumeBuilder() {
 
 	const [showCreationModal, setShowCreationModal] = useState(!formData.id)
 
-	const isModalDisplaying = showAIModal || showCreateJob || showCreationModal
+	const isModalDisplaying = showAIModal || showCreateJob
 
 	// Add state for color and color picker visibility
 	const [nameColor, setNameColor] = useState(formData.nameColor ?? '#6B45FF')
@@ -1633,6 +1650,9 @@ export default function ResumeBuilder() {
 				isOpen={showCreationModal}
 				onClose={() => setShowCreationModal(false)}
 				resumes={resumes}
+				handleUploadResume={handleUploadResume}
+				userId={userId}
+				subscription={subscription}
 			/>
 		</DraggingContext.Provider>
 	)
