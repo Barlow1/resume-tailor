@@ -5,13 +5,12 @@ import {
 	updateBuilderResume,
 } from '~/utils/builder-resume.server.ts'
 import { resumeCookie } from '~/utils/resume-cookie.server.ts'
-import { requireUserId } from '~/utils/auth.server.ts'
+import { getUserId } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
 
 export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData()
-	const userId = await requireUserId(request, { redirectTo: '/builder' })
-
+	const userId = await getUserId(request)
 
 	const type = formData.get('type')
 
@@ -47,6 +46,8 @@ export async function action({ request }: ActionFunctionArgs) {
 		: await createBuilderResume(userId, resumeData)
 
 	// Increment download count
+
+	if (userId) {
 	await prisma.gettingStartedProgress.upsert({
 		where: { ownerId: userId },
 		update: { downloadCount: { increment: 1 } },
@@ -57,8 +58,9 @@ export async function action({ request }: ActionFunctionArgs) {
 			hasGeneratedResume: false,
 			tailorCount: 0,
 			generateCount: 0,
-		 },
-	})
+			},
+		})	
+	}
 
 	// Store minimal data in cookie
 	const cookieData = {
