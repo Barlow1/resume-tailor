@@ -16,6 +16,9 @@ import { passwordSchema, usernameSchema } from '~/utils/user-validation.ts'
 import { checkboxSchema } from '~/utils/zod-extensions.ts'
 import { type VerificationTypes, Verify } from './verify.tsx'
 import SocialLogin from '~/components/social-login.tsx'
+import { GoogleReCaptcha } from 'react-google-recaptcha-v3'
+import { useCallback, useState } from 'react'
+import { getRecaptchaScore } from '~/utils/recaptcha.server.ts'
 
 const ROUTE_PATH = '/resources/login'
 export const unverifiedSessionKey = 'unverified-sessionId'
@@ -33,6 +36,16 @@ export async function action({ request }: DataFunctionArgs) {
 		schema: LoginFormSchema,
 		acceptMultipleErrors: () => true,
 	})
+	const token = formData.get('_captcha')
+	if (token && typeof token === 'string') {
+		const score = await getRecaptchaScore(
+			token,
+			process.env.RECAPTCHA_SECRET_KEY,
+		)
+		if (!score) {
+			return json({ status: 'error', submission } as const, { status: 401 })
+		}
+	}
 	// get the password off the payload that's sent back
 	delete submission.payload.password
 	// @ts-expect-error - conform should probably have support for doing this
@@ -110,10 +123,7 @@ export async function action({ request }: DataFunctionArgs) {
 			responseInit,
 		)
 	} else if (user?.username) {
-		throw redirect(
-			safeRedirect(`/builder`),
-			responseInit,
-		)
+		throw redirect(safeRedirect(`/builder`), responseInit)
 	} else if (!redirectTo) {
 		return json({ status: 'success', submission } as const, responseInit)
 	} else {
@@ -129,6 +139,10 @@ export function InlineLogin({
 	formError?: string | null
 }) {
 	const loginFetcher = useFetcher<typeof action>()
+	const [token, setToken] = useState<string | null>(null)
+	const onVerify = useCallback((token: string) => {
+		setToken(token)
+	}, [])
 
 	const [form, fields] = useForm({
 		id: 'inline-login',
@@ -159,6 +173,10 @@ export function InlineLogin({
 							name="login"
 							{...form.props}
 						>
+							{token ? (
+								<input type="hidden" name="_captcha" value={token} />
+							) : null}
+
 							<Field
 								labelProps={{ children: 'Username' }}
 								inputProps={{
@@ -223,7 +241,7 @@ export function InlineLogin({
 											: loginFetcher.data?.status ?? 'idle'
 									}
 									type="submit"
-									disabled={loginFetcher.state !== 'idle'}
+									disabled={loginFetcher.state !== 'idle' || !token}
 								>
 									Log in
 								</StatusButton>
@@ -236,6 +254,7 @@ export function InlineLogin({
 						</div>
 					</>
 				)}
+				<GoogleReCaptcha onVerify={onVerify} action="login" />
 			</div>
 		</div>
 	)

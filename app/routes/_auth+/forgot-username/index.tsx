@@ -16,7 +16,8 @@ import { sendEmail } from '~/utils/email.server.ts'
 import { emailSchema } from '~/utils/user-validation.ts'
 import { ForgotUsernameEmail } from './email.server.tsx'
 import { GoogleReCaptcha } from "react-google-recaptcha-v3"
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
+import { getRecaptchaScore } from '~/utils/recaptcha.server.ts'
 
 const ForgotUsernameSchema = z.object({
 	email: emailSchema,
@@ -24,6 +25,7 @@ const ForgotUsernameSchema = z.object({
 
 export async function action({ request }: DataFunctionArgs) {
 	const formData = await request.formData()
+	const token = formData.get('_captcha')
 	const submission = await parse(formData, {
 		schema: ForgotUsernameSchema.superRefine(async (data, ctx) => {
 			if (data.email.includes('@')) return
@@ -47,6 +49,12 @@ export async function action({ request }: DataFunctionArgs) {
 		async: true,
 		acceptMultipleErrors: () => true,
 	})
+	if (token && typeof token === 'string') {
+		const score = await getRecaptchaScore(token, process.env.RECAPTCHA_SECRET_KEY)
+		if (!score) {
+			return json({ status: 'error', submission } as const, { status: 401 })
+		}
+	}
 	if (submission.intent !== 'submit') {
 		return json({ status: 'idle', submission } as const)
 	}
@@ -95,9 +103,9 @@ export default function ForgotUsernameRoute() {
 	const forgotUsername = useFetcher<typeof action>()
 
 	const [token, setToken] = useState<string | null>(null)
-	const onVerify = (token: string) => {
+	const onVerify = useCallback((token: string) => {
 		setToken(token)
-	}
+	}, [])
 
 	const [form, fields] = useForm({
 		id: 'forgot-username-form',
@@ -123,6 +131,9 @@ export default function ForgotUsernameRoute() {
 					{...form.props}
 					className="mx-auto mt-16 min-w-[368px] max-w-sm"
 				>
+					{token ? (
+						<input type="hidden" name="_captcha" value={token} />
+					) : null}
 					<div>
 						<Field
 							labelProps={{
@@ -151,7 +162,7 @@ export default function ForgotUsernameRoute() {
 						>
 							Recover username
 						</StatusButton>
-						<GoogleReCaptcha onVerify={onVerify} />
+						<GoogleReCaptcha onVerify={onVerify} action="forgot-username" />
 					</div>
 				</forgotUsername.Form>
 				<Link to="/login" className="mt-11 text-center text-body-sm font-bold">

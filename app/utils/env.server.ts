@@ -8,6 +8,8 @@ const schema = z.object({
 	INTERNAL_COMMAND_TOKEN: z.string(),
 	CACHE_DATABASE_PATH: z.string(),
 	CI: z.string().optional(),
+	RECAPTCHA_SITE_KEY: z.string(),
+	RECAPTCHA_SECRET_KEY: z.string(),
 	// If you plan on using Sentry, uncomment this line
 	// SENTRY_DSN: z.string(),
 	// If you plan to use Resend, uncomment this line
@@ -47,6 +49,7 @@ export function getEnv() {
 		MODE: process.env.NODE_ENV,
 		SENTRY_DSN: process.env.SENTRY_DSN,
 		CI: process.env.CI,
+		RECAPTCHA_SITE_KEY: process.env.RECAPTCHA_SITE_KEY,
 	}
 }
 

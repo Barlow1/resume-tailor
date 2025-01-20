@@ -361,7 +361,8 @@ function App() {
 	return (
 		<Document nonce={nonce} theme={theme} env={data.ENV}>
 			<GoogleReCaptchaProvider
-				reCaptchaKey="6LcrBbkqAAAAAIjg4DrH75tQdU-Y0GdBdDvhr9rL"
+				reCaptchaKey={data.ENV.RECAPTCHA_SITE_KEY}
+				useEnterprise={false}
 				container={{
 					element: 'recaptcha-container',
 					parameters: {

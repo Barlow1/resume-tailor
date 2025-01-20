@@ -19,8 +19,9 @@ import { prisma } from '~/utils/db.server.ts'
 import { sendEmail } from '~/utils/email.server.ts'
 import { emailSchema, usernameSchema } from '~/utils/user-validation.ts'
 import { ForgotPasswordEmail } from './email.server.tsx'
-import { GoogleReCaptcha } from "react-google-recaptcha-v3"
-import { useState } from 'react'
+import { GoogleReCaptcha } from 'react-google-recaptcha-v3'
+import { useCallback, useState } from 'react'
+import { getRecaptchaScore } from '~/utils/recaptcha.server.ts'
 
 const ForgotPasswordSchema = z.object({
 	usernameOrEmail: z.union([emailSchema, usernameSchema]),
@@ -51,6 +52,16 @@ export async function action({ request }: DataFunctionArgs) {
 		async: true,
 		acceptMultipleErrors: () => true,
 	})
+	const token = formData.get('_captcha')
+	if (token && typeof token === 'string') {
+		const score = await getRecaptchaScore(
+			token,
+			process.env.RECAPTCHA_SECRET_KEY,
+		)
+		if (!score) {
+			return json({ status: 'error', submission } as const, { status: 401 })
+		}
+	}
 	if (submission.intent !== 'submit') {
 		return json({ status: 'idle', submission } as const)
 	}
@@ -109,9 +120,10 @@ export const meta: MetaFunction = () => {
 export default function ForgotPasswordRoute() {
 	const forgotPassword = useFetcher<typeof action>()
 	const [token, setToken] = useState<string | null>(null)
-	const onVerify = (token: string) => {
+	const onVerify = useCallback((token: string) => {
+		debugger;
 		setToken(token)
-	}
+	}, [])
 
 	const [form, fields] = useForm({
 		id: 'forgot-password-form',
@@ -124,7 +136,7 @@ export default function ForgotPasswordRoute() {
 	})
 
 	return (
-		<div className="md:container pb-32 pt-20">
+		<div className="pb-32 pt-20 md:container">
 			<div className="flex flex-col justify-center">
 				<div className="text-center">
 					<h1 className="text-h1">Forgot Password</h1>
@@ -137,6 +149,7 @@ export default function ForgotPasswordRoute() {
 					{...form.props}
 					className="mx-auto mt-16 min-w-[368px] max-w-sm"
 				>
+					{token ? <input type="hidden" name="_captcha" value={token} /> : null}
 					<div>
 						<Field
 							labelProps={{
@@ -165,13 +178,13 @@ export default function ForgotPasswordRoute() {
 						>
 							Recover password
 						</StatusButton>
-						<GoogleReCaptcha onVerify={onVerify} />
 					</div>
 				</forgotPassword.Form>
 				<Link to="/login" className="mt-11 text-center text-body-sm font-bold">
 					Back to Login
 				</Link>
 			</div>
+			<GoogleReCaptcha onVerify={onVerify} action="forgot-password" />
 		</div>
 	)
 }

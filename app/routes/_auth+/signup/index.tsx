@@ -17,8 +17,9 @@ import { sendEmail } from '~/utils/email.server.ts'
 import { useIsSubmitting } from '~/utils/misc.ts'
 import { emailSchema } from '~/utils/user-validation.ts'
 import { SignupEmail } from './email.server.tsx'
-import { GoogleReCaptcha } from "react-google-recaptcha-v3";
-import { useState } from 'react'
+import { GoogleReCaptcha } from 'react-google-recaptcha-v3'
+import { useCallback, useState } from 'react'
+import { getRecaptchaScore } from '~/utils/recaptcha.server.ts'
 
 export const onboardingOTPQueryParam = 'code'
 export const onboardingEmailQueryParam = 'email'
@@ -48,6 +49,13 @@ export async function action({ request }: DataFunctionArgs) {
 		acceptMultipleErrors: () => true,
 		async: true,
 	})
+	const token = formData.get('_captcha')
+	if (token && typeof token === 'string') {
+		const score = await getRecaptchaScore(token, process.env.RECAPTCHA_SECRET_KEY)
+		if (!score) {
+			return json({ status: 'error', submission } as const, { status: 401 })
+		}
+	}
 	if (submission.intent !== 'submit') {
 		return json({ status: 'idle', submission } as const)
 	}
@@ -100,12 +108,12 @@ export default function SignupRoute() {
 		shouldRevalidate: 'onBlur',
 	})
 	const [token, setToken] = useState<string | null>(null)
-	const onVerify = (token: string) => {
+	const onVerify = useCallback((token: string) => {
 		setToken(token)
-	}
+	}, [])
 
 	return (
-		<div className="md:container flex flex-col justify-center pb-32 pt-20">
+		<div className="flex flex-col justify-center pb-32 pt-20 md:container">
 			<div className="text-center">
 				<h1 className="text-h1">Let's start your journey!</h1>
 				<p className="mt-3 text-body-md text-muted-foreground">
@@ -117,6 +125,7 @@ export default function SignupRoute() {
 				className="mx-auto mt-16 min-w-[368px] max-w-sm"
 				{...form.props}
 			>
+				{token ? <input type="hidden" name="_captcha" value={token} /> : null}
 				<Field
 					labelProps={{
 						htmlFor: fields.email.id,
@@ -135,7 +144,7 @@ export default function SignupRoute() {
 					Submit
 				</StatusButton>
 			</Form>
-			<GoogleReCaptcha onVerify={onVerify} />
+			<GoogleReCaptcha onVerify={onVerify} action="signup" />
 		</div>
 	)
 }
