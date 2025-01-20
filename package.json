@@ -120,7 +120,8 @@
     "twitter-api-v2": "^1.17.2",
     "use-debounce": "^10.0.4",
     "zod": "^3.21.4",
-    "zustand": "^4.5.4"
+    "zustand": "^4.5.4",
+    "tsx": "^3.12.7"
   },
   "devDependencies": {
     "@faker-js/faker": "^8.0.2",
@@ -165,7 +166,6 @@
     "remix-development-tools": "^1.2.2",
     "remix-flat-routes": "^0.5.10",
     "tsconfig-paths": "^4.2.0",
-    "tsx": "^3.12.7",
     "typescript": "^5.1.6",
     "vite": "^4.4.2",
     "vite-tsconfig-paths": "^4.2.0",
