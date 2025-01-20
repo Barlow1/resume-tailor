@@ -145,6 +145,16 @@ const defaultFormData: ResumeData = {
 	},
 }
 
+const defaultVisibleSections: VisibleSections = {
+	about: true,
+	experience: true,
+	education: true,
+	skills: true,
+	hobbies: true,
+	personalDetails: true,
+	photo: true,
+}
+
 export async function loader({ request }: LoaderFunctionArgs) {
 	const userId = await getUserId(request)
 	const cookieHeader = request.headers.get('Cookie')
@@ -152,15 +162,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		(await resumeCookie.parse(cookieHeader)) || {}
 
 	let savedData = defaultFormData
-	let savedVisibleSections: VisibleSections = {
-		about: true,
-		experience: true,
-		education: true,
-		skills: true,
-		hobbies: true,
-		personalDetails: true,
-		photo: true,
-	}
+	let savedVisibleSections: VisibleSections = defaultVisibleSections
 
 	if (resumeId) {
 		const resume = await getBuilderResume(resumeId)
@@ -1124,6 +1126,7 @@ export default function ResumeBuilder() {
 	const handleReset = () => {
 		setFormData(defaultFormData as Jsonify<ResumeData>)
 		setNameColor(defaultFormData.nameColor ?? '#6B45FF')
+		setVisibleSections(defaultVisibleSections)
 		setShowResetModal(false)
 		setShowCreationModal(true)
 		rerenderRef.current = true
