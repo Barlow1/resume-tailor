@@ -121,7 +121,6 @@ export default function ForgotPasswordRoute() {
 	const forgotPassword = useFetcher<typeof action>()
 	const [token, setToken] = useState<string | null>(null)
 	const onVerify = useCallback((token: string) => {
-		debugger;
 		setToken(token)
 	}, [])
 
