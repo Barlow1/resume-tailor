@@ -86,7 +86,23 @@ const handlers = [
 						"updatedAt": "2024-03-17T01:09:50.187Z"
 					  }),
 				)
-		  })
+		  }),
+		// mock recaptcha token retrieval
+		rest.get(
+			`https://www.google.com/recaptcha/api2/reload?k=${process.env.RECAPTCHA_SITE_KEY}`,
+			(req, res, ctx) => {
+				console.log('🔶 mocked recaptcha token retrieval')
+				return res(ctx.json({ token: '1234567890' }))
+			},
+		),
+		// mock recaptcha score retrieval
+		rest.post(
+			`https://www.google.com/recaptcha/api/siteverify`,
+			(req, res, ctx) => {
+				console.log('🔶 mocked recaptcha score retrieval')
+				return res(ctx.json({ success: true, score: 0.9 }))
+			},
+		),
 ].filter(Boolean)
 
 const server = setupServer(...handlers)
