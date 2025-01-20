@@ -184,7 +184,7 @@ export default function ForgotPasswordRoute() {
 					Back to Login
 				</Link>
 			</div>
-			<GoogleReCaptcha onVerify={onVerify} action="forgot-password" />
+			<GoogleReCaptcha onVerify={onVerify} action="forgot_password" />
 		</div>
 	)
 }

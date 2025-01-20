@@ -162,7 +162,7 @@ export default function ForgotUsernameRoute() {
 						>
 							Recover username
 						</StatusButton>
-						<GoogleReCaptcha onVerify={onVerify} action="forgot-username" />
+						<GoogleReCaptcha onVerify={onVerify} action="forgot_username" />
 					</div>
 				</forgotUsername.Form>
 				<Link to="/login" className="mt-11 text-center text-body-sm font-bold">
