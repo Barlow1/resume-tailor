@@ -71,11 +71,23 @@ export type ResumeData = {
 	headers?: BuilderHeaders | null
 	createdAt?: string | Date | null
 	updatedAt?: string | Date | null
+	visibleSections?: VisibleSections | null
+}
+
+export type VisibleSections = {
+	about: boolean
+	experience: boolean
+	education: boolean
+	skills: boolean
+	hobbies: boolean
+	personalDetails: boolean
+	photo: boolean
 }
 
 export async function createBuilderResume(
 	userId: string | null,
 	data: Omit<ResumeData, 'id' | 'userId' | 'createdAt' | 'updatedAt'>,
+	visibleSections: VisibleSections,
 ) {
 	const { job, jobId, ...createData } = data
 	const createInput: Prisma.BuilderResumeCreateInput = {
@@ -98,6 +110,7 @@ export async function createBuilderResume(
 		hobbies: { create: data.hobbies },
 		headers: data.headers ? { create: data.headers } : undefined,
 		job: jobId ? { connect: { id: jobId } } : undefined,
+		visibleSections: visibleSections ? { create: visibleSections } : undefined,
 	}
 
 	return prisma.builderResume.create({
@@ -113,7 +126,7 @@ export async function createBuilderResume(
 	})
 }
 
-export async function updateBuilderResume(userId: string | null, resumeId: string, data: Omit<ResumeData, 'userId' | 'createdAt' | 'updatedAt'>) {
+export async function updateBuilderResume(userId: string | null, resumeId: string, data: Omit<ResumeData, 'userId' | 'createdAt' | 'updatedAt'>, visibleSections: VisibleSections) {
 	const { id, job, jobId, ...updateData } = data
 	const updateInput: Prisma.BuilderResumeUpdateInput = {
 		...updateData,
@@ -152,6 +165,12 @@ export async function updateBuilderResume(userId: string | null, resumeId: strin
 			  }
 			: undefined,
 		job: data.jobId ? { connect: { id: data.jobId } } : undefined,
+		visibleSections: visibleSections ? {
+			upsert: {
+				create: visibleSections,
+				update: visibleSections,
+			},
+		} : undefined,
 	}
 	return prisma.builderResume.update({
 		where: { id: resumeId },
@@ -171,6 +190,7 @@ export async function updateBuilderResume(userId: string | null, resumeId: strin
 			hobbies: true,
 			headers: true,
 			job: true,
+			visibleSections: true,
 		},
 	})
 }
@@ -233,6 +253,18 @@ export async function getBuilderResume(id: string) {
 					educationHeader: true,
 					aboutHeader: true,
 					detailsHeader: true,
+				},
+			},
+			visibleSections: {
+				select: {
+					id: true,
+					about: true,
+					experience: true,
+					education: true,
+					skills: true,
+					hobbies: true,
+					personalDetails: true,
+					photo: true,
 				},
 			},
 		},
@@ -299,6 +331,18 @@ export async function getUserBuilderResumes(
 					educationHeader: true,
 					aboutHeader: true,
 					detailsHeader: true,
+				},
+			},
+			visibleSections: {
+				select: {
+					id: true,
+					about: true,
+					experience: true,
+					education: true,
+					skills: true,
+					hobbies: true,
+					personalDetails: true,
+					photo: true,
 				},
 			},
 		},

@@ -3,6 +3,7 @@ import {
 	createBuilderResume,
 	type ResumeData,
 	updateBuilderResume,
+	type VisibleSections,
 } from '~/utils/builder-resume.server.ts'
 import { resumeCookie } from '~/utils/resume-cookie.server.ts'
 import { getUserId } from '~/utils/auth.server.ts'
@@ -34,6 +35,9 @@ export async function action({ request }: ActionFunctionArgs) {
 	const resumeData: ResumeData = JSON.parse(
 		formData.get('formData') as string,
 	) as ResumeData
+	const visibleSections: VisibleSections = JSON.parse(
+		formData.get('visibleSections') as string
+	) as VisibleSections
 	const downloadPDFRequested = formData.get('downloadPDFRequested') === 'true'
 	const subscribe = formData.get('subscribe') === 'true'
 
@@ -42,8 +46,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
 	// Create or update resume in database
 	const resume = resumeId
-		? await updateBuilderResume(userId, resumeId, resumeData)
-		: await createBuilderResume(userId, resumeData)
+		? await updateBuilderResume(userId, resumeId, resumeData, visibleSections)
+		: await createBuilderResume(userId, resumeData, visibleSections)
 
 	// Increment download count
 

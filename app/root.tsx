@@ -66,6 +66,8 @@ import {
 	DocumentTextIcon,
 	DocumentArrowUpIcon,
 	QueueListIcon,
+	ChevronLeftIcon,
+	ChevronRightIcon,
 } from '@heroicons/react/24/outline'
 import { redirect } from '@remix-run/router'
 import { Crisp } from 'crisp-sdk-web'
@@ -308,6 +310,22 @@ function App() {
 	}, [])
 
 	const [sidebarOpen, setSidebarOpen] = useState(false)
+	const [isCollapsed, setIsCollapsed] = useState(false)
+
+	// Load collapsed state from localStorage on mount
+	useEffect(() => {
+		const savedState = localStorage.getItem('sidebarCollapsed')
+		if (savedState) {
+			setIsCollapsed(JSON.parse(savedState) as boolean)
+		}
+	}, [])
+
+	// Save collapsed state to localStorage
+	const toggleCollapse = () => {
+		const newState = !isCollapsed
+		setIsCollapsed(newState)
+		localStorage.setItem('sidebarCollapsed', JSON.stringify(newState))
+	}
 
 	const navigation = [
 		{
@@ -388,6 +406,7 @@ function App() {
 													</div>
 												</TransitionChild>
 												{/* Sidebar component, swap this element with another sidebar if you like */}
+
 												<div className="flex grow flex-col gap-y-5 overflow-y-auto bg-[#6B45FF] px-6 pb-4">
 													<div className="flex h-16 shrink-0 items-center">
 														<Link to="/">
@@ -395,6 +414,7 @@ function App() {
 																className={clsx(
 																	'md:text-md text-center text-sm font-extrabold text-white lg:text-xl',
 																	{ 'text-white': isOnLandingPage },
+																	{ hidden: isCollapsed },
 																)}
 															>
 																RESUME TAILOR
@@ -427,7 +447,7 @@ function App() {
 																					)}
 																					aria-hidden="true"
 																				/>
-																				{item.name}
+																				{!isCollapsed && item.name}
 																			</Link>
 																		</li>
 																	))}
@@ -455,7 +475,12 @@ function App() {
 									</Dialog>
 
 									{/* Static sidebar for desktop */}
-									<div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
+									<div
+										className={clsx(
+											'hidden transition-all duration-300 lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:flex-col',
+											isCollapsed ? 'lg:w-20' : 'lg:w-72',
+										)}
+									>
 										{/* Sidebar component, swap this element with another sidebar if you like */}
 										<div className="flex grow flex-col gap-y-5 overflow-y-auto bg-[#6B45FF] px-6 pb-4">
 											<div className="flex h-16 shrink-0 items-center">
@@ -466,10 +491,23 @@ function App() {
 															{ 'text-white': isOnLandingPage },
 														)}
 													>
-														RESUME TAILOR
+														{!isCollapsed ? 'RESUME TAILOR' : 'RT'}
 													</div>
 												</Link>
 											</div>
+
+											{/* Collapse toggle button */}
+											<button
+												onClick={toggleCollapse}
+												className="absolute right-0 top-[50vh] -mr-3 flex h-6 w-6 items-center justify-center rounded-full text-white hover:bg-brand-800 bg-brand-500 shadow-md"
+											>
+												{isCollapsed ? (
+													<ChevronRightIcon className="h-4 w-4" />
+												) : (
+													<ChevronLeftIcon className="h-4 w-4" />
+												)}
+											</button>
+
 											<nav className="flex flex-1 flex-col">
 												<ul className="flex flex-1 flex-col gap-y-7">
 													<li>
@@ -484,6 +522,7 @@ function App() {
 																				: 'text-purple-200 hover:bg-brand-800/50 hover:text-white',
 																			'group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6',
 																		)}
+																		title={item.name}
 																	>
 																		<item.icon
 																			className={classNames(
@@ -494,23 +533,24 @@ function App() {
 																			)}
 																			aria-hidden="true"
 																		/>
-																		{item.name}
+																		{!isCollapsed && item.name}
 																	</a>
 																</li>
 															))}
 														</ul>
 													</li>
 													{user ? (
-													<li className="mt-auto">
-														<Link
-															to={`/users/${user?.username}`}
-															className="group -mx-2 flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-purple-200 hover:bg-brand-800/50 hover:text-white"
-														>
-															<Cog6ToothIcon
-																className="h-6 w-6 shrink-0 text-purple-200 group-hover:text-white"
-																aria-hidden="true"
-															/>
-															Settings
+														<li className="mt-auto">
+															<Link
+																to={`/users/${user?.username}`}
+																className="group -mx-2 flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-purple-200 hover:bg-brand-800/50 hover:text-white"
+																title="Settings"
+															>
+																<Cog6ToothIcon
+																	className="h-6 w-6 shrink-0 text-purple-200 group-hover:text-white"
+																	aria-hidden="true"
+																/>
+																{!isCollapsed && 'Settings'}
 															</Link>
 														</li>
 													) : null}
@@ -521,7 +561,11 @@ function App() {
 								</>
 							)}
 
-							<div className={`${shouldHideNav ? '' : 'lg:pl-72'}`}>
+							<div
+								className={`${
+									shouldHideNav ? '' : isCollapsed ? 'lg:pl-20' : 'lg:pl-72'
+								}`}
+							>
 								<div
 									className={`${
 										shouldHideNav ? '' : 'sticky bg-background'

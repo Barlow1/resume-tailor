@@ -4,6 +4,7 @@ import { parseResume } from '~/utils/hrflowai.server.ts'
 import {
 	createBuilderResume,
 	getBuilderResume,
+	type VisibleSections,
 } from '~/utils/builder-resume.server.ts'
 import { resumeCookie } from '~/utils/resume-cookie.server.ts'
 import {
@@ -13,6 +14,16 @@ import {
 import moment from 'moment'
 
 const MAX_SIZE = 1024 * 1024 * 10 // 10MB
+
+const defaultVisibleSections: VisibleSections = {
+	about: true,
+	experience: true,
+	education: true,
+	skills: true,
+	hobbies: true,
+	personalDetails: true,
+	photo: true,
+}
 
 export async function action({ request }: DataFunctionArgs) {
 	const userId = await getUserId(request)
@@ -58,18 +69,21 @@ export async function action({ request }: DataFunctionArgs) {
 				endDate: moment(ed.date_end).format('MMM YYYY'),
 				description: ed.tasks.map(t => t.name).join('\n'),
 			})),
-			skills: parsedResume.profile.skills.length > 0 ? parsedResume.profile.skills.map(skill => ({
-				name: skill.name,
-					}))
-				: [{ name: '' }],
-			hobbies: parsedResume.profile.interests.length > 0
-				? parsedResume.profile.interests.map(hobby => ({	
-						name: hobby.name,
-				  }))
-				: [{ name: '' }],
+			skills:
+				parsedResume.profile.skills.length > 0
+					? parsedResume.profile.skills.map(skill => ({
+							name: skill.name,
+					  }))
+					: [{ name: '' }],
+			hobbies:
+				parsedResume.profile.interests.length > 0
+					? parsedResume.profile.interests.map(hobby => ({
+							name: hobby.name,
+					  }))
+					: [{ name: '' }],
 		}
 
-		const resume = await createBuilderResume(userId, builderResume)
+		const resume = await createBuilderResume(userId, builderResume, defaultVisibleSections)
 
 		return redirectDocument('/builder', {
 			headers: {
@@ -131,7 +145,11 @@ export async function action({ request }: DataFunctionArgs) {
 		delete resumeCopy.headers.id
 		delete resumeCopy.headers.resumeId
 
-		const builderResume = await createBuilderResume(userId, resumeCopy)
+		const builderResume = await createBuilderResume(
+			userId,
+			resumeCopy,
+			resume.visibleSections ?? defaultVisibleSections,
+		)
 
 		return redirectDocument('/builder', {
 			headers: {
