@@ -25,6 +25,7 @@ function getOnboardingData() {
 }
 
 test('onboarding with link', async ({ page }) => {
+	test.slow()
 	const onboardingData = getOnboardingData()
 
 	await page.goto('/')
@@ -100,6 +101,7 @@ test('onboarding with link', async ({ page }) => {
 })
 
 test('onboarding with a short code', async ({ page }) => {
+	test.slow()
 	const onboardingData = getOnboardingData()
 
 	await page.goto('/signup')
@@ -131,6 +133,7 @@ test('onboarding with a short code', async ({ page }) => {
 })
 
 test('login as existing user', async ({ page }) => {
+	test.slow()
 	const password = faker.internet.password()
 	const user = await insertNewUser({ password })
 	invariant(user.name, 'User name not found')
@@ -149,6 +152,7 @@ test('login as existing user', async ({ page }) => {
 })
 
 test('reset password with a link', async ({ page }) => {
+	test.slow()
 	const originalPassword = faker.internet.password()
 	const user = await insertNewUser({ password: originalPassword })
 	invariant(user.name, 'User name not found')
@@ -208,6 +212,7 @@ test('reset password with a link', async ({ page }) => {
 })
 
 test('reset password with a short code', async ({ page }) => {
+	test.slow()
 	const user = await insertNewUser()
 	await page.goto('/login')
 

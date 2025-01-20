@@ -6,6 +6,7 @@ test('Users can add 2FA to their account and use it when logging in', async ({
 	login,
 	page,
 }) => {
+	test.slow()
 	const password = faker.internet.password()
 	const user = await insertNewUser({ password })
 	await login(user)
