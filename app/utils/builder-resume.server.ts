@@ -71,7 +71,7 @@ export type ResumeData = {
 	headers?: BuilderHeaders | null
 	createdAt?: string | Date | null
 	updatedAt?: string | Date | null
-	visibleSections?: VisibleSections | null
+	visibleSections: VisibleSections | null
 }
 
 export type VisibleSections = {
@@ -87,10 +87,9 @@ export type VisibleSections = {
 
 export async function createBuilderResume(
 	userId: string | null,
-	data: Omit<ResumeData, 'id' | 'userId' | 'createdAt' | 'updatedAt'>,
-	visibleSections: VisibleSections,
+	data: Omit<ResumeData, 'userId' | 'createdAt' | 'updatedAt'>,
 ) {
-	const { job, jobId, ...createData } = data
+	const { id, job, jobId, ...createData } = data
 	const createInput: Prisma.BuilderResumeCreateInput = {
 		...createData,
 		user: userId ? { connect: { id: userId } } : undefined,
@@ -111,9 +110,8 @@ export async function createBuilderResume(
 		hobbies: { create: data.hobbies },
 		headers: data.headers ? { create: data.headers } : undefined,
 		job: jobId ? { connect: { id: jobId } } : undefined,
-		visibleSections: visibleSections ? { create: visibleSections } : undefined,
+		visibleSections: data.visibleSections ? { create: data.visibleSections } : undefined,
 	}
-
 	return prisma.builderResume.create({
 		data: createInput,
 		include: {
@@ -123,11 +121,12 @@ export async function createBuilderResume(
 			hobbies: true,
 			headers: true,
 			job: true,
+			visibleSections: true,
 		},
 	})
 }
 
-export async function updateBuilderResume(userId: string | null, resumeId: string, data: Omit<ResumeData, 'userId' | 'createdAt' | 'updatedAt'>, visibleSections: VisibleSections) {
+export async function updateBuilderResume(userId: string | null, resumeId: string, data: Omit<ResumeData, 'userId' | 'createdAt' | 'updatedAt'>) {
 	const { id, job, jobId, ...updateData } = data
 	const updateInput: Prisma.BuilderResumeUpdateInput = {
 		...updateData,
@@ -160,18 +159,16 @@ export async function updateBuilderResume(userId: string | null, resumeId: strin
 		headers: data.headers
 			? {
 					upsert: {
-						where: { id: data.headers?.id },
 						create: data.headers,
 						update: data.headers,
 					},
 			  }
 			: undefined,
 		job: data.jobId ? { connect: { id: data.jobId } } : undefined,
-		visibleSections: visibleSections ? {
+		visibleSections: data.visibleSections ? {
 			upsert: {
-				where: { id: visibleSections?.id },
-				create: visibleSections,
-				update: visibleSections,
+				create: data.visibleSections,
+				update: data.visibleSections,
 			},
 		} : undefined,
 	}

@@ -63,7 +63,6 @@ import {
 	type BuilderSkill,
 	getBuilderResume,
 	type ResumeData,
-	type VisibleSections,
 } from '~/utils/builder-resume.server.ts'
 import { ImageCropper } from '~/components/image-cropper.tsx'
 import { CreateJobModal } from '~/components/create-job-modal.tsx'
@@ -79,7 +78,7 @@ import { getUserBuilderResumes } from '~/utils/builder-resume.server.ts'
 import { type Jsonify } from '@remix-run/server-runtime/dist/jsonify.js'
 import type { SubmitTarget } from 'react-router-dom/dist/dom.d.ts'
 import * as reactColor from 'react-color'
-import { type BuilderResume, type Job } from '@prisma/client'
+import { type Job } from '@prisma/client'
 import { SectionVisibilityMenu } from '~/components/section-visibility-menu.tsx'
 
 const { ChromePicker } = reactColor
@@ -88,7 +87,8 @@ function base64ToUint8Array(base64: string): Uint8Array {
 	return Uint8Array.from(atob(base64), c => c.charCodeAt(0))
 }
 
-const defaultFormData: ResumeData = {
+const getDefaultFormData = (): ResumeData => {
+	return {
 	name: '',
 	nameColor: '#6B45FF',
 	role: '',
@@ -143,17 +143,17 @@ const defaultFormData: ResumeData = {
 		aboutHeader: 'About Me',
 		detailsHeader: 'Personal Details',
 	},
-}
-
-const defaultVisibleSections: VisibleSections = {
-	about: true,
-	experience: true,
-	education: true,
-	skills: true,
-	hobbies: true,
-	personalDetails: true,
-	photo: true,
-}
+	visibleSections: {
+		about: true,
+		experience: true,
+		education: true,
+		skills: true,
+		hobbies: true,
+		personalDetails: true,
+		photo: true,
+		},
+	}
+}	
 
 export async function loader({ request }: LoaderFunctionArgs) {
 	const userId = await getUserId(request)
@@ -161,8 +161,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 	const { resumeId, subscribe, downloadPDFRequested } =
 		(await resumeCookie.parse(cookieHeader)) || {}
 
-	let savedData = defaultFormData
-	let savedVisibleSections: VisibleSections = defaultVisibleSections
+	let savedData = getDefaultFormData()
 
 	if (resumeId) {
 		const resume = await getBuilderResume(resumeId)
@@ -185,7 +184,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 				job: resume.job || null,
 				nameColor: resume.nameColor || '#6B45FF',
 				headers: {
-					id: resume.headers?.id,
 					experienceHeader:
 						resume.headers?.experienceHeader || 'Professional Experience',
 					skillsHeader: resume.headers?.skillsHeader || 'Skills & Expertise',
@@ -195,9 +193,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
 					aboutHeader: resume.headers?.aboutHeader || 'About Me',
 					detailsHeader: resume.headers?.detailsHeader || 'Personal Details',
 				},
-			}
-			if (resume.visibleSections) {
-				savedVisibleSections = resume.visibleSections as VisibleSections
+				visibleSections: {
+					about: resume.visibleSections?.about || true,
+					experience: resume.visibleSections?.experience || true,
+					education: resume.visibleSections?.education || true,
+					skills: resume.visibleSections?.skills || true,
+					hobbies: resume.visibleSections?.hobbies || true,
+					personalDetails: resume.visibleSections?.personalDetails || true,
+					photo: resume.visibleSections?.photo || true,
+				}
 			}
 		}
 	}
@@ -211,14 +215,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
 				: null,
 			userId ? getStripeSubscription(userId) : null,
 			userId ? getUserJobs(userId) : ([] as Jsonify<Job>[]),
-			userId ? getUserBuilderResumes(userId) : ([] as Jsonify<BuilderResume>[]),
+			userId ? getUserBuilderResumes(userId) : ([] as ResumeData[]),
 		])
 
 	return json({
 		userId,
 		subscription,
 		savedData,
-		savedVisibleSections,
 		subscribe: subscribe === 'true',
 		downloadPDFRequested: downloadPDFRequested === 'true',
 		jobs,
@@ -242,7 +245,6 @@ export default function ResumeBuilder() {
 		userId,
 		subscription,
 		savedData,
-		savedVisibleSections,
 		subscribe,
 		downloadPDFRequested,
 		jobs,
@@ -260,10 +262,9 @@ export default function ResumeBuilder() {
 	const navigate = useNavigate()
 
 	// Debounced save function - will only fire after 1000ms of no changes
-	const debouncedSave = useDebouncedCallback(async (formData: ResumeData, newVisibleSections?: VisibleSections) => {
+	const debouncedSave = useDebouncedCallback(async (formData: ResumeData) => {
 		const form = new FormData()
 		form.append('formData', JSON.stringify(formData))
-		form.append('visibleSections', JSON.stringify(newVisibleSections ?? visibleSections))
 		form.append('downloadPDFRequested', 'false')
 		form.append('subscribe', 'false')
 		
@@ -273,7 +274,7 @@ export default function ResumeBuilder() {
 	const resetSave = () => {
 		fetcher.submit(
 			{
-				formData: JSON.stringify(defaultFormData),
+				formData: JSON.stringify(getDefaultFormData()),
 				type: 'reset',
 			} as SubmitTarget,
 			{ method: 'post', action: '/resources/save-resume' },
@@ -1125,9 +1126,8 @@ export default function ResumeBuilder() {
 	const [showResetModal, setShowResetModal] = useState(false)
 
 	const handleReset = () => {
-		setFormData(defaultFormData as Jsonify<ResumeData>)
-		setNameColor(defaultFormData.nameColor ?? '#6B45FF')
-		setVisibleSections(defaultVisibleSections)
+		setFormData(getDefaultFormData() as Jsonify<ResumeData>)
+		setNameColor(getDefaultFormData().nameColor ?? '#6B45FF')
 		setShowResetModal(false)
 		setShowCreationModal(true)
 		rerenderRef.current = true
@@ -1153,16 +1153,21 @@ export default function ResumeBuilder() {
 		debouncedSave(newFormData)
 	}
 
-	const [visibleSections, setVisibleSections] = useState(savedVisibleSections)
 
 	const handleToggleSection = (sectionId: string) => {
-		const newVisibleSections = {
-			...visibleSections,
-			[sectionId as keyof typeof visibleSections]: !visibleSections[sectionId as keyof typeof visibleSections],
+		if (!formData.visibleSections) {
+			return
+		}
+		const newFormData = {
+			...formData,
+			visibleSections: {
+				...formData.visibleSections,
+				[sectionId as keyof typeof formData.visibleSections]: !(formData.visibleSections?.[sectionId as keyof typeof formData.visibleSections] ?? true),
+			}
 		}
 
-		setVisibleSections(newVisibleSections)
-		debouncedSave(formData, newVisibleSections)
+		setFormData(newFormData)
+		debouncedSave(newFormData)
 	}
 
 	return (
@@ -1266,37 +1271,37 @@ export default function ResumeBuilder() {
 										{
 											id: 'about',
 											label: 'About Me',
-											visible: visibleSections.about,
+											visible: formData.visibleSections?.about ?? true,
 										},
 										{
 											id: 'experience',
 											label: 'Experience',
-											visible: visibleSections.experience,
+											visible: formData.visibleSections?.experience ?? true,
 										},
 										{
 											id: 'education',
 											label: 'Education',
-											visible: visibleSections.education,
+											visible: formData.visibleSections?.education ?? true,
 										},
 										{
 											id: 'skills',
 											label: 'Skills',
-											visible: visibleSections.skills,
+											visible: formData.visibleSections?.skills ?? true,
 										},
 										{
 											id: 'hobbies',
 											label: 'Interests',
-											visible: visibleSections.hobbies,
+											visible: formData.visibleSections?.hobbies ?? true,
 										},
 										{
 											id: 'personalDetails',
 											label: 'Personal Details',
-											visible: visibleSections.personalDetails,
+											visible: formData.visibleSections?.personalDetails ?? true,
 										},
 										{
 											id: 'photo',
 											label: 'Photo',
-											visible: visibleSections.photo,
+											visible: formData.visibleSections?.photo ?? true,
 										},
 									]}
 									onToggleSection={handleToggleSection}
@@ -1355,7 +1360,7 @@ export default function ResumeBuilder() {
 									{/* Left Pane */}
 									<div className="space-y-6 pr-6">
 										{/* Image Upload */}
-										{visibleSections.photo && (
+										{formData.visibleSections?.photo && (
 											<div>
 												<input
 													type="file"
@@ -1395,7 +1400,7 @@ export default function ResumeBuilder() {
 										)}
 
 										{/* About Me */}
-										{visibleSections.about && (
+										{formData.visibleSections?.about && (
 											<div className="rounded border-dashed border-gray-400 hover:border">
 												<EditableContent
 													content={formData.headers?.aboutHeader}
@@ -1423,7 +1428,7 @@ export default function ResumeBuilder() {
 										)}
 
 										{/* Personal Details */}
-										{visibleSections.personalDetails && (
+										{formData.visibleSections?.personalDetails && (
 											<div>
 												<EditableContent
 													content={formData.headers?.detailsHeader}
@@ -1527,7 +1532,7 @@ export default function ResumeBuilder() {
 										/>
 
 										<div className="mb-6">
-											{visibleSections.experience && (
+											{formData.visibleSections?.experience && (
 												<EditableContent
 													content={formData.headers?.experienceHeader}
 													onInput={e =>
@@ -1542,7 +1547,7 @@ export default function ResumeBuilder() {
 											)}
 
 											<div className="space-y-4">
-												{visibleSections.experience && formData.experiences ? (
+												{formData.visibleSections?.experience && formData.experiences ? (
 													<SortableContext
 														items={formData.experiences.map(exp => exp.id!)}
 														strategy={verticalListSortingStrategy}
@@ -1567,7 +1572,7 @@ export default function ResumeBuilder() {
 										</div>
 
 										<div className="mb-6">
-											{visibleSections.education && (
+											{formData.visibleSections?.education && (
 												<EditableContent
 													content={formData.headers?.educationHeader}
 													onInput={e =>
@@ -1581,13 +1586,13 @@ export default function ResumeBuilder() {
 												/>
 											)}
 											<div className="space-y-4">
-												{visibleSections.education &&
+												{formData.visibleSections?.education &&
 												formData.education?.length === 0 ? (
 													<div className="rounded border border-dashed border-gray-300 p-4 text-center text-gray-500">
 														Click "Add Education" to add your educational
 														background
 													</div>
-												) : visibleSections.education && formData.education ? (
+												) : formData.visibleSections?.education && formData.education ? (
 													<SortableContext
 														items={formData.education.map(edu => edu.id!)!}
 														strategy={verticalListSortingStrategy}
@@ -1607,7 +1612,7 @@ export default function ResumeBuilder() {
 										</div>
 
 										<div className="mb-6">
-											{visibleSections.skills && (
+											{formData.visibleSections?.skills && (
 												<>
 													<EditableContent
 														content={formData.headers?.skillsHeader}
@@ -1622,7 +1627,7 @@ export default function ResumeBuilder() {
 													/>
 
 													<div className="flex flex-wrap gap-2">
-														{visibleSections.skills &&
+														{formData.visibleSections?.skills &&
 															formData.skills?.map(skill => (
 																<div
 																	key={skill.id}
@@ -1664,7 +1669,7 @@ export default function ResumeBuilder() {
 										</div>
 
 										<div className="mb-6">
-											{visibleSections.hobbies && (
+											{formData.visibleSections?.hobbies && (
 												<EditableContent
 													content={formData.headers?.hobbiesHeader}
 													onInput={e =>
@@ -1680,7 +1685,7 @@ export default function ResumeBuilder() {
 											)}
 
 											<div className="flex flex-wrap gap-2">
-												{visibleSections.hobbies &&
+												{formData.visibleSections?.hobbies &&
 													formData.hobbies?.map(hobby => (
 														<div
 															key={hobby.id}

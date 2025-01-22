@@ -81,9 +81,10 @@ export async function action({ request }: DataFunctionArgs) {
 							name: hobby.name,
 					  }))
 					: [{ name: '' }],
+			visibleSections: defaultVisibleSections,
 		}
 
-		const resume = await createBuilderResume(userId, builderResume, defaultVisibleSections)
+		const resume = await createBuilderResume(userId, builderResume)
 
 		return redirectDocument('/builder', {
 			headers: {
@@ -145,10 +146,12 @@ export async function action({ request }: DataFunctionArgs) {
 		delete resumeCopy.headers.id
 		delete resumeCopy.headers.resumeId
 
+		delete resumeCopy.visibleSections.id
+		delete resumeCopy.visibleSections.resumeId
+
 		const builderResume = await createBuilderResume(
 			userId,
 			resumeCopy,
-			resume.visibleSections ?? defaultVisibleSections,
 		)
 
 		return redirectDocument('/builder', {
