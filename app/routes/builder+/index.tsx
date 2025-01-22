@@ -185,6 +185,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 				job: resume.job || null,
 				nameColor: resume.nameColor || '#6B45FF',
 				headers: {
+					id: resume.headers?.id,
 					experienceHeader:
 						resume.headers?.experienceHeader || 'Professional Experience',
 					skillsHeader: resume.headers?.skillsHeader || 'Skills & Expertise',

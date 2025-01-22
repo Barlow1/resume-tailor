@@ -75,6 +75,7 @@ export type ResumeData = {
 }
 
 export type VisibleSections = {
+	id?: string
 	about: boolean
 	experience: boolean
 	education: boolean
@@ -159,6 +160,7 @@ export async function updateBuilderResume(userId: string | null, resumeId: strin
 		headers: data.headers
 			? {
 					upsert: {
+						where: { id: data.headers?.id },
 						create: data.headers,
 						update: data.headers,
 					},
@@ -167,6 +169,7 @@ export async function updateBuilderResume(userId: string | null, resumeId: strin
 		job: data.jobId ? { connect: { id: data.jobId } } : undefined,
 		visibleSections: visibleSections ? {
 			upsert: {
+				where: { id: visibleSections?.id },
 				create: visibleSections,
 				update: visibleSections,
 			},
