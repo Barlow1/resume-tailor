@@ -194,13 +194,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
 					detailsHeader: resume.headers?.detailsHeader || 'Personal Details',
 				},
 				visibleSections: {
-					about: resume.visibleSections?.about || true,
-					experience: resume.visibleSections?.experience || true,
-					education: resume.visibleSections?.education || true,
-					skills: resume.visibleSections?.skills || true,
-					hobbies: resume.visibleSections?.hobbies || true,
-					personalDetails: resume.visibleSections?.personalDetails || true,
-					photo: resume.visibleSections?.photo || true,
+					about: resume.visibleSections?.about ?? true,
+					experience: resume.visibleSections?.experience ?? true,
+					education: resume.visibleSections?.education ?? true,
+					skills: resume.visibleSections?.skills ?? true,
+					hobbies: resume.visibleSections?.hobbies ?? true,
+					personalDetails: resume.visibleSections?.personalDetails ?? true,
+					photo: resume.visibleSections?.photo ?? true,
 				}
 			}
 		}
