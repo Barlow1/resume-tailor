@@ -22,6 +22,7 @@ import {
 	TrashIcon,
 	PlusIcon,
 	ArrowDownTrayIcon,
+	ArrowUturnLeftIcon,
 } from '@heroicons/react/24/outline'
 import { SubscribeModal } from '~/components/subscribe-modal.tsx'
 import { getStripeSubscription, getUserId } from '~/utils/auth.server.ts'
@@ -80,6 +81,11 @@ import type { SubmitTarget } from 'react-router-dom/dist/dom.d.ts'
 import * as reactColor from 'react-color'
 import { type Job } from '@prisma/client'
 import { SectionVisibilityMenu } from '~/components/section-visibility-menu.tsx'
+import type OpenAI from 'openai'
+import { RainbowSparklesIcon } from '~/components/rainbow-sparkles-icon.tsx'
+import { TooltipContent, TooltipTrigger } from '~/components/ui/tooltip.tsx'
+import { TooltipProvider } from '~/components/ui/tooltip.tsx'
+import { Tooltip } from '~/components/ui/tooltip.tsx'
 
 const { ChromePicker } = reactColor
 
@@ -89,71 +95,71 @@ function base64ToUint8Array(base64: string): Uint8Array {
 
 const getDefaultFormData = (): ResumeData => {
 	return {
-	name: '',
-	nameColor: '#6B45FF',
-	role: '',
-	email: '',
-	phone: '',
-	location: '',
-	website: '',
-	about: '',
-	experiences: [
-		{
-			id: crypto.randomUUID(),
-			role: '',
-			company: '',
-			startDate: '',
-			endDate: '',
-			descriptions: [
-				{
-					id: crypto.randomUUID(),
-					content: '',
-				},
-			],
+		name: '',
+		nameColor: '#6B45FF',
+		role: '',
+		email: '',
+		phone: '',
+		location: '',
+		website: '',
+		about: '',
+		experiences: [
+			{
+				id: crypto.randomUUID(),
+				role: '',
+				company: '',
+				startDate: '',
+				endDate: '',
+				descriptions: [
+					{
+						id: crypto.randomUUID(),
+						content: '',
+					},
+				],
+			},
+		],
+		education: [
+			{
+				id: crypto.randomUUID(),
+				school: '',
+				degree: '',
+				startDate: '',
+				endDate: '',
+				description: '',
+			},
+		],
+		skills: [
+			{
+				id: crypto.randomUUID(),
+				name: '',
+			},
+		],
+		hobbies: [
+			{
+				id: crypto.randomUUID(),
+				name: '',
+			},
+		],
+		image: '',
+		headers: {
+			experienceHeader: 'Professional Experience',
+			skillsHeader: 'Skills & Expertise',
+			hobbiesHeader: 'Interests & Activities',
+			educationHeader: 'Education',
+			aboutHeader: 'About Me',
+			detailsHeader: 'Personal Details',
 		},
-	],
-	education: [
-		{
-			id: crypto.randomUUID(),
-			school: '',
-			degree: '',
-			startDate: '',
-			endDate: '',
-			description: '',
-		},
-	],
-	skills: [
-		{
-			id: crypto.randomUUID(),
-			name: '',
-		},
-	],
-	hobbies: [
-		{
-			id: crypto.randomUUID(),
-			name: '',
-		},
-	],
-	image: '',
-	headers: {
-		experienceHeader: 'Professional Experience',
-		skillsHeader: 'Skills & Expertise',
-		hobbiesHeader: 'Interests & Activities',
-		educationHeader: 'Education',
-		aboutHeader: 'About Me',
-		detailsHeader: 'Personal Details',
-	},
-	visibleSections: {
-		about: true,
-		experience: true,
-		education: true,
-		skills: true,
-		hobbies: true,
-		personalDetails: true,
-		photo: true,
+		visibleSections: {
+			about: true,
+			experience: true,
+			education: true,
+			skills: true,
+			hobbies: true,
+			personalDetails: true,
+			photo: true,
 		},
 	}
-}	
+}
 
 export async function loader({ request }: LoaderFunctionArgs) {
 	const userId = await getUserId(request)
@@ -201,7 +207,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 					hobbies: resume.visibleSections?.hobbies ?? true,
 					personalDetails: resume.visibleSections?.personalDetails ?? true,
 					photo: resume.visibleSections?.photo ?? true,
-				}
+				},
 			}
 		}
 	}
@@ -267,8 +273,11 @@ export default function ResumeBuilder() {
 		form.append('formData', JSON.stringify(formData))
 		form.append('downloadPDFRequested', 'false')
 		form.append('subscribe', 'false')
-		
-		await fetcher.submit(form, { method: 'POST', action: '/resources/save-resume' })
+
+		await fetcher.submit(form, {
+			method: 'POST',
+			action: '/resources/save-resume',
+		})
 	}, 1000)
 
 	const resetSave = () => {
@@ -616,7 +625,12 @@ export default function ResumeBuilder() {
 			{ html: html },
 			{ method: 'post', action: '/resources/generate-pdf' },
 		)
-	}, [subscription?.active, gettingStartedProgress?.downloadCount, handlePDFDownloadRequested, pdfFetcher])
+	}, [
+		subscription?.active,
+		gettingStartedProgress?.downloadCount,
+		handlePDFDownloadRequested,
+		pdfFetcher,
+	])
 
 	const pricingFetcher = useFetcher()
 
@@ -1153,7 +1167,6 @@ export default function ResumeBuilder() {
 		debouncedSave(newFormData)
 	}
 
-
 	const handleToggleSection = (sectionId: string) => {
 		if (!formData.visibleSections) {
 			return
@@ -1162,13 +1175,84 @@ export default function ResumeBuilder() {
 			...formData,
 			visibleSections: {
 				...formData.visibleSections,
-				[sectionId as keyof typeof formData.visibleSections]: !(formData.visibleSections?.[sectionId as keyof typeof formData.visibleSections] ?? true),
-			}
+				[sectionId as keyof typeof formData.visibleSections]: !(
+					formData.visibleSections?.[
+						sectionId as keyof typeof formData.visibleSections
+					] ?? true
+				),
+			},
 		}
 
 		setFormData(newFormData)
 		debouncedSave(newFormData)
 	}
+
+	const tailorFetcher = useFetcher<OpenAI.Chat.Completions.ChatCompletion>()
+
+	// Add new state for storing the pre-tailored resume
+	const [preTailoredResume, setPreTailoredResume] =
+		useState<Jsonify<ResumeData> | null>(null)
+
+	const handleTailorEntireResume = async () => {
+		if (!selectedJob) {
+			return
+		}
+
+		// Store current resume state before tailoring
+		setPreTailoredResume(formData)
+
+		const form = new FormData()
+		form.append('jobTitle', selectedJob.title || '')
+		form.append('jobDescription', selectedJob.content || '')
+		form.append('entireResume', 'true')
+		form.append('resumeData', JSON.stringify(formData))
+
+		await tailorFetcher.submit(form, {
+			method: 'POST',
+			action: '/resources/builder-completions',
+		})
+	}
+
+	// Add new function to handle undo
+	const handleUndoTailor = () => {
+		if (preTailoredResume) {
+			setFormData(preTailoredResume)
+			debouncedSave(preTailoredResume)
+			setPreTailoredResume(null)
+			rerenderRef.current = true
+		}
+	}
+
+	useEffect(() => {
+		if (tailorFetcher.data && tailorFetcher.state === 'idle') {
+			const parsedData = JSON.parse(
+				tailorFetcher.data.choices[0].message.content ?? '{}',
+			) as Jsonify<ResumeData>
+
+			setFormData(prevFormData => {
+				const newFormData = {
+					...prevFormData,
+					...parsedData,
+					// keep the old experiences except for the descriptions & new ids
+					experiences: parsedData.experiences?.map(exp => {
+						const currentExp = prevFormData.experiences?.find(
+							e => e.id === exp.id,
+						)
+						if (!currentExp) {
+							return exp
+						}
+						return {
+							...currentExp,
+							descriptions: exp.descriptions,
+						}
+					}),
+				}
+				debouncedSave(newFormData)
+				return newFormData
+			})
+			rerenderRef.current = true
+		}
+	}, [tailorFetcher.data, tailorFetcher.state, setFormData, debouncedSave])
 
 	return (
 		<DraggingContext.Provider value={{ isDraggingAny, setIsDraggingAny }}>
@@ -1229,6 +1313,49 @@ export default function ResumeBuilder() {
 									selectedJob={selectedJob}
 									setSelectedJob={handleJobChange}
 								/>
+								{selectedJob ? (
+									<TooltipProvider>
+										<Tooltip>
+											<TooltipTrigger>
+												<StatusButton
+													type="button"
+													onClick={
+														preTailoredResume
+															? handleUndoTailor
+															: handleTailorEntireResume
+													}
+													className="flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-200"
+													status={
+														tailorFetcher.state === 'submitting'
+															? 'pending'
+															: 'idle'
+													}
+												>
+													{preTailoredResume &&
+													tailorFetcher.state === 'idle' &&
+													tailorFetcher.data ? (
+														<>
+															<ArrowUturnLeftIcon className="h-5 w-5" />
+															Undo Tailor
+														</>
+													) : (
+														<>
+															<RainbowSparklesIcon className="h-5 w-5" />
+															Tailor to Job
+														</>
+													)}
+												</StatusButton>
+											</TooltipTrigger>
+											<TooltipContent>
+												{preTailoredResume &&
+												tailorFetcher.state === 'idle' &&
+												tailorFetcher.data
+													? 'Undo tailoring and revert to your last saved version'
+													: 'Tailor your entire resume to the selected job description'}
+											</TooltipContent>
+										</Tooltip>
+									</TooltipProvider>
+								) : null}
 							</div>
 							<div className="flex gap-2">
 								<div className="relative">
@@ -1251,21 +1378,28 @@ export default function ResumeBuilder() {
 										</div>
 									)}
 								</div>
-								<StatusButton
-									type="button"
-									onClick={() => debouncedSave(formData)}
-									className="flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-200"
-									status={
-										fetcher.state === 'submitting'
-											? 'pending'
-											: fetcher.state === 'idle' && fetcher.data
-											? 'success'
-											: 'idle'
-									}
-									title="Save"
-								>
-									<Icon size="md" name="save" />
-								</StatusButton>
+								<TooltipProvider>
+									<Tooltip>
+										<TooltipTrigger>
+											<StatusButton
+												type="button"
+												onClick={() => debouncedSave(formData)}
+												className="flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-200"
+												status={
+													fetcher.state === 'submitting'
+														? 'pending'
+														: fetcher.state === 'idle' && fetcher.data
+														? 'success'
+														: 'idle'
+												}
+											>
+												<Icon size="md" name="save" />
+											</StatusButton>
+										</TooltipTrigger>
+										<TooltipContent>Save Resume</TooltipContent>
+									</Tooltip>
+								</TooltipProvider>
+
 								<SectionVisibilityMenu
 									sections={[
 										{
@@ -1296,7 +1430,8 @@ export default function ResumeBuilder() {
 										{
 											id: 'personalDetails',
 											label: 'Personal Details',
-											visible: formData.visibleSections?.personalDetails ?? true,
+											visible:
+												formData.visibleSections?.personalDetails ?? true,
 										},
 										{
 											id: 'photo',
@@ -1547,7 +1682,8 @@ export default function ResumeBuilder() {
 											)}
 
 											<div className="space-y-4">
-												{formData.visibleSections?.experience && formData.experiences ? (
+												{formData.visibleSections?.experience &&
+												formData.experiences ? (
 													<SortableContext
 														items={formData.experiences.map(exp => exp.id!)}
 														strategy={verticalListSortingStrategy}
@@ -1592,7 +1728,8 @@ export default function ResumeBuilder() {
 														Click "Add Education" to add your educational
 														background
 													</div>
-												) : formData.visibleSections?.education && formData.education ? (
+												) : formData.visibleSections?.education &&
+												  formData.education ? (
 													<SortableContext
 														items={formData.education.map(edu => edu.id!)!}
 														strategy={verticalListSortingStrategy}

@@ -47,6 +47,13 @@ export function EditableContent({
 					}
 				}
 			}}
+			onPaste={e => {
+				e.preventDefault()
+				// Get plain text from clipboard
+				const text = e.clipboardData.getData('text/plain')
+				// Insert at cursor position
+				document.execCommand('insertText', false, text)
+			}}
 			onInput={onInput}
 			suppressContentEditableWarning
 			className={`cursor-text hover:bg-gray-100 ${className}`}

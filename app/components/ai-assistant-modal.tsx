@@ -9,7 +9,8 @@ import {
 	type BuilderJob,
 } from '~/utils/builder-resume.server.ts'
 import { type Jsonify } from '@remix-run/server-runtime/dist/jsonify.js'
-import { useNavigate } from '@remix-run/react'
+import { useFetcher } from '@remix-run/react'
+import type OpenAI from 'openai'
 
 interface AIAssistantModalProps {
 	isOpen: boolean
@@ -37,34 +38,25 @@ export function AIAssistantModal({
 	setShowSubscribeModal,
 }: AIAssistantModalProps) {
 	const [activeTab, setActiveTab] = useState<'tailor' | 'generate'>('tailor')
-	const [rawContent, setRawContent] = useState('')
-	const [isLoading, setIsLoading] = useState(false)
 	const [selectedItems, setSelectedItems] = useState<number[]>([])
-	const navigate = useNavigate()
+	const [rawContent, setRawContent] = useState<string>('')
 
 	useEffect(() => {
 		if (!isOpen) {
-			setRawContent('')
 			setSelectedItems([])
-			setIsLoading(false)
 		}
 	}, [isOpen])
 
 	const resetState = () => {
-		setRawContent('')
 		setSelectedItems([])
-		setIsLoading(false)
+		setRawContent('')
 	}
 
-	const parsedOptions = rawContent
-		? (() => {
-				try {
-					return JSON.parse(rawContent) as string[]
-				} catch {
-					return []
-				}
-		  })()
-		: ([] as string[])
+	const builderCompletionsFetcher = useFetcher<
+		OpenAI.Chat.Completions.ChatCompletion & {
+			_request_id?: string | null
+		}
+	>()
 
 	const handleCompletion = async (type: 'tailor' | 'generate') => {
 		if (!subscription) {
@@ -77,47 +69,36 @@ export function AIAssistantModal({
 				return
 			}
 		}
-
-		setIsLoading(true)
-		setRawContent('')
 		setSelectedItems([])
 
 		const endpoint = type === 'tailor' ? 'experience' : 'generated-experience'
 
-		const sse = new EventSource(
-			`/resources/builder-completions?${new URLSearchParams({
+		builderCompletionsFetcher.submit(
+			{
 				jobTitle: job?.title ?? '',
 				jobDescription: job?.content ?? '',
 				currentJobTitle: experience?.role ?? '',
 				currentJobCompany: experience?.company ?? '',
 				...(activeTab === 'tailor' ? { experience: content } : {}),
 				type: endpoint,
-			})}`,
+			},
+			{ method: 'post', action: '/resources/builder-completions' },
 		)
-
-		sse.addEventListener('redirect', event => {
-			const { url } = JSON.parse(event.data) as { url: string }
-			navigate(url)
-			sse.close()
-		})
-
-		sse.addEventListener('message', event => {
-			setRawContent(
-				prevContent => prevContent + event.data.replace(/__NEWLINE__/g, '\n'),
-			)
-		})
-
-		sse.addEventListener('error', event => {
-			setIsLoading(false)
-			console.log('error: ', event)
-			sse.close()
-		})
-
-		sse.addEventListener('done', () => {
-			setIsLoading(false)
-			sse.close()
-		})
 	}
+
+	useEffect(() => {
+		if (builderCompletionsFetcher.state === 'idle' && builderCompletionsFetcher.data) {
+			setRawContent(
+				builderCompletionsFetcher.data?.choices[0].message.content ?? '{}',
+			)
+		}
+	}, [builderCompletionsFetcher.state, builderCompletionsFetcher.data])
+
+	const parsedOptions = rawContent
+		? (JSON.parse(rawContent) as { experiences: string[] }).experiences
+		: []
+
+	const isLoading = builderCompletionsFetcher.state === 'submitting'
 
 	const handleItemSelect = (index: number) => {
 		if (activeTab === 'tailor') {

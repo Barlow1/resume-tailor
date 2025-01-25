@@ -1,6 +1,10 @@
 import { Menu } from '@headlessui/react'
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 import { Button } from './ui/button.tsx'
+import { TooltipProvider } from './ui/tooltip.tsx'
+import { TooltipTrigger } from './ui/tooltip.tsx'
+import { Tooltip } from './ui/tooltip.tsx'
+import { TooltipContent } from './ui/tooltip.tsx'
 
 interface Section {
 	id: string
@@ -19,12 +23,20 @@ export function SectionVisibilityMenu({
 }: SectionVisibilityMenuProps) {
 	return (
 		<Menu as="div" className="relative">
-			<Menu.Button
-				as={Button}
-				className="flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-200"
-			>
-				<EyeIcon className="h-5 w-5" />
-			</Menu.Button>
+			<TooltipProvider>
+				<Tooltip>
+					<TooltipTrigger>
+						<Menu.Button
+							as={Button}
+							className="flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-200"
+						>
+							<EyeIcon className="h-5 w-5" />
+						</Menu.Button>
+					</TooltipTrigger>
+					<TooltipContent>Toggle Section Visibility</TooltipContent>
+				</Tooltip>
+			</TooltipProvider>
+
 			<Menu.Items className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-lg border bg-background p-2 shadow-lg">
 				{sections.map(section => (
 					<Menu.Item key={section.id}>

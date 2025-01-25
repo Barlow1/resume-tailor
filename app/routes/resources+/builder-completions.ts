@@ -1,20 +1,28 @@
-import { type DataFunctionArgs } from '@remix-run/node'
-import { eventStream } from 'remix-utils/sse/server'
-import { authenticator, getUserId } from '~/utils/auth.server.ts'
+import { json, type DataFunctionArgs } from '@remix-run/node'
+import type OpenAI from 'openai'
+import { authenticator, requireUserId } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
 import {
 	getBuilderExperienceResponse,
-	getGeneratedExperienceResponse,
+	getBuilderGeneratedExperienceResponse,
+	getEntireTailoredResumeResponse,
 } from '~/utils/openai.server.ts'
+import { z } from 'zod';
+import { parse } from '@conform-to/zod'
+import { type ResumeData } from '~/utils/builder-resume.server.ts'
 
-export async function loader({ request }: DataFunctionArgs) {
-	const userId = await getUserId(request)
-	if (!userId) {
-		return eventStream(request.signal, function setup(send) {
-			send({ event: 'redirect', data: JSON.stringify({ url: '/login?redirectTo=/builder' }) })
-			return function clear() {}
-		})
-	}
+const builderCompletionSchema = z.object({
+	experience: z.string().optional(),
+	jobTitle: z.string(),
+	jobDescription: z.string(),
+	currentJobTitle: z.string().optional(),
+	currentJobCompany: z.string().optional(),
+	entireResume: z.string().optional(),
+	resumeData: z.string().optional(),
+})
+
+export async function action({ request }: DataFunctionArgs) {
+	const userId = await requireUserId(request, { redirectTo: '/builder' })
 
 	const user = await prisma.user.findUnique({
 		where: { id: userId },
@@ -25,22 +33,56 @@ export async function loader({ request }: DataFunctionArgs) {
 		return new Response(null, { status: 401 })
 	}
 
-	const url = new URL(request.url)
-	const jobTitle = url.searchParams.get('jobTitle') ?? ''
-	const jobDescription = url.searchParams.get('jobDescription') ?? ''
-	const currentJobTitle = url.searchParams.get('currentJobTitle') ?? ''
-	const currentJobCompany = url.searchParams.get('currentJobCompany') ?? ''
-	const experience = url.searchParams.get('experience') ?? ''
+	const formData = await request.formData()
+	const submission = parse(formData, {
+		schema: builderCompletionSchema,
+	})
+	if (submission.intent !== 'submit') {
+		return json({ status: 'idle', submission } as const)
+	}
+	if (!submission.value) {
+		return json({ status: 'error', submission } as const, { status: 400 })
+	}
 
-	let response: any
-	if (experience) {
+	const { experience, jobTitle, jobDescription, currentJobTitle, currentJobCompany, entireResume, resumeData } = submission.value
+
+	let response: OpenAI.Chat.Completions.ChatCompletion & {
+		_request_id?: string | null;
+	}
+
+	if (entireResume === 'true' && resumeData) {
+		;[{ response }] = await Promise.all([
+			await getEntireTailoredResumeResponse({
+				resume: JSON.parse(resumeData) as ResumeData,
+				jobDescription,
+				jobTitle,
+				user,
+			}),
+			await prisma.gettingStartedProgress.upsert({
+				where: { ownerId: userId },
+				update: {
+					tailorCount: {
+						increment: 1,
+					},
+				},
+				create: {
+					hasSavedJob: false,
+					hasSavedResume: false,
+					hasGeneratedResume: false,
+					hasTailoredResume: true,
+					tailorCount: 1,
+					ownerId: userId,
+				},
+			}),
+		])
+	} else if (experience) {
 		;[{ response }] = await Promise.all([
 			await getBuilderExperienceResponse({
 				experience,
 				jobDescription,
 				jobTitle,
-				currentJobTitle,
-				currentJobCompany,
+				currentJobTitle: currentJobTitle ?? '',
+				currentJobCompany: currentJobCompany ?? '',
 				user,
 			}),
 			await prisma.gettingStartedProgress.upsert({
@@ -62,10 +104,10 @@ export async function loader({ request }: DataFunctionArgs) {
 		])
 	} else {
 		;[{ response }] = await Promise.all([
-			await getGeneratedExperienceResponse({
+			await getBuilderGeneratedExperienceResponse({
 				jobDescription,
-				currentJobTitle,
-				currentJobCompany,
+				currentJobTitle: currentJobTitle ?? '',
+				currentJobCompany: currentJobCompany ?? '',
 				jobTitle,
 				user,
 			}),
@@ -88,45 +130,5 @@ export async function loader({ request }: DataFunctionArgs) {
 		])
 	}
 
-	const controller = new AbortController()
-	request.signal.addEventListener('abort', () => {
-		controller.abort()
-	})
-
-	return eventStream(controller.signal, function setup(send) {
-		response.data.on('data', (data: any) => {
-			const lines = data
-				.toString()
-				.split('\n')
-				.filter((line: string) => line.trim() !== '')
-
-			for (const line of lines) {
-				const message = line.toString().replace(/^data: /, '')
-				if (message === '[DONE]') {
-					return // Stream finished
-				}
-				try {
-					const parsed = JSON.parse(message) as any
-					const delta = parsed.choices[0].delta?.content?.replace(
-						/\n/g,
-						'__NEWLINE__',
-					)
-					if (delta) send({ data: delta })
-				} catch (error) {
-					console.error('Could not JSON parse stream message', message, error)
-				}
-			}
-		})
-
-		response.data.on('error', (error: any) => {
-			console.error('Stream error', error)
-		})
-
-		response.data.on('end', () => {
-			controller.abort()
-		})
-
-
-		return function clear() {}
-	})
+	return response;
 }
