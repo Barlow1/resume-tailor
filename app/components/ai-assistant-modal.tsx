@@ -72,18 +72,18 @@ export function AIAssistantModal({
 		setSelectedItems([])
 
 		const endpoint = type === 'tailor' ? 'experience' : 'generated-experience'
+		const formData = new FormData()
+		formData.append('jobTitle', job?.title ?? '')
+		formData.append('jobDescription', job?.content ?? '')
+		formData.append('currentJobTitle', experience?.role ?? '')
+		formData.append('currentJobCompany', experience?.company ?? '')
+		formData.append('experience', content ?? '')
+		formData.append('type', endpoint)
 
-		builderCompletionsFetcher.submit(
-			{
-				jobTitle: job?.title ?? '',
-				jobDescription: job?.content ?? '',
-				currentJobTitle: experience?.role ?? '',
-				currentJobCompany: experience?.company ?? '',
-				...(activeTab === 'tailor' ? { experience: content } : {}),
-				type: endpoint,
-			},
-			{ method: 'post', action: '/resources/builder-completions' },
-		)
+		builderCompletionsFetcher.submit(formData, {
+			method: 'POST',
+			action: '/resources/builder-completions',
+		})
 	}
 
 	useEffect(() => {

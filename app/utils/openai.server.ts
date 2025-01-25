@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { type ResumeData } from './builder-resume.server.ts'
 
 const openai = new OpenAI({
-	apiKey: process.env.OPENAI_API_KEY,
+	apiKey: process.env.OPENAI_API_KEY ?? 'test-key',
 })
 
 const builderExperienceDescriptionSchema = z.object({
