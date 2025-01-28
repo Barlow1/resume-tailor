@@ -83,9 +83,14 @@ import { type Job } from '@prisma/client'
 import { SectionVisibilityMenu } from '~/components/section-visibility-menu.tsx'
 import type OpenAI from 'openai'
 import { RainbowSparklesIcon } from '~/components/rainbow-sparkles-icon.tsx'
-import { TooltipContent, TooltipTrigger } from '~/components/ui/tooltip.tsx'
-import { TooltipProvider } from '~/components/ui/tooltip.tsx'
-import { Tooltip } from '~/components/ui/tooltip.tsx'
+import {
+	TooltipContent,
+	TooltipTrigger,
+	TooltipProvider,
+	Tooltip,
+} from '~/components/ui/tooltip.tsx'
+import { FontSelector } from '~/components/font-selector.tsx'
+import { LayoutSelector } from '~/components/layout-selector.tsx'
 
 const { ChromePicker } = reactColor
 
@@ -158,6 +163,8 @@ const getDefaultFormData = (): ResumeData => {
 			personalDetails: true,
 			photo: true,
 		},
+		font: 'font-sans',
+		layout: 'modern',
 	}
 }
 
@@ -208,6 +215,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 					personalDetails: resume.visibleSections?.personalDetails ?? true,
 					photo: resume.visibleSections?.photo ?? true,
 				},
+				font: resume.font || 'font-sans',
+				layout: resume.layout || 'modern',
 			}
 		}
 	}
@@ -1254,6 +1263,35 @@ export default function ResumeBuilder() {
 		}
 	}, [tailorFetcher.data, tailorFetcher.state, setFormData, debouncedSave])
 
+	// Inside ResumeBuilder component, add state for font
+	const [selectedFont, setSelectedFont] = useState(formData.font ?? 'font-sans')
+
+	// Add font change handler
+	const handleFontChange = (newFont: string) => {
+		setSelectedFont(newFont)
+		const newFormData = {
+			...formData,
+			font: newFont,
+		}
+		setFormData(newFormData)
+		debouncedSave(newFormData)
+	}
+
+	// Add layout state
+	const [selectedLayout, setSelectedLayout] = useState(formData.layout ?? 'modern')
+
+	// Add layout change handler
+	const handleLayoutChange = (newLayout: string) => {
+		setSelectedLayout(newLayout)
+		const newFormData = {
+			...formData,
+			layout: newLayout,
+		}
+		setFormData(newFormData)
+		debouncedSave(newFormData)
+		rerenderRef.current = true
+	}
+
 	return (
 		<DraggingContext.Provider value={{ isDraggingAny, setIsDraggingAny }}>
 			<DndContext
@@ -1357,7 +1395,7 @@ export default function ResumeBuilder() {
 									</TooltipProvider>
 								) : null}
 							</div>
-							<div className="flex gap-2">
+							<div className="flex items-center gap-2">
 								<div className="relative">
 									<button
 										title="Change Color"
@@ -1378,6 +1416,14 @@ export default function ResumeBuilder() {
 										</div>
 									)}
 								</div>
+								<LayoutSelector
+									selectedLayout={selectedLayout}
+									onLayoutChange={handleLayoutChange}
+								/>
+								<FontSelector
+									selectedFont={selectedFont}
+									onFontChange={handleFontChange}
+								/>
 								<TooltipProvider>
 									<Tooltip>
 										<TooltipTrigger>
@@ -1396,7 +1442,7 @@ export default function ResumeBuilder() {
 												<Icon size="md" name="save" />
 											</StatusButton>
 										</TooltipTrigger>
-										<TooltipContent>Save Resume</TooltipContent>
+										<TooltipContent>Save resume</TooltipContent>
 									</Tooltip>
 								</TooltipProvider>
 
@@ -1441,28 +1487,40 @@ export default function ResumeBuilder() {
 									]}
 									onToggleSection={handleToggleSection}
 								/>
-								<Button
-									onClick={handleReset}
-									className="flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-200"
-								>
-									<Icon size="md" name="plus" />
-									New Resume
-								</Button>
-								<StatusButton
-									type="button"
-									onClick={handleClickDownloadPDF}
-									className="flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-200"
-									status={
-										pdfFetcher.state === 'submitting'
-											? 'pending'
-											: pdfFetcher.state === 'idle' && pdfFetcher.data
-											? 'success'
-											: 'idle'
-									}
-								>
-									<ArrowDownTrayIcon className="h-4 w-4" />
-									Download PDF
-								</StatusButton>
+								<TooltipProvider>
+									<Tooltip>
+										<TooltipTrigger>
+											<Button
+												onClick={handleReset}
+												className="flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-200"
+											>
+												<Icon size="md" name="plus" />
+											</Button>
+										</TooltipTrigger>
+										<TooltipContent>Create a new resume</TooltipContent>
+									</Tooltip>
+								</TooltipProvider>
+								<TooltipProvider>
+									<Tooltip>
+										<TooltipTrigger>
+											<StatusButton
+												type="button"
+												onClick={handleClickDownloadPDF}
+												className="flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-200"
+												status={
+													pdfFetcher.state === 'submitting'
+														? 'pending'
+														: pdfFetcher.state === 'idle' && pdfFetcher.data
+														? 'success'
+														: 'idle'
+												}
+											>
+												<ArrowDownTrayIcon className="h-4 w-4" />
+											</StatusButton>
+										</TooltipTrigger>
+										<TooltipContent>Download PDF</TooltipContent>
+									</Tooltip>
+								</TooltipProvider>
 							</div>
 						</div>
 
@@ -1489,298 +1547,545 @@ export default function ResumeBuilder() {
 								id="resume-content"
 								className={`min-h-[842px] rounded-lg border bg-white p-8 shadow-lg ${
 									isModalDisplaying ? 'scale-90' : ''
-								}`}
+								} ${selectedFont}`}
 							>
-								<div className="grid grid-cols-[250px_1fr] gap-8">
-									{/* Left Pane */}
-									<div className="space-y-6 pr-6">
-										{/* Image Upload */}
-										{formData.visibleSections?.photo && (
-											<div>
-												<input
-													type="file"
-													accept="image/*"
-													className="hidden"
-													onChange={handleImageUpload}
-													id="image-upload"
-												/>
-												<label
-													htmlFor="image-upload"
-													className="block cursor-pointer"
-												>
-													<div
-														className={`aspect-square w-full overflow-hidden rounded-full ${
-															formData.image
-																? ''
-																: 'border-2 border-dashed border-gray-300 bg-gray-50 transition hover:bg-gray-100'
-														}`}
+								{selectedLayout === 'modern' ? (
+									<div className="grid grid-cols-[250px_1fr] gap-8">
+										{/* Left Pane */}
+										<div className="space-y-6 pr-6">
+											{/* Image Upload */}
+											{formData.visibleSections?.photo && (
+												<div>
+													<input
+														type="file"
+														accept="image/*"
+														className="hidden"
+														onChange={handleImageUpload}
+														id="image-upload"
+													/>
+													<label
+														htmlFor="image-upload"
+														className="block cursor-pointer"
 													>
-														{formData.image ? (
-															<img
-																src={formData.image}
-																alt="Profile"
-																className="h-full w-full object-cover"
-															/>
-														) : (
-															<div className="flex h-full flex-col items-center justify-center gap-2 p-4">
-																<UserCircleIcon className="h-16 w-16 text-gray-400" />
-																<span className="text-sm text-gray-500">
-																	Click to upload photo
-																</span>
-															</div>
-														)}
-													</div>
-												</label>
-											</div>
-										)}
-
-										{/* About Me */}
-										{formData.visibleSections?.about && (
-											<div className="rounded border-dashed border-gray-400 hover:border">
-												<EditableContent
-													content={formData.headers?.aboutHeader}
-													onInput={e =>
-														handleHeaderEdit(
-															e.currentTarget.innerText,
-															'aboutHeader',
-														)
-													}
-													className="mb-2 font-semibold text-gray-700"
-													placeholder="About Me"
-													rerenderRef={rerenderRef}
-												/>
-												<EditableContent
-													multiline
-													content={formData.about}
-													onInput={e =>
-														handleAboutEdit(e.currentTarget.innerText, 'about')
-													}
-													className="min-h-[150px] p-3 text-sm text-gray-600"
-													placeholder="Write a brief introduction about yourself..."
-													rerenderRef={rerenderRef}
-												/>
-											</div>
-										)}
-
-										{/* Personal Details */}
-										{formData.visibleSections?.personalDetails && (
-											<div>
-												<EditableContent
-													content={formData.headers?.detailsHeader}
-													onInput={e =>
-														handleHeaderEdit(
-															e.currentTarget.innerText,
-															'detailsHeader',
-														)
-													}
-													className="mb-2 font-semibold text-gray-700"
-													placeholder="Personal Details"
-													rerenderRef={rerenderRef}
-												/>
-												<div className="space-y-3">
-													<div className="flex items-center gap-2">
-														<MapPinIcon className="h-5 w-5 text-gray-400" />
-														<EditableContent
-															content={formData.location}
-															onInput={e =>
-																handleFieldEdit(
-																	e.currentTarget.innerText,
-																	'location',
-																)
-															}
-															className="flex-1 rounded p-1 text-sm text-gray-600 outline-none transition"
-															placeholder="Location"
-															rerenderRef={rerenderRef}
-														/>
-													</div>
-													<div className="flex items-center gap-2">
-														<EnvelopeIcon className="h-5 w-5 text-gray-400" />
-														<EditableContent
-															content={formData.email}
-															onInput={e =>
-																handleFieldEdit(
-																	e.currentTarget.innerText,
-																	'email',
-																)
-															}
-															className="flex-1 rounded p-1 text-sm text-gray-600 outline-none transition"
-															placeholder="Email"
-															rerenderRef={rerenderRef}
-														/>
-													</div>
-													<div className="flex items-center gap-2">
-														<PhoneIcon className="h-5 w-5 text-gray-400" />
-														<EditableContent
-															content={formData.phone}
-															onInput={e =>
-																handleFieldEdit(
-																	e.currentTarget.innerText,
-																	'phone',
-																)
-															}
-															className="flex-1 rounded p-1 text-sm text-gray-600 outline-none transition"
-															placeholder="Phone"
-															rerenderRef={rerenderRef}
-														/>
-													</div>
-													<div className="flex items-center gap-2">
-														<LinkIcon className="h-5 w-5 text-gray-400" />
-														<EditableContent
-															content={formData.website}
-															onInput={e =>
-																handleFieldEdit(
-																	e.currentTarget.innerText,
-																	'website',
-																)
-															}
-															className="flex-1 rounded p-1 text-sm text-gray-600 outline-none transition"
-															placeholder="Website"
-															rerenderRef={rerenderRef}
-														/>
-													</div>
+														<div
+															className={`aspect-square w-full overflow-hidden rounded-full ${
+																formData.image
+																	? ''
+																	: 'border-2 border-dashed border-gray-300 bg-gray-50 transition hover:bg-gray-100'
+															}`}
+														>
+															{formData.image ? (
+																<img
+																	src={formData.image}
+																	alt="Profile"
+																	className="h-full w-full object-cover"
+																/>
+															) : (
+																<div className="flex h-full flex-col items-center justify-center gap-2 p-4">
+																	<UserCircleIcon className="h-16 w-16 text-gray-400" />
+																	<span className="text-sm text-gray-500">
+																		Click to upload photo
+																	</span>
+																</div>
+															)}
+														</div>
+													</label>
 												</div>
-											</div>
-										)}
-									</div>
-
-									{/* Right Pane */}
-									<div>
-										<EditableContent
-											content={formData.name}
-											onInput={e =>
-												handleFieldEdit(e.currentTarget.innerText, 'name')
-											}
-											className={`mb-2 rounded p-1 text-3xl font-bold outline-none transition`}
-											placeholder="Your Name"
-											rerenderRef={rerenderRef}
-											style={{ color: nameColor }}
-										/>
-
-										<EditableContent
-											content={formData.role}
-											onInput={e =>
-												handleFieldEdit(e.currentTarget.innerText, 'role')
-											}
-											className="mb-4 rounded p-1 text-xl text-gray-600 outline-none transition"
-											placeholder="Your Role (e.g. Frontend Developer)"
-											rerenderRef={rerenderRef}
-										/>
-
-										<div className="mb-6">
-											{formData.visibleSections?.experience && (
-												<EditableContent
-													content={formData.headers?.experienceHeader}
-													onInput={e =>
-														handleHeaderEdit(
-															e.currentTarget.innerText,
-															'experienceHeader',
-														)
-													}
-													className="mb-4 text-xl font-semibold text-gray-700 outline-none"
-													placeholder="Professional Experience"
-												/>
 											)}
 
-											<div className="space-y-4">
-												{formData.visibleSections?.experience &&
-												formData.experiences ? (
-													<SortableContext
-														items={formData.experiences.map(exp => exp.id!)}
-														strategy={verticalListSortingStrategy}
-													>
-														{formData.experiences?.map(exp => (
-															<SortableExperience
-																key={exp.id}
-																experience={exp}
-																onExperienceEdit={handleExperienceEdit}
-																onRemoveExperience={removeExperience}
-																onAddExperience={addExperience}
-																onAIClick={handleAIClick}
-																onAddBullet={addBulletPoint}
-																onRemoveBullet={removeBulletPoint}
-																onBulletEdit={handleBulletPointEdit}
-																rerenderRef={rerenderRef}
-															/>
-														))}
-													</SortableContext>
-												) : null}
-											</div>
-										</div>
-
-										<div className="mb-6">
-											{formData.visibleSections?.education && (
-												<EditableContent
-													content={formData.headers?.educationHeader}
-													onInput={e =>
-														handleHeaderEdit(
-															e.currentTarget.innerText,
-															'educationHeader',
-														)
-													}
-													className="mb-4 text-xl font-semibold text-gray-700 outline-none"
-													placeholder="Education"
-												/>
-											)}
-											<div className="space-y-4">
-												{formData.visibleSections?.education &&
-												formData.education?.length === 0 ? (
-													<div className="rounded border border-dashed border-gray-300 p-4 text-center text-gray-500">
-														Click "Add Education" to add your educational
-														background
-													</div>
-												) : formData.visibleSections?.education &&
-												  formData.education ? (
-													<SortableContext
-														items={formData.education.map(edu => edu.id!)!}
-														strategy={verticalListSortingStrategy}
-													>
-														{formData.education?.map(edu => (
-															<SortableEducation
-																key={edu.id}
-																education={edu}
-																onEducationEdit={handleEducationEdit}
-																onRemoveEducation={removeEducation}
-																onAddEducation={addEducation}
-															/>
-														))}
-													</SortableContext>
-												) : null}
-											</div>
-										</div>
-
-										<div className="mb-6">
-											{formData.visibleSections?.skills && (
-												<>
+											{/* About Me */}
+											{formData.visibleSections?.about && (
+												<div className="rounded border-dashed border-gray-400 hover:border">
 													<EditableContent
-														content={formData.headers?.skillsHeader}
+														content={formData.headers?.aboutHeader}
 														onInput={e =>
 															handleHeaderEdit(
 																e.currentTarget.innerText,
-																'skillsHeader',
+																'aboutHeader',
+															)
+														}
+														className="mb-2 font-semibold text-gray-700"
+														placeholder="About Me"
+														rerenderRef={rerenderRef}
+													/>
+													<EditableContent
+														multiline
+														content={formData.about}
+														onInput={e =>
+															handleAboutEdit(e.currentTarget.innerText, 'about')
+														}
+														className="min-h-[150px] p-3 text-sm text-gray-600"
+														placeholder="Write a brief introduction about yourself..."
+														rerenderRef={rerenderRef}
+													/>
+												</div>
+											)}
+
+											{/* Personal Details */}
+											{formData.visibleSections?.personalDetails && (
+												<div>
+													<EditableContent
+														content={formData.headers?.detailsHeader}
+														onInput={e =>
+															handleHeaderEdit(
+																e.currentTarget.innerText,
+																'detailsHeader',
+															)
+														}
+														className="mb-2 font-semibold text-gray-700"
+														placeholder="Personal Details"
+														rerenderRef={rerenderRef}
+													/>
+													<div className="space-y-3">
+														<div className="flex items-center gap-2">
+															<MapPinIcon className="h-5 w-5 text-gray-400" />
+															<EditableContent
+																content={formData.location}
+																onInput={e =>
+																	handleFieldEdit(
+																		e.currentTarget.innerText,
+																		'location',
+																	)
+																}
+																className="flex-1 rounded p-1 text-sm text-gray-600 outline-none transition"
+																placeholder="Location"
+																rerenderRef={rerenderRef}
+															/>
+														</div>
+														<div className="flex items-center gap-2">
+															<EnvelopeIcon className="h-5 w-5 text-gray-400" />
+															<EditableContent
+																content={formData.email}
+																onInput={e =>
+																	handleFieldEdit(
+																		e.currentTarget.innerText,
+																		'email',
+																	)
+																}
+																className="flex-1 rounded p-1 text-sm text-gray-600 outline-none transition"
+																placeholder="Email"
+																rerenderRef={rerenderRef}
+															/>
+														</div>
+														<div className="flex items-center gap-2">
+															<PhoneIcon className="h-5 w-5 text-gray-400" />
+															<EditableContent
+																content={formData.phone}
+																onInput={e =>
+																	handleFieldEdit(
+																		e.currentTarget.innerText,
+																		'phone',
+																	)
+																}
+																className="flex-1 rounded p-1 text-sm text-gray-600 outline-none transition"
+																placeholder="Phone"
+																rerenderRef={rerenderRef}
+															/>
+														</div>
+														<div className="flex items-center gap-2">
+															<LinkIcon className="h-5 w-5 text-gray-400" />
+															<EditableContent
+																content={formData.website}
+																onInput={e =>
+																	handleFieldEdit(
+																		e.currentTarget.innerText,
+																		'website',
+																	)
+																}
+																className="flex-1 rounded p-1 text-sm text-gray-600 outline-none transition"
+																placeholder="Website"
+																rerenderRef={rerenderRef}
+															/>
+														</div>
+													</div>
+												</div>
+											)}
+										</div>
+
+										{/* Right Pane */}
+										<div>
+											<EditableContent
+												content={formData.name}
+												onInput={e =>
+													handleFieldEdit(e.currentTarget.innerText, 'name')
+												}
+												className={`mb-2 rounded p-1 text-3xl font-bold outline-none transition`}
+												placeholder="Your Name"
+												rerenderRef={rerenderRef}
+												style={{ color: nameColor }}
+											/>
+
+											<EditableContent
+												content={formData.role}
+												onInput={e =>
+													handleFieldEdit(e.currentTarget.innerText, 'role')
+												}
+												className="mb-4 rounded p-1 text-xl text-gray-600 outline-none transition"
+												placeholder="Your Role (e.g. Frontend Developer)"
+												rerenderRef={rerenderRef}
+											/>
+
+											<div className="mb-6">
+												{formData.visibleSections?.experience && (
+													<EditableContent
+														content={formData.headers?.experienceHeader}
+														onInput={e =>
+															handleHeaderEdit(
+																e.currentTarget.innerText,
+																'experienceHeader',
 															)
 														}
 														className="mb-4 text-xl font-semibold text-gray-700 outline-none"
-														placeholder="Skills & Expertise"
+														placeholder="Professional Experience"
 													/>
+												)}
 
-													<div className="flex flex-wrap gap-2">
-														{formData.visibleSections?.skills &&
-															formData.skills?.map(skill => (
+												<div className="space-y-4">
+													{formData.visibleSections?.experience &&
+													formData.experiences ? (
+														<SortableContext
+															items={formData.experiences.map(exp => exp.id!)}
+															strategy={verticalListSortingStrategy}
+														>
+															{formData.experiences?.map(exp => (
+																<SortableExperience
+																	key={exp.id}
+																	experience={exp}
+																	onExperienceEdit={handleExperienceEdit}
+																	onRemoveExperience={removeExperience}
+																	onAddExperience={addExperience}
+																	onAIClick={handleAIClick}
+																	onAddBullet={addBulletPoint}
+																	onRemoveBullet={removeBulletPoint}
+																	onBulletEdit={handleBulletPointEdit}
+																	rerenderRef={rerenderRef}
+																/>
+															))}
+														</SortableContext>
+													) : null}
+												</div>
+											</div>
+
+											<div className="mb-6">
+												{formData.visibleSections?.education && (
+													<EditableContent
+														content={formData.headers?.educationHeader}
+														onInput={e =>
+															handleHeaderEdit(
+																e.currentTarget.innerText,
+																'educationHeader',
+															)
+														}
+														className="mb-4 text-xl font-semibold text-gray-700 outline-none"
+														placeholder="Education"
+													/>
+												)}
+												<div className="space-y-4">
+													{formData.visibleSections?.education &&
+													formData.education?.length === 0 ? (
+														<div className="rounded border border-dashed border-gray-300 p-4 text-center text-gray-500">
+																Click "Add Education" to add your educational
+																background
+															</div>
+													) : formData.visibleSections?.education &&
+													  formData.education ? (
+														<SortableContext
+															items={formData.education.map(edu => edu.id!)!}
+															strategy={verticalListSortingStrategy}
+														>
+															{formData.education?.map(edu => (
+																<SortableEducation
+																	key={edu.id}
+																	education={edu}
+																	onEducationEdit={handleEducationEdit}
+																	onRemoveEducation={removeEducation}
+																	onAddEducation={addEducation}
+																/>
+															))}
+														</SortableContext>
+													) : null}
+												</div>
+											</div>
+
+											<div className="mb-6">
+												{formData.visibleSections?.skills && (
+													<>
+														<EditableContent
+															content={formData.headers?.skillsHeader}
+															onInput={e =>
+																handleHeaderEdit(
+																	e.currentTarget.innerText,
+																	'skillsHeader',
+																)
+															}
+															className="mb-4 text-xl font-semibold text-gray-700 outline-none"
+															placeholder="Skills & Expertise"
+														/>
+
+														<div className="flex flex-wrap gap-2">
+															{formData.visibleSections?.skills &&
+																formData.skills?.map(skill => (
+																	<div
+																		key={skill.id}
+																		className="group relative flex items-center rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-center"
+																	>
+																		<EditableContent
+																			content={skill.name}
+																			onInput={e =>
+																				handleSkillEdit(
+																					e.currentTarget.innerText,
+																					skill.id!,
+																					'name',
+																				)
+																			}
+																			onEnter={() => addSkill()}
+																			className="text-sm text-gray-700 outline-none"
+																			placeholder="Skill"
+																			id={`skill-${skill.id}`}
+																		/>
+																		<button
+																			type="button"
+																			onClick={() => removeSkill(skill.id!)}
+																			className="ml-2 hidden text-gray-400 hover:text-gray-600 group-hover:block"
+																		>
+																			<TrashIcon className="h-3 w-3" />
+																		</button>
+																		<button
+																			type="button"
+																			onClick={() => addSkill()}
+																			className="ml-2 hidden text-gray-400 hover:text-gray-600 group-hover:block"
+																		>
+																			<PlusIcon className="h-3 w-3" />
+																		</button>
+																	</div>
+																))}
+														</div>
+													</>
+												)}
+											</div>
+
+											<div className="mb-6">
+												{formData.visibleSections?.hobbies && (
+													<EditableContent
+														content={formData.headers?.hobbiesHeader}
+														onInput={e =>
+															handleHeaderEdit(
+																e.currentTarget.innerText,
+																'hobbiesHeader',
+															)
+														}
+														className="mb-4 text-xl font-semibold text-gray-700 outline-none"
+														placeholder="Interests & Activities"
+														rerenderRef={rerenderRef}
+													/>
+												)}
+
+												<div className="flex flex-wrap gap-2">
+													{formData.visibleSections?.hobbies &&
+														formData.hobbies?.map(hobby => (
+															<div
+																key={hobby.id}
+																className="group relative flex items-center rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-center"
+															>
+																<EditableContent
+																	content={hobby.name}
+																	onInput={e =>
+																		handleHobbyEdit(
+																			e.currentTarget.innerText,
+																			hobby.id!,
+																			'name',
+																		)
+																	}
+																	onEnter={() => addHobby()}
+																	className="text-sm text-gray-700 outline-none"
+																	placeholder="Hobby"
+																	id={`hobby-${hobby.id}`}
+																/>
+																<button
+																	type="button"
+																	onClick={() => removeHobby(hobby.id!)}
+																	className="ml-2 hidden text-gray-400 hover:text-gray-600 group-hover:block"
+																>
+																	<TrashIcon className="h-3 w-3" />
+																</button>
+																<button
+																	type="button"
+																	onClick={() => addHobby()}
+																	className="ml-2 hidden text-gray-400 hover:text-gray-600 group-hover:block"
+																>
+																	<PlusIcon className="h-3 w-3" />
+																</button>
+															</div>
+														))}
+												</div>
+											</div>
+										</div>
+									</div>
+								) : selectedLayout === 'professional' ? (
+									<div className="space-y-6">
+										{/* Header */}
+										<div className="border-b border-gray-200 pb-6">
+											<div className="text-center">
+												<EditableContent
+													content={formData.name}
+													onInput={e => handleFieldEdit(e.currentTarget.innerText, 'name')}
+													className="mb-2 text-3xl font-bold"
+													style={{ color: nameColor }}
+													placeholder="Your Name"
+													rerenderRef={rerenderRef}
+												/>
+												<EditableContent
+													content={formData.role}
+													onInput={e => handleFieldEdit(e.currentTarget.innerText, 'role')}
+													className="text-xl text-gray-600"
+													placeholder="Your Role"
+													rerenderRef={rerenderRef}
+												/>
+											</div>
+											{formData.visibleSections?.personalDetails && (
+												<div className="mt-4 flex justify-center gap-6 text-sm text-gray-600">
+													{formData.email && (
+														<div className="flex items-center gap-1">
+															<EnvelopeIcon className="h-4 w-4" />
+															<EditableContent
+																content={formData.email}
+																onInput={e => handleFieldEdit(e.currentTarget.innerText, 'email')}
+																className="outline-none"
+																placeholder="Email"
+																rerenderRef={rerenderRef}
+															/>
+														</div>
+													)}
+													{formData.phone && (
+														<div className="flex items-center gap-1">
+															<PhoneIcon className="h-4 w-4" />
+															<EditableContent
+																content={formData.phone}
+																onInput={e => handleFieldEdit(e.currentTarget.innerText, 'phone')}
+																className="outline-none"
+																placeholder="Phone"
+																rerenderRef={rerenderRef}
+															/>
+														</div>
+													)}
+													{formData.location && (
+														<div className="flex items-center gap-1">
+															<MapPinIcon className="h-4 w-4" />
+															<EditableContent
+																content={formData.location}
+																onInput={e => handleFieldEdit(e.currentTarget.innerText, 'location')}
+																className="outline-none"
+																placeholder="Location"
+																rerenderRef={rerenderRef}
+															/>
+														</div>
+													)}
+												</div>
+											)}
+										</div>
+
+										{/* Two-column content */}
+										<div className="grid grid-cols-2 gap-8">
+											{/* Left column */}
+											<div className="space-y-6">
+												{formData.visibleSections?.experience && (
+													<div>
+														<EditableContent
+															content={formData.headers?.experienceHeader}
+															onInput={e => handleHeaderEdit(e.currentTarget.innerText, 'experienceHeader')}
+															className="mb-4 text-lg font-bold text-gray-700"
+															placeholder="Professional Experience"
+														/>
+														<div className="space-y-4">
+															<SortableContext
+																items={formData.experiences?.map(exp => exp.id!) ?? []}
+																strategy={verticalListSortingStrategy}
+															>
+																{formData.experiences?.map(exp => (
+																	<SortableExperience
+																		key={exp.id}
+																		experience={exp}
+																		onExperienceEdit={handleExperienceEdit}
+																		onRemoveExperience={removeExperience}
+																		onAddExperience={addExperience}
+																		onAIClick={handleAIClick}
+																		onAddBullet={addBulletPoint}
+																		onRemoveBullet={removeBulletPoint}
+																		onBulletEdit={handleBulletPointEdit}
+																		rerenderRef={rerenderRef}
+																	/>
+																))}
+															</SortableContext>
+														</div>
+													</div>
+												)}
+
+												{formData.visibleSections?.education && (
+													<div>
+														<EditableContent
+															content={formData.headers?.educationHeader}
+															onInput={e => handleHeaderEdit(e.currentTarget.innerText, 'educationHeader')}
+															className="mb-4 text-lg font-bold text-gray-700"
+															placeholder="Education"
+														/>
+														<div className="space-y-4">
+															<SortableContext
+																items={formData.education?.map(edu => edu.id!) ?? []}
+																strategy={verticalListSortingStrategy}
+															>
+																{formData.education?.map(edu => (
+																	<SortableEducation
+																		key={edu.id}
+																		education={edu}
+																		onEducationEdit={handleEducationEdit}
+																		onRemoveEducation={removeEducation}
+																		onAddEducation={addEducation}
+																	/>
+																))}
+															</SortableContext>
+														</div>
+													</div>
+												)}
+											</div>
+
+											{/* Right column */}
+											<div className="space-y-6">
+												{formData.visibleSections?.about && (
+													<div>
+														<EditableContent
+															content={formData.headers?.aboutHeader}
+															onInput={e => handleHeaderEdit(e.currentTarget.innerText, 'aboutHeader')}
+															className="mb-4 text-lg font-bold text-gray-700"
+															placeholder="About Me"
+														/>
+														<EditableContent
+															content={formData.about}
+															onInput={e => handleFieldEdit(e.currentTarget.innerText, 'about')}
+															className="whitespace-pre-wrap text-gray-600"
+															placeholder="Write a brief summary about yourself..."
+															rerenderRef={rerenderRef}
+														/>
+													</div>
+												)}
+
+												{formData.visibleSections?.skills && (
+													<div>
+														<EditableContent
+															content={formData.headers?.skillsHeader}
+															onInput={e => handleHeaderEdit(e.currentTarget.innerText, 'skillsHeader')}
+															className="mb-4 text-lg font-bold text-gray-700"
+															placeholder="Skills & Expertise"
+														/>
+														<div className="flex flex-wrap gap-2">
+															{formData.skills?.map(skill => (
 																<div
 																	key={skill.id}
-																	className="group relative flex items-center rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-center"
+																	className="group relative flex items-center rounded-sm border border-gray-300 bg-gray-50 px-3 py-1"
 																>
 																	<EditableContent
 																		content={skill.name}
-																		onInput={e =>
-																			handleSkillEdit(
-																				e.currentTarget.innerText,
-																				skill.id!,
-																				'name',
-																			)
-																		}
-																		onEnter={() => addSkill()}
-																		className="text-sm text-gray-700 outline-none"
+																		onInput={e => handleSkillEdit(e.currentTarget.innerText, skill.id!, 'name')}
+																		className="text-sm text-gray-700"
 																		placeholder="Skill"
 																		id={`skill-${skill.id}`}
 																	/>
@@ -1800,45 +2105,274 @@ export default function ResumeBuilder() {
 																	</button>
 																</div>
 															))}
+														</div>
 													</div>
-												</>
+												)}
+
+												{formData.visibleSections?.hobbies && (
+													<div>
+														<EditableContent
+															content={formData.headers?.hobbiesHeader}
+															onInput={e => handleHeaderEdit(e.currentTarget.innerText, 'hobbiesHeader')}
+															className="mb-4 text-lg font-bold text-gray-700"
+															placeholder="Interests & Activities"
+														/>
+														<div className="flex flex-wrap gap-2">
+															{formData.hobbies?.map(hobby => (
+																<div
+																	key={hobby.id}
+																	className="group relative flex items-center rounded-sm border border-gray-300 bg-gray-50 px-3 py-1"
+																>
+																	<EditableContent
+																		content={hobby.name}
+																		onInput={e => handleHobbyEdit(e.currentTarget.innerText, hobby.id!, 'name')}
+																		className="text-sm text-gray-700"
+																		placeholder="Hobby"
+																		id={`hobby-${hobby.id}`}
+																	/>
+																	<button
+																		type="button"
+																		onClick={() => removeHobby(hobby.id!)}
+																		className="ml-2 hidden text-gray-400 hover:text-gray-600 group-hover:block"
+																	>
+																		<TrashIcon className="h-3 w-3" />
+																	</button>
+																	<button
+																		type="button"
+																		onClick={() => addHobby()}
+																		className="ml-2 hidden text-gray-400 hover:text-gray-600 group-hover:block"
+																	>
+																		<PlusIcon className="h-3 w-3" />
+																	</button>
+																</div>
+															))}
+														</div>
+													</div>
+												)}
+											</div>
+										</div>
+									</div>
+								) : (
+									// Traditional layout - Classic single-column
+									<div className="space-y-6">
+										{/* Header */}
+										<div className="border-b-2 border-gray-900 pb-4">
+											<EditableContent
+												content={formData.name}
+												onInput={e => handleFieldEdit(e.currentTarget.innerText, 'name')}
+												className="text-center text-2xl font-bold uppercase tracking-wider"
+												style={{ color: nameColor }}
+												placeholder="Your Name"
+												rerenderRef={rerenderRef}
+											/>
+											<EditableContent
+												content={formData.role}
+												onInput={e => handleFieldEdit(e.currentTarget.innerText, 'role')}
+												className="text-center text-lg uppercase tracking-wide text-gray-600"
+												placeholder="Your Role"
+												rerenderRef={rerenderRef}
+											/>
+											{formData.visibleSections?.personalDetails && (
+												<div className="mt-2 text-center text-sm text-gray-600">
+													{[
+														formData.email && (
+															<EditableContent
+																key="email"
+																content={formData.email}
+																onInput={e => handleFieldEdit(e.currentTarget.innerText, 'email')}
+																className="inline text-gray-600"
+																placeholder="Email"
+																rerenderRef={rerenderRef}
+															/>
+														),
+														formData.phone && (
+															<EditableContent
+																key="phone"
+																content={formData.phone}
+																onInput={e => handleFieldEdit(e.currentTarget.innerText, 'phone')}
+																className="inline text-gray-600"
+																placeholder="Phone"
+																rerenderRef={rerenderRef}
+															/>
+														),
+														formData.location && (
+															<EditableContent
+																key="location"
+																content={formData.location}
+																onInput={e => handleFieldEdit(e.currentTarget.innerText, 'location')}
+																className="inline text-gray-600"
+																placeholder="Location"
+																rerenderRef={rerenderRef}
+															/>
+														),
+														formData.website && (
+															<EditableContent
+																content={formData.website}
+																onInput={e => handleFieldEdit(e.currentTarget.innerText, 'website')}
+																className="inline text-gray-600"
+																placeholder="Website"
+																rerenderRef={rerenderRef}
+															/>
+														),
+													]
+														.filter(Boolean)
+														.reduce((prev, curr, i) => (
+															<>
+																{prev}
+																{i !== 0 && <span className="mx-2 text-gray-400">|</span>}
+																{curr}
+															</>
+														))}
+												</div>
 											)}
 										</div>
 
-										<div className="mb-6">
-											{formData.visibleSections?.hobbies && (
+										{/* About/Summary */}
+										{formData.visibleSections?.about && (
+											<div className="border-b border-gray-300 pb-4">
 												<EditableContent
-													content={formData.headers?.hobbiesHeader}
-													onInput={e =>
-														handleHeaderEdit(
-															e.currentTarget.innerText,
-															'hobbiesHeader',
-														)
-													}
-													className="mb-4 text-xl font-semibold text-gray-700 outline-none"
-													placeholder="Interests & Activities"
+													content={formData.headers?.aboutHeader}
+													onInput={e => handleHeaderEdit(e.currentTarget.innerText, 'aboutHeader')}
+													className="mb-3 font-serif text-lg font-bold uppercase tracking-wider text-gray-700"
+													placeholder="Professional Summary"
 													rerenderRef={rerenderRef}
 												/>
-											)}
+												<EditableContent
+													content={formData.about}
+													onInput={e => handleFieldEdit(e.currentTarget.innerText, 'about')}
+													className="whitespace-pre-wrap text-gray-600"
+													placeholder="Write a brief summary about yourself..."
+													rerenderRef={rerenderRef}
+												/>
+											</div>
+										)}
 
-											<div className="flex flex-wrap gap-2">
-												{formData.visibleSections?.hobbies &&
-													formData.hobbies?.map(hobby => (
+										{/* Experience */}
+										{formData.visibleSections?.experience && (
+											<div className="border-b border-gray-300 pb-4">
+												<EditableContent
+													content={formData.headers?.experienceHeader}
+													onInput={e => handleHeaderEdit(e.currentTarget.innerText, 'experienceHeader')}
+													className="mb-3 font-serif text-lg font-bold uppercase tracking-wider text-gray-700"
+													placeholder="Experience"
+													rerenderRef={rerenderRef}
+												/>
+												<div className="space-y-4">
+													<SortableContext
+														items={formData.experiences?.map(exp => exp.id!) ?? []}
+														strategy={verticalListSortingStrategy}
+													>
+														{formData.experiences?.map(exp => (
+															<SortableExperience
+																key={exp.id}
+																experience={exp}
+																onExperienceEdit={handleExperienceEdit}
+																onRemoveExperience={removeExperience}
+																onAddExperience={addExperience}
+																onAIClick={handleAIClick}
+																onAddBullet={addBulletPoint}
+																onRemoveBullet={removeBulletPoint}
+																onBulletEdit={handleBulletPointEdit}
+																rerenderRef={rerenderRef}
+															/>
+														))}
+													</SortableContext>
+												</div>
+											</div>
+										)}
+
+										{/* Education */}
+										{formData.visibleSections?.education && (
+											<div className="border-b border-gray-300 pb-4">
+												<EditableContent
+													content={formData.headers?.educationHeader}
+													onInput={e => handleHeaderEdit(e.currentTarget.innerText, 'educationHeader')}
+													className="mb-3 font-serif text-lg font-bold uppercase tracking-wider text-gray-700"
+													placeholder="Education"
+													rerenderRef={rerenderRef}
+												/>
+												<div className="space-y-4">
+													<SortableContext
+														items={formData.education?.map(edu => edu.id!) ?? []}
+														strategy={verticalListSortingStrategy}
+													>
+														{formData.education?.map(edu => (
+															<SortableEducation
+																key={edu.id}
+																education={edu}
+																onEducationEdit={handleEducationEdit}
+																onRemoveEducation={removeEducation}
+																onAddEducation={addEducation}
+															/>
+														))}
+													</SortableContext>
+												</div>
+											</div>
+										)}
+
+										{/* Skills */}
+										{formData.visibleSections?.skills && (
+											<div className="border-b border-gray-300 pb-4">
+												<EditableContent
+													content={formData.headers?.skillsHeader}
+													onInput={e => handleHeaderEdit(e.currentTarget.innerText, 'skillsHeader')}
+													className="mb-3 font-serif text-lg font-bold uppercase tracking-wider text-gray-700"
+													placeholder="Skills"
+													rerenderRef={rerenderRef}
+												/>
+												<div className="flex flex-wrap gap-2">
+													{formData.skills?.map(skill => (
+														<div
+															key={skill.id}
+															className="group relative flex items-center rounded-sm border border-gray-300 bg-gray-50 px-3 py-1"
+														>
+															<EditableContent
+																content={skill.name}
+																onInput={e => handleSkillEdit(e.currentTarget.innerText, skill.id!, 'name')}
+																className="text-sm text-gray-700"
+																placeholder="Skill"
+																id={`skill-${skill.id}`}
+															/>
+															<button
+																type="button"
+																onClick={() => removeSkill(skill.id!)}
+																className="ml-2 hidden text-gray-400 hover:text-gray-600 group-hover:block"
+															>
+																<TrashIcon className="h-3 w-3" />
+															</button>
+															<button
+																type="button"
+																onClick={() => addSkill()}
+																className="ml-2 hidden text-gray-400 hover:text-gray-600 group-hover:block"
+															>
+																<PlusIcon className="h-3 w-3" />
+															</button>
+														</div>
+													))}
+												</div>
+											</div>
+										)}
+
+										{/* Interests */}
+										{formData.visibleSections?.hobbies && (
+											<div>
+												<EditableContent
+													content={formData.headers?.hobbiesHeader}
+													onInput={e => handleHeaderEdit(e.currentTarget.innerText, 'hobbiesHeader')}
+													className="mb-3 font-serif text-lg font-bold uppercase tracking-wider text-gray-700"
+													placeholder="Interests"
+													rerenderRef={rerenderRef}
+												/>
+												<div className="flex flex-wrap gap-2">
+													{formData.hobbies?.map(hobby => (
 														<div
 															key={hobby.id}
-															className="group relative flex items-center rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-center"
+															className="group relative flex items-center rounded-sm border border-gray-300 bg-gray-50 px-3 py-1"
 														>
 															<EditableContent
 																content={hobby.name}
-																onInput={e =>
-																	handleHobbyEdit(
-																		e.currentTarget.innerText,
-																		hobby.id!,
-																		'name',
-																	)
-																}
-																onEnter={() => addHobby()}
-																className="text-sm text-gray-700 outline-none"
+																onInput={e => handleHobbyEdit(e.currentTarget.innerText, hobby.id!, 'name')}
+																className="text-sm text-gray-700"
 																placeholder="Hobby"
 																id={`hobby-${hobby.id}`}
 															/>
@@ -1858,10 +2392,11 @@ export default function ResumeBuilder() {
 															</button>
 														</div>
 													))}
+												</div>
 											</div>
-										</div>
+										)}
 									</div>
-								</div>
+								)}
 							</div>
 						</Form>
 					</div>

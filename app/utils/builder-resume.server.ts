@@ -72,6 +72,8 @@ export type ResumeData = {
 	createdAt?: string | Date | null
 	updatedAt?: string | Date | null
 	visibleSections: VisibleSections | null
+	font?: string | null
+	layout?: string | null
 }
 
 export type VisibleSections = {

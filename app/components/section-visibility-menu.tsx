@@ -33,7 +33,7 @@ export function SectionVisibilityMenu({
 							<EyeIcon className="h-5 w-5" />
 						</Menu.Button>
 					</TooltipTrigger>
-					<TooltipContent>Toggle Section Visibility</TooltipContent>
+					<TooltipContent>Toggle section visibility</TooltipContent>
 				</Tooltip>
 			</TooltipProvider>
 
