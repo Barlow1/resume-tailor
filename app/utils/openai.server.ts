@@ -234,7 +234,7 @@ export const getExperienceResponse = async ({
 						content: `Here are the current experiences listed in my resume: ${experience}.
 	
                     Create a list of resume experience items combined with the experience list I gave you with the with the experience and achievements for this job description would have for a ${currentJobTitle} role at company ${currentJobCompany}
-                    Keep the list limited to 10 items. Only 5 should have outcomes.
+                    Keep the list limited to 10 items. Only 5 should have outcomes. Only supply the experience items, do not include any other text.
                     Modified Experience List:`,
 						name,
 					},
@@ -249,7 +249,6 @@ export const getExperienceResponse = async ({
 		temperature: 0.2,
 		max_tokens: 1024,
 		stream: true,
-		response_format: openaiExperienceResponseFormat,
 	})
 
 	return { response }
@@ -284,7 +283,7 @@ export const getGeneratedExperienceResponse = async ({
 						role: 'user' as const,
 						content: `Generate a JSON string array of resume bullet points that someone with the experience and achievements for this job description would have for a ${currentJobTitle} role at company ${currentJobCompany}.
                     Keep the array limited to 10 items. Only 5 should have outcomes.
-                    Only supply the JSON string array in the response`,
+                    Only supply the JSON string array in the response. Do not include any other text or formatting.`,
 						name,
 					},
 			  ]
@@ -298,7 +297,6 @@ export const getGeneratedExperienceResponse = async ({
 		temperature: 0.2,
 		max_tokens: 1024,
 		stream: true,
-		response_format: openaiExperienceResponseFormat,
 	})
 
 	return { response }

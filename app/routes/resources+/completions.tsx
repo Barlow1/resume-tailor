@@ -51,40 +51,38 @@ export async function loader({ request }: DataFunctionArgs) {
 		controller.abort()
 	})
 
-	return eventStream(controller.signal, function setup(send) {
-		response.data.on('data', (data: any) => {
-			const lines = data
-				.toString()
-				.split('\n')
-				.filter((line: string) => line.trim() !== '')
-
-			for (const line of lines) {
-				const message = line.toString().replace(/^data: /, '')
-				if (message === '[DONE]') {
-					return // Stream finished
-				}
-				try {
-					const parsed = JSON.parse(message) as any
-					// newlines get stripped out of the stream, so we replace them with a placeholder
-					const delta = parsed.choices[0].delta?.content?.replace(
-						/\n/g,
-						'__NEWLINE__',
-					)
-					if (delta) send({ data: delta })
-				} catch (error) {
-					console.error('Could not JSON parse stream message', message, error)
-				}
-			}
-		})
-
-		response.data.on('error', (error: any) => {
-			console.error('Stream error', error)
-		})
-
-		response.data.on('end', () => {
-			controller.abort()
-		})
-
+	return eventStream(controller.signal, function setup(send: any) {
+		processStream(controller, response, send)
 		return function clear() {}
 	})
+}
+
+const processStream = async (controller: any, response: any, send: any) => {
+	for await (const data of response) {
+		const lines = data
+			.toString()
+			.split('\n')
+			.filter((line: string) => line.trim() !== '')
+
+		for (const line of lines) {
+			const message = line.toString().replace(/^data: /, '')
+			if (message === '[DONE]') {
+				controller.abort()
+			}
+			// if data is an empty object, skip it
+			if (Object.keys(data.choices[0].delta).length === 0) {
+				controller.abort()
+			}
+			try {
+				// newlines get stripped out of the stream, so we replace them with a placeholder
+				const delta = data.choices[0].delta?.content?.replace(
+					/\n/g,
+					'__NEWLINE__',
+				)
+				if (delta) send({ data: delta })
+			} catch (error) {
+				console.error('Could not JSON parse stream message', message, error)
+			}
+		}
+	}
 }
