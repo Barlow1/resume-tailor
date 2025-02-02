@@ -1278,7 +1278,9 @@ export default function ResumeBuilder() {
 	}
 
 	// Add layout state
-	const [selectedLayout, setSelectedLayout] = useState(formData.layout ?? 'modern')
+	const [selectedLayout, setSelectedLayout] = useState(
+		formData.layout ?? 'modern',
+	)
 
 	// Add layout change handler
 	const handleLayoutChange = (newLayout: string) => {
@@ -1612,7 +1614,10 @@ export default function ResumeBuilder() {
 														multiline
 														content={formData.about}
 														onInput={e =>
-															handleAboutEdit(e.currentTarget.innerText, 'about')
+															handleAboutEdit(
+																e.currentTarget.innerText,
+																'about',
+															)
 														}
 														className="min-h-[150px] p-3 text-sm text-gray-600"
 														placeholder="Write a brief introduction about yourself..."
@@ -1784,9 +1789,9 @@ export default function ResumeBuilder() {
 													{formData.visibleSections?.education &&
 													formData.education?.length === 0 ? (
 														<div className="rounded border border-dashed border-gray-300 p-4 text-center text-gray-500">
-																Click "Add Education" to add your educational
-																background
-															</div>
+															Click "Add Education" to add your educational
+															background
+														</div>
 													) : formData.visibleSections?.education &&
 													  formData.education ? (
 														<SortableContext
@@ -1928,7 +1933,9 @@ export default function ResumeBuilder() {
 											<div className="text-center">
 												<EditableContent
 													content={formData.name}
-													onInput={e => handleFieldEdit(e.currentTarget.innerText, 'name')}
+													onInput={e =>
+														handleFieldEdit(e.currentTarget.innerText, 'name')
+													}
 													className="mb-2 text-3xl font-bold"
 													style={{ color: nameColor }}
 													placeholder="Your Name"
@@ -1936,7 +1943,9 @@ export default function ResumeBuilder() {
 												/>
 												<EditableContent
 													content={formData.role}
-													onInput={e => handleFieldEdit(e.currentTarget.innerText, 'role')}
+													onInput={e =>
+														handleFieldEdit(e.currentTarget.innerText, 'role')
+													}
 													className="text-xl text-gray-600"
 													placeholder="Your Role"
 													rerenderRef={rerenderRef}
@@ -1949,7 +1958,12 @@ export default function ResumeBuilder() {
 															<EnvelopeIcon className="h-4 w-4" />
 															<EditableContent
 																content={formData.email}
-																onInput={e => handleFieldEdit(e.currentTarget.innerText, 'email')}
+																onInput={e =>
+																	handleFieldEdit(
+																		e.currentTarget.innerText,
+																		'email',
+																	)
+																}
 																className="outline-none"
 																placeholder="Email"
 																rerenderRef={rerenderRef}
@@ -1961,7 +1975,12 @@ export default function ResumeBuilder() {
 															<PhoneIcon className="h-4 w-4" />
 															<EditableContent
 																content={formData.phone}
-																onInput={e => handleFieldEdit(e.currentTarget.innerText, 'phone')}
+																onInput={e =>
+																	handleFieldEdit(
+																		e.currentTarget.innerText,
+																		'phone',
+																	)
+																}
 																className="outline-none"
 																placeholder="Phone"
 																rerenderRef={rerenderRef}
@@ -1973,7 +1992,12 @@ export default function ResumeBuilder() {
 															<MapPinIcon className="h-4 w-4" />
 															<EditableContent
 																content={formData.location}
-																onInput={e => handleFieldEdit(e.currentTarget.innerText, 'location')}
+																onInput={e =>
+																	handleFieldEdit(
+																		e.currentTarget.innerText,
+																		'location',
+																	)
+																}
 																className="outline-none"
 																placeholder="Location"
 																rerenderRef={rerenderRef}
@@ -1992,13 +2016,21 @@ export default function ResumeBuilder() {
 													<div>
 														<EditableContent
 															content={formData.headers?.experienceHeader}
-															onInput={e => handleHeaderEdit(e.currentTarget.innerText, 'experienceHeader')}
+															onInput={e =>
+																handleHeaderEdit(
+																	e.currentTarget.innerText,
+																	'experienceHeader',
+																)
+															}
 															className="mb-4 text-lg font-bold text-gray-700"
 															placeholder="Professional Experience"
 														/>
 														<div className="space-y-4">
 															<SortableContext
-																items={formData.experiences?.map(exp => exp.id!) ?? []}
+																items={
+																	formData.experiences?.map(exp => exp.id!) ??
+																	[]
+																}
 																strategy={verticalListSortingStrategy}
 															>
 																{formData.experiences?.map(exp => (
@@ -2024,13 +2056,20 @@ export default function ResumeBuilder() {
 													<div>
 														<EditableContent
 															content={formData.headers?.educationHeader}
-															onInput={e => handleHeaderEdit(e.currentTarget.innerText, 'educationHeader')}
+															onInput={e =>
+																handleHeaderEdit(
+																	e.currentTarget.innerText,
+																	'educationHeader',
+																)
+															}
 															className="mb-4 text-lg font-bold text-gray-700"
 															placeholder="Education"
 														/>
 														<div className="space-y-4">
 															<SortableContext
-																items={formData.education?.map(edu => edu.id!) ?? []}
+																items={
+																	formData.education?.map(edu => edu.id!) ?? []
+																}
 																strategy={verticalListSortingStrategy}
 															>
 																{formData.education?.map(edu => (
@@ -2054,13 +2093,23 @@ export default function ResumeBuilder() {
 													<div>
 														<EditableContent
 															content={formData.headers?.aboutHeader}
-															onInput={e => handleHeaderEdit(e.currentTarget.innerText, 'aboutHeader')}
+															onInput={e =>
+																handleHeaderEdit(
+																	e.currentTarget.innerText,
+																	'aboutHeader',
+																)
+															}
 															className="mb-4 text-lg font-bold text-gray-700"
 															placeholder="About Me"
 														/>
 														<EditableContent
 															content={formData.about}
-															onInput={e => handleFieldEdit(e.currentTarget.innerText, 'about')}
+															onInput={e =>
+																handleFieldEdit(
+																	e.currentTarget.innerText,
+																	'about',
+																)
+															}
 															className="whitespace-pre-wrap text-gray-600"
 															placeholder="Write a brief summary about yourself..."
 															rerenderRef={rerenderRef}
@@ -2072,7 +2121,12 @@ export default function ResumeBuilder() {
 													<div>
 														<EditableContent
 															content={formData.headers?.skillsHeader}
-															onInput={e => handleHeaderEdit(e.currentTarget.innerText, 'skillsHeader')}
+															onInput={e =>
+																handleHeaderEdit(
+																	e.currentTarget.innerText,
+																	'skillsHeader',
+																)
+															}
 															className="mb-4 text-lg font-bold text-gray-700"
 															placeholder="Skills & Expertise"
 														/>
@@ -2084,7 +2138,13 @@ export default function ResumeBuilder() {
 																>
 																	<EditableContent
 																		content={skill.name}
-																		onInput={e => handleSkillEdit(e.currentTarget.innerText, skill.id!, 'name')}
+																		onInput={e =>
+																			handleSkillEdit(
+																				e.currentTarget.innerText,
+																				skill.id!,
+																				'name',
+																			)
+																		}
 																		className="text-sm text-gray-700"
 																		placeholder="Skill"
 																		id={`skill-${skill.id}`}
@@ -2113,7 +2173,12 @@ export default function ResumeBuilder() {
 													<div>
 														<EditableContent
 															content={formData.headers?.hobbiesHeader}
-															onInput={e => handleHeaderEdit(e.currentTarget.innerText, 'hobbiesHeader')}
+															onInput={e =>
+																handleHeaderEdit(
+																	e.currentTarget.innerText,
+																	'hobbiesHeader',
+																)
+															}
 															className="mb-4 text-lg font-bold text-gray-700"
 															placeholder="Interests & Activities"
 														/>
@@ -2125,7 +2190,13 @@ export default function ResumeBuilder() {
 																>
 																	<EditableContent
 																		content={hobby.name}
-																		onInput={e => handleHobbyEdit(e.currentTarget.innerText, hobby.id!, 'name')}
+																		onInput={e =>
+																			handleHobbyEdit(
+																				e.currentTarget.innerText,
+																				hobby.id!,
+																				'name',
+																			)
+																		}
 																		className="text-sm text-gray-700"
 																		placeholder="Hobby"
 																		id={`hobby-${hobby.id}`}
@@ -2159,7 +2230,9 @@ export default function ResumeBuilder() {
 										<div className="border-b-2 border-gray-900 pb-4">
 											<EditableContent
 												content={formData.name}
-												onInput={e => handleFieldEdit(e.currentTarget.innerText, 'name')}
+												onInput={e =>
+													handleFieldEdit(e.currentTarget.innerText, 'name')
+												}
 												className="text-center text-2xl font-bold uppercase tracking-wider"
 												style={{ color: nameColor }}
 												placeholder="Your Name"
@@ -2167,59 +2240,76 @@ export default function ResumeBuilder() {
 											/>
 											<EditableContent
 												content={formData.role}
-												onInput={e => handleFieldEdit(e.currentTarget.innerText, 'role')}
+												onInput={e =>
+													handleFieldEdit(e.currentTarget.innerText, 'role')
+												}
 												className="text-center text-lg uppercase tracking-wide text-gray-600"
 												placeholder="Your Role"
 												rerenderRef={rerenderRef}
 											/>
 											{formData.visibleSections?.personalDetails && (
-												<div className="mt-2 text-center text-sm text-gray-600">
+												<div className="mt-2 text-center text-sm text-gray-600 flex flex-row justify-center">
 													{[
-														formData.email && (
-															<EditableContent
-																key="email"
-																content={formData.email}
-																onInput={e => handleFieldEdit(e.currentTarget.innerText, 'email')}
-																className="inline text-gray-600"
-																placeholder="Email"
-																rerenderRef={rerenderRef}
-															/>
-														),
-														formData.phone && (
-															<EditableContent
-																key="phone"
-																content={formData.phone}
-																onInput={e => handleFieldEdit(e.currentTarget.innerText, 'phone')}
-																className="inline text-gray-600"
-																placeholder="Phone"
-																rerenderRef={rerenderRef}
-															/>
-														),
-														formData.location && (
-															<EditableContent
-																key="location"
-																content={formData.location}
-																onInput={e => handleFieldEdit(e.currentTarget.innerText, 'location')}
-																className="inline text-gray-600"
-																placeholder="Location"
-																rerenderRef={rerenderRef}
-															/>
-														),
-														formData.website && (
-															<EditableContent
-																content={formData.website}
-																onInput={e => handleFieldEdit(e.currentTarget.innerText, 'website')}
-																className="inline text-gray-600"
-																placeholder="Website"
-																rerenderRef={rerenderRef}
-															/>
-														),
+														<EditableContent
+															key="email"
+															content={formData.email}
+															onInput={e =>
+																handleFieldEdit(
+																	e.currentTarget.innerText,
+																	'email',
+																)
+															}
+															className="inline text-gray-600"
+															placeholder="Email"
+															rerenderRef={rerenderRef}
+														/>,
+														<EditableContent
+															key="phone"
+															content={formData.phone}
+															onInput={e =>
+																handleFieldEdit(
+																	e.currentTarget.innerText,
+																	'phone',
+																)
+															}
+															className="inline text-gray-600"
+															placeholder="Phone"
+															rerenderRef={rerenderRef}
+														/>,
+														<EditableContent
+															key="location"
+															content={formData.location}
+															onInput={e =>
+																handleFieldEdit(
+																	e.currentTarget.innerText,
+																	'location',
+																)
+															}
+															className="inline text-gray-600"
+															placeholder="Location"
+															rerenderRef={rerenderRef}
+														/>,
+														<EditableContent
+															key="website"
+															content={formData.website}
+															onInput={e =>
+																handleFieldEdit(
+																	e.currentTarget.innerText,
+																	'website',
+																)
+															}
+															className="inline text-gray-600"
+															placeholder="Website"
+															rerenderRef={rerenderRef}
+														/>,
 													]
 														.filter(Boolean)
 														.reduce((prev, curr, i) => (
 															<>
 																{prev}
-																{i !== 0 && <span className="mx-2 text-gray-400">|</span>}
+																{i !== 0 && (
+																	<span className="mx-2 text-gray-400">|</span>
+																)}
 																{curr}
 															</>
 														))}
@@ -2232,14 +2322,21 @@ export default function ResumeBuilder() {
 											<div className="border-b border-gray-300 pb-4">
 												<EditableContent
 													content={formData.headers?.aboutHeader}
-													onInput={e => handleHeaderEdit(e.currentTarget.innerText, 'aboutHeader')}
+													onInput={e =>
+														handleHeaderEdit(
+															e.currentTarget.innerText,
+															'aboutHeader',
+														)
+													}
 													className="mb-3 font-serif text-lg font-bold uppercase tracking-wider text-gray-700"
 													placeholder="Professional Summary"
 													rerenderRef={rerenderRef}
 												/>
 												<EditableContent
 													content={formData.about}
-													onInput={e => handleFieldEdit(e.currentTarget.innerText, 'about')}
+													onInput={e =>
+														handleFieldEdit(e.currentTarget.innerText, 'about')
+													}
 													className="whitespace-pre-wrap text-gray-600"
 													placeholder="Write a brief summary about yourself..."
 													rerenderRef={rerenderRef}
@@ -2252,14 +2349,21 @@ export default function ResumeBuilder() {
 											<div className="border-b border-gray-300 pb-4">
 												<EditableContent
 													content={formData.headers?.experienceHeader}
-													onInput={e => handleHeaderEdit(e.currentTarget.innerText, 'experienceHeader')}
+													onInput={e =>
+														handleHeaderEdit(
+															e.currentTarget.innerText,
+															'experienceHeader',
+														)
+													}
 													className="mb-3 font-serif text-lg font-bold uppercase tracking-wider text-gray-700"
 													placeholder="Experience"
 													rerenderRef={rerenderRef}
 												/>
 												<div className="space-y-4">
 													<SortableContext
-														items={formData.experiences?.map(exp => exp.id!) ?? []}
+														items={
+															formData.experiences?.map(exp => exp.id!) ?? []
+														}
 														strategy={verticalListSortingStrategy}
 													>
 														{formData.experiences?.map(exp => (
@@ -2286,14 +2390,21 @@ export default function ResumeBuilder() {
 											<div className="border-b border-gray-300 pb-4">
 												<EditableContent
 													content={formData.headers?.educationHeader}
-													onInput={e => handleHeaderEdit(e.currentTarget.innerText, 'educationHeader')}
+													onInput={e =>
+														handleHeaderEdit(
+															e.currentTarget.innerText,
+															'educationHeader',
+														)
+													}
 													className="mb-3 font-serif text-lg font-bold uppercase tracking-wider text-gray-700"
 													placeholder="Education"
 													rerenderRef={rerenderRef}
 												/>
 												<div className="space-y-4">
 													<SortableContext
-														items={formData.education?.map(edu => edu.id!) ?? []}
+														items={
+															formData.education?.map(edu => edu.id!) ?? []
+														}
 														strategy={verticalListSortingStrategy}
 													>
 														{formData.education?.map(edu => (
@@ -2315,7 +2426,12 @@ export default function ResumeBuilder() {
 											<div className="border-b border-gray-300 pb-4">
 												<EditableContent
 													content={formData.headers?.skillsHeader}
-													onInput={e => handleHeaderEdit(e.currentTarget.innerText, 'skillsHeader')}
+													onInput={e =>
+														handleHeaderEdit(
+															e.currentTarget.innerText,
+															'skillsHeader',
+														)
+													}
 													className="mb-3 font-serif text-lg font-bold uppercase tracking-wider text-gray-700"
 													placeholder="Skills"
 													rerenderRef={rerenderRef}
@@ -2328,7 +2444,13 @@ export default function ResumeBuilder() {
 														>
 															<EditableContent
 																content={skill.name}
-																onInput={e => handleSkillEdit(e.currentTarget.innerText, skill.id!, 'name')}
+																onInput={e =>
+																	handleSkillEdit(
+																		e.currentTarget.innerText,
+																		skill.id!,
+																		'name',
+																	)
+																}
 																className="text-sm text-gray-700"
 																placeholder="Skill"
 																id={`skill-${skill.id}`}
@@ -2358,7 +2480,12 @@ export default function ResumeBuilder() {
 											<div>
 												<EditableContent
 													content={formData.headers?.hobbiesHeader}
-													onInput={e => handleHeaderEdit(e.currentTarget.innerText, 'hobbiesHeader')}
+													onInput={e =>
+														handleHeaderEdit(
+															e.currentTarget.innerText,
+															'hobbiesHeader',
+														)
+													}
 													className="mb-3 font-serif text-lg font-bold uppercase tracking-wider text-gray-700"
 													placeholder="Interests"
 													rerenderRef={rerenderRef}
@@ -2371,7 +2498,13 @@ export default function ResumeBuilder() {
 														>
 															<EditableContent
 																content={hobby.name}
-																onInput={e => handleHobbyEdit(e.currentTarget.innerText, hobby.id!, 'name')}
+																onInput={e =>
+																	handleHobbyEdit(
+																		e.currentTarget.innerText,
+																		hobby.id!,
+																		'name',
+																	)
+																}
 																className="text-sm text-gray-700"
 																placeholder="Hobby"
 																id={`hobby-${hobby.id}`}
