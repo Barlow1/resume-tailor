@@ -46,6 +46,7 @@ const tiers = [
 			'3-day free trial',
 			'Unlimited AI tailored & ATS optimized resumes',
 			'AI powered resume builder',
+			'AI resume upload & parsing',
 			'Dedicated support',
 		],
 		mostPopular: true,

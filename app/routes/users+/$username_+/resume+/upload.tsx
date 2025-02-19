@@ -15,12 +15,17 @@ import {
 	useLoaderData,
 	useNavigation,
 } from '@remix-run/react'
-import { useReducer } from 'react'
+import { useEffect, useReducer, useState } from 'react'
 import { z } from 'zod'
 import { ErrorList } from '~/components/forms.tsx'
+import { SubscribeModal } from '~/components/subscribe-modal.tsx'
 import { Button } from '~/components/ui/button.tsx'
 import * as deleteFileRoute from '~/routes/resources+/delete-file.tsx'
-import { authenticator, requireUserId } from '~/utils/auth.server.ts'
+import {
+	authenticator,
+	getStripeSubscription,
+	requireUserId,
+} from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
 import { parseResume } from '~/utils/hrflowai.server.ts'
 import { bytesToMB, invariant } from '~/utils/misc.ts'
@@ -86,7 +91,19 @@ export async function action({ request }: DataFunctionArgs) {
 			{ status: 400 },
 		)
 	}
+	const subscription = await getStripeSubscription(userId)
 
+	if (!subscription) {
+		return json(
+			{
+				status: 'error',
+				type: 'subscription_required',
+				message: 'You need a subscription to upload a resume',
+				submission,
+			} as const,
+			{ status: 400 },
+		)
+	}
 	const { resumeFile, resumeId } = submission.value
 
 	const buffer = Buffer.from(await resumeFile.arrayBuffer())
@@ -349,6 +366,18 @@ export default function FileUploaderModal() {
 
 	const transition = useNavigation()
 
+	const [showSubscribeModal, setShowSubscribeModal] = useState(false)
+
+	useEffect(() => {
+		if (
+			actionData &&
+			'type' in actionData &&
+			actionData.type === 'subscription_required'
+		) {
+			setShowSubscribeModal(true)
+		}
+	}, [actionData])
+
 	// useEffect(() => {
 	// 	function preventDefault(e: any) {
 	// 		e = e || event
@@ -414,6 +443,10 @@ export default function FileUploaderModal() {
 		<>
 			<>
 				<h2 className="text-h2">Upload Resume</h2>
+				<p className="text-sm">
+					Upload your resume for copy-paste tailing through jobs. If you want to
+					use the builder, upload your resume from the builder instead.
+				</p>
 				<Form
 					method="POST"
 					encType="multipart/form-data"
@@ -525,6 +558,13 @@ export default function FileUploaderModal() {
 						value={data.resume?.fileId ?? ''}
 					/>
 				</deleteFileFetcher.Form>
+				<SubscribeModal
+					isOpen={showSubscribeModal}
+					onClose={() => setShowSubscribeModal(false)}
+					successUrl={`/users/${data.user?.username}/resume/upload`}
+					redirectTo={`/users/${data.user?.username}/resume/upload`}
+					cancelUrl={`/users/${data.user?.username}/resume/upload`}
+				/>
 			</>
 
 			<Outlet />

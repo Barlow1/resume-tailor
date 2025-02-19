@@ -72,6 +72,12 @@ import {
 import { redirect } from '@remix-run/router'
 import { Crisp } from 'crisp-sdk-web'
 import { GoogleReCaptchaProvider } from 'react-google-recaptcha-v3'
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from './components/ui/tooltip.tsx'
 
 export const links: LinksFunction = () => {
 	return [
@@ -500,7 +506,7 @@ function App() {
 											{/* Collapse toggle button */}
 											<button
 												onClick={toggleCollapse}
-												className="absolute right-0 top-[50vh] -mr-3 flex h-6 w-6 items-center justify-center rounded-full text-white hover:bg-brand-800 bg-brand-500 shadow-md"
+												className="absolute right-0 top-[50vh] -mr-3 flex h-6 w-6 items-center justify-center rounded-full bg-brand-500 text-white shadow-md hover:bg-brand-800"
 											>
 												{isCollapsed ? (
 													<ChevronRightIcon className="h-4 w-4" />
@@ -515,27 +521,41 @@ function App() {
 														<ul className="-mx-2 space-y-1">
 															{navigation.map(item => (
 																<li key={item.name}>
-																	<a
-																		href={item.href}
-																		className={classNames(
-																			item.current
-																				? 'bg-brand-800 text-white'
-																				: 'text-purple-200 hover:bg-brand-800/50 hover:text-white',
-																			'group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6',
-																		)}
-																		title={item.name}
+																	<TooltipProvider
+																		delayDuration={200}
+																		key={item.name}
 																	>
-																		<item.icon
-																			className={classNames(
-																				item.current
-																					? 'text-white'
-																					: 'text-purple-200 group-hover:text-white',
-																				'h-6 w-6 shrink-0',
+																		<Tooltip>
+																			<TooltipTrigger asChild>
+																				<a
+																					href={item.href}
+																					className={classNames(
+																						item.current
+																							? 'bg-brand-800 text-white'
+																							: 'text-purple-200 hover:bg-brand-800/50 hover:text-white',
+																						'group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6',
+																					)}
+																					title={item.name}
+																				>
+																					<item.icon
+																						className={classNames(
+																							item.current
+																								? 'text-white'
+																								: 'text-purple-200 group-hover:text-white',
+																							'h-6 w-6 shrink-0',
+																						)}
+																						aria-hidden="true"
+																					/>
+																					{!isCollapsed && item.name}
+																				</a>
+																			</TooltipTrigger>
+																			{isCollapsed && (
+																				<TooltipContent side="right">
+																					{item.name}
+																				</TooltipContent>
 																			)}
-																			aria-hidden="true"
-																		/>
-																		{!isCollapsed && item.name}
-																	</a>
+																		</Tooltip>
+																	</TooltipProvider>
 																</li>
 															))}
 														</ul>
