@@ -444,7 +444,7 @@ export default function FileUploaderModal() {
 			<>
 				<h2 className="text-h2">Upload Resume</h2>
 				<p className="text-sm">
-					Upload your resume for copy-paste tailing through jobs. If you want to
+					Upload your resume for copy-paste tailoring to jobs. If you want to
 					use the builder, upload your resume from the builder instead.
 				</p>
 				<Form
