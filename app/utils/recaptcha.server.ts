@@ -1,6 +1,7 @@
 export async function getRecaptchaScore(
 	token: string,
 	key: string,
+	score: number = 0.5,
 ): Promise<boolean> {
 	const captchData = new URLSearchParams({
 		secret: key,
@@ -23,7 +24,7 @@ export async function getRecaptchaScore(
 			score: number
 		}
 		console.log('recaptcha result:', result)
-		if (result.success && result.score > 0.5) {
+		if (result.success && result.score >= score) {
 			return true
 		} else {
 			return false
