@@ -214,6 +214,7 @@ function Document({
 }) {
 	const location = useLocation()
 	const gaTrackingId = 'G-8JBRTFQ8PR'
+	const adsTrackingId = 'AW-16893834380'
 	useEffect(() => {
 		if (gaTrackingId?.length && process.env.NODE_ENV === 'production') {
 			gtag.pageview(location.pathname, gaTrackingId)
@@ -238,6 +239,7 @@ function Document({
                 gtag('config', '${gaTrackingId}', {
                   page_path: window.location.pathname,
                 });
+				gtag('config', '${adsTrackingId}');
               `,
 					}}
 				/>
