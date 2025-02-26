@@ -420,7 +420,6 @@ function App() {
 															<div
 																className={clsx(
 																	'md:text-md text-center text-sm font-extrabold text-white lg:text-xl',
-																	{ 'text-white': isOnLandingPage },
 																	{ hidden: isCollapsed },
 																)}
 															>
@@ -495,7 +494,6 @@ function App() {
 													<div
 														className={clsx(
 															'md:text-md text-center text-sm font-extrabold text-white lg:text-xl',
-															{ 'text-white': isOnLandingPage },
 														)}
 													>
 														{!isCollapsed ? 'RESUME TAILOR' : 'RT'}
@@ -618,7 +616,6 @@ function App() {
 													<div
 														className={clsx(
 															'text-center text-xl font-extrabold text-primary md:text-3xl lg:text-4xl',
-															{ 'text-white': isOnLandingPage },
 														)}
 													>
 														RESUME TAILOR
