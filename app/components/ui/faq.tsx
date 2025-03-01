@@ -96,7 +96,7 @@ const FAQ: React.FC = () => {
 
   return (
     <div className="mx-auto mt-32 h-full max-w-5xl px-2 py-3 tracking-wide md:mt-44 md:px-4">
-      <div className="flex justify-center text-3xl text-black dark:text-primary">
+      <div className="flex justify-center text-3xl text-black dark:text-primary font-bold">
         Frequently Asked Questions
       </div>
       <div className="grid gap-3 py-8 text-lg leading-6 text-black dark:text-primary md:grid-cols-2 md:gap-8">
