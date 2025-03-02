@@ -24,7 +24,7 @@ export function HeroSection() {
 					</p>
 				</div>
 				<div className="space-y-6 lg:pl-8">
-					<div className="rounded-lg bg-white dark:bg-gray-800">
+					<div className="rounded-lg">
 						<p className="mb-6 text-xl text-gray-900 dark:text-white">
 							That's why we created Resume Tailor—a powerful AI-driven tool that
 							doesn't just tailor your resume but also helps you build one from

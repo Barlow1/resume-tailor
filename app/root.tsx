@@ -642,9 +642,6 @@ function App() {
 												>
 													<span className="sr-only">Toggle Theme</span>
 													<ThemeSwitch
-														className={
-															isOnLandingPage ? 'text-white' : undefined
-														}
 														userPreference={data.requestInfo.userPrefs.theme}
 													/>
 												</button>
