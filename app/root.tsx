@@ -642,9 +642,6 @@ function App() {
 												>
 													<span className="sr-only">Toggle Theme</span>
 													<ThemeSwitch
-														className={
-															isOnLandingPage ? 'text-white' : undefined
-														}
 														userPreference={data.requestInfo.userPrefs.theme}
 													/>
 												</button>
@@ -711,6 +708,8 @@ function UserDropdown({ isOnLandingPage }: { isOnLandingPage: boolean }) {
 							className="h-8 w-8 rounded-full object-cover"
 							alt={user.name ?? user.username}
 							src={getUserImgSrc(user.imageId)}
+							width={32}
+							height={32}
 						/>
 						<span className="text-body-sm font-bold">
 							{user.name ?? user.username}

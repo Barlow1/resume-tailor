@@ -1,8 +1,15 @@
 import type { MetaFunction } from '@remix-run/node'
-import { addJob, background, tailorJob, topCompanies } from './logos/logos.ts'
+import { resumeBuilderScreenshot, topCompanies } from './logos/logos.ts'
+import banner1 from './logos/baner-1-2.webp'
+import banner2 from './logos/baner-1-3.webp'
+import connect from './logos/connect.webp'
 import { Link } from '@remix-run/react'
-import { Button } from '~/components/ui/button.tsx'
 import { FAQ } from '~/components/ui/faq.tsx'
+import { FeatureSection } from '~/components/feature-section.tsx'
+import { RejectionSection } from '~/components/rejection-section.tsx'
+import { StepsSection } from '~/components/steps-section.tsx'
+import { HeroSection } from '~/components/hero-section.tsx'
+import { OptimizedImage } from '~/components/ui/optimized-image.tsx'
 
 export const meta: MetaFunction = () => [
 	{ title: 'Resume Tailor' },
@@ -15,215 +22,84 @@ export const meta: MetaFunction = () => [
 
 export default function Index() {
 	return (
-		<main className="min-h-screen pb-5">
+		<main className="min-h-screen rounded-3xl pb-5">
 			<div>
-				<img
-					className="pointer-events-none absolute left-0 top-0 z-[-1] h-full max-h-[40rem] w-full select-none object-cover"
-					src={background}
-					alt=""
-				/>
 				<div className="lg:px-15 max-w-6xl px-2 pt-10 sm:px-6 md:mx-auto">
-					<h1 className="text-4xl font-bold md:text-7xl lg:text-8xl">
-						<Link to="/login" className="block text-white drop-shadow-md">
-							<span>Tailor your resume to each job using AI</span>
-						</Link>
-					</h1>
-					<p className="mt-16 max-w-5xl text-3xl text-white">
-						Tired of tailoring your resume to each job description?
-						<br /> Let AI tailor your resume for you.
-					</p>
-					<div className="flex justify-center p-10">
-						<Button
-							className="whitespace-nowrap"
-							size={'wide'}
-							variant="primary"
-							asChild
-						>
-							<Link to="/builder">Build a Resume</Link>
-						</Button>
-					</div>
-					<div className="flex flex-col space-y-24 pt-32">
-						<div className="flex flex-col space-y-12">
-							<div className="relative">
-								<span className="text-3xl font-bold italic text-brand-800  md:text-6xl">
-									Nobody
+					<div className="flex flex-col items-center justify-center">
+						<h1 className="text-center text-3xl font-bold md:text-5xl lg:text-6xl">
+							<Link to="/login" className="block drop-shadow-md">
+								<span>Land More</span>{' '}
+								<span className="bg-gradient-to-r from-brand-500 to-brand-800 bg-clip-text text-transparent">
+									Interviews, Faster
 								</span>
-								<span className="align-top text-2xl font-bold text-brand-800">
-									{' '}
-									^
-								</span>
-								<span className="absolute left-20 top-[-2rem] -rotate-6 font-rainbow text-xl font-normal text-brand-800 sm:left-48 md:text-3xl lg:float-none">
-									{' '}
-									(we swear)
-								</span>
-								<span className="text-3xl font-bold text-black dark:text-white md:text-6xl ">
-									{' '}
-									likes tailoring resumes to job descriptions.{' '}
-								</span>
-								<span className="text-3xl font-bold text-brand-800 md:text-6xl ">
-									Let AI do it for you.
-								</span>
-							</div>
-							<div>
-								<span className="text-xl font-bold text-black  dark:text-white md:text-3xl ">
-									No more{' '}
-								</span>
-								<span className="text-xl font-bold text-brand-800  md:text-3xl ">
-									copying
-								</span>
-								<span className="text-xl font-bold text-black  dark:text-white md:text-3xl ">
-									{' '}
-									monotonous job descriptions,{' '}
-								</span>
-								<span className="text-xl font-bold text-brand-800  md:text-3xl ">
-									editing
-								</span>
-								<span className="text-xl font-bold text-black  dark:text-white md:text-3xl ">
-									{' '}
-									62 resumes,{' '}
-								</span>
-								<span className="text-xl font-bold text-brand-800  md:text-3xl ">
-									or
-								</span>
-								<span className="text-xl font-bold text-black  dark:text-white md:text-3xl ">
-									{' '}
-								</span>
-								<span className="text-xl font-bold text-brand-800  md:text-3xl ">
-									submitting the wrong one
-								</span>
-								<span className="text-xl font-bold text-black  dark:text-white md:text-3xl ">
-									{' '}
-									for the job
-								</span>
-								<span className="float-right font-rainbow text-xl font-normal text-brand-800 md:text-3xl lg:float-none">
-									{' '}
-									(we've done that too)
-								</span>
-							</div>
-							<div>
-								<div className="rounded-lg p-5 shadow-2xl dark:bg-gray-900">
-									<div>
-										<div className="w-full text-xl font-bold text-brand-800 md:text-3xl ">
-											Monotonous Job Description
-										</div>
-										<div className="text-right font-rainbow text-xl font-normal text-brand-800 md:text-center md:text-3xl lg:float-none">
-											{' '}
-											(you really like reading these?)
-										</div>
-										<div className="line-clamp-6 text-base font-normal text-black dark:text-white ">
-											We are seeking a highly skilled and experienced Senior
-											Product Designer with experience designing complex systems
-											and workflows. As a Senior Product Designer, you will play
-											a crucial role in our product development process,
-											contributing to the design and optimization of our
-											products, with a focus on enhancing user experience and
-											optimizing user flows. The ideal candidate will have a
-											strong interest or aptitude in the technical specifics of
-											the products they are working on, as well as experience in
-											customer acquisition optimization and data-driven
-											decision-making.
-											<br />
-											Your responsibilities will entail designing and enhancing
-											the user experience (UX) of our products, considering
-											complex decision trees & 3rd party system requirements,
-											while ensuring usability, accessibility, and aesthetic
-											appeal. Collaborating closely with cross-functional teams,
-											including product managers, engineers, and stakeholders,
-											to gather requirements, understand
-										</div>
-									</div>
-								</div>
+							</Link>
+						</h1>
+						<p className="max-w-5xl pt-6 text-center text-xl">
+							Create a tailored resume for every job you apply to—in minutes
+						</p>
+						<div className="flex justify-center pt-6">
+							<Link
+								to="/builder"
+								className="hover:bg-brand-600 inline-block rounded-lg bg-brand-500 px-8 py-4 text-lg font-semibold text-white"
+							>
+								BUILD YOUR RESUME NOW
+							</Link>
+						</div>
+						<div className="relative mt-10 max-w-4xl justify-self-center overflow-visible rounded-t-3xl bg-gradient-to-r from-brand-500 to-brand-800">
+							<OptimizedImage
+								src={banner1}
+								alt=""
+								className="absolute -left-52 -top-32 -z-10 w-[250px]"
+								width={250}
+								height={250}
+								loading='eager'
+							/>
+							<OptimizedImage
+								src={banner2}
+								alt=""
+								className="absolute -right-52 -top-44 -z-10 w-[300px]"
+								width={300}
+								height={300}
+								loading='eager'
+							/>
+							<OptimizedImage
+								src={connect}
+								alt=""
+								className="absolute left-1/2 top-[30%] -z-10 min-w-[100vw] -translate-x-1/2 -translate-y-1/2"
+								width={1920}
+								height={1080}
+								loading='eager'
+							/>
+							<div className="flex justify-center p-6 pb-0">
+								<OptimizedImage
+									src={resumeBuilderScreenshot}
+									alt="Resume Builder Screenshot"
+									className="w-full rounded-t-xl object-contain"
+									width={1200}
+									height={800}
+									loading='eager'
+								/>
 							</div>
 						</div>
+					</div>
+
+					<FeatureSection />
+					<RejectionSection />
+					<StepsSection />
+					<HeroSection />
+
+					<div className="flex flex-col space-y-24 pt-24">
 						<div className="flex flex-col space-y-12">
-							<div className="text-center text-xl font-bold text-brand-800 md:text-4xl ">
+							<div className="text-center text-xl font-bold md:text-4xl ">
 								Trusted by employees at top companies
 							</div>
-							<img
+							<OptimizedImage
 								className="rounded-lg"
 								alt="top company logos"
 								src={topCompanies}
-							/>
-						</div>
-						<div className="flex flex-col space-y-12">
-							<div>
-								<div className=" text-center text-3xl font-bold text-brand-800 md:text-6xl ">
-									Copy the job description
-								</div>
-								<div className="text-right font-rainbow text-xl font-normal text-brand-800 md:text-3xl lg:mr-32">
-									(Command + C)
-								</div>
-							</div>
-							<div className="text-center text-xl font-bold text-black dark:text-white md:text-3xl ">
-								Head over to the job board where you've been hunting. Once
-								there, select and copy everything on the job posting.
-							</div>
-
-							<div className="rounded-lg p-5 shadow-2xl dark:bg-gray-900">
-								<div className="text-xl font-bold text-brand-800 md:text-3xl ">
-									Monotonous Job Description
-								</div>
-								<div className="line-clamp-6 pt-5 text-base font-normal text-black dark:text-white ">
-									<mark className="bg-blue-200 leading-10">
-										We are seeking a highly skilled and experienced Senior
-										Product Designer with experience designing complex systems
-										and workflows. As a Senior Product Designer, you will play a
-										crucial role in our product development process,
-										contributing to the design and optimization of our products,
-										with a focus on enhancing user experience and optimizing
-										user flows. The ideal candidate will have a strong interest
-										or aptitude in the technical specifics of the products they
-										are working on, as well as experience in customer
-										acquisition optimization and data-driven decision-making.
-										<br />
-										Your responsibilities will entail designing and enhancing
-										the user experience (UX) of our products, considering
-										complex decision trees & 3rd party system requirements,
-										while ensuring usability, accessibility, and aesthetic
-										appeal. Collaborating closely with cross-functional teams,
-										including product managers, engineers, and stakeholders, to
-										gather requirements, understand
-									</mark>
-								</div>
-							</div>
-						</div>
-						<div className="flex flex-col space-y-12">
-							<div>
-								<div className="text-center text-3xl font-bold text-brand-800 md:text-6xl ">
-									Paste the job description
-								</div>
-								<div className="text-right font-rainbow text-xl font-normal text-brand-800 md:text-3xl lg:mr-32">
-									(Command + V)
-								</div>
-							</div>
-							<div className="text-center text-xl font-bold text-black dark:text-white md:text-3xl ">
-								Paste the job description that you copied into Resume Tailor so
-								you can easily tailor your job experiences to match the job
-								requirements.
-							</div>
-							<img
-								className="rounded-3xl shadow"
-								alt="add a job screenshot"
-								src={addJob}
-							/>
-						</div>
-						<div className="flex flex-col space-y-12">
-							<div>
-								<div className="text-center text-3xl font-bold text-brand-800 md:text-6xl ">
-									Tailor your job experience with AI
-								</div>
-								<div className="text-right font-rainbow text-xl font-normal text-brand-800 md:text-3xl lg:mr-32">
-									(Click)
-								</div>
-							</div>
-							<div className="text-center text-xl font-bold text-black dark:text-white md:text-3xl">
-								Let AI do the boring, monotonous editing. Once you have tailored
-								results, copy and paste them into your resume.
-							</div>
-							<img
-								className="rounded-3xl shadow"
-								alt="tailor resume screenshot"
-								src={tailorJob}
+								loading="lazy"
+								width={1200}
+								height={150}
 							/>
 						</div>
 						<FAQ />
