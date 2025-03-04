@@ -1,8 +1,8 @@
 import { Link } from '@remix-run/react'
 import clsx from 'clsx'
-import step1 from '~/routes/_marketing+/logos/step-1.png'
-import step2 from '~/routes/_marketing+/logos/step-2.png'
-import step3 from '~/routes/_marketing+/logos/step-3.png'
+import step1 from '~/routes/_marketing+/logos/step-1.webp'
+import step2 from '~/routes/_marketing+/logos/step-2.webp'
+import step3 from '~/routes/_marketing+/logos/step-3.webp'
 
 export function StepsSection() {
 	const steps = [
@@ -75,7 +75,14 @@ export function StepsSection() {
 							<div className="relative h-[80%] rounded-xl bg-muted p-8">
 								{/* Image placeholder */}
 								<div className="aspect-video h-full w-full rounded-lg bg-muted-foreground/10">
-									<img src={step.image} alt={step.title} className="h-full w-full object-fill rounded-lg" />
+									<img 
+										src={step.image} 
+										alt={step.title} 
+										className="h-full w-full object-fill rounded-lg"
+										loading="lazy"
+										width={800}
+										height={450} 
+									/>
 								</div>
 
 								{/* Connecting dotted lines */}

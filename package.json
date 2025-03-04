@@ -25,7 +25,8 @@
     "test:e2e:install": "npx playwright install --with-deps chromium",
     "typecheck": "tsc",
     "validate": "run-p \"test -- --run\" lint typecheck test:e2e:run",
-    "stripe-listen": "stripe listen --forward-to localhost:3000/resources/stripe/hook"
+    "stripe-listen": "stripe listen --forward-to localhost:3000/resources/stripe/hook",
+    "optimize-images": "node scripts/optimize-images.js"
   },
   "eslintIgnore": [
     "/node_modules",
@@ -109,6 +110,7 @@
     "remix-auth-github": "^1.3.0",
     "remix-auth-socials": "^2.1.0",
     "remix-utils": "^7.1.0",
+    "sharp": "^0.33.5",
     "spin-delay": "^1.2.0",
     "stripe": "^14.14.0",
     "tailwind-merge": "^1.13.2",

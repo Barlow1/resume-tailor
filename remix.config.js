@@ -11,6 +11,8 @@ export default {
 	tailwind: true,
 	postcss: true,
 	watchPaths: ['./tailwind.config.ts'],
+	assetsBuildDirectory: 'public/build',
+	publicPath: '/build/',
 	routes: async defineRoutes => {
 		return flatRoutes('routes', defineRoutes, {
 			ignoredRouteFiles: [

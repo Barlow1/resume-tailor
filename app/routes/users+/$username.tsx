@@ -63,6 +63,9 @@ export default function UsernameIndex() {
 								src={getUserImgSrc(data.user.imageId)}
 								alt={userDisplayName}
 								className="h-52 w-52 rounded-full object-cover"
+								width={208}
+								height={208}
+								loading="lazy"
 							/>
 						</div>
 					</div>

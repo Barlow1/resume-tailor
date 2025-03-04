@@ -1,20 +1,27 @@
-import resumeBadGood from '~/routes/_marketing+/logos/resume-bad-good.png'
-import colorBlur from '~/routes/_marketing+/logos/color-blur.png'
+import resumeBadGood from '~/routes/_marketing+/logos/resume-bad-good.webp'
+import colorBlur from '~/routes/_marketing+/logos/color-blur.webp'
 import { Link } from '@remix-run/react'
+import { OptimizedImage } from './ui/optimized-image.tsx'
 
 export function RejectionSection() {
 	return (
 		<div className="mt-24 grid grid-cols-1 items-center gap-12 md:grid-cols-2">
 			<div className="relative h-full rounded-xl bg-muted px-12 py-20 shadow-lg">
-				<img
+				<OptimizedImage
 					src={colorBlur}
 					alt="Color blur"
 					className="absolute -right-52 -top-52 h-full w-full -z-10"
+					loading="lazy"
+					width={800}
+					height={800}
 				/>
-				<img
+				<OptimizedImage
 					src={resumeBadGood}
 					alt="Resume comparison"
 					className="h-full w-full"
+					loading="lazy"
+					width={800}
+					height={600}
 				/>
 			</div>
 			<div className="space-y-4">

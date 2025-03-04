@@ -21,11 +21,11 @@ import sentry from './sentry.svg'
 import shadcnUI from './shadcn-ui.svg'
 
 export { default as stars } from './stars.jpg'
-export { default as topCompanies } from './top-companies.png'
-export { default as background } from './background.png'
-export { default as addJob } from './add-job.png'
-export { default as tailorJob } from './tailor-job.png'
-export { default as resumeBuilderScreenshot } from './resume-builder-screenshot.png'
+export { default as topCompanies } from './top-companies.webp'
+export { default as background } from './background.webp'
+export { default as addJob } from './add-job.webp'
+export { default as tailorJob } from './tailor-job.webp'
+export { default as resumeBuilderScreenshot } from './resume-builder-screenshot.webp'
 
 
 
