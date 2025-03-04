@@ -50,7 +50,6 @@ export default function Index() {
 								src={banner1}
 								alt=""
 								className="absolute -left-52 -top-32 -z-10 w-[250px]"
-								loading="lazy"
 								width={250}
 								height={250}
 							/>
@@ -58,7 +57,6 @@ export default function Index() {
 								src={banner2}
 								alt=""
 								className="absolute -right-52 -top-44 -z-10 w-[300px]"
-								loading="lazy"
 								width={300}
 								height={300}
 							/>
@@ -66,7 +64,6 @@ export default function Index() {
 								src={connect}
 								alt=""
 								className="absolute left-1/2 top-[30%] -z-10 min-w-[100vw] -translate-x-1/2 -translate-y-1/2"
-								loading="lazy"
 								width={1920}
 								height={1080}
 							/>
@@ -75,7 +72,6 @@ export default function Index() {
 									src={resumeBuilderScreenshot}
 									alt="Resume Builder Screenshot"
 									className="w-full rounded-t-xl object-contain"
-									loading="lazy"
 									width={1200}
 									height={800}
 								/>
