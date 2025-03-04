@@ -50,7 +50,10 @@ export async function action({ request }: DataFunctionArgs) {
 		async: true,
 	})
 	const token = formData.get('_captcha')
-	if (token && typeof token === 'string') {
+	if (!token) {
+		return json({ status: 'error', submission } as const, { status: 401 })
+	}
+	if (typeof token === 'string') {
 		const score = await getRecaptchaScore(
 			token,
 			process.env.RECAPTCHA_SECRET_KEY,

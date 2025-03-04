@@ -37,6 +37,9 @@ export async function action({ request }: DataFunctionArgs) {
 		acceptMultipleErrors: () => true,
 	})
 	const token = formData.get('_captcha')
+	if (!token) {
+		return json({ status: 'error', submission } as const, { status: 401 })
+	}
 	if (token && typeof token === 'string') {
 		const score = await getRecaptchaScore(
 			token,
