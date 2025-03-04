@@ -52,6 +52,7 @@ export default function Index() {
 								className="absolute -left-52 -top-32 -z-10 w-[250px]"
 								width={250}
 								height={250}
+								loading='eager'
 							/>
 							<OptimizedImage
 								src={banner2}
@@ -59,6 +60,7 @@ export default function Index() {
 								className="absolute -right-52 -top-44 -z-10 w-[300px]"
 								width={300}
 								height={300}
+								loading='eager'
 							/>
 							<OptimizedImage
 								src={connect}
@@ -66,6 +68,7 @@ export default function Index() {
 								className="absolute left-1/2 top-[30%] -z-10 min-w-[100vw] -translate-x-1/2 -translate-y-1/2"
 								width={1920}
 								height={1080}
+								loading='eager'
 							/>
 							<div className="flex justify-center p-6 pb-0">
 								<OptimizedImage
@@ -74,6 +77,7 @@ export default function Index() {
 									className="w-full rounded-t-xl object-contain"
 									width={1200}
 									height={800}
+									loading='eager'
 								/>
 							</div>
 						</div>
