@@ -129,34 +129,51 @@ export async function createBuilderResume(
 }
 
 export async function updateBuilderResume(userId: string | null, resumeId: string, data: Omit<ResumeData, 'userId' | 'createdAt' | 'updatedAt'>) {
+	const existingResume = await prisma.builderResume.findUnique({
+		where: { id: resumeId },
+	});
+	console.log('Attempting to update resume:', resumeId);
+	console.log('Resume exists?', !!existingResume);
+
 	const { id, job, jobId, ...updateData } = data
+	console.log('resume id', resumeId);
+	console.log('id', id);
 	const updateInput: Prisma.BuilderResumeUpdateInput = {
 		...updateData,
-    user: userId ? { connect: { id: userId } } : undefined,
+		user: userId ? { connect: { id: userId } } : undefined,
 		experiences: {
 			deleteMany: {},
-			create:
-				data.experiences?.map(exp => ({
-					...exp,
-					descriptions: {
-						create: exp.descriptions?.map((desc, index) => ({
-							content: desc.content,
-							order: desc.order ?? index,
-						})),
-					},
-				})) || [],
+			create: data.experiences?.map(exp => ({
+				...exp,
+				descriptions: {
+					create: exp.descriptions?.map((desc, index) => ({
+						content: desc.content,
+						order: desc.order ?? index,
+					})),
+				},
+			})) || [],
 		},
 		education: {
 			deleteMany: {},
-			create: data.education || [],
+			create: data.education?.map(edu => ({
+				school: edu.school,
+				degree: edu.degree,
+				startDate: edu.startDate,
+				endDate: edu.endDate,
+				description: edu.description,
+			})) || [],
 		},
 		skills: {
 			deleteMany: {},
-			create: data.skills || [],
+			create: data.skills?.map(skill => ({
+				name: skill.name,
+			})) || [],
 		},
 		hobbies: {
 			deleteMany: {},
-			create: data.hobbies || [],
+			create: data.hobbies?.map(hobby => ({
+				name: hobby.name,
+			})) || [],
 		},
 		headers: data.headers
 			? {
@@ -174,6 +191,7 @@ export async function updateBuilderResume(userId: string | null, resumeId: strin
 			},
 		} : undefined,
 	}
+	console.log('updateInput', JSON.stringify(updateInput, null, 2));
 	return prisma.builderResume.update({
 		where: { id: resumeId },
 		data: updateInput,
