@@ -94,7 +94,7 @@ export const getEntireTailoredResumeResponse = async ({
 		model: 'gpt-4o',
 		messages,
 		temperature: 0.2,
-		max_tokens: 2048,
+		max_tokens: 4096,
 		response_format: openaiResumeResponseFormat,
 	})
 
