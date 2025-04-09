@@ -12,11 +12,11 @@ import { HeroSection } from '~/components/hero-section.tsx'
 import { OptimizedImage } from '~/components/ui/optimized-image.tsx'
 
 export const meta: MetaFunction = () => [
-	{ title: 'Resume Tailor' },
+	{ title: 'Resume Tailor: AI Resume Tailoring | Land More Interviews' },
 	{
 		name: 'description',
 		content:
-			'Land more job interviews: Upload your resume once and our AI customizes it to every job you apply to, save time and improve your shot at getting hired.',
+			'Land more interviews faster with AI resume tailoring. Upload once, customize for every job, save time, and boost your hiring chances. Start free today!.',
 	},
 ]
 
