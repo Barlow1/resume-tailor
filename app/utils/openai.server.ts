@@ -91,9 +91,9 @@ export const getEntireTailoredResumeResponse = async ({
 	invariant(messages, 'Must provide jobTitle and jobDescription')
 
 	const response = await openai.chat.completions.create({
-		model: 'gpt-4o',
+		model: 'gpt-4.1-mini',
 		messages,
-		temperature: 0.2,
+		temperature: 0.4,
 		max_tokens: 4096,
 		response_format: openaiResumeResponseFormat,
 	})
@@ -144,9 +144,9 @@ export const getBuilderExperienceResponse = async ({
 	invariant(messages, 'Must provide jobTitle and jobDescription')
 
 	const response = await openai.chat.completions.create({
-		model: 'gpt-4o',
+		model: 'gpt-4.1-mini',
 		messages,
-		temperature: 0.2,
+		temperature: 0.4,
 		max_tokens: 1024,
 		response_format: openaiExperienceResponseFormat,
 	})
@@ -192,9 +192,9 @@ export const getBuilderGeneratedExperienceResponse = async ({
 	invariant(messages, 'Must provide jobTitle and jobDescription')
 
 	const response = await openai.chat.completions.create({
-		model: 'gpt-4o',
+		model: 'gpt-4.1-mini',
 		messages,
-		temperature: 0.2,
+		temperature: 0.4,
 		max_tokens: 1024,
 		response_format: openaiExperienceResponseFormat,
 	})
@@ -244,9 +244,9 @@ export const getExperienceResponse = async ({
 	invariant(messages, 'Must provide jobTitle and jobDescription')
 
 	const response = await openai.chat.completions.create({
-		model: 'gpt-4o-mini',
+		model: 'gpt-4.1-mini',
 		messages,
-		temperature: 0.2,
+		temperature: 0.4,
 		max_tokens: 1024,
 		stream: true,
 	})
@@ -292,9 +292,9 @@ export const getGeneratedExperienceResponse = async ({
 	invariant(messages, 'Must provide jobTitle and jobDescription')
 
 	const response = await openai.chat.completions.create({
-		model: 'gpt-4o-mini',
+		model: 'gpt-4.1-mini',
 		messages,
-		temperature: 0.2,
+		temperature: 0.4,
 		max_tokens: 1024,
 		stream: true,
 	})
