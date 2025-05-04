@@ -274,6 +274,7 @@ const hideNavPages = [
 	'routes/_auth+/reset-password',
 	'routes/_auth+/forgot-username/index',
 	'routes/pricing+/index',
+	'routes/ai-resume-builder+/index',
 ]
 
 function App() {
@@ -336,6 +337,7 @@ function App() {
 	}
 
 	const navigation = [
+		
 		{
 			name: 'Builder',
 			href: `/builder`,
@@ -631,6 +633,14 @@ function App() {
 														Pricing
 													</Link>
 												</div>
+												<div className="flex flex-1 items-center justify-end gap-x-4 self-stretch text-xl lg:gap-x-6">
+													<Link
+														to="/ai-resume-builder"
+														className="whitespace-nowrap  text-primary hover:underline"
+													>
+														Resume Builder
+													</Link>
+												</div>
 											</div>
 										) : null}
 
@@ -669,8 +679,8 @@ function App() {
 									</div>
 								</div>
 
-								<div className="py-10">
-									<div className="px-4 sm:px-6 lg:px-8">
+								<div className="py-10 mx-auto">
+									<div className="mx-au">
 										<Outlet />
 									</div>
 								</div>
