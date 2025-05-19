@@ -193,12 +193,12 @@ export function Pricing({
 										type="submit"
 										className={cn(
 											tier.mostPopular
-												? 'bg-brand-800 text-primary-foreground hover:bg-brand-500'
+												? 'bg-brand-800 text-primary-foreground hover:bg-brand-500 !text-white'
 												: 'bg-background text-brand-800 ring-1 ring-inset ring-border hover:ring-brand-800/30',
 											'mt-6 block w-full',
 										)}
 									>
-										Start free trial
+										Start my free trial
 									</Button>
 								</Form>
 							)}
