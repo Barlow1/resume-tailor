@@ -15,6 +15,11 @@ destination = "/data"
 [deploy]
 release_command = "node ./other/sentry-create-release"
 
+[[restart]]
+  policy = "always"
+  retries = 10
+  processes = ["app"]
+
 [[services]]
 internal_port = 8080
 processes = [ "app" ]

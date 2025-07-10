@@ -102,7 +102,15 @@ app.get(['/build/*', '/img/*', '/fonts/*', '/favicons/*'], (req, res) => {
 	return res.status(404).send('Not found')
 })
 
-morgan.token('url', (req, res) => decodeURIComponent(req.url ?? ''))
+morgan.token('url', (req, res) => {
+	try {
+		return decodeURIComponent(req.url ?? '')
+	} catch (error) {
+		console.error(error)
+		// If URL is malformed, return the original URL
+		return req.url ?? ''
+	}
+})
 app.use(
 	morgan('tiny', {
 		skip: (req, res) =>
