@@ -1788,10 +1788,13 @@ export default function ResumeBuilder() {
 												<div className="space-y-4">
 													{formData.visibleSections?.education &&
 													formData.education?.length === 0 ? (
+														<>
 														<div className="rounded border border-dashed border-gray-300 p-4 text-center text-gray-500">
 															Click "Add Education" to add your educational
 															background
 														</div>
+														<Button onClick={() => addEducation()}>Add Education</Button>
+														</>
 													) : formData.visibleSections?.education &&
 													  formData.education ? (
 														<SortableContext
