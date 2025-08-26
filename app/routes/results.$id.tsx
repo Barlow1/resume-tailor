@@ -1,44 +1,135 @@
-import * as React from 'react';
-import { useLoaderData, Link } from '@remix-run/react';
-import { json, type LoaderFunctionArgs } from '@remix-run/node';
+import * as React from 'react'
+import { json, type LoaderFunctionArgs } from '@remix-run/node'
+import { Link, useLoaderData, useNavigate } from '@remix-run/react'
+import { prisma } from '~/utils/db.server.ts'
 
-export async function loader({ params, request }: LoaderFunctionArgs) {
-  const id = params.id!;
-  const origin = new URL(request.url).origin;
-  const apiUrl = new URL(`/resources/analysis/${id}`, origin);
-  const res = await fetch(apiUrl);
-  if (!res.ok) throw new Response(`Failed to load analysis ${id}`, { status: res.status });
-  const data = await res.json();
-  return json(data);
+// ---------- Types (align with getAiFeedback) ----------
+type ImproveItem = { current?: string; suggest: string; why: string }
+type Feedback = {
+  fitPct: number
+  summary: string
+  redFlags?: string[]
+  improveBullets?: ImproveItem[]
 }
 
+type AnalysisRow = {
+  id: string
+  title: string
+  company: string
+  jdText: string
+  resumeTxt: string | null
+  fitPct: number | null
+  feedback: string | null // JSON string
+  createdAt: string | Date
+  updatedAt: string | Date
+}
+
+type LoaderData = {
+  analysis: AnalysisRow
+  feedback: Feedback | null
+}
+
+const resumeKey = (id: string) => `analysis-resume-${id}`
+
+// ---------- Loader: read from DB directly ----------
+export async function loader({ params }: LoaderFunctionArgs) {
+  const id = params.id!
+  const analysis = await prisma.analysis.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      title: true,
+      company: true,
+      jdText: true,
+      resumeTxt: true,
+      fitPct: true,
+      feedback: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  })
+
+  if (!analysis) throw new Response('Analysis not found', { status: 404 })
+
+  let parsed: Feedback | null = null
+  try {
+    parsed = analysis.feedback ? (JSON.parse(analysis.feedback) as Feedback) : null
+  } catch {
+    parsed = null
+  }
+
+  return json<LoaderData>({ analysis, feedback: parsed })
+}
+
+// ---------- Component ----------
 export default function ResultsPage() {
-  const a = useLoaderData<any>();
-  const [resumeTxt, setResumeTxt] = React.useState(a.resumeTxt || '');
-  const [newFit, setNewFit] = React.useState<number | null>(null);
-  const [reanalyzing, setReanalyzing] = React.useState(false);
+  const { analysis, feedback } = useLoaderData<typeof loader>()
+  const nav = useNavigate()
+
+  const [resumeTxt, setResumeTxt] = React.useState<string>(() => {
+    if (typeof window === 'undefined') return analysis.resumeTxt ?? ''
+    return localStorage.getItem(resumeKey(analysis.id)) ?? analysis.resumeTxt ?? ''
+  })
+  const [newFit, setNewFit] = React.useState<number | null>(null)
+  const [reanalyzing, setReanalyzing] = React.useState(false)
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(resumeKey(analysis.id), resumeTxt ?? '')
+    }
+  }, [analysis.id, resumeTxt])
 
   async function reanalyze() {
-    setReanalyzing(true);
+    setReanalyzing(true)
     try {
-      const res = await fetch(`/resources/update-analysis/${a.id}`, {
+      const res = await fetch(`/resources/update-analysis/${analysis.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ resumeTxt }),
-      });
-      if (!res.ok) throw new Error(await res.text());
-      const data = await res.json();
-      setNewFit(data.fitPct ?? data.feedback?.fitPct ?? null);
+        body: JSON.stringify({
+          // keep current job meta unless user changed it elsewhere
+          title: analysis.title,
+          company: analysis.company,
+          jdText: analysis.jdText,
+          resumeTxt,
+        }),
+      })
+
+      if (res.status === 401) {
+        nav(`/login?redirectTo=/results/${analysis.id}`)
+        return
+      }
+      if (res.status === 402) {
+        // you can show your subscribe modal here if you want
+        alert('You’ve reached the free analysis limit. Please upgrade to continue.')
+        return
+      }
+      if (!res.ok) {
+        const text = await res.text()
+        throw new Error(text || `Re-analyze failed (${res.status})`)
+      }
+
+      // result shape from our update route: { analysis, feedback }
+      const data: { analysis?: { fitPct?: number | null }; feedback?: { fitPct?: number } } =
+        await res.json()
+
+      const nextFit =
+        (typeof data.analysis?.fitPct === 'number' ? data.analysis?.fitPct : null) ??
+        (typeof data.feedback?.fitPct === 'number' ? data.feedback.fitPct : null)
+
+      setNewFit(nextFit ?? null)
+
+      // Optionally refresh the page to pull latest feedback/improvements:
+      // nav(`/results/${analysis.id}`)
     } catch (err) {
-      console.error(err);
-      alert('Re-analyze failed.');
+      console.error(err)
+      alert('Re-analyze failed. Check server logs.')
     } finally {
-      setReanalyzing(false);
+      setReanalyzing(false)
     }
   }
 
-  const improvements = a.feedback?.improveBullets ?? [];
-  const fit = typeof a.fitPct === 'number' ? a.fitPct : null;
+  const improvements = feedback?.improveBullets ?? []
+  const fit = typeof analysis.fitPct === 'number' ? analysis.fitPct : feedback?.fitPct ?? null
 
   return (
     <div className="mx-auto max-w-5xl p-6">
@@ -60,7 +151,7 @@ export default function ResultsPage() {
           <h2 className="text-sm font-semibold text-gray-800">Analysis Summary</h2>
         </div>
 
-        <div className="px-5 py-5 space-y-6">
+        <div className="space-y-6 px-5 py-5">
           {/* Fit block */}
           <div>
             <div className="mb-2 flex items-center gap-3">
@@ -68,11 +159,7 @@ export default function ResultsPage() {
               <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700 ring-1 ring-inset ring-gray-200">
                 {fit != null ? `${fit}%` : '—'}
               </span>
-              {newFit != null && (
-                <span className="text-xs font-medium text-green-700">
-                  → {newFit}%
-                </span>
-              )}
+              {newFit != null && <span className="text-xs font-medium text-green-700">→ {newFit}%</span>}
             </div>
 
             {/* Progress bar */}
@@ -86,16 +173,14 @@ export default function ResultsPage() {
           </div>
 
           {/* Summary text */}
-          {a.feedback?.summary && (
-            <p className="text-sm leading-relaxed text-gray-800">{a.feedback.summary}</p>
-          )}
+          {feedback?.summary && <p className="text-sm leading-relaxed text-gray-800">{feedback.summary}</p>}
 
           {/* Red flags */}
-          {a.feedback?.redFlags?.length > 0 && (
+          {feedback?.redFlags && feedback.redFlags.length > 0 && (
             <div>
               <h3 className="mb-2 text-sm font-semibold text-gray-900">Red Flags</h3>
               <ul className="space-y-1.5 text-sm text-gray-800">
-                {a.feedback.redFlags.map((f: string, i: number) => (
+                {feedback.redFlags.map((f, i) => (
                   <li key={i} className="flex items-start gap-2">
                     <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-amber-500" />
                     <span>{f}</span>
@@ -119,9 +204,9 @@ export default function ResultsPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {improvements.length ? (
-                    improvements.map((b: any, i: number) => (
+                    improvements.map((b, i) => (
                       <tr key={i} className="align-top">
-                        <td className="px-3 py-3 text-gray-800">{b.current}</td>
+                        <td className="px-3 py-3 text-gray-800">{b.current ?? ''}</td>
                         <td className="px-3 py-3 text-gray-800">{b.suggest}</td>
                         <td className="px-3 py-3 text-gray-800">{b.why}</td>
                       </tr>
@@ -174,7 +259,8 @@ export default function ResultsPage() {
 
               {newFit != null && (
                 <span className="text-xs text-gray-600">
-                  Updated fit after re-analysis: <span className="font-semibold text-gray-800">{newFit}%</span>
+                  Updated fit after re-analysis:{' '}
+                  <span className="font-semibold text-gray-800">{newFit}%</span>
                 </span>
               )}
             </div>
@@ -182,32 +268,9 @@ export default function ResultsPage() {
         </div>
       </section>
 
-      {/* People card */}
-      {a.people?.length > 0 && (
-        <section className="mt-6 rounded-2xl border border-gray-200 bg-white shadow-sm">
-          <div className="rounded-t-2xl bg-gradient-to-r from-indigo-50 to-purple-50 px-5 py-3">
-            <h2 className="text-sm font-semibold text-gray-800">Relevant People</h2>
-          </div>
-          <ul className="px-5 py-4 space-y-2 text-sm">
-            {a.people.map((p: any, i: number) => (
-              <li key={i}>
-                <a
-                  className="text-indigo-700 underline-offset-4 hover:underline"
-                  href={p.linkedin}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {p.name} — {p.role}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
       {/* Footer nav */}
       <div className="mt-6 flex flex-wrap gap-4">
-        <Link to={`/job/${a.id}`} className="text-sm text-gray-600 underline-offset-4 hover:underline">
+        <Link to={`/job/${analysis.id}`} className="text-sm text-gray-600 underline-offset-4 hover:underline">
           ← Back to Job
         </Link>
         <Link to="/resume" className="text-sm text-gray-600 underline-offset-4 hover:underline">
@@ -215,5 +278,5 @@ export default function ResultsPage() {
         </Link>
       </div>
     </div>
-  );
+  )
 }

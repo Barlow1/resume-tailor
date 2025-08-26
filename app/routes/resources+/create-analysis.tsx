@@ -1,37 +1,29 @@
-import { json, type ActionFunctionArgs } from '@remix-run/node';
-import { prisma } from '../../utils/db.server.ts';
-import { getAiFeedback, findPeople } from '../../lib/careerfit.server.ts';
+import { json, type ActionFunctionArgs } from '@remix-run/node'
+import { prisma } from '~/utils/db.server.ts'
+import { requireUserId } from '~/utils/auth.server.ts'
 
-type Body = { title?: string; company?: string; jdText?: string; resumeTxt?: string };
+type Body = { title?: string; company?: string; jdText?: string; resumeTxt?: string }
 
 export async function action({ request }: ActionFunctionArgs) {
-  if (request.method !== 'POST') return json({ error: 'Method Not Allowed' }, { status: 405 });
+  // Must be signed in to create an analysis, but NO paywall here
+  const userId = await requireUserId(request)
 
-  const body = (await request.json().catch(() => ({}))) as Body;
-  const { title = '', company = '', jdText = '', resumeTxt = '' } = body;
+  const body = (await request.json().catch(() => ({}))) as Body
+  const { title = '', company = '', jdText = '', resumeTxt = '' } = body
 
-  // 1) create
-  const base = await prisma.analysis.create({ data: { title, company, jdText, resumeTxt } });
+  // Create the analysis (your schema has no ownerId — we won’t add one)
+  const created = await prisma.analysis.create({
+    data: {
+      title,
+      company,
+      jdText,
+      resumeTxt,
+    },
+    select: { id: true, title: true, company: true, jdText: true, resumeTxt: true },
+  })
 
-  // 2) optional AI
-  let feedback: any = null;
-  let people: any[] = [];
-  if (resumeTxt && jdText) {
-    feedback = await getAiFeedback(jdText, resumeTxt, title, company);
-    people = await findPeople(company, title);
-  }
+  // You can still increment an existing counter somewhere else if you like,
+  // but we won’t touch the DB shape here.
 
-  // 3) persist
-  const updated = await prisma.analysis.update({
-    where: { id: base.id },
-    data: feedback
-      ? { fitPct: feedback.fitPct, feedback: JSON.stringify(feedback), peopleJson: JSON.stringify(people) }
-      : {},
-  });
-
-  return json({
-    ...updated,
-    feedback: updated.feedback ? JSON.parse(updated.feedback) : null,
-    people: updated.peopleJson ? JSON.parse(updated.peopleJson) : [],
-  });
+  return json(created, { status: 200 })
 }

@@ -1,36 +1,92 @@
-import OpenAI from 'openai';
-import { z } from 'zod';
+// app/lib/careerfit.server.ts
+import OpenAI from 'openai'
+import { z } from 'zod'
 
-// ---- OpenAI client ----
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY, // throws if missing in your env util
-});
+  apiKey: process.env.OPENAI_API_KEY,
+})
 
-// ---- Result schema (strict) ----
 const ResultSchema = z.object({
   fitPct: z.number().min(0).max(100),
   summary: z.string(),
   redFlags: z.array(z.string()).default([]),
-  improveBullets: z.array(
-    z.object({
-      current: z.string().default(''),
-      suggest: z.string(),
-      why: z.string(),
-    })
-  ).max(5),
-});
+  improveBullets: z
+    .array(
+      z.object({
+        current: z.string().default(''),
+        suggest: z.string(),
+        why: z.string(),
+      })
+    )
+    .max(5),
+})
+export type Result = z.infer<typeof ResultSchema>
 
-type Result = z.infer<typeof ResultSchema>;
-
-// ---- JSON sanitizer (handles ```json fences etc.) ----
 function extractJson(s: string): string {
-  // Remove markdown fences if present
-  const fenced = s.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
-  const raw = fenced ? fenced[1] : s;
-  // Trim leading junk before first { and trailing after last }
-  const start = raw.indexOf('{');
-  const end = raw.lastIndexOf('}');
-  return start >= 0 && end >= 0 ? raw.slice(start, end + 1) : raw;
+  const fenced = s.match(/```(?:json)?\s*([\s\S]*?)\s*```/i)
+  const raw = fenced ? fenced[1] : s
+  const start = raw.indexOf('{')
+  const end = raw.lastIndexOf('}')
+  return start >= 0 && end >= 0 ? raw.slice(start, end + 1) : raw
+}
+
+function cleanInline(s: string) {
+  return (s || '—').replace(/[\r\n]+/g, ' ').slice(0, 120)
+}
+
+function buildSystemPrompt(title: string, company: string) {
+  const t = cleanInline(title)
+  const c = cleanInline(company)
+  return `
+You are a senior hiring manager with 20+ years hiring for the role of **${t}** ${c !== '—' ? `at **${c}**` : ''}.
+Evaluate a candidate strictly against the provided Job Description (JD) and the candidate's résumé.
+
+Rules:
+- Use only information present in the JD and résumé; do not invent facts.
+- Consider must-have vs nice-to-have skills, certifications, soft skills, leadership, impact, domain fit.
+- Be concise and actionable.
+- **Return UP TO 5 distinct "improveBullets" items** that are actionable résumé edits mapped to the JD.
+- Output JSON ONLY matching this schema (no extra fields, no prose outside JSON):
+
+{
+  "fitPct": 87,
+  "summary": "short paragraph…",
+  "redFlags": ["..."],
+  "improveBullets": [
+    { "current": "…", "suggest": "…", "why": "…" }
+  ]
+}
+
+"fitPct" must be an integer 0..100 reflecting how well the résumé covers the JD.
+`.trim()
+}
+
+function buildUserPrompt(jdText: string, resumeTxt: string) {
+  return [
+    `=== JOB DESCRIPTION (BEGIN) ===`,
+    (jdText || '(none provided)').trim(),
+    `=== JOB DESCRIPTION (END) ===`,
+    ``,
+    `=== RESUME (BEGIN) ===`,
+    (resumeTxt || '(none provided)').trim(),
+    `=== RESUME (END) ===`,
+  ].join('\n')
+}
+
+function mockResult(): Result {
+  return {
+    fitPct: 48,
+    summary:
+      'Mock result used because the AI call failed or API key is missing. Provide a JD and résumé for best results.',
+    redFlags: ['Missing measurable impact in key responsibilities.'],
+    improveBullets: [
+      {
+        current: '',
+        suggest: 'Quantify outcomes (e.g., “Improved conversion by 12% in 3 months”).',
+        why: 'Hiring managers prefer measurable impact.',
+      },
+    ],
+  }
 }
 
 export async function getAiFeedback(
@@ -39,129 +95,33 @@ export async function getAiFeedback(
   title: string,
   company: string
 ): Promise<Result> {
-  const systemPrompt = `
-Act as a senior hiring manager with over 20 years in the *${title}* domain.
-Your goal: evaluate a candidate’s résumé **for this specific JD**.
-
-1. Analyse MUST-have & NICE-to-have skills, certs, soft skills, leadership,
-   impact, culture fit. Cite red flags.
-2. Score overall fitPct (0-100).
-3. Suggest ≤ 5 *bullet-point* résumé improvements (plain text).
-4. Return JSON:
-     {
-       "fitPct": 87,
-       "summary": "...short paragraph…",
-       "redFlags": ["…"],
-       "improveBullets": [
-          { "current": "Managed UI…", "suggest": "Revamped React…", "why": "Quantify impact" }
-       ]
-     }
-STRICTLY return only valid JSON.
-`.trim();
-
-  const userPrompt = [
-    `Title: ${title || '—'}`,
-    `Company: ${company || '—'}`,
-    ``,
-    `=== JOB DESCRIPTION ===`,
-    jdText?.trim() || '(none provided)',
-    ``,
-    `=== RESUME ===`,
-    resumeTxt?.trim() || '(none provided)',
-  ].join('\n');
-
-  // Call OpenAI (no streaming; we need a single JSON blob)
-  const completion = await openai.chat.completions.create({
-    model: process.env.OPENAI_MODEL || 'o3',
-    temperature: 1,
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt },
-    ],
-    response_format: { type: 'text' }, // let’s normalize ourselves
-  });
-
-  const raw = completion.choices?.[0]?.message?.content ?? '';
-  const cleaned = extractJson(raw);
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(cleaned);
-  } catch {
-    // last-ditch fallback; return safe defaults to avoid 500s
-    return {
-      fitPct: 50,
-      summary:
-        'Could not parse model output strictly as JSON. Returned a safe fallback. Try again or adjust your prompt.',
-      redFlags: [],
-      improveBullets: [],
-    };
+  // If no API key, return a mock (prevents 500s)
+  if (!process.env.OPENAI_API_KEY) {
+    return mockResult()
   }
-
-  const result = ResultSchema.safeParse(parsed);
-  if (!result.success) {
-    // schema mismatch → fallback with minimal data (helps UI keep working)
-    return {
-      fitPct: 50,
-      summary:
-        'Model output did not match the expected schema. Returned a safe fallback. Try again or adjust your prompt.',
-      redFlags: [],
-      improveBullets: [],
-    };
-  }
-
-  return result.data;
-}
-
-// ---- People lookup ----
-// Uses Proxycurl company employees endpoint IF PEOPLE_API_KEY is set.
-// Otherwise returns a tiny static list.
-export async function findPeople(company: string, title: string) {
-  const key = process.env.PEOPLE_API_KEY;
-  if (!key) {
-    return [
-      { name: 'Alice Smith', role: 'Product Lead', linkedin: 'https://www.linkedin.com/in/example1' },
-      { name: 'Bob Johnson', role: 'Eng Manager', linkedin: 'https://www.linkedin.com/in/example2' },
-    ];
-  }
-
-  // NOTE: The real Proxycurl company employees endpoint typically expects a LinkedIn company profile URL.
-  // If you only have a name, you may need an enrichment step (not included here).
-  // Below is a best-effort example that falls back gracefully.
-
-  const url = new URL('https://nubela.co/proxycurl/api/v2/linkedin/company/employees/');
-  // If you have a company LinkedIn URL, set it as `url.searchParams.set('linkedin_company_url', ...)`
-  // As a lightweight fallback, pass a query param your server can map if you proxy this request.
-  url.searchParams.set('employment_status', 'current');
 
   try {
-    const res = await fetch(url.toString(), {
-      headers: { Authorization: `Bearer ${key}` },
-    });
+    const completion = await openai.chat.completions.create({
+      model: process.env.OPENAI_MODEL || 'o3',
+      temperature: 1,
+      messages: [
+        { role: 'system', content: buildSystemPrompt(title, company) },
+        { role: 'user', content: buildUserPrompt(jdText, resumeTxt) },
+      ],
+      response_format: { type: 'json_object' },
+    })
 
-    if (!res.ok) throw new Error(`people lookup ${res.status}`);
+    const raw = completion.choices?.[0]?.message?.content ?? ''
+    const cleaned = extractJson(raw)
+    const parsed = JSON.parse(cleaned)
+    const result = ResultSchema.safeParse(parsed)
 
-    const payload = (await res.json()) as any[];
-    // Map to the UI shape and filter by role keywords if title provided
-    const mapped = (payload || [])
-      .map((p: any) => ({
-        name: p?.name || p?.full_name || 'Unknown',
-        role: p?.title || p?.occupation || 'Employee',
-        linkedin: p?.linkedin_profile_url || '#',
-      }))
-      .filter((p) =>
-        title ? (p.role || '').toLowerCase().includes(title.toLowerCase().split(' ')[0]) : true
-      )
-      .slice(0, 6);
-
-    return mapped.length ? mapped : [
-      { name: 'Alice Smith', role: 'Product Lead', linkedin: 'https://www.linkedin.com/in/example1' },
-      { name: 'Bob Johnson', role: 'Eng Manager', linkedin: 'https://www.linkedin.com/in/example2' },
-    ];
-  } catch {
-    // Never fail the UX on people lookup
-    return [
-      { name: 'Alice Smith', role: 'Product Lead', linkedin: 'https://www.linkedin.com/in/example1' },
-      { name: 'Bob Johnson', role: 'Eng Manager', linkedin: 'https://www.linkedin.com/in/example2' },
-    ];
+    if (result.success) return result.data
+    // schema mismatch
+    return mockResult()
+  } catch (err) {
+    // Log once on server; return mock so UX doesn’t crash
+    console.error('getAiFeedback error:', err)
+    return mockResult()
   }
 }

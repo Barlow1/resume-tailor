@@ -207,6 +207,7 @@ model GettingStartedProgress {
   hasGeneratedResume Boolean
   tailorCount        Int      @default(0)
   generateCount      Int      @default(0)
+  analysisCount      Int      @default(0)
   downloadCount      Int      @default(0)
   owner              User     @relation(fields: [ownerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   ownerId            String   @unique
@@ -331,6 +332,7 @@ model BuilderHeaders {
   resumeId         String        @unique
   resume           BuilderResume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
 }
+
 model Analysis {
   id         String   @id @default(cuid())
   title      String   @default("")
@@ -338,8 +340,8 @@ model Analysis {
   jdText     String   @default("")
   resumeTxt  String
   fitPct     Int?
-  feedback   String?     
-  peopleJson String?     
+  feedback   String?
+  peopleJson String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }

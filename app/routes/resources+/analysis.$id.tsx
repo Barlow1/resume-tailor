@@ -1,14 +1,30 @@
-// app/routes/resources+/analysis.$id.tsx
-import { json, type LoaderFunctionArgs } from '@remix-run/node';
-import { prisma } from '../../utils/db.server.ts';
+import { json, type LoaderFunctionArgs } from '@remix-run/node'
+import { prisma } from '~/utils/db.server.ts'
 
 export async function loader({ params }: LoaderFunctionArgs) {
-  const id = params.id!;
-  const a = await prisma.analysis.findUnique({ where: { id } });
-  if (!a) throw new Response('Not Found', { status: 404 });
-  return json({
-    ...a,
-    feedback: a.feedback ? JSON.parse(a.feedback) : null,
-    people: a.peopleJson ? JSON.parse(a.peopleJson) : [],
-  });
+  const id = params.id!
+  const analysis = await prisma.analysis.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      title: true,
+      company: true,
+      jdText: true,
+      resumeTxt: true,
+      fitPct: true,
+      feedback: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  })
+  if (!analysis) throw new Response('Not found', { status: 404 })
+
+  let feedback = null as any
+  try {
+    feedback = analysis.feedback ? JSON.parse(analysis.feedback) : null
+  } catch {
+    feedback = null
+  }
+
+  return json({ ...analysis, feedback })
 }
