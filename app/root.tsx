@@ -68,6 +68,7 @@ import {
 	QueueListIcon,
 	ChevronLeftIcon,
 	ChevronRightIcon,
+	MagnifyingGlassIcon
 } from '@heroicons/react/24/outline'
 import { redirect } from '@remix-run/router'
 import { Crisp } from 'crisp-sdk-web'
@@ -78,6 +79,7 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from './components/ui/tooltip.tsx'
+import { NewBadge } from './components/ui/badge.tsx'
 
 export const links: LinksFunction = () => {
 	return [
@@ -344,6 +346,15 @@ function App() {
 			icon: DocumentTextIcon,
 			current: path?.includes('builder'),
 		},
+		{ 
+			name: 'Resume Analyzer',
+			href: `/resume`,
+			icon: MagnifyingGlassIcon,
+			current: path === '/resume' ||
+			path.startsWith('/resume/') ||
+			path.startsWith('/job/') ||
+			path.startsWith('/results/'),
+		},
 		{
 			name: 'Resumes',
 			href: `/resumes`,
@@ -360,7 +371,7 @@ function App() {
 			name: 'Upload Resume',
 			href: `/users/${user?.username}/resume/upload`,
 			icon: DocumentArrowUpIcon,
-			current: path?.includes('resume') && !path?.includes('resumes'),
+			current: path?.includes('Upload') && !path?.includes('resumes'),
 		},
 	]
 
@@ -441,24 +452,25 @@ function App() {
 																				prefetch="intent"
 																				to={item.href}
 																				className={classNames(
-																					item.current
-																						? 'bg-brand-800 text-white'
-																						: 'text-purple-200 hover:bg-brand-800/50 hover:text-white',
-																					'group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6',
+																					item.current ? 'bg-brand-800 text-white' : 'text-purple-200 hover:bg-brand-800/50 hover:text-white',
+																					'group flex items-center gap-x-3 rounded-md p-2 text-sm font-semibold leading-6',
 																				)}
 																				onClick={() => setSidebarOpen(false)}
-																			>
+																				>
 																				<item.icon
 																					className={classNames(
-																						item.current
-																							? 'text-white'
-																							: 'text-purple-200 group-hover:text-white',
-																						'h-6 w-6 shrink-0',
+																					item.current ? 'text-white' : 'text-purple-200 group-hover:text-white',
+																					'h-6 w-6 shrink-0',
 																					)}
-																					aria-hidden="true"
 																				/>
-																				{!isCollapsed && item.name}
+																				{!isCollapsed && (
+																					<span className="flex items-center">
+																					{item.name}
+																					{item.name === 'Resume Analyzer' && !item.current && <NewBadge />}
+																					</span>
+																				)}
 																			</Link>
+
 																		</li>
 																	))}
 																</ul>
@@ -532,24 +544,28 @@ function App() {
 																				<a
 																					href={item.href}
 																					className={classNames(
-																						item.current
-																							? 'bg-brand-800 text-white'
-																							: 'text-purple-200 hover:bg-brand-800/50 hover:text-white',
-																						'group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6',
+																						item.current ? 'bg-brand-800 text-white' : 'text-purple-200 hover:bg-brand-800/50 hover:text-white',
+																						'group flex items-center gap-x-3 rounded-md p-2 text-sm font-semibold leading-6',
 																					)}
 																					title={item.name}
-																				>
+																					>
 																					<item.icon
 																						className={classNames(
-																							item.current
-																								? 'text-white'
-																								: 'text-purple-200 group-hover:text-white',
-																							'h-6 w-6 shrink-0',
+																						item.current ? 'text-white' : 'text-purple-200 group-hover:text-white',
+																						'h-6 w-6 shrink-0',
 																						)}
-																						aria-hidden="true"
 																					/>
-																					{!isCollapsed && item.name}
+																					{!isCollapsed ? (
+																						<span className="flex items-center">
+																						{item.name}
+																						{item.name === 'Resume Analyzer' && !item.current && <NewBadge />}
+																						</span>
+																					) : (
+																						/* tiny dot when collapsed */
+																						item.name === 'Resume Analyzer' && !item.current && <NewBadge compact />
+																					)}
 																				</a>
+
 																			</TooltipTrigger>
 																			{isCollapsed && (
 																				<TooltipContent side="right">

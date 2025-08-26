@@ -331,3 +331,15 @@ model BuilderHeaders {
   resumeId         String        @unique
   resume           BuilderResume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
 }
+model Analysis {
+  id         String   @id @default(cuid())
+  title      String   @default("")
+  company    String   @default("")
+  jdText     String   @default("")
+  resumeTxt  String
+  fitPct     Int?
+  feedback   String?     
+  peopleJson String?     
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
