@@ -1,15 +1,32 @@
 import * as React from 'react'
 import { json, type LoaderFunctionArgs } from '@remix-run/node'
-import { Link, useLoaderData, useNavigate } from '@remix-run/react'
+import { Link, useLoaderData, useNavigate, useRevalidator } from '@remix-run/react'
 import { prisma } from '~/utils/db.server.ts'
+import { KeywordPlan } from '~/components/keyword-plan.tsx'
+import { KeywordSnippet } from '~/lib/keywords/types.ts'
 
 // ---------- Types (align with getAiFeedback) ----------
 type ImproveItem = { current?: string; suggest: string; why: string }
+
+type KeywordPlan = {
+  term: string
+  priority: 'critical' | 'important' | 'nice'
+  where: Array<'skills' | 'summmary' | 'bullet'>
+  supported: boolean
+  proof?: string
+  proofSuggestions?: string
+  synonms?: string[]
+  snippets?: { skills?: string; summary?: string; bullet?: string}
+}
+
 type Feedback = {
   fitPct: number
   summary: string
   redFlags?: string[]
   improveBullets?: ImproveItem[]
+  keywords?: { resume: string[]; jd: string[]; missing: string[] }
+  keywordBullets?: { suggest: string; why: string }[]
+  keywordPlan?: { top10: KeywordSnippet[] }
 }
 
 type AnalysisRow = {
@@ -61,10 +78,14 @@ export async function loader({ params }: LoaderFunctionArgs) {
   return json<LoaderData>({ analysis, feedback: parsed })
 }
 
+
+
 // ---------- Component ----------
 export default function ResultsPage() {
   const { analysis, feedback } = useLoaderData<typeof loader>()
   const nav = useNavigate()
+  const revalidator = useRevalidator()
+  const cap = 5
 
   const [resumeTxt, setResumeTxt] = React.useState<string>(() => {
     if (typeof window === 'undefined') return analysis.resumeTxt ?? ''
@@ -118,8 +139,7 @@ export default function ResultsPage() {
 
       setNewFit(nextFit ?? null)
 
-      // Optionally refresh the page to pull latest feedback/improvements:
-      // nav(`/results/${analysis.id}`)
+      revalidator.revalidate()
     } catch (err) {
       console.error(err)
       alert('Re-analyze failed. Check server logs.')
@@ -135,9 +155,6 @@ export default function ResultsPage() {
     <div className="mx-auto max-w-5xl p-6">
       {/* Page header */}
       <header className="mb-6">
-        <div className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-200">
-          Resume Analyzer
-        </div>
         <h1 className="mt-3 text-3xl font-bold tracking-tight">Results &amp; Edits</h1>
         <p className="mt-2 max-w-2xl text-sm text-gray-600">
           Review your fit, scan red flags, and apply targeted edits below. Re-analyze anytime to see
@@ -222,7 +239,53 @@ export default function ResultsPage() {
               </table>
             </div>
           </div>
+          {/* Top-10 Keyword Plan */}
+          <KeywordPlan plan={feedback?.keywordPlan} />
+          {/* Keyword Analyzer */}
+          <div className="rounded-t-xl bg-gray-50 px-5 py-3">
+            <h2 className="text-sm font-semibold text-gray-800">Keyword Analyzer</h2>
+          </div>
 
+          <div className="px-5 py-4 grid gap-4 md:grid-cols-3">
+            <div>
+              <div className="mb-2 text-xs font-medium text-gray-500">JD Keywords</div>
+              <div className="flex flex-wrap gap-2">
+                {(feedback?.keywords?.jd ?? []).slice(0,cap).map((k) => (
+                  <span key={k} className="rounded-full bg-gray-100 px-2 py-0.5 text-xs">{k}</span>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div className="mb-2 text-xs font-medium text-gray-500">Resume Keywords</div>
+              <div className="flex flex-wrap gap-2">
+                {(feedback?.keywords?.resume ?? []).slice(0,cap).map((k) => (
+                  <span key={k} className="rounded-full bg-gray-100 px-2 py-0.5 text-xs">{k}</span>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div className="mb-2 text-xs font-medium text-gray-500">Missing in Resume</div>
+              <div className="flex flex-wrap gap-2">
+                {(feedback?.keywords?.missing ?? []).slice(0,cap).map((k) => (
+                  <span key={k} className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">{k}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {!!(feedback?.keywordBullets?.length) && (
+            <div className="px-5 pb-5">
+              <div className="mb-2 text-sm font-semibold text-gray-900">Keyword-focused Suggestions</div>
+              <ul className="list-disc pl-6 text-sm text-gray-800 space-y-2">
+                {feedback!.keywordBullets!.map((b, i) => (
+                  <li key={i}>
+                    <div className="font-medium">{b.suggest}</div>
+                    <div className="text-gray-600 text-xs">{b.why}</div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           {/* Edit + Reanalyze */}
           <div>
             <h3 className="mb-2 text-sm font-semibold text-gray-900">Edit Résumé</h3>
