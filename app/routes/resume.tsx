@@ -1,45 +1,65 @@
-import * as React from 'react';
-import { useNavigate, Link } from '@remix-run/react';
+import * as React from 'react'
+import { useNavigate, Link } from '@remix-run/react'
 
 export default function ResumePage() {
   const [resumeTxt, setResumeTxt] = React.useState(
     (typeof window !== 'undefined' && localStorage.getItem('resume-draft')) || ''
-  );
-  const [saving, setSaving] = React.useState(false);
-  const nav = useNavigate();
+  )
+  const [saving, setSaving] = React.useState(false)
+  const nav = useNavigate()
 
   // Persist as they type so they never lose work
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('resume-draft', resumeTxt);
+      localStorage.setItem('resume-draft', resumeTxt)
     }
-  }, [resumeTxt]);
+  }, [resumeTxt])
 
   const words = React.useMemo(
     () => resumeTxt.trim().split(/\s+/).filter(Boolean).length,
     [resumeTxt]
-  );
-  const chars = resumeTxt.length;
+  )
+  const chars = resumeTxt.length
 
   async function handleSave(e: React.FormEvent) {
-    e.preventDefault();
-    setSaving(true);
+    e.preventDefault()
+    setSaving(true)
     try {
       const res = await fetch('/resources/create-analysis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ resumeTxt }),
-      });
-      if (!res.ok) throw new Error(await res.text());
-      const data = await res.json();
-      localStorage.setItem(`analysis-resume-${data.id}`, resumeTxt);
-      localStorage.setItem('resume-draft', resumeTxt);
-      nav(`/job/${data.id}`);
-    } catch (e) {
-      console.error(e);
-      alert('Failed to save résumé. Check server logs.');
+      })
+
+      // ✅ force login if not authenticated
+      if (res.status === 401) {
+        // bounce back to this page after login
+        nav(`/login?redirectTo=/resume`)
+        return
+      }
+
+      // You may keep a free/paid gate ONLY for "analyze", not "save".
+      // If your server accidentally returns 402 here, surface it:
+      if (res.status === 402) {
+        const text = await res.text()
+        throw new Error(text || 'Upgrade required')
+      }
+
+      if (!res.ok) {
+        // If the server sent an HTML error page, avoid .json() exploding
+        const text = await res.text()
+        throw new Error(`Save failed (${res.status}). ${text.slice(0, 200)}…`)
+      }
+
+      const data: { id: string } = await res.json()
+      localStorage.setItem(`analysis-resume-${data.id}`, resumeTxt)
+      localStorage.setItem('resume-draft', resumeTxt)
+      nav(`/job/${data.id}`)
+    } catch (e: any) {
+      console.error(e)
+      alert(e?.message || 'Failed to save résumé. Check server logs.')
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
   }
 
@@ -76,6 +96,7 @@ export default function ResumePage() {
           />
 
           <div className="mt-2 flex flex-wrap items-center justify-between gap-3 text-xs text-gray-500">
+            <span>{words} words • {chars} chars</span>
             <span>Tip: Plain text works best. Remove images/columns before pasting.</span>
           </div>
 
@@ -87,6 +108,7 @@ export default function ResumePage() {
                   : 'bg-indigo-600 hover:bg-indigo-700'}`}
               disabled={saving || !resumeTxt.trim()}
               aria-busy={saving}
+              type="submit"
             >
               {saving && (
                 <svg
@@ -109,7 +131,7 @@ export default function ResumePage() {
         </form>
       </div>
 
-      {/* Benefits row (optional) */}
+      {/* Benefits row */}
       <ul className="mt-6 grid gap-3 text-sm text-gray-700 sm:grid-cols-3">
         <li className="flex items-center gap-2">
           <span className="inline-block h-1.5 w-1.5 rounded-full bg-green-500" />
@@ -125,5 +147,5 @@ export default function ResumePage() {
         </li>
       </ul>
     </div>
-  );
+  )
 }
