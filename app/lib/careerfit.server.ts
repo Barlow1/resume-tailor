@@ -38,27 +38,24 @@ function buildSystemPrompt(title: string, company: string) {
   const t = cleanInline(title)
   const c = cleanInline(company)
   return `
-You are a senior hiring manager with 20+ years hiring for the role of **${t}** ${c !== '—' ? `at **${c}**` : ''}.
-Evaluate a candidate strictly against the provided Job Description (JD) and the candidate's résumé.
+    You are a senior hiring manager with 20+ years hiring for the role of **${t}** ${c !== '—' ? `at **${c}**` : ''}.
+    Evaluate a candidate strictly against the provided Job Description (JD) and the candidate's résumé.
 
-Rules:
-- Use only information present in the JD and résumé; do not invent facts.
-- Consider must-have vs nice-to-have skills, certifications, soft skills, leadership, impact, domain fit.
-- Be concise and actionable.
-- **Return UP TO 5 distinct "improveBullets" items** that are actionable résumé edits mapped to the JD.
-- Output JSON ONLY matching this schema (no extra fields, no prose outside JSON):
-
-{
-  "fitPct": 87,
-  "summary": "short paragraph…",
-  "redFlags": ["..."],
-  "improveBullets": [
-    { "current": "…", "suggest": "…", "why": "…" }
-  ]
-}
-
-"fitPct" must be an integer 0..100 reflecting how well the résumé covers the JD.
-`.trim()
+    1. Analyse MUST-have & NICE-to-have skills, certs, soft skills, leadership,
+      impact, culture fit, strengths. Cite red flags.
+    2. Score overall fitPct (0-100).
+    3. Suggest ≤ 5 *bullet-point* résumé improvements (plain text).
+    4. Return JSON:
+        {
+          "fitPct": 87,
+          "summary": "...short paragraph…",
+          "redFlags": ["…"],
+          "improveBullets": [
+              { "current": "Managed UI…", "suggest": "Revamped React…", "why": "Quantify impact" }
+          ]
+        }
+    STRICTLY return only valid JSON.
+    `.trim()
 }
 
 function buildUserPrompt(jdText: string, resumeTxt: string) {
