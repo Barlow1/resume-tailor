@@ -68,7 +68,8 @@ import {
 	QueueListIcon,
 	ChevronLeftIcon,
 	ChevronRightIcon,
-	MagnifyingGlassIcon
+	MagnifyingGlassIcon,
+	MegaphoneIcon
 } from '@heroicons/react/24/outline'
 import { redirect } from '@remix-run/router'
 import { Crisp } from 'crisp-sdk-web'
@@ -354,6 +355,12 @@ function App() {
 			path.startsWith('/resume/') ||
 			path.startsWith('/job/') ||
 			path.startsWith('/results/'),
+		},
+		{
+			name: 'Recruiter Outreach',
+			href: `/outreach`,
+			icon: MegaphoneIcon,
+			current: path?.includes('outreach'),
 		},
 		{
 			name: 'Resumes',

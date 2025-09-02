@@ -1,7 +1,7 @@
 import * as React from 'react'
 import type { ActionFunctionArgs, MetaFunction, LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Form, useActionData, useNavigation, useLoaderData, useNavigate, Link } from "@remix-run/react";
+import { Form, useActionData, useNavigation, useLoaderData, useNavigate } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { writeRecruiterMessage } from "../../utils/ai-helpers.server.ts";
 import { requireUserId, getUserId, getStripeSubscription } from '~/utils/auth.server.ts';
