@@ -131,8 +131,6 @@ export default function ResultsPage() {
 
       // result shape from our update route: { analysis, feedback }
       const data = await res.json() as { analysis?: { fitPct?: number | null }; feedback?: { fitPct?: number } }
-        await res.json()
-
       const nextFit =
         (typeof data.analysis?.fitPct === 'number' ? data.analysis?.fitPct : null) ??
         (typeof data.feedback?.fitPct === 'number' ? data.feedback.fitPct : null)
