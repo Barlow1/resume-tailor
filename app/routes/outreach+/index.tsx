@@ -22,7 +22,7 @@ import {
 import { prisma } from '~/utils/db.server.ts'
 import { SubscribeModal } from '~/components/subscribe-modal.tsx'
 
-const FREE_LIMIT = 1000
+const FREE_LIMIT = 2
 
 // ---------------- Types ----------------
 
