@@ -73,7 +73,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { redirect } from '@remix-run/router'
 import { Crisp } from 'crisp-sdk-web'
-import { GoogleReCaptchaProvider } from 'react-google-recaptcha-v3'
+import { GoogleReCaptchaProvider } from '@google-recaptcha/react'
 import {
 	Tooltip,
 	TooltipContent,
@@ -385,15 +385,8 @@ function App() {
 	return (
 		<Document nonce={nonce} theme={theme} env={data.ENV}>
 			<GoogleReCaptchaProvider
-				reCaptchaKey={data.ENV.RECAPTCHA_SITE_KEY}
-				useEnterprise={false}
-				container={{
-					element: 'recaptcha-container',
-					parameters: {
-						badge: 'bottomleft',
-						theme: theme === 'dark' ? 'dark' : 'light',
-					},
-				}}
+				type="v3"
+				siteKey={data.ENV.RECAPTCHA_SITE_KEY}
 			>
 				<div className="flex h-screen flex-col justify-between">
 					<>
