@@ -8,7 +8,7 @@ import { requireUserId, getUserId, getStripeSubscription } from '~/utils/auth.se
 import { prisma } from '~/utils/db.server.ts';
 import { SubscribeModal } from '~/components/subscribe-modal.tsx';
 
-const FREE_LIMIT = 2
+const FREE_LIMIT = 1000
 
 // ---------------- Types ----------------
 
