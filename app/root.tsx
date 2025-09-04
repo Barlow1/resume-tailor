@@ -69,7 +69,7 @@ import {
 	ChevronLeftIcon,
 	ChevronRightIcon,
 	MagnifyingGlassIcon,
-	MegaphoneIcon
+	MegaphoneIcon,
 } from '@heroicons/react/24/outline'
 import { redirect } from '@remix-run/router'
 import { Crisp } from 'crisp-sdk-web'
@@ -340,14 +340,13 @@ function App() {
 	}
 
 	const navigation = [
-		
 		{
 			name: 'Builder',
 			href: `/builder`,
 			icon: DocumentTextIcon,
 			current: path?.includes('builder'),
 		},
-		{ 
+		{
 			name: 'Resume Analyzer',
 			href: `/analyze`,
 			icon: MagnifyingGlassIcon,
@@ -456,25 +455,29 @@ function App() {
 																				prefetch="intent"
 																				to={item.href}
 																				className={classNames(
-																					item.current ? 'bg-brand-800 text-white' : 'text-purple-200 hover:bg-brand-800/50 hover:text-white',
-																					'group flex items-center gap-x-3 rounded-md p-2 text-sm font-semibold leading-6',
+																					item.current
+																						? 'bg-brand-800 text-white'
+																						: 'text-purple-200 hover:bg-brand-800/50 hover:text-white',
+																					'group relative flex items-center gap-x-3 rounded-md p-2 text-sm font-semibold leading-6',
 																				)}
 																				onClick={() => setSidebarOpen(false)}
-																				>
+																			>
 																				<item.icon
 																					className={classNames(
-																					item.current ? 'text-white' : 'text-purple-200 group-hover:text-white',
-																					'h-6 w-6 shrink-0',
+																						item.current
+																							? 'text-white'
+																							: 'text-purple-200 group-hover:text-white',
+																						'h-6 w-6 shrink-0',
 																					)}
 																				/>
 																				{!isCollapsed && (
-																					<span className="flex items-center">
-																					{item.name}
-																					{item.name === 'Resume Analyzer' && !item.current && <NewBadge />}
+																					<span className="relative flex items-center">
+																						{item.name}
+																						{item.name === 'Resume Analyzer' &&
+																							!item.current && <NewBadge />}
 																					</span>
 																				)}
 																			</Link>
-
 																		</li>
 																	))}
 																</ul>
@@ -548,28 +551,42 @@ function App() {
 																				<a
 																					href={item.href}
 																					className={classNames(
-																						item.current ? 'bg-brand-800 text-white' : 'text-purple-200 hover:bg-brand-800/50 hover:text-white',
-																						'group flex items-center gap-x-3 rounded-md p-2 text-sm font-semibold leading-6',
+																						item.current
+																							? 'bg-brand-800 text-white'
+																							: 'text-purple-200 hover:bg-brand-800/50 hover:text-white',
+																						'group relative flex items-center gap-x-3 rounded-md p-2 text-sm font-semibold leading-6',
 																					)}
 																					title={item.name}
-																					>
+																				>
 																					<item.icon
 																						className={classNames(
-																						item.current ? 'text-white' : 'text-purple-200 group-hover:text-white',
-																						'h-6 w-6 shrink-0',
+																							item.current
+																								? 'text-white'
+																								: 'text-purple-200 group-hover:text-white',
+																							'h-6 w-6 shrink-0',
 																						)}
 																					/>
-																					{!isCollapsed ? (
-																						<span className="flex items-center">
-																						{item.name}
-																						{item.name === 'Resume Analyzer' && !item.current && <NewBadge />}
+																					{!isCollapsed && (
+																						<span className="relative flex items-center">
+																							{item.name}
+																							{(item.name ===
+																								'Resume Analyzer' ||
+																								item.name ===
+																									'Recruiter Outreach') &&
+																								!item.current && <NewBadge />}
 																						</span>
-																					) : (
-																						/* tiny dot when collapsed */
-																						item.name === 'Resume Analyzer' && !item.current && <NewBadge compact />
 																					)}
+																					{/* tiny dot when collapsed */}
+																					{isCollapsed &&
+																						(item.name === 'Resume Analyzer' ||
+																							item.name ===
+																								'Recruiter Outreach') &&
+																						!item.current && (
+																							<div className="absolute -top-1 -right-1">
+																								<NewBadge compact />
+																							</div>
+																						)}
 																				</a>
-
 																			</TooltipTrigger>
 																			{isCollapsed && (
 																				<TooltipContent side="right">
@@ -699,7 +716,7 @@ function App() {
 									</div>
 								</div>
 
-								<div className="py-10 mx-auto">
+								<div className="mx-auto py-10">
 									<div className="mx-au">
 										<Outlet />
 									</div>

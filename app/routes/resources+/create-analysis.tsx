@@ -8,7 +8,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return json({ error: 'unauthorized' }, { status: 401 })
   }
 
-  const body = await request.json().catch(() => ({}))
+  const body = await request.json() as { resumeTxt: string }
   const resumeTxt = String(body.resumeTxt || '')
 
   // NOTE: do NOT gate saving with subscription/paywall

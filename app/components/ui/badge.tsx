@@ -5,7 +5,7 @@ export function NewBadge({ compact = false }: { compact?: boolean }) {
   return compact ? (
     <span
       className={clsx(
-        "ml-auto inline-block h-1.5 w-1.5 rounded-full bg-[#FA824C]"
+        "ml-auto inline-block h-1.5 w-1.5 rounded-full bg-[#FF7034]"
       )}
       aria-label="New"
       title="New"
@@ -13,7 +13,7 @@ export function NewBadge({ compact = false }: { compact?: boolean }) {
   ) : (
     <span
       className={clsx(
-        "ml-2 inline-flex items-center rounded-full bg-[#FA824C]/90 px-1.5 py-0.5 text-[11px] font-bold text-white ring-1 ring-[#FA824C]"
+        "ml-2 inline-flex items-center rounded-full bg-[#FF7034]/90 px-1.5 py-0.5 text-[11px] font-bold text-white ring-1 ring-[#FF7034]"
       )}
     >
       New
