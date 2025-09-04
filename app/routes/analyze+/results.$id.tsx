@@ -116,7 +116,7 @@ export default function ResultsPage() {
       })
 
       if (res.status === 401) {
-        nav(`/login?redirectTo=/results/${analysis.id}`)
+        nav(`/login?redirectTo=analyze/results/${analysis.id}`)
         return
       }
       if (res.status === 402) {
@@ -130,7 +130,7 @@ export default function ResultsPage() {
       }
 
       // result shape from our update route: { analysis, feedback }
-      const data: { analysis?: { fitPct?: number | null }; feedback?: { fitPct?: number } } =
+      const data = await res.json() as { analysis?: { fitPct?: number | null }; feedback?: { fitPct?: number } }
         await res.json()
 
       const nextFit =
@@ -288,13 +288,13 @@ export default function ResultsPage() {
           )}
           {/* Edit + Reanalyze */}
           <div>
-            <h3 className="mb-2 text-sm font-semibold text-gray-900">Edit Résumé</h3>
+            <h3 className="mb-2 text-sm font-semibold text-gray-900">Edit Resume</h3>
             <textarea
               className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm leading-relaxed outline-none ring-indigo-200 transition focus:ring-4"
               rows={10}
               value={resumeTxt}
               onChange={(e) => setResumeTxt(e.target.value)}
-              placeholder="Edit your résumé text here…"
+              placeholder="Edit your resume text here…"
             />
 
             <div className="mt-3 flex flex-wrap items-center gap-4">
@@ -333,10 +333,10 @@ export default function ResultsPage() {
 
       {/* Footer nav */}
       <div className="mt-6 flex flex-wrap gap-4">
-        <Link to={`/job/${analysis.id}`} className="text-sm text-gray-600 underline-offset-4 hover:underline">
+        <Link to={`../../analyze/job/${analysis.id}`} className="text-sm text-gray-600 underline-offset-4 hover:underline">
           ← Back to Job
         </Link>
-        <Link to="/resume" className="text-sm text-gray-600 underline-offset-4 hover:underline">
+        <Link to="../../analyze" className="text-sm text-gray-600 underline-offset-4 hover:underline">
           Start Over
         </Link>
       </div>

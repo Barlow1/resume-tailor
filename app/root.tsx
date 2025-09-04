@@ -349,12 +349,9 @@ function App() {
 		},
 		{ 
 			name: 'Resume Analyzer',
-			href: `/resume`,
+			href: `/analyze`,
 			icon: MagnifyingGlassIcon,
-			current: path === '/resume' ||
-			path.startsWith('/resume/') ||
-			path.startsWith('/job/') ||
-			path.startsWith('/results/'),
+			current: path?.includes('analyze'),
 		},
 		{
 			name: 'Recruiter Outreach',

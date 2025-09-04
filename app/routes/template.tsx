@@ -26,7 +26,7 @@ export default function SelectTemplate() {
           >
             <img
               src={t.img}
-              alt={`${t.name} résumé example`}
+              alt={`${t.name} resume example`}
               className="rounded-xl shadow transition group-hover:scale-105"
             />
             <p className="mt-2 text-center font-medium">{t.name}</p>

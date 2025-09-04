@@ -121,13 +121,13 @@ function buildSystemPrompt(title: string, company: string) {
   const c = cleanInline(company)
   return `
 You are a senior hiring manager with 20+ years hiring for the role of **${t}** ${c !== '—' ? `at **${c}**` : ''}.
-Evaluate a candidate strictly against the provided Job Description (JD) and the candidate's résumé.
+Evaluate a candidate strictly against the provided Job Description (JD) and the candidate's resume.
 
 1) Analyse MUST-have & NICE-to-have skills, certs, soft skills, leadership, impact, culture fit, strengths. Cite red flags.
 2) Score overall fitPct (0-100).
-3) Suggest ≤5 *bullet-point* résumé improvements (plain text).
+3) Suggest ≤5 *bullet-point* resume improvements (plain text).
 4) Keyword task:
-   - You will receive a deterministic pre-pass (lists, candidate CSV, draft Top-10). Validate, then **re-rank or replace** terms based on the **role (“${title}”${company ? ` at “${company}”` : ''})**, the **candidate’s experience/seniority inferred from the résumé**, and **what’s most critical to the JD**.
+   - You will receive a deterministic pre-pass (lists, candidate CSV, draft Top-10). Validate, then **re-rank or replace** terms based on the **role (“${title}”${company ? ` at “${company}”` : ''})**, the **candidate’s experience/seniority inferred from the resume**, and **what’s most critical to the JD**.
    - Return a **"keywords"** object { jd, resume, missing } **capped at 10 items each** (≤10).
    - Return a **"keywordPlan.top10"** where each item includes:
        • **priority** ("critical"/"important"/"nice") based on JD,
@@ -190,7 +190,7 @@ function mockResult(): Result {
   return {
     fitPct: 48,
     summary:
-      'Mock result used because the AI call failed or API key is missing. Provide a JD and résumé for best results.',
+      'Mock result used because the AI call failed or API key is missing. Provide a JD and resume for best results.',
     redFlags: ['Missing measurable impact in key responsibilities.'],
     improveBullets: [
       {

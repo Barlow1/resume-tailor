@@ -34,7 +34,7 @@ export default function ResumePage() {
       // ✅ force login if not authenticated
       if (res.status === 401) {
         // bounce back to this page after login
-        nav(`/login?redirectTo=/resume`)
+        nav(`/login?redirectTo=/analyze`)
         return
       }
 
@@ -51,13 +51,13 @@ export default function ResumePage() {
         throw new Error(`Save failed (${res.status}). ${text.slice(0, 200)}…`)
       }
 
-      const data: { id: string } = await res.json()
+      const data = await res.json() as { id: string }
       localStorage.setItem(`analysis-resume-${data.id}`, resumeTxt)
       localStorage.setItem('resume-draft', resumeTxt)
-      nav(`/job/${data.id}`)
+      nav(`job/${data.id}`)
     } catch (e: any) {
       console.error(e)
-      alert(e?.message || 'Failed to save résumé. Check server logs.')
+      alert(e?.message || 'Failed to save resume. Check server logs.')
     } finally {
       setSaving(false)
     }
@@ -68,23 +68,23 @@ export default function ResumePage() {
       {/* Header */}
       <header className="mb-6">
         <h1 className="mt-3 text-3xl font-bold tracking-tight">
-          Analyze Your Résumé for Job Fit
+          Analyze Your Resume for Job Fit
         </h1>
         <p className="mt-2 max-w-2xl text-sm text-gray-600">
-          Paste your résumé to see how well it matches a target job, uncover red flags,
-          and get actionable improvements so your résumé stands out.
+          Paste your resume to see how well it matches a target job, uncover red flags,
+          and get actionable improvements so your resume stands out.
         </p>
       </header>
 
       {/* Card */}
       <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
         <div className="rounded-t-2xl bg-gradient-to-r from-indigo-50 to-purple-50 px-5 py-3">
-          <h2 className="text-sm font-semibold text-gray-800">Paste Your Résumé</h2>
+          <h2 className="text-sm font-semibold text-gray-800">Paste Your Resume</h2>
         </div>
 
         <form onSubmit={handleSave} className="px-5 pb-5 pt-4">
           <label htmlFor="resume" className="sr-only">
-            Résumé text
+            Resume text
           </label>
           <textarea
             id="resume"
@@ -92,7 +92,7 @@ export default function ResumePage() {
             rows={14}
             value={resumeTxt}
             onChange={(e) => setResumeTxt(e.target.value)}
-            placeholder="Paste your résumé text here…"
+            placeholder="Paste your resume text here…"
           />
 
           <div className="mt-2 flex flex-wrap items-center justify-between gap-3 text-xs text-gray-500">

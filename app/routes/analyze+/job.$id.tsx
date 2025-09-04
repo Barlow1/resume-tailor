@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { useLoaderData, useNavigate, Link } from '@remix-run/react'
 import { json, type LoaderFunctionArgs } from '@remix-run/node'
-import { SubscribeModal } from '../components/subscribe-modal.tsx'
+import { SubscribeModal } from '~/components/subscribe-modal.tsx'
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
   const id = params.id!
@@ -52,7 +52,7 @@ export default function JobPage() {
       }
 
       await res.json()
-      nav(`/results/${a.id}`)
+      nav(`../../analyze/results/${a.id}`)
     } catch (err) {
       console.error(err)
       alert('Analyze failed. Check server logs.')
@@ -67,7 +67,7 @@ export default function JobPage() {
       <div>
         <h1 className="text-3xl font-bold mb-2">Add the Job You’re Targeting</h1>
         <p className="text-gray-600">
-          Paste the job title, company, and description. We’ll compare it against your résumé.
+          Paste the job title, company, and description. We’ll compare it against your resume.
         </p>
         <form onSubmit={analyze} className="space-y-3">
           <input
@@ -126,7 +126,7 @@ export default function JobPage() {
 
       {/* right: resume snapshot */}
       <div>
-        <h2 className="font-semibold mb-2">Your Résumé (snapshot)</h2>
+        <h2 className="font-semibold mb-2">Your Resume</h2>
         <pre className="border rounded p-3 whitespace-pre-wrap text-sm">{resumePreview}</pre>
       </div>
 
