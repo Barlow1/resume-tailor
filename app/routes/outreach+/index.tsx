@@ -164,13 +164,33 @@ export async function action({ request }: ActionFunctionArgs) {
 	}
 
 	try {
-		const subscription = await getStripeSubscription(userId)
-		if (!subscription) {
+		const [subscription, progress] = await Promise.all([
+			getStripeSubscription(userId),
+			prisma.gettingStartedProgress.upsert({
+				where: { ownerId: userId },
+				update: {},
+				create: {
+					ownerId: userId,
+					outreachCount: 0,
+					hasSavedJob: false,
+					hasSavedResume: false,
+					hasTailoredResume: false,
+					hasGeneratedResume: false,
+				},
+				select: { outreachCount: true },
+			})
+		])
+
+		const freeUsed = progress.outreachCount
+		const freeRemaining = Math.max(0, FREE_LIMIT - freeUsed)
+
+		// Check if user has subscription or free usage remaining
+		if (!subscription?.active && freeRemaining <= 0) {
 			return json<ActionError>(
 				{
 					ok: false,
-					requireSubscribe: false, // ✅ fixed typo (was reqireSubscribe)
-					message: 'A paid subscription is required to generate outreach.',
+					requireSubscribe: true,
+					message: `You've used all ${FREE_LIMIT} free outreach generations. Upgrade to continue generating personalized outreach messages.`,
 					fields: {
 						jobTitle,
 						jobDescription,
@@ -183,20 +203,6 @@ export async function action({ request }: ActionFunctionArgs) {
 				{ status: 402 },
 			)
 		}
-
-		const progress = await prisma.gettingStartedProgress.upsert({
-			where: { ownerId: userId },
-			update: {},
-			create: {
-				ownerId: userId,
-				outreachCount: 0,
-				hasSavedJob: false,
-				hasSavedResume: false,
-				hasTailoredResume: false,
-				hasGeneratedResume: false,
-			},
-			select: { outreachCount: true },
-		})
 
 		// Optional: try to generate outreach; if helper signature differs, this stays safe.
 		let outreach: Outreach = null
@@ -219,10 +225,20 @@ export async function action({ request }: ActionFunctionArgs) {
 			outreach = null
 		}
 
+		// Increment outreach count after successful generation (only if not subscribed)
+		let updatedProgress = progress
+		if (!subscription?.active) {
+			updatedProgress = await prisma.gettingStartedProgress.update({
+				where: { ownerId: userId },
+				data: { outreachCount: progress.outreachCount + 1 },
+				select: { outreachCount: true },
+			})
+		}
+
 		return json<ActionSuccess>({
 			ok: true,
-			hasSubscription: true,
-			progress,
+			hasSubscription: !!subscription?.active,
+			progress: updatedProgress,
 			fields: {
 				jobTitle,
 				jobDescription,
@@ -268,7 +284,7 @@ export default function RecruiterOutreachPage() {
 	const data = useActionData<ActionData>()
 	const nav = useNavigation()
 	const isSubmitting = nav.state === 'submitting'
-	const { userId } = useLoaderData<typeof loader>()
+	const { userId, subscription, freeRemaining } = useLoaderData<typeof loader>()
 	const navigate = useNavigate()
 
 	const err = data && !data.ok ? (data as ActionError).errors : null
@@ -377,7 +393,7 @@ export default function RecruiterOutreachPage() {
 						<span className="font-medium text-foreground">
 							email & LinkedIn messages
 						</span>
-						you can send today to land more interviews.
+						&nbsp;you can send today to land more interviews.
 					</p>
 					<ul className="mt-4 grid gap-2 text-sm text-muted-foreground sm:grid-cols-3">
 						<li className="flex items-center gap-2">
@@ -401,12 +417,29 @@ export default function RecruiterOutreachPage() {
 				{/* Form */}
 				<div className="md:col-span-3">
 					<div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-						<h2 className="text-lg font-medium">Enter these fields</h2>
-						<p className="mt-1 text-sm text-muted-foreground">
-							Paste your resume and job description, add the recruiter's name,
-							and we'll craft polished email and LinkedIn messages you can send
-							today to land more interviews.
-						</p>
+						<div className="flex items-center justify-between">
+							<div>
+								<h2 className="text-lg font-medium">Enter these fields</h2>
+								<p className="mt-1 text-sm text-muted-foreground">
+									Paste your resume and job description, add the recruiter's name,
+									and we'll craft polished email and LinkedIn messages you can send
+									today to land more interviews.
+								</p>
+							</div>
+							{userId && !subscription?.active && typeof freeRemaining === 'number' && (
+								<div className="text-right">
+									<div className="text-sm font-medium text-foreground">
+										Free generations
+									</div>
+									<div className="text-lg font-semibold text-primary">
+										{freeRemaining} / {FREE_LIMIT}
+									</div>
+									<div className="text-xs text-muted-foreground">
+										remaining
+									</div>
+								</div>
+							)}
+						</div>
 
 						<Form
 							method="post"
@@ -548,6 +581,12 @@ export default function RecruiterOutreachPage() {
 							{err?.imports && (
 								<div className="rounded-md border border-destructive bg-destructive/10 p-3 text-sm text-destructive">
 									{err.imports}
+								</div>
+							)}
+
+							{data && !data.ok && (data as ActionError).message && (
+								<div className="rounded-md border border-destructive bg-destructive/10 p-3 text-sm text-destructive">
+									{(data as ActionError).message}
 								</div>
 							)}
 
