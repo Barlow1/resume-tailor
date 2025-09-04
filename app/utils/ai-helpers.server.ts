@@ -4,11 +4,11 @@ import { jobDescriptionSchema, resumeAnalysisSchema, jobFitSchema,
     getParsedJobDescription,
     getRecruiterMessage, 
     recruiterOutreachSchema} from "./openai.server.ts"
-import { z } from 'zod'
+import type { z } from 'zod'
 import { type ResumeData } from "./builder-resume.server.ts"
 import { type User } from '@prisma/client'
 
-export type JD = z.infer<typeof jobDescriptionSchema>
+export type JD = z.output<typeof jobDescriptionSchema>
 export type ResumeAnalysis = z.infer<typeof resumeAnalysisSchema>
 export type JobFit = z.infer<typeof jobFitSchema>
 export type recruiterOutreach = z.infer<typeof recruiterOutreachSchema>
@@ -46,18 +46,14 @@ export async function analyzePostingAndResume({
   jobDescription: string;
   resume: string | ResumeData; // accept either raw text or builder object
   user: Partial<User>;
-}): Promise<{
-  parsedJD: JD | null;
-  structuredResume: ResumeAnalysis | null; // useful for UI (skills/score), not passed into fit
-  jobFit: JobFit | null;
-}> {
+}) {
     try {
         const { response: jdResponse } = await getParsedJobDescription({
             jobTitle,
             jobDescription,
             user,
         })
-        const parsedJD = safeParse<JD>(jdResponse, jobDescriptionSchema)
+        const parsedJD = safeParse(jdResponse, jobDescriptionSchema)
         
         const jdForFit: string = parsedJD
         ? JSON.stringify(parsedJD)
