@@ -288,7 +288,8 @@ function App() {
 	)
 	useToast(data.flash?.toast)
 
-	const shouldHideNav = Boolean(matches.find(m => hideNavPages.includes(m.id)))
+	const isBlogRoute = matches.some(m => m.id.startsWith('routes/blog+'))
+	const shouldHideNav = Boolean(matches.find(m => hideNavPages.includes(m.id))) || isBlogRoute
 
 	const location = useLocation()
 	const path = location.pathname
@@ -639,6 +640,14 @@ function App() {
 														className="whitespace-nowrap  text-primary hover:underline"
 													>
 														Resume Builder
+													</Link>
+												</div>
+												<div className="flex flex-1 items-center justify-end gap-x-4 self-stretch text-xl lg:gap-x-6">
+													<Link
+														to="/blog"
+														className="whitespace-nowrap  text-primary hover:underline"
+													>
+														Blog 
 													</Link>
 												</div>
 											</div>
