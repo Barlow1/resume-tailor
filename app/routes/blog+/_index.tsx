@@ -224,91 +224,116 @@ function Pager({
 export default function BlogIndex() {
   const { posts, page, pageSize, total } = useLoaderData<typeof loader>();
 
+  // Helper: derive an estimated reading time in minutes if available
+  const getReadingMinutes = (post: any) => {
+    // Prefer explicit fields if your loader provides them.
+    // Fallback: estimate ~200 words/min if wordCount is present.
+    const explicit =
+      post.readingMinutes ??
+      post.reading_min ??
+      post.reading_time ??
+      post.readingTime?.minutes;
+
+    if (typeof explicit === "number" && !Number.isNaN(explicit)) {
+      return Math.max(1, Math.round(explicit));
+    }
+
+    if (typeof post.wordCount === "number" && post.wordCount > 0) {
+      return Math.max(1, Math.round(post.wordCount / 200));
+    }
+
+    return null;
+  };
+
   return (
     <main className="min-h-screen">
       {/* Header */}
       <section className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 pt-12 pb-6 text-center">
         <p className="text-sm text-muted-foreground">The Blog</p>
         <h1 className="mt-2 text-4xl md:text-5xl font-bold tracking-tight">
-          Job market trends, job search guides,<br className="hidden md:block" />
-          product updates, and more…
+          Insights, guides, and updates to help you land more interviews.
         </h1>
         <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
-          Fresh, practical articles to level up your job search.
+          Practical, fresh articles to power your job search.
         </p>
       </section>
 
       {/* Grid of posts */}
       <section className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pb-10">
         <ul className="grid gap-8 md:grid-cols-2">
-          {posts.map((post) => (
-            <li key={post.slug} className="group">
-              <Link
-                prefetch="intent"
-                to={`/blog/${post.slug}`}
-                className="block focus:outline-none"
-              >
-                <article className="h-full overflow-hidden rounded-2xl border bg-card transition hover:shadow-lg">
-                  {/* Optional cover */}
-                  {post.cover ? (
-                    <div className="aspect-[16/9] overflow-hidden">
-                      <img
-                        src={post.cover}
-                        alt={post.title}
-                        width={1200}
-                        height={675}
-                        loading="lazy"
-                        decoding="async"
-                        sizes="(max-width: 768px) 100vw, 50vw"
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-                      />
-                    </div>
-                  ) : null}
+          {posts.map((post: any) => {
+            const mins = getReadingMinutes(post);
 
-                  <div className="p-6">
-                    {/* Tags (show up to 2, non-clickable to avoid route deps) */}
-                    {post.tags?.length ? (
-                      <div className="mb-2 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
-                        {post.tags.slice(0, 2).map((t) => (
-                          <span
-                            key={t}
-                            className="rounded-full bg-secondary/60 px-2 py-0.5"
-                          >
-                            {t}
-                          </span>
-                        ))}
-                        {post.tags.length > 2 ? (
-                          <span className="rounded-full bg-secondary/60 px-2 py-0.5">
-                            +{post.tags.length - 2}
-                          </span>
-                        ) : null}
+            return (
+              <li key={post.slug} className="group">
+                <Link
+                  prefetch="intent"
+                  to={`/blog/${post.slug}`}
+                  className="block focus:outline-none"
+                >
+                  <article className="h-full overflow-hidden rounded-2xl border bg-card transition hover:shadow-lg">
+                    {/* Optional cover */}
+                    {post.cover ? (
+                      <div className="aspect-[16/9] overflow-hidden">
+                        <img
+                          src={post.cover}
+                          alt={post.title}
+                          width={1200}
+                          height={675}
+                          loading="lazy"
+                          decoding="async"
+                          sizes="(max-width: 768px) 100vw, 50vw"
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                        />
                       </div>
                     ) : null}
 
-                    <h2 className="text-xl font-semibold leading-snug group-hover:underline">
-                      {post.title}
-                    </h2>
-
-                    {post.description ? (
-                      <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">
-                        {post.description}
-                      </p>
-                    ) : null}
-
-                    <div className="mt-4 flex items-center gap-3 text-xs text-muted-foreground">
-                      {post.author ? <span>by {post.author}</span> : null}
-                      {post.author && post.date ? <span>•</span> : null}
-                      {post.date ? (
-                        <time dateTime={post.date}>
-                          {fmt.format(new Date(post.date))}
-                        </time>
+                    <div className="p-6">
+                      {/* Tags (show up to 4, no "+N") */}
+                      {post.tags?.length ? (
+                        <div className="mb-2 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                          {post.tags.slice(0, 4).map((t: string) => (
+                            <span
+                              key={t}
+                              className="rounded-full bg-secondary/60 px-2 py-0.5"
+                            >
+                              {t}
+                            </span>
+                          ))}
+                        </div>
                       ) : null}
+
+                      <h2 className="text-xl font-semibold leading-snug group-hover:underline">
+                        {post.title}
+                      </h2>
+
+                      {post.description ? (
+                        <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
+                          {post.description}
+                        </p>
+                      ) : null}
+
+                      <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                        {post.author ? <span>by {post.author}</span> : null}
+                        {post.author && (post.date || mins) ? <span>•</span> : null}
+                        {post.date ? (
+                          <time dateTime={post.date}>
+                            {fmt.format(new Date(post.date))}
+                          </time>
+                        ) : null}
+                        {mins ? (
+                          <>
+                            {(post.author || post.date) ? <span>•</span> : null}
+                            <span>{mins} min read</span>
+                          </>
+                        ) : null}
+                      </div>
                     </div>
-                  </div>
-                </article>
-              </Link>
-            </li>
-          ))}
+                  </article>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
 
         {/* Pagination */}
