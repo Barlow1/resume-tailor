@@ -12,11 +12,11 @@ import { HeroSection } from '~/components/hero-section.tsx'
 import { OptimizedImage } from '~/components/ui/optimized-image.tsx'
 
 export const meta: MetaFunction = () => [
-	{ title: 'Resume Tailor: AI Resume Tailoring | Land More Interviews' },
+	{ title: 'Resume Tailor AI | Tailor Your Resume to Any Job' },
 	{
 		name: 'description',
 		content:
-			'Land more interviews faster with AI resume tailoring. Upload once, customize for every job, save time, and boost your hiring chances. Start free today!.',
+			'Use AI resume tailoring to match your resume to any job description in minutes. Upload your resume, paste the JD, get ATS-friendly keywords and bullet rewrites. Start free.',
 	},
 ]
 
