@@ -29,6 +29,11 @@ const providerContext = createContext<{
 export const useRecaptcha = (action: string) => {
   const { token, siteKey, setToken } = useContext(providerContext)
   useEffect(() => {
+      // if the site key is test-key, set the token to test-token
+    if (siteKey === 'test-key') {
+        setToken('test-token')
+        return
+    }
     if (
       typeof grecaptcha !== "undefined"
     ) {

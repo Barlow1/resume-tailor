@@ -218,6 +218,7 @@ function Document({
 	const location = useLocation()
 	const gaTrackingId = 'G-8JBRTFQ8PR'
 	const adsTrackingId = 'AW-16893834380'
+	const loadRecaptcha = env.MODE === 'production'
 	useEffect(() => {
 		if (gaTrackingId?.length && process.env.NODE_ENV === 'production') {
 			gtag.pageview(location.pathname, gaTrackingId)
@@ -248,11 +249,13 @@ function Document({
               `,
 					}}
 				/>
-				<script
-					nonce={nonce}
-					async
-					src={`https://www.google.com/recaptcha/enterprise.js?render=${env.RECAPTCHA_SITE_KEY}&badge=bottomleft`}
-				/>
+				{loadRecaptcha && (
+					<script
+						nonce={nonce}
+						async
+						src={`https://www.google.com/recaptcha/enterprise.js?render=${env.RECAPTCHA_SITE_KEY}&badge=bottomleft`}
+					/>
+				)}
 				<Meta />
 				<meta charSet="utf-8" />
 				<meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -389,9 +392,11 @@ function App() {
 		return classes.filter(Boolean).join(' ')
 	}
 
+	const recaptchaSiteKey = data.ENV.MODE === 'production' ? data.ENV.RECAPTCHA_SITE_KEY : 'test-key';
+
 	return (
 		<Document nonce={nonce} theme={theme} env={data.ENV}>
-			<RecaptchaProvider siteKey={data.ENV.RECAPTCHA_SITE_KEY}>
+			<RecaptchaProvider siteKey={recaptchaSiteKey}>
 				<div className="flex h-screen flex-col justify-between">
 					<>
 						<div>
