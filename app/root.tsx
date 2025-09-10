@@ -218,7 +218,6 @@ function Document({
 	const location = useLocation()
 	const gaTrackingId = 'G-8JBRTFQ8PR'
 	const adsTrackingId = 'AW-16893834380'
-	const loadRecaptcha = env.MODE === 'production' && env.CI !== 'true'
 	useEffect(() => {
 		if (gaTrackingId?.length && process.env.NODE_ENV === 'production') {
 			gtag.pageview(location.pathname, gaTrackingId)
@@ -249,14 +248,6 @@ function Document({
               `,
 					}}
 				/>
-				{loadRecaptcha && (
-					<script
-						nonce={nonce}
-						async
-						defer
-						src={`https://www.google.com/recaptcha/enterprise.js?render=${env.RECAPTCHA_SITE_KEY}&badge=bottomleft`}
-					/>
-				)}
 				<Meta />
 				<meta charSet="utf-8" />
 				<meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -393,7 +384,10 @@ function App() {
 		return classes.filter(Boolean).join(' ')
 	}
 
-	const recaptchaSiteKey = data.ENV.MODE === 'production' && data.ENV.CI !== 'true' ? data.ENV.RECAPTCHA_SITE_KEY : 'test-key';
+	const recaptchaSiteKey =
+		data.ENV.MODE === 'production' && data.ENV.CI !== 'true'
+			? data.ENV.RECAPTCHA_SITE_KEY
+			: 'test-key'
 
 	return (
 		<Document nonce={nonce} theme={theme} env={data.ENV}>
