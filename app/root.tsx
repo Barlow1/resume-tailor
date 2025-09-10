@@ -218,7 +218,7 @@ function Document({
 	const location = useLocation()
 	const gaTrackingId = 'G-8JBRTFQ8PR'
 	const adsTrackingId = 'AW-16893834380'
-	const loadRecaptcha = env.MODE === 'production'
+	const loadRecaptcha = env.MODE === 'production' && env.CI !== 'true'
 	useEffect(() => {
 		if (gaTrackingId?.length && process.env.NODE_ENV === 'production') {
 			gtag.pageview(location.pathname, gaTrackingId)
@@ -392,7 +392,7 @@ function App() {
 		return classes.filter(Boolean).join(' ')
 	}
 
-	const recaptchaSiteKey = data.ENV.MODE === 'production' ? data.ENV.RECAPTCHA_SITE_KEY : 'test-key';
+	const recaptchaSiteKey = data.ENV.MODE === 'production' && data.ENV.CI !== 'true' ? data.ENV.RECAPTCHA_SITE_KEY : 'test-key';
 
 	return (
 		<Document nonce={nonce} theme={theme} env={data.ENV}>
