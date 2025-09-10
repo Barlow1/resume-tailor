@@ -253,6 +253,7 @@ function Document({
 					<script
 						nonce={nonce}
 						async
+						defer
 						src={`https://www.google.com/recaptcha/enterprise.js?render=${env.RECAPTCHA_SITE_KEY}&badge=bottomleft`}
 					/>
 				)}
