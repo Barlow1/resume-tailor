@@ -17,8 +17,7 @@ import { sendEmail } from '~/utils/email.server.ts'
 import { useIsSubmitting } from '~/utils/misc.ts'
 import { emailSchema } from '~/utils/user-validation.ts'
 import { SignupEmail } from './email.server.tsx'
-import { useGoogleReCaptcha } from '@google-recaptcha/react'
-import { useState, useEffect } from 'react'
+import { useRecaptcha } from '~/components/recaptcha-provider.tsx'
 import { getRecaptchaScore } from '~/utils/recaptcha.server.ts'
 
 export const onboardingOTPQueryParam = 'code'
@@ -104,7 +103,6 @@ export const meta: MetaFunction = () => {
 export default function SignupRoute() {
 	const actionData = useActionData<typeof action>()
 	const isSubmitting = useIsSubmitting()
-	const googleReCaptcha = useGoogleReCaptcha()
 	const [form, fields] = useForm({
 		id: 'signup-form',
 		constraint: getFieldsetConstraint(SignupSchema),
@@ -115,22 +113,8 @@ export default function SignupRoute() {
 		},
 		shouldRevalidate: 'onBlur',
 	})
-	const [token, setToken] = useState<string | null>(null)
 
-	// Execute reCAPTCHA automatically when the component mounts
-	useEffect(() => {
-		const executeReCaptcha = async () => {
-			if (googleReCaptcha.executeV3) {
-				try {
-					const recaptchaToken = await googleReCaptcha.executeV3('signup')
-					setToken(recaptchaToken)
-				} catch (error) {
-					console.error('reCAPTCHA execution failed:', error)
-				}
-			}
-		}
-		executeReCaptcha()
-	}, [googleReCaptcha])
+	const { token } = useRecaptcha('signup')
 
 	return (
 		<div className="flex flex-col justify-center pb-32 pt-20 md:container">

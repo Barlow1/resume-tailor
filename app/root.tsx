@@ -73,7 +73,6 @@ import {
 } from '@heroicons/react/24/outline'
 import { redirect } from '@remix-run/router'
 import { Crisp } from 'crisp-sdk-web'
-import { GoogleReCaptchaProvider } from '@google-recaptcha/react'
 import {
 	Tooltip,
 	TooltipContent,
@@ -81,6 +80,7 @@ import {
 	TooltipTrigger,
 } from './components/ui/tooltip.tsx'
 import { NewBadge } from './components/ui/badge.tsx'
+import { RecaptchaProvider } from './components/recaptcha-provider.tsx'
 
 export const links: LinksFunction = () => {
 	return [
@@ -228,10 +228,12 @@ function Document({
 			<head>
 				<ClientHintCheck nonce={nonce} />
 				<script
+					nonce={nonce}
 					async
 					src={`https://www.googletagmanager.com/gtag/js?id=${gaTrackingId}`}
 				></script>
 				<script
+					nonce={nonce}
 					async
 					id="gtag-init"
 					dangerouslySetInnerHTML={{
@@ -245,6 +247,11 @@ function Document({
 				gtag('config', '${adsTrackingId}');
               `,
 					}}
+				/>
+				<script
+					nonce={nonce}
+					async
+					src={`https://www.google.com/recaptcha/enterprise.js?render=${env.RECAPTCHA_SITE_KEY}&badge=bottomleft`}
 				/>
 				<Meta />
 				<meta charSet="utf-8" />
@@ -384,10 +391,7 @@ function App() {
 
 	return (
 		<Document nonce={nonce} theme={theme} env={data.ENV}>
-			<GoogleReCaptchaProvider
-				type="v3"
-				siteKey={data.ENV.RECAPTCHA_SITE_KEY}
-			>
+			<RecaptchaProvider siteKey={data.ENV.RECAPTCHA_SITE_KEY}>
 				<div className="flex h-screen flex-col justify-between">
 					<>
 						<div>
@@ -575,7 +579,7 @@ function App() {
 																							item.name ===
 																								'Recruiter Outreach') &&
 																						!item.current && (
-																							<div className="absolute -top-1 -right-1">
+																							<div className="absolute -right-1 -top-1">
 																								<NewBadge compact />
 																							</div>
 																						)}
@@ -720,8 +724,7 @@ function App() {
 				</div>
 				<Confetti confetti={data.flash?.confetti} />
 				<Toaster />
-				<div id="recaptcha-container" />
-			</GoogleReCaptchaProvider>
+			</RecaptchaProvider>
 		</Document>
 	)
 }

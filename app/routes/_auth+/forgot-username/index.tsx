@@ -15,9 +15,8 @@ import { prisma } from '~/utils/db.server.ts'
 import { sendEmail } from '~/utils/email.server.ts'
 import { emailSchema } from '~/utils/user-validation.ts'
 import { ForgotUsernameEmail } from './email.server.tsx'
-import { useGoogleReCaptcha } from '@google-recaptcha/react'
-import { useState, useEffect } from 'react'
 import { getRecaptchaScore } from '~/utils/recaptcha.server.ts'
+import { useRecaptcha } from '~/components/recaptcha-provider.tsx'
 
 const ForgotUsernameSchema = z.object({
 	email: emailSchema,
@@ -104,23 +103,8 @@ export const meta: MetaFunction = () => {
 
 export default function ForgotUsernameRoute() {
 	const forgotUsername = useFetcher<typeof action>()
-	const googleReCaptcha = useGoogleReCaptcha()
-	const [token, setToken] = useState<string | null>(null)
+	const { token } = useRecaptcha('forgot_username')
 
-	// Execute reCAPTCHA automatically when the component mounts
-	useEffect(() => {
-		const executeReCaptcha = async () => {
-			if (googleReCaptcha.executeV3) {
-				try {
-					const recaptchaToken = await googleReCaptcha.executeV3('forgot_username')
-					setToken(recaptchaToken)
-				} catch (error) {
-					console.error('reCAPTCHA execution failed:', error)
-				}
-			}
-		}
-		executeReCaptcha()
-	}, [googleReCaptcha])
 
 	const [form, fields] = useForm({
 		id: 'forgot-username-form',

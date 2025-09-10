@@ -113,10 +113,10 @@ const handlers = [
 		),
 		// mock recaptcha v3 API
 		rest.get(
-			'https://www.google.com/recaptcha/api.js',
+			'https://www.google.com/recaptcha/enterprise.js',
 			(req, res, ctx) => {
-				console.log('🔶 mocked recaptcha api.js')
-				return res(ctx.text('// mocked recaptcha api.js'))
+				console.log('🔶 mocked recaptcha enterprise.js')
+				return res(ctx.text('// mocked recaptcha enterprise.js'))
 			},
 		),
 		// mock recaptcha score retrieval
