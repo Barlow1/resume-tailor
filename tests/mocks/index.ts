@@ -14,7 +14,7 @@ const handlers = [
 	// feel free to remove this conditional from the mock once you've set up resend
 	process.env.RESEND_API_KEY
 		? rest.post(`https://api.resend.com/emails`, async (req, res, ctx) => {
-				requiredHeader(req.headers, 'Authorization')
+				requiredHeader(req.headers as any, 'Authorization')
 				const body = await req.json()
 				console.info('🔶 mocked email contents:', body)
 
@@ -31,7 +31,7 @@ const handlers = [
 		  })
 		: null,
 		rest.post(`https://api.hubapi.com/crm/v3/objects/contacts`, async (req, res, ctx) => {
-				requiredHeader(req.headers, 'Authorization')
+				requiredHeader(req.headers as any, 'Authorization')
 				const body = await req.json()
 				console.info('🔶 mocked hubapi contents:', body)
 
@@ -87,17 +87,41 @@ const handlers = [
 					  }),
 				)
 		  }),
-		// mock recaptcha token retrieval
+		// mock recaptcha token retrieval - matches any site key with query params
 		rest.get(
-			`https://www.google.com/recaptcha/api2/reload?k=${process.env.RECAPTCHA_SITE_KEY}`,
+			'https://www.google.com/recaptcha/api2/reload',
 			(req, res, ctx) => {
-				console.log('🔶 mocked recaptcha token retrieval')
+				console.log('🔶 mocked recaptcha token retrieval', req.url.searchParams.get('k'))
 				return res(ctx.json({ token: '1234567890' }))
+			},
+		),
+		// mock recaptcha anchor endpoint with query params
+		rest.get(
+			'https://www.google.com/recaptcha/api2/anchor',
+			(req, res, ctx) => {
+				console.log('🔶 mocked recaptcha anchor', req.url.searchParams.get('k'))
+				return res(ctx.text('mocked anchor response'))
+			},
+		),
+		// mock recaptcha bframe endpoint with query params
+		rest.get(
+			'https://www.google.com/recaptcha/api2/bframe',
+			(req, res, ctx) => {
+				console.log('🔶 mocked recaptcha bframe', req.url.searchParams.get('k'))
+				return res(ctx.text('mocked bframe response'))
+			},
+		),
+		// mock recaptcha v3 API
+		rest.get(
+			'https://www.google.com/recaptcha/enterprise.js',
+			(req, res, ctx) => {
+				console.log('🔶 mocked recaptcha enterprise.js')
+				return res(ctx.text('// mocked recaptcha enterprise.js'))
 			},
 		),
 		// mock recaptcha score retrieval
 		rest.post(
-			`https://www.google.com/recaptcha/api/siteverify`,
+			'https://www.google.com/recaptcha/api/siteverify',
 			(req, res, ctx) => {
 				console.log('🔶 mocked recaptcha score retrieval')
 				return res(ctx.json({ success: true, score: 0.9 }))

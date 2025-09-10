@@ -10,6 +10,8 @@ import { RejectionSection } from '~/components/rejection-section.tsx'
 import { StepsSection } from '~/components/steps-section.tsx'
 import { HeroSection } from '~/components/hero-section.tsx'
 import { OptimizedImage } from '~/components/ui/optimized-image.tsx'
+import { OutreachSection } from '~/components/outreach-section.tsx'
+import { ResumeAnalyzerSection } from '~/components/resume-analyzer-section.tsx'
 
 export const meta: MetaFunction = () => [
 	{ title: 'Resume Tailor: AI Resume Tailoring | Land More Interviews' },
@@ -102,6 +104,8 @@ export default function Index() {
 								height={150}
 							/>
 						</div>
+					<ResumeAnalyzerSection />
+					<OutreachSection />
 						<FAQ />
 					</div>
 				</div>
