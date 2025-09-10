@@ -2,9 +2,11 @@ import type { Config } from 'tailwindcss'
 import defaultTheme from 'tailwindcss/defaultTheme.js'
 import animatePlugin from 'tailwindcss-animate'
 import radixPlugin from 'tailwindcss-radix'
+import typography from '@tailwindcss/typography'
+import lineClamp from '@tailwindcss/line-clamp'
 
 export default {
-	content: ['./app/**/*.{ts,tsx,jsx,js}'],
+	content: ['./app/**/*.{ts,tsx,jsx,js,mdx}'],
 	darkMode: 'class',
 	theme: {
 		container: {
@@ -149,11 +151,57 @@ export default {
 			backgroundImage: {
 				'rainbow-text': 'linear-gradient(to right, #6366f1, #ec4899, #6366f1)',
 			},
+			typography: {
+				DEFAULT: {
+				css: {
+					maxWidth: '70ch',
+					h1: { fontWeight: '800', letterSpacing: '-0.02em' },
+					h2: { fontWeight: '700', letterSpacing: '-0.01em', marginTop: '2.2em' },
+					h3: { fontWeight: '700' },
+					a: { color: '#2563eb', fontWeight: '500' },
+					'a:hover': { color: '#6A95F1'},
+					blockquote: {
+					borderLeftColor: 'hsl(221 83% 53%)',
+					background: 'hsl(220 14% 97%)',
+					padding: '1rem 1.25rem',
+					borderRadius: '0.75rem',
+					},
+					table: { width: '100%', tableLayout: 'auto' },
+					'th, td': { padding: '0.5rem 0.75rem', borderBottom: '1px solid hsl(220 13% 90%)' },
+					'thead th': { borderBottomWidth: '2px' },
+					hr: { borderColor: 'hsl(220 13% 90%)' },
+					'code::before': { content: 'none' },
+					'code::after': { content: 'none' },
+					code: {
+					background: 'hsl(220 14% 96%)',
+					padding: '0.15rem 0.35rem',
+					borderRadius: '0.375rem',
+					},
+					'ul > li, ol > li': { marginTop: '0.4em', marginBottom: '0.4em' },
+				},
+				},
+				invert: {
+				css: {
+					'--tw-prose-body': 'hsl(220 13% 91%)',
+					'--tw-prose-headings': 'white',
+					'--tw-prose-links': 'hsl(217 91% 60%)',
+					'--tw-prose-quotes': 'hsl(220 13% 91%)',
+					'--tw-prose-hr': 'hsl(215 14% 25%)',
+					'--tw-prose-code': 'hsl(220 13% 91%)',
+					'--tw-prose-th-borders': 'hsl(215 14% 25%)',
+					'--tw-prose-td-borders': 'hsl(215 14% 25%)',
+					blockquote: { background: 'hsl(215 14% 18%)' },
+					code: { background: 'hsl(215 14% 18%)' },
+				},
+				},
+			},
+			},
 		},
-	},
 	plugins: [
 		animatePlugin,
 		radixPlugin,
+		typography,
+		lineClamp,
 		function ({ addUtilities }: { addUtilities: (utilities: Record<string, any>) => void }) {
 			addUtilities({
 				'.bg-clip-text': {
