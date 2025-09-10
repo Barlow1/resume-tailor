@@ -17,8 +17,7 @@ import { sendEmail } from '~/utils/email.server.ts'
 import { useIsSubmitting } from '~/utils/misc.ts'
 import { emailSchema } from '~/utils/user-validation.ts'
 import { SignupEmail } from './email.server.tsx'
-import { GoogleReCaptcha } from 'react-google-recaptcha-v3'
-import { useCallback, useState } from 'react'
+import { useRecaptcha } from '~/components/recaptcha-provider.tsx'
 import { getRecaptchaScore } from '~/utils/recaptcha.server.ts'
 
 export const onboardingOTPQueryParam = 'code'
@@ -114,10 +113,8 @@ export default function SignupRoute() {
 		},
 		shouldRevalidate: 'onBlur',
 	})
-	const [token, setToken] = useState<string | null>(null)
-	const onVerify = useCallback((token: string) => {
-		setToken(token)
-	}, [])
+
+	const { token } = useRecaptcha('signup')
 
 	return (
 		<div className="flex flex-col justify-center pb-32 pt-20 md:container">
@@ -151,7 +148,6 @@ export default function SignupRoute() {
 					Submit
 				</StatusButton>
 			</Form>
-			<GoogleReCaptcha onVerify={onVerify} action="signup" />
 		</div>
 	)
 }

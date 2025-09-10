@@ -68,16 +68,19 @@ import {
 	QueueListIcon,
 	ChevronLeftIcon,
 	ChevronRightIcon,
+	MagnifyingGlassIcon,
+	MegaphoneIcon,
 } from '@heroicons/react/24/outline'
 import { redirect } from '@remix-run/router'
 import { Crisp } from 'crisp-sdk-web'
-import { GoogleReCaptchaProvider } from 'react-google-recaptcha-v3'
 import {
 	Tooltip,
 	TooltipContent,
 	TooltipProvider,
 	TooltipTrigger,
 } from './components/ui/tooltip.tsx'
+import { NewBadge } from './components/ui/badge.tsx'
+import { RecaptchaProvider } from './components/recaptcha-provider.tsx'
 
 export const links: LinksFunction = () => {
 	return [
@@ -225,10 +228,12 @@ function Document({
 			<head>
 				<ClientHintCheck nonce={nonce} />
 				<script
+					nonce={nonce}
 					async
 					src={`https://www.googletagmanager.com/gtag/js?id=${gaTrackingId}`}
 				></script>
 				<script
+					nonce={nonce}
 					async
 					id="gtag-init"
 					dangerouslySetInnerHTML={{
@@ -338,12 +343,23 @@ function App() {
 	}
 
 	const navigation = [
-		
 		{
 			name: 'Builder',
 			href: `/builder`,
 			icon: DocumentTextIcon,
 			current: path?.includes('builder'),
+		},
+		{
+			name: 'Resume Analyzer',
+			href: `/analyze`,
+			icon: MagnifyingGlassIcon,
+			current: path?.includes('analyze'),
+		},
+		{
+			name: 'Recruiter Outreach',
+			href: `/outreach`,
+			icon: MegaphoneIcon,
+			current: path?.includes('outreach'),
 		},
 		{
 			name: 'Resumes',
@@ -361,7 +377,7 @@ function App() {
 			name: 'Upload Resume',
 			href: `/users/${user?.username}/resume/upload`,
 			icon: DocumentArrowUpIcon,
-			current: path?.includes('resume') && !path?.includes('resumes'),
+			current: path?.includes('Upload') && !path?.includes('resumes'),
 		},
 	]
 
@@ -369,19 +385,14 @@ function App() {
 		return classes.filter(Boolean).join(' ')
 	}
 
+	const recaptchaSiteKey =
+		data.ENV.MODE === 'production' && data.ENV.CI !== 'true'
+			? data.ENV.RECAPTCHA_SITE_KEY
+			: 'test-key'
+
 	return (
 		<Document nonce={nonce} theme={theme} env={data.ENV}>
-			<GoogleReCaptchaProvider
-				reCaptchaKey={data.ENV.RECAPTCHA_SITE_KEY}
-				useEnterprise={false}
-				container={{
-					element: 'recaptcha-container',
-					parameters: {
-						badge: 'bottomleft',
-						theme: theme === 'dark' ? 'dark' : 'light',
-					},
-				}}
-			>
+			<RecaptchaProvider siteKey={recaptchaSiteKey}>
 				<div className="flex h-screen flex-col justify-between">
 					<>
 						<div>
@@ -445,7 +456,7 @@ function App() {
 																					item.current
 																						? 'bg-brand-800 text-white'
 																						: 'text-purple-200 hover:bg-brand-800/50 hover:text-white',
-																					'group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6',
+																					'group relative flex items-center gap-x-3 rounded-md p-2 text-sm font-semibold leading-6',
 																				)}
 																				onClick={() => setSidebarOpen(false)}
 																			>
@@ -456,9 +467,14 @@ function App() {
 																							: 'text-purple-200 group-hover:text-white',
 																						'h-6 w-6 shrink-0',
 																					)}
-																					aria-hidden="true"
 																				/>
-																				{!isCollapsed && item.name}
+																				{!isCollapsed && (
+																					<span className="relative flex items-center">
+																						{item.name}
+																						{item.name === 'Resume Analyzer' &&
+																							!item.current && <NewBadge />}
+																					</span>
+																				)}
 																			</Link>
 																		</li>
 																	))}
@@ -536,7 +552,7 @@ function App() {
 																						item.current
 																							? 'bg-brand-800 text-white'
 																							: 'text-purple-200 hover:bg-brand-800/50 hover:text-white',
-																						'group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6',
+																						'group relative flex items-center gap-x-3 rounded-md p-2 text-sm font-semibold leading-6',
 																					)}
 																					title={item.name}
 																				>
@@ -547,9 +563,27 @@ function App() {
 																								: 'text-purple-200 group-hover:text-white',
 																							'h-6 w-6 shrink-0',
 																						)}
-																						aria-hidden="true"
 																					/>
-																					{!isCollapsed && item.name}
+																					{!isCollapsed && (
+																						<span className="relative flex items-center">
+																							{item.name}
+																							{(item.name ===
+																								'Resume Analyzer' ||
+																								item.name ===
+																									'Recruiter Outreach') &&
+																								!item.current && <NewBadge />}
+																						</span>
+																					)}
+																					{/* tiny dot when collapsed */}
+																					{isCollapsed &&
+																						(item.name === 'Resume Analyzer' ||
+																							item.name ===
+																								'Recruiter Outreach') &&
+																						!item.current && (
+																							<div className="absolute -right-1 -top-1">
+																								<NewBadge compact />
+																							</div>
+																						)}
 																				</a>
 																			</TooltipTrigger>
 																			{isCollapsed && (
@@ -688,7 +722,7 @@ function App() {
 									</div>
 								</div>
 
-								<div className="py-10 mx-auto">
+								<div className="mx-auto py-10">
 									<div className="mx-au">
 										<Outlet />
 									</div>
@@ -699,8 +733,7 @@ function App() {
 				</div>
 				<Confetti confetti={data.flash?.confetti} />
 				<Toaster />
-				<div id="recaptcha-container" />
-			</GoogleReCaptchaProvider>
+			</RecaptchaProvider>
 		</Document>
 	)
 }

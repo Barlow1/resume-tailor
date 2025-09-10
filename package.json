@@ -105,7 +105,6 @@
     "react": "^18.2.0",
     "react-color": "^2.19.3",
     "react-dom": "^18.2.0",
-    "react-google-recaptcha-v3": "^1.10.1",
     "react-image-crop": "^11.0.7",
     "react-transition-group": "^4.4.5",
     "remark-gfm": "^4.0.1",

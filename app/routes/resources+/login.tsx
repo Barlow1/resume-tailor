@@ -16,9 +16,8 @@ import { passwordSchema, usernameSchema } from '~/utils/user-validation.ts'
 import { checkboxSchema } from '~/utils/zod-extensions.ts'
 import { type VerificationTypes, Verify } from './verify.tsx'
 import SocialLogin from '~/components/social-login.tsx'
-import { GoogleReCaptcha } from 'react-google-recaptcha-v3'
-import { useCallback, useState } from 'react'
 import { getRecaptchaScore } from '~/utils/recaptcha.server.ts'
+import { useRecaptcha } from '~/components/recaptcha-provider.tsx'
 
 const ROUTE_PATH = '/resources/login'
 export const unverifiedSessionKey = 'unverified-sessionId'
@@ -142,10 +141,7 @@ export function InlineLogin({
 	formError?: string | null
 }) {
 	const loginFetcher = useFetcher<typeof action>()
-	const [token, setToken] = useState<string | null>(null)
-	const onVerify = useCallback((token: string) => {
-		setToken(token)
-	}, [])
+	const { token } = useRecaptcha('login')
 
 	const [form, fields] = useForm({
 		id: 'inline-login',
@@ -257,7 +253,6 @@ export function InlineLogin({
 						</div>
 					</>
 				)}
-				<GoogleReCaptcha onVerify={onVerify} action="login" />
 			</div>
 		</div>
 	)
