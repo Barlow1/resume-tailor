@@ -18,7 +18,7 @@ export const meta: MetaFunction = () => [
 	{
 		name: 'description',
 		content:
-			'Use AI resume tailoring to match your resume to any job description in minutes. Upload your resume, paste the JD, get ATS-friendly keywords and bullet rewrites. Start free.',
+			'Use AI resume tailoring to match your resume to any job description in minutes. Upload your resume, paste the JD, get ATS-friendly keywords and bullet rewrites. Start free today.',
 	},
 ]
 
