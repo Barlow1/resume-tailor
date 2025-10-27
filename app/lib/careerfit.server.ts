@@ -239,3 +239,35 @@ export async function getAiFeedback(
     return mockResult()
   }
 }
+
+/* ------------------------------ Streaming Version ------------------------------ */
+
+export async function getAiFeedbackStreaming(
+  jdText: string,
+  resumeTxt: string,
+  title: string,
+  company: string,
+) {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error('OpenAI API key not configured')
+  }
+
+  const pre = buildPrepass(jdText, resumeTxt, title)
+
+  // Note: streaming doesn't work well with response_format: { type: 'json_object' }
+  // So we rely on strong prompting to ensure JSON output
+  const stream = await openai.chat.completions.create({
+    model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+    temperature: 1,
+    messages: [
+      {
+        role: 'system',
+        content: buildSystemPrompt(title, company) + '\n\nIMPORTANT: Return ONLY valid JSON. Start with { and end with }. No markdown, no prose before or after.'
+      },
+      { role: 'user', content: buildUserPrompt(jdText, resumeTxt, pre, title, company) },
+    ],
+    stream: true,
+  })
+
+  return stream
+}

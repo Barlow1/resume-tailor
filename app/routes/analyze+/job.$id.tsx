@@ -33,8 +33,10 @@ export default function JobPage() {
 	async function analyze(e: React.FormEvent) {
 		e.preventDefault()
 		setAnalyzing(true)
+
 		try {
-			const res = await fetch(`/resources/update-analysis/${a.id}`, {
+			// Check permissions before redirecting
+			const checkRes = await fetch(`/resources/update-analysis/${a.id}`, {
 				method: 'PATCH',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
@@ -42,30 +44,35 @@ export default function JobPage() {
 					company,
 					jdText,
 					resumeTxt: resumePreview,
+					dryRun: true,
 				}),
 			})
 
-			if (res.status === 401) {
+			if (checkRes.status === 401) {
 				nav(`/login?redirectTo=/job/${a.id}`)
 				return
 			}
-			if (res.status === 402) {
+			if (checkRes.status === 402) {
 				setShowSubscribe(true)
+				setAnalyzing(false)
 				return
 			}
-			if (!res.ok) {
-				const text = await res.text()
-				throw new Error(
-					`Analyze failed (${res.status}). ${text.slice(0, 200)}…`,
-				)
+
+			// Save the inputs to localStorage for the results page to pick up
+			if (typeof window !== 'undefined') {
+				localStorage.setItem(`analysis-streaming-${a.id}`, JSON.stringify({
+					title,
+					company,
+					jdText,
+					resumeTxt: resumePreview,
+				}))
 			}
 
-			await res.json()
-			nav(`../../analyze/results/${a.id}`)
+			// Immediately redirect to results page with streaming flag
+			nav(`../../analyze/results/${a.id}?streaming=true`)
 		} catch (err) {
 			console.error(err)
 			alert('Analyze failed. Check server logs.')
-		} finally {
 			setAnalyzing(false)
 		}
 	}
@@ -75,10 +82,10 @@ export default function JobPage() {
 			{/* left: form */}
 			<div>
 				<h1 className="mb-2 text-3xl font-bold">
-					Add the Job You’re Targeting
+					Add the Job You're Targeting
 				</h1>
 				<p className="text-muted-foreground">
-					Paste the job title, company, and description. We’ll compare it
+					Paste the job title, company, and description. We'll compare it
 					against your resume.
 				</p>
 				<form onSubmit={analyze} className="space-y-3">
@@ -129,7 +136,7 @@ export default function JobPage() {
 										opacity="0.25"
 									/>
 									<path
-										d="M22 12a10 10 0 0 1-10 10"
+										d="M22 12 a10 10 0 0 1-10 10"
 										stroke="currentColor"
 										strokeWidth="4"
 										strokeLinecap="round"
