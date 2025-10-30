@@ -226,9 +226,9 @@ export async function requireStripeSubscription(
 		let stripePriceId: string
 		const stripeProductId = process.env.STRIPE_PRODUCT_ID as string
 		if (frequency === 'monthly') {
-			stripePriceId = process.env.STRIPE_PRICE_ID_MONTHLY as string
+			stripePriceId = 'price_1SNqL1KTjl3LCGHC4jAKDuWX'
 		} else if (frequency === 'weekly') {
-			stripePriceId = process.env.STRIPE_PRICE_ID_WEEKLY as string
+			stripePriceId = 'price_1SNqKmKTjl3LCGHCaYorxQeE'
 		}
 		else {
 			stripePriceId = process.env.STRIPE_PRICE_ID_MONTHLY as string
