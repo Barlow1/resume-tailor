@@ -111,14 +111,14 @@ export default function ResultsPage() {
 	})
 	const isStreaming = searchParams.get('streaming') === 'true'
 
-	const [resumeTxt, setResumeTxt] = React.useState<string>(() => {
+	const [resumeTxt] = React.useState<string>(() => {
 		if (typeof window === 'undefined') return analysis.resumeTxt ?? ''
 		return (
 			localStorage.getItem(resumeKey(analysis.id)) ?? analysis.resumeTxt ?? ''
 		)
 	})
 	const [newFit, setNewFit] = React.useState<number | null>(null)
-	const [reanalyzing, setReanalyzing] = React.useState(false)
+	const [_reanalyzing, setReanalyzing] = React.useState(false)
 	const [selectedBullets, setSelectedBullets] = React.useState<string[]>([])
 	const [bulletExperienceMap, setBulletExperienceMap] = React.useState<Record<string, number>>({})
 	const [sendingToBuilder, setSendingToBuilder] = React.useState(false)
@@ -127,7 +127,7 @@ export default function ResultsPage() {
 	const experiences = React.useMemo(() => {
 		try {
 			if (analysis.resumeData) {
-				const parsedData = JSON.parse(analysis.resumeData)
+				const parsedData = JSON.parse(analysis.resumeData) as { experiences?: any[] }
 				return parsedData.experiences || []
 			}
 		} catch (e) {
@@ -172,6 +172,7 @@ export default function ResultsPage() {
 	}, [analysis.id, resumeTxt])
 
 	// Streaming effect
+	// eslint-disable-next-line react-hooks/exhaustive-deps
 	React.useEffect(() => {
 		if (!isStreaming || typeof window === 'undefined') return
 
@@ -182,7 +183,12 @@ export default function ResultsPage() {
 			return
 		}
 
-		const { title, company, jdText, resumeTxt: resume } = JSON.parse(streamingData)
+		const { title, company, jdText, resumeTxt: resume } = JSON.parse(streamingData) as {
+			title: string
+			company: string
+			jdText: string
+			resumeTxt: string
+		}
 
 		const params = new URLSearchParams({
 			analysisId: analysis.id,
@@ -351,7 +357,7 @@ export default function ResultsPage() {
 				try {
 					// Try to parse the keywords object if it's complete enough
 					const completed = keywordsObj.endsWith('}') ? keywordsObj : keywordsObj + '}'
-					const keywords = JSON.parse(completed)
+					const keywords = JSON.parse(completed) as { resume: string[]; jd: string[]; missing: string[] }
 					updates.keywords = keywords
 				} catch {
 					// Partial parse - extract what we can
@@ -424,7 +430,7 @@ export default function ResultsPage() {
 						const wrapped = `{${keywordPlanStr}}`
 
 						try {
-							const parsed = JSON.parse(wrapped)
+							const parsed = JSON.parse(wrapped) as { keywordPlan?: { top10?: any[] } }
 							if (parsed.keywordPlan?.top10?.length > 0) {
 								updates.keywordPlan = parsed.keywordPlan
 								console.log('🔑 Parsed keywordPlan items:', parsed.keywordPlan.top10.length)
@@ -535,7 +541,7 @@ export default function ResultsPage() {
 	) {
 		console.log('💾 Saving streaming result...')
 		try {
-			const parsed = JSON.parse(jsonStr)
+			const parsed = JSON.parse(jsonStr) as { fitPct?: number; keywordPlan?: { top10?: any[] } }
 			console.log('✅ Parsed JSON successfully', {
 				hasFitPct: !!parsed.fitPct,
 				hasKeywordPlan: !!parsed.keywordPlan,
@@ -596,7 +602,7 @@ export default function ResultsPage() {
 		}
 	}, [streamCompleted, revalidator.state, loadedFeedback])
 
-	async function reanalyze() {
+	async function _reanalyze() {
 		setReanalyzing(true)
 		try {
 			const res = await fetch(`/resources/update-analysis/${analysis.id}`, {
@@ -1038,7 +1044,6 @@ export default function ResultsPage() {
 								<div className="space-y-3">
 									{feedback.suggestedBullets.map((bullet) => {
 										const selectedExpIndex = bulletExperienceMap[bullet.id] ?? bullet.addToExperience
-										const selectedExp = experiences[selectedExpIndex]
 
 										return (
 											<div
@@ -1123,11 +1128,11 @@ export default function ResultsPage() {
 											}
 
 											if (!res.ok) {
-												const errorData = await res.json()
+												const errorData = (await res.json()) as { error?: string }
 												throw new Error(errorData.error || 'Failed to create builder resume')
 											}
 
-											const { resumeId } = await res.json()
+											await res.json()
 
 											// Navigate to builder
 											nav('/builder')

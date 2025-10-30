@@ -9,10 +9,7 @@ interface Step {
 export default function Stepper({ steps }: { steps: Step[] }) {
 	return (
 		<nav aria-label="Progress">
-			<ol
-				role="list"
-				className="my-6 divide-y divide-gray-300 rounded-md border border-gray-300 md:flex md:divide-y-0"
-			>
+			<ol className="my-6 divide-y divide-gray-300 rounded-md border border-gray-300 md:flex md:divide-y-0">
 				{steps.map((step, stepIdx) => (
 					<li key={step.name} className="relative md:flex md:flex-1">
 						{step.status === 'complete' ? (

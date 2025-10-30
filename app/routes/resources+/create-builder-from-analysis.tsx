@@ -40,8 +40,20 @@ export async function action({ request }: ActionFunctionArgs) {
 		return json({ error: 'Analysis or resume data not found' }, { status: 404 })
 	}
 
-	const resumeData = JSON.parse(analysis.resumeData)
-	const feedback = analysis.feedback ? JSON.parse(analysis.feedback) : null
+	const resumeData = JSON.parse(analysis.resumeData) as {
+		name?: string
+		email?: string
+		phone?: string
+		location?: string
+		about?: string
+		experiences?: any[]
+		education?: any[]
+		skills?: any[]
+		hobbies?: any[]
+	}
+	const feedback = analysis.feedback ? JSON.parse(analysis.feedback) as {
+		suggestedBullets?: any[]
+	} : {}
 
 	console.log('=== CREATE BUILDER FROM ANALYSIS ===')
 	console.log('Resume Data:', JSON.stringify(resumeData, null, 2))

@@ -5,7 +5,7 @@ import { zodResponseFormat } from 'openai/helpers/zod'
 import { z } from 'zod'
 import { type ResumeData } from './builder-resume.server.ts'
 import { type  Metric } from './outreach-helpers.server.ts'
-import { JobFit } from './ai-helpers.server.ts'
+import type { JobFit } from './ai-helpers.server.ts'
 
 const openai = new OpenAI({
 	apiKey: process.env.OPENAI_API_KEY ?? 'test-key',

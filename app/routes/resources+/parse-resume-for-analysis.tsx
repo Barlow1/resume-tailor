@@ -15,9 +15,6 @@ function capitalizeFirstLetter(str: string) {
 function parseBulletPoints(description: string): string[] {
 	if (!description) return []
 
-	// Split by bullet point markers (●, •, -, or numbered bullets)
-	const bulletMarkers = /[●•\-]\s+|^\d+\.\s+/gm
-
 	// Split the description into lines
 	const lines = description.split('\n')
 	const bullets: string[] = []
@@ -32,13 +29,13 @@ function parseBulletPoints(description: string): string[] {
 		}
 
 		// Check if this line starts with a bullet marker
-		if (trimmedLine.match(/^[●•\-]\s+/) || trimmedLine.match(/^\d+\.\s+/)) {
+		if (trimmedLine.match(/^[●•-]\s+/) || trimmedLine.match(/^\d+\.\s+/)) {
 			// Save the previous bullet if it exists
 			if (currentBullet) {
 				bullets.push(currentBullet.trim())
 			}
 			// Start a new bullet, removing the marker
-			currentBullet = trimmedLine.replace(/^[●•\-]\s+/, '').replace(/^\d+\.\s+/, '')
+			currentBullet = trimmedLine.replace(/^[●•-]\s+/, '').replace(/^\d+\.\s+/, '')
 		} else if (currentBullet) {
 			// Continuation of the current bullet
 			currentBullet += ' ' + trimmedLine

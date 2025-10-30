@@ -26,11 +26,14 @@ export default function ResumePage() {
 			})
 
 			if (!res.ok) {
-				const errorData = await res.json()
+				const errorData = (await res.json()) as { error?: string }
 				throw new Error(errorData.error || 'Failed to parse resume')
 			}
 
-			const { resumeData: parsedData, resumeTxt: parsedTxt } = await res.json()
+			const { resumeData: parsedData, resumeTxt: parsedTxt } = (await res.json()) as {
+				resumeData: any
+				resumeTxt: string
+			}
 
 			setResumeData(parsedData)
 			setResumeTxt(parsedTxt)

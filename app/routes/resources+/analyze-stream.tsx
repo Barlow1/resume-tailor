@@ -5,7 +5,7 @@ import { prisma } from '~/utils/db.server.ts'
 import { getAiFeedbackStreaming } from '~/lib/careerfit.server.ts'
 
 export async function loader({ request }: DataFunctionArgs) {
-	const userId = await requireUserId(request)
+	await requireUserId(request)
 
 	const url = new URL(request.url)
 	const analysisId = url.searchParams.get('analysisId') ?? ''

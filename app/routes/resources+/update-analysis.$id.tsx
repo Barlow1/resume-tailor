@@ -5,7 +5,7 @@ import { requireUserId } from '~/utils/auth.server.ts'
 
 // Free re/analyses allowed per user (per browser if not using DB)
 // Set to 0 to force Stripe-only paywall
-const FREE_ANALYSIS_LIMIT = 200
+const FREE_ANALYSIS_LIMIT = 2
 
 // Small cookie helper for a per-browser free quota without DB changes
 function getCookieCount(req: Request, key: string) {

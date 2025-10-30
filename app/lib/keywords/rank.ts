@@ -1,4 +1,4 @@
-import { KeywordCandidate, Priority, WhereToAdd } from './types.ts';
+import type { KeywordCandidate, Priority, WhereToAdd } from './types.ts';
 
 // Simple heuristic; keep it transparent & testable.
 export function rankCandidates(jdTokens: string[], resumeTokens: string[], opts?: {

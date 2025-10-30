@@ -32,7 +32,7 @@ export function KeywordPlan({
 	plan: { top10: any[] } | undefined
 	isLoading?: boolean
 }) {
-	const hasData = plan?.top10?.length > 0
+	const hasData = (plan?.top10?.length ?? 0) > 0
 	const showComponent = hasData || isLoading
 
 	if (!showComponent) return null
@@ -47,7 +47,7 @@ export function KeywordPlan({
 
 			<div className="divide-y divide-border">
 				{hasData ? (
-					plan.top10.map((k, i) => {
+					plan!.top10.map((k, i) => {
 						const baseId = makeSafeId('kw', String(k.term ?? ''), i)
 						const skillsId = `${baseId}-skills`
 						const summaryId = `${baseId}-summary`
