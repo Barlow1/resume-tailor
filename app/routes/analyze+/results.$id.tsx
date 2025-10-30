@@ -117,8 +117,6 @@ export default function ResultsPage() {
 			localStorage.getItem(resumeKey(analysis.id)) ?? analysis.resumeTxt ?? ''
 		)
 	})
-	const [newFit, setNewFit] = React.useState<number | null>(null)
-	const [_reanalyzing, setReanalyzing] = React.useState(false)
 	const [selectedBullets, setSelectedBullets] = React.useState<string[]>([])
 	const [bulletExperienceMap, setBulletExperienceMap] = React.useState<Record<string, number>>({})
 	const [sendingToBuilder, setSendingToBuilder] = React.useState(false)
@@ -171,92 +169,16 @@ export default function ResultsPage() {
 		}
 	}, [analysis.id, resumeTxt])
 
-	// Streaming effect
-	// eslint-disable-next-line react-hooks/exhaustive-deps
-	React.useEffect(() => {
-		if (!isStreaming || typeof window === 'undefined') return
-
-		const streamingData = localStorage.getItem(`analysis-streaming-${analysis.id}`)
-		if (!streamingData) {
-			setStreamError('Missing analysis data')
-			setIsStreamingActive(false)
-			return
+	function extractStringArray(str: string): string[] {
+		const matches = str.matchAll(/"((?:[^"\\]|\\.)*)"/g)
+		const result: string[] = []
+		for (const match of matches) {
+			result.push(match[1].replace(/\\"/g, '"').replace(/\\n/g, '\n'))
 		}
+		return result
+	}
 
-		const { title, company, jdText, resumeTxt: resume } = JSON.parse(streamingData) as {
-			title: string
-			company: string
-			jdText: string
-			resumeTxt: string
-		}
-
-		const params = new URLSearchParams({
-			analysisId: analysis.id,
-			jdText,
-			resumeTxt: resume,
-			title,
-			company,
-		})
-
-		const sse = new EventSource(`/resources/analyze-stream?${params}`)
-		let accumulatedJson = ''
-		let parseTimeout: NodeJS.Timeout | null = null
-
-		sse.addEventListener('message', event => {
-			const data = event.data
-
-			// Less verbose logging - only log special events
-			if (data === '[DONE]' || data.startsWith('[ERROR]')) {
-				console.log('📨 SSE event:', data)
-			}
-
-			if (data === '[DONE]') {
-				console.log('✅ Stream complete, saving...')
-				console.log('📦 Final JSON length:', accumulatedJson.length)
-				console.log('📦 JSON preview (first 200):', accumulatedJson.substring(0, 200))
-				console.log('📦 JSON preview (last 200):', accumulatedJson.substring(accumulatedJson.length - 200))
-				sse.close()
-				setIsStreamingActive(false)
-				setStreamCompleted(true)
-				// Final parse to ensure we have everything
-				if (parseTimeout) clearTimeout(parseTimeout)
-				parseStreamingJson(accumulatedJson)
-				// Save final result
-				saveFinalStreamingResult(accumulatedJson, title, company, jdText, resume)
-				return
-			}
-
-			if (data.startsWith('[ERROR]')) {
-				console.error('❌ Stream error:', data)
-				sse.close()
-				setIsStreamingActive(false)
-				setStreamError(data.replace('[ERROR]', ''))
-				return
-			}
-
-			// Accumulate JSON
-			accumulatedJson += data
-
-			// Throttle parsing to every 100ms to avoid excessive renders
-			if (parseTimeout) clearTimeout(parseTimeout)
-			parseTimeout = setTimeout(() => {
-				parseStreamingJson(accumulatedJson)
-			}, 100)
-		})
-
-		sse.addEventListener('error', event => {
-			console.error('SSE error:', event)
-			sse.close()
-			setIsStreamingActive(false)
-			setStreamError('Connection lost')
-		})
-
-		return () => {
-			sse.close()
-		}
-	}, [isStreaming, analysis.id])
-
-	function parseStreamingJson(jsonStr: string) {
+	const parseStreamingJson = React.useCallback((jsonStr: string) => {
 		try {
 			const updates: Partial<Feedback> = {}
 
@@ -521,24 +443,15 @@ export default function ResultsPage() {
 			// Log parse errors but don't crash
 			console.error('❌ Streaming parse error:', err)
 		}
-	}
+	}, [])
 
-	function extractStringArray(str: string): string[] {
-		const matches = str.matchAll(/"((?:[^"\\]|\\.)*)"/g)
-		const result: string[] = []
-		for (const match of matches) {
-			result.push(match[1].replace(/\\"/g, '"').replace(/\\n/g, '\n'))
-		}
-		return result
-	}
-
-	async function saveFinalStreamingResult(
+	const saveFinalStreamingResult = React.useCallback(async (
 		jsonStr: string,
 		title: string,
 		company: string,
 		jdText: string,
 		resumeTxt: string,
-	) {
+	) => {
 		console.log('💾 Saving streaming result...')
 		try {
 			const parsed = JSON.parse(jsonStr) as { fitPct?: number; keywordPlan?: { top10?: any[] } }
@@ -583,7 +496,91 @@ export default function ResultsPage() {
 			setStreamError(`Failed to save results: ${err instanceof Error ? err.message : 'Unknown error'}`)
 			setStreamCompleted(false) // Clear the completed state so we don't get stuck
 		}
-	}
+	}, [analysis.id, revalidator])
+
+	// Streaming effect
+	React.useEffect(() => {
+		if (!isStreaming || typeof window === 'undefined') return
+
+		const streamingData = localStorage.getItem(`analysis-streaming-${analysis.id}`)
+		if (!streamingData) {
+			setStreamError('Missing analysis data')
+			setIsStreamingActive(false)
+			return
+		}
+
+		const { title, company, jdText, resumeTxt: resume } = JSON.parse(streamingData) as {
+			title: string
+			company: string
+			jdText: string
+			resumeTxt: string
+		}
+
+		const params = new URLSearchParams({
+			analysisId: analysis.id,
+			jdText,
+			resumeTxt: resume,
+			title,
+			company,
+		})
+
+		const sse = new EventSource(`/resources/analyze-stream?${params}`)
+		let accumulatedJson = ''
+		let parseTimeout: NodeJS.Timeout | null = null
+
+		sse.addEventListener('message', event => {
+			const data = event.data
+
+			// Less verbose logging - only log special events
+			if (data === '[DONE]' || data.startsWith('[ERROR]')) {
+				console.log('📨 SSE event:', data)
+			}
+
+			if (data === '[DONE]') {
+				console.log('✅ Stream complete, saving...')
+				console.log('📦 Final JSON length:', accumulatedJson.length)
+				console.log('📦 JSON preview (first 200):', accumulatedJson.substring(0, 200))
+				console.log('📦 JSON preview (last 200):', accumulatedJson.substring(accumulatedJson.length - 200))
+				sse.close()
+				setIsStreamingActive(false)
+				setStreamCompleted(true)
+				// Final parse to ensure we have everything
+				if (parseTimeout) clearTimeout(parseTimeout)
+				parseStreamingJson(accumulatedJson)
+				// Save final result
+				saveFinalStreamingResult(accumulatedJson, title, company, jdText, resume)
+				return
+			}
+
+			if (data.startsWith('[ERROR]')) {
+				console.error('❌ Stream error:', data)
+				sse.close()
+				setIsStreamingActive(false)
+				setStreamError(data.replace('[ERROR]', ''))
+				return
+			}
+
+			// Accumulate JSON
+			accumulatedJson += data
+
+			// Throttle parsing to every 100ms to avoid excessive renders
+			if (parseTimeout) clearTimeout(parseTimeout)
+			parseTimeout = setTimeout(() => {
+				parseStreamingJson(accumulatedJson)
+			}, 100)
+		})
+
+		sse.addEventListener('error', event => {
+			console.error('SSE error:', event)
+			sse.close()
+			setIsStreamingActive(false)
+			setStreamError('Connection lost')
+		})
+
+		return () => {
+			sse.close()
+		}
+	}, [isStreaming, analysis.id, parseStreamingJson, saveFinalStreamingResult])
 
 	// Detect when revalidation completes after streaming
 	React.useEffect(() => {
@@ -601,61 +598,6 @@ export default function ResultsPage() {
 			setStreamCompleted(false)
 		}
 	}, [streamCompleted, revalidator.state, loadedFeedback])
-
-	async function _reanalyze() {
-		setReanalyzing(true)
-		try {
-			const res = await fetch(`/resources/update-analysis/${analysis.id}`, {
-				method: 'PATCH',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					// keep current job meta unless user changed it elsewhere
-					title: analysis.title,
-					company: analysis.company,
-					jdText: analysis.jdText,
-					resumeTxt,
-				}),
-			})
-
-			if (res.status === 401) {
-				nav(`/login?redirectTo=analyze/results/${analysis.id}`)
-				return
-			}
-			if (res.status === 402) {
-				// you can show your subscribe modal here if you want
-				alert(
-					'You’ve reached the free analysis limit. Please upgrade to continue.',
-				)
-				return
-			}
-			if (!res.ok) {
-				const text = await res.text()
-				throw new Error(text || `Re-analyze failed (${res.status})`)
-			}
-
-			// result shape from our update route: { analysis, feedback }
-			const data = (await res.json()) as {
-				analysis?: { fitPct?: number | null }
-				feedback?: { fitPct?: number }
-			}
-			const nextFit =
-				(typeof data.analysis?.fitPct === 'number'
-					? data.analysis?.fitPct
-					: null) ??
-				(typeof data.feedback?.fitPct === 'number'
-					? data.feedback.fitPct
-					: null)
-
-			setNewFit(nextFit ?? null)
-
-			revalidator.revalidate()
-		} catch (err) {
-			console.error(err)
-			alert('Re-analyze failed. Check server logs.')
-		} finally {
-			setReanalyzing(false)
-		}
-	}
 
 	const improvements = feedback?.improveBullets ?? []
 	const fit =
@@ -758,11 +700,6 @@ export default function ResultsPage() {
 									<span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground ring-1 ring-inset ring-border">
 										{fit}%
 									</span>
-									{newFit != null && (
-										<span className="text-xs font-medium text-green-700">
-											→ {newFit}%
-										</span>
-									)}
 								</>
 							) : (
 								<div className="h-5 w-12 animate-pulse rounded-full bg-muted" />
@@ -774,7 +711,7 @@ export default function ResultsPage() {
 							<div
 								className="h-full bg-primary transition-all duration-500"
 								style={{
-									width: `${Math.max(0, Math.min(100, newFit ?? fit ?? 0))}%`,
+									width: `${Math.max(0, Math.min(100, fit ?? 0))}%`,
 								}}
 								aria-hidden="true"
 							/>
