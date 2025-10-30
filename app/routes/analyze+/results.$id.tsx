@@ -13,6 +13,13 @@ import type { KeywordSnippet } from '~/lib/keywords/types.ts'
 // ---------- Types (align with getAiFeedback) ----------
 type ImproveItem = { current?: string; suggest: string; why: string }
 
+type SuggestedBullet = {
+	id: string
+	content: string
+	why: string
+	addToExperience: number
+}
+
 type KeywordPlan = {
 	term: string
 	priority: 'critical' | 'important' | 'nice'
@@ -27,8 +34,11 @@ type KeywordPlan = {
 type Feedback = {
 	fitPct: number
 	summary: string
+	strengths?: string[]
+	weaknesses?: string[]
 	redFlags?: string[]
 	improveBullets?: ImproveItem[]
+	suggestedBullets?: SuggestedBullet[]
 	keywords?: { resume: string[]; jd: string[]; missing: string[] }
 	keywordBullets?: { suggest: string; why: string }[]
 	keywordPlan?: { top10: KeywordSnippet[] }
@@ -40,6 +50,7 @@ type AnalysisRow = {
 	company: string
 	jdText: string
 	resumeTxt: string | null
+	resumeData: string | null
 	fitPct: number | null
 	feedback: string | null // JSON string
 	createdAt: string | Date
@@ -64,6 +75,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
 			company: true,
 			jdText: true,
 			resumeTxt: true,
+			resumeData: true,
 			fitPct: true,
 			feedback: true,
 			createdAt: true,
@@ -107,6 +119,22 @@ export default function ResultsPage() {
 	})
 	const [newFit, setNewFit] = React.useState<number | null>(null)
 	const [reanalyzing, setReanalyzing] = React.useState(false)
+	const [selectedBullets, setSelectedBullets] = React.useState<string[]>([])
+	const [bulletExperienceMap, setBulletExperienceMap] = React.useState<Record<string, number>>({})
+	const [sendingToBuilder, setSendingToBuilder] = React.useState(false)
+
+	// Parse resume data to get experiences
+	const experiences = React.useMemo(() => {
+		try {
+			if (analysis.resumeData) {
+				const parsedData = JSON.parse(analysis.resumeData)
+				return parsedData.experiences || []
+			}
+		} catch (e) {
+			console.error('Failed to parse resumeData:', e)
+		}
+		return []
+	}, [analysis.resumeData])
 
 	// Streaming state
 	const [streamingFeedback, setStreamingFeedback] = React.useState<Partial<Feedback>>({})
@@ -120,6 +148,22 @@ export default function ResultsPage() {
 	const feedback = (isStreamingActive || (streamCompleted && hasStreamingData && !loadedFeedback))
 		? (streamingFeedback as Feedback)
 		: loadedFeedback
+
+	// Initialize bulletExperienceMap when suggestedBullets change
+	React.useEffect(() => {
+		if (feedback?.suggestedBullets) {
+			setBulletExperienceMap(prev => {
+				const newMap = { ...prev }
+				feedback.suggestedBullets?.forEach(bullet => {
+					// Only set if not already set (preserve user selections)
+					if (!(bullet.id in newMap)) {
+						newMap[bullet.id] = bullet.addToExperience
+					}
+				})
+				return newMap
+			})
+		}
+	}, [feedback?.suggestedBullets])
 
 	React.useEffect(() => {
 		if (typeof window !== 'undefined') {
@@ -226,6 +270,34 @@ export default function ResultsPage() {
 			const summaryMatch = jsonStr.match(/"summary"\s*:\s*"((?:[^"\\]|\\.)*)"/s)
 			if (summaryMatch) {
 				updates.summary = summaryMatch[1].replace(/\\"/g, '"').replace(/\\n/g, '\n')
+			}
+
+			// Parse strengths array
+			const strengthsMatch = jsonStr.match(/"strengths"\s*:\s*\[(.*?)(?:\]|$)/s)
+			if (strengthsMatch) {
+				const strengthsStr = strengthsMatch[1]
+				const strengths: string[] = []
+				const strengthMatches = strengthsStr.matchAll(/"((?:[^"\\]|\\.)*)"/g)
+				for (const match of strengthMatches) {
+					strengths.push(match[1].replace(/\\"/g, '"').replace(/\\n/g, '\n'))
+				}
+				if (strengths.length > 0) {
+					updates.strengths = strengths
+				}
+			}
+
+			// Parse weaknesses array
+			const weaknessesMatch = jsonStr.match(/"weaknesses"\s*:\s*\[(.*?)(?:\]|$)/s)
+			if (weaknessesMatch) {
+				const weaknessesStr = weaknessesMatch[1]
+				const weaknesses: string[] = []
+				const weaknessMatches = weaknessesStr.matchAll(/"((?:[^"\\]|\\.)*)"/g)
+				for (const match of weaknessMatches) {
+					weaknesses.push(match[1].replace(/\\"/g, '"').replace(/\\n/g, '\n'))
+				}
+				if (weaknesses.length > 0) {
+					updates.weaknesses = weaknesses
+				}
 			}
 
 			// Parse redFlags array - extract each complete item
@@ -372,6 +444,30 @@ export default function ResultsPage() {
 				// Log that we haven't found keywordPlan yet at milestones
 				if (jsonStr.length % 1000 < 100 && jsonStr.length > 2000) {
 					console.log('⏳ No keywordPlan found yet at', jsonStr.length, 'chars')
+				}
+			}
+
+			// Parse suggestedBullets array - extract each complete object
+			const suggestedBulletsMatch = jsonStr.match(/"suggestedBullets"\s*:\s*\[(.*?)(?:\]|$)/s)
+			if (suggestedBulletsMatch) {
+				const suggestedStr = suggestedBulletsMatch[1]
+				const suggestedBullets: SuggestedBullet[] = []
+
+				// Match each complete suggested bullet object
+				const suggestedRegex = /\{\s*"id"\s*:\s*"((?:[^"\\]|\\.)*)"\s*,\s*"content"\s*:\s*"((?:[^"\\]|\\.)*)"\s*,\s*"why"\s*:\s*"((?:[^"\\]|\\.)*)"\s*,\s*"addToExperience"\s*:\s*(\d+)\s*\}/g
+				let match
+				while ((match = suggestedRegex.exec(suggestedStr)) !== null) {
+					suggestedBullets.push({
+						id: match[1].replace(/\\"/g, '"').replace(/\\n/g, '\n'),
+						content: match[2].replace(/\\"/g, '"').replace(/\\n/g, '\n'),
+						why: match[3].replace(/\\"/g, '"').replace(/\\n/g, '\n'),
+						addToExperience: parseInt(match[4]),
+					})
+				}
+
+				if (suggestedBullets.length > 0) {
+					updates.suggestedBullets = suggestedBullets
+					console.log('✨ Parsed suggestedBullets:', suggestedBullets.length)
 				}
 			}
 
@@ -610,42 +706,6 @@ export default function ResultsPage() {
 						</div>
 					)}
 
-					{/* Debug panel - development only */}
-					{process.env.NODE_ENV === 'development' && isStreamingActive && (
-						<details className="rounded border border-border bg-muted/50 p-2 text-xs">
-							<summary className="cursor-pointer font-semibold">
-								Debug: Streaming State
-							</summary>
-							<div className="mt-2 space-y-1">
-								<div>Fit: {streamingFeedback.fitPct ?? 'pending...'}</div>
-								<div>
-									Summary:{' '}
-									{streamingFeedback.summary
-										? `${streamingFeedback.summary.slice(0, 50)}...`
-										: 'pending...'}
-								</div>
-								<div>
-									Red Flags: {streamingFeedback.redFlags?.length ?? 0} items
-								</div>
-								<div>
-									Improvements: {streamingFeedback.improveBullets?.length ?? 0}{' '}
-									items
-								</div>
-								<div>
-									Keywords JD: {streamingFeedback.keywords?.jd?.length ?? 0}{' '}
-									items
-								</div>
-								<div>
-									Keyword Plan:{' '}
-									{streamingFeedback.keywordPlan?.top10?.length ?? 0} items
-								</div>
-								<div>
-									Keyword Bullets: {streamingFeedback.keywordBullets?.length ?? 0}{' '}
-									items
-								</div>
-							</div>
-						</details>
-					)}
 
 					{/* Saving indicator */}
 					{streamCompleted && !loadedFeedback && (
@@ -728,45 +788,66 @@ export default function ResultsPage() {
 						</div>
 					) : null}
 
-					{/* Red flags */}
+					{/* Strengths */}
 					<div>
 						<h3 className="mb-2 text-sm font-semibold text-foreground">
-							Red Flags
+							✓ Strengths
 						</h3>
-						{feedback?.redFlags && feedback.redFlags.length > 0 ? (
+						{feedback?.strengths && feedback.strengths.length > 0 ? (
 							<ul className="space-y-1.5 text-sm text-foreground">
-								{feedback.redFlags.map((f, i) => (
+								{feedback.strengths.map((s, i) => (
 									<li
 										key={i}
 										className="flex items-start gap-2 animate-in fade-in slide-in-from-left-2 duration-300"
 										style={{ animationDelay: `${i * 50}ms` }}
 									>
-										<span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-amber-500" />
-										<span>{f}</span>
+										<span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-green-500" />
+										<span>{s}</span>
 									</li>
 								))}
 							</ul>
 						) : isStreamingActive ? (
 							<div className="space-y-2">
-								<div className="flex items-start gap-2">
-									<div className="mt-1 h-1.5 w-1.5 rounded-full bg-muted" />
-									<div className="h-4 w-full animate-pulse rounded bg-muted" />
-								</div>
-								<div className="flex items-start gap-2">
-									<div className="mt-1 h-1.5 w-1.5 rounded-full bg-muted" />
-									<div className="h-4 w-5/6 animate-pulse rounded bg-muted" />
-								</div>
-								<div className="flex items-start gap-2">
-									<div className="mt-1 h-1.5 w-1.5 rounded-full bg-muted" />
-									<div className="h-4 w-4/6 animate-pulse rounded bg-muted" />
-								</div>
+								{[...Array(3)].map((_, i) => (
+									<div key={i} className="flex items-start gap-2">
+										<div className="mt-1 h-1.5 w-1.5 rounded-full bg-muted" />
+										<div className="h-4 flex-1 animate-pulse rounded bg-muted" />
+									</div>
+								))}
 							</div>
-						) : (
-							<p className="text-sm italic text-muted-foreground">
-								No red flags identified.
-							</p>
-						)}
+						) : null}
 					</div>
+
+					{/* Weaknesses */}
+					<div>
+						<h3 className="mb-2 text-sm font-semibold text-foreground">
+							⚠ Areas to Improve
+						</h3>
+						{feedback?.weaknesses && feedback.weaknesses.length > 0 ? (
+							<ul className="space-y-1.5 text-sm text-foreground">
+								{feedback.weaknesses.map((w, i) => (
+									<li
+										key={i}
+										className="flex items-start gap-2 animate-in fade-in slide-in-from-left-2 duration-300"
+										style={{ animationDelay: `${i * 50}ms` }}
+									>
+										<span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-orange-500" />
+										<span>{w}</span>
+									</li>
+								))}
+							</ul>
+						) : isStreamingActive ? (
+							<div className="space-y-2">
+								{[...Array(3)].map((_, i) => (
+									<div key={i} className="flex items-start gap-2">
+										<div className="mt-1 h-1.5 w-1.5 rounded-full bg-muted" />
+										<div className="h-4 flex-1 animate-pulse rounded bg-muted" />
+									</div>
+								))}
+							</div>
+						) : null}
+					</div>
+
 
 					{/* Improvements table */}
 					<div>
@@ -942,68 +1023,173 @@ export default function ResultsPage() {
 							) : null}
 						</div>
 					)}
-					{/* Edit + Reanalyze */}
+
+					{/* Suggested Bullets to Stand Out */}
 					<div>
 						<h3 className="mb-2 text-sm font-semibold text-foreground">
-							Edit Resume
+							Suggested Bullets to Stand Out
 						</h3>
-						<textarea
-							className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm leading-relaxed outline-none ring-ring transition placeholder:text-muted-foreground focus:ring-4"
-							rows={10}
-							value={resumeTxt}
-							onChange={e => setResumeTxt(e.target.value)}
-							placeholder="Edit your resume text here…"
-						/>
+						<p className="mb-4 text-sm text-muted-foreground">
+							Select the bullets you want to add to your resume. Click "Open in Builder" below to see them added to your resume.
+						</p>
 
-						<div className="mt-3 flex flex-wrap items-center gap-4">
-							<button
-								onClick={reanalyze}
-								disabled={reanalyzing}
-								aria-busy={reanalyzing}
-								aria-live="polite"
-								className={`inline-flex items-center rounded-lg px-4 py-2 text-sm font-semibold transition
-                  ${
-										reanalyzing
-											? 'cursor-not-allowed bg-primary/60 text-primary-foreground'
-											: 'bg-primary text-primary-foreground hover:bg-primary/90'
-									}`}
-							>
-								{reanalyzing && (
-									<svg
-										className="mr-2 h-4 w-4 animate-spin"
-										viewBox="0 0 24 24"
-										fill="none"
-										aria-hidden="true"
-									>
-										<circle
-											cx="12"
-											cy="12"
-											r="10"
-											stroke="currentColor"
-											strokeWidth="4"
-											opacity="0.25"
-										/>
-										<path
-											d="M22 12a10 10 0 0 1-10 10"
-											stroke="currentColor"
-											strokeWidth="4"
-											strokeLinecap="round"
-										/>
-									</svg>
-								)}
-								{reanalyzing ? 'Reanalyzing…' : 'Re-analyze'}
-							</button>
+						{feedback?.suggestedBullets && feedback.suggestedBullets.length > 0 ? (
+							<>
+								<div className="space-y-3">
+									{feedback.suggestedBullets.map((bullet) => {
+										const selectedExpIndex = bulletExperienceMap[bullet.id] ?? bullet.addToExperience
+										const selectedExp = experiences[selectedExpIndex]
 
-							{newFit != null && (
-								<span className="text-xs text-muted-foreground">
-									Updated fit after re-analysis:{' '}
-									<span className="font-semibold text-foreground">
-										{newFit}%
-									</span>
-								</span>
-							)}
+										return (
+											<div
+												key={bullet.id}
+												className="rounded-lg border border-border p-4"
+											>
+												<div className="flex gap-3">
+													<input
+														type="checkbox"
+														checked={selectedBullets.includes(bullet.id)}
+														onChange={(e) => {
+															if (e.target.checked) {
+																setSelectedBullets([...selectedBullets, bullet.id])
+															} else {
+																setSelectedBullets(
+																	selectedBullets.filter(id => id !== bullet.id)
+																)
+															}
+														}}
+														className="mt-1 h-4 w-4 flex-shrink-0"
+													/>
+
+													<div className="flex-1">
+														<div className="text-sm font-medium text-foreground">
+															{bullet.content}
+														</div>
+														<div className="mt-2 text-xs text-muted-foreground">
+															Why: {bullet.why}
+														</div>
+
+														{experiences.length > 0 && (
+															<div className="mt-3">
+																<label className="block text-xs font-medium text-muted-foreground mb-1">
+																	Add to experience:
+																</label>
+																<select
+																	value={selectedExpIndex}
+																	onChange={(e) => {
+																		const newIndex = parseInt(e.target.value)
+																		setBulletExperienceMap(prev => ({
+																			...prev,
+																			[bullet.id]: newIndex
+																		}))
+																	}}
+																	className="w-full rounded border border-input bg-background px-2 py-1.5 text-sm text-foreground"
+																>
+																	{experiences.map((exp: any, idx: number) => (
+																		<option key={idx} value={idx}>
+																			{exp.role} @ {exp.company} ({exp.startDate} - {exp.endDate || 'Present'})
+																		</option>
+																	))}
+																</select>
+															</div>
+														)}
+													</div>
+												</div>
+											</div>
+										)
+									})}
+								</div>
+
+								<div className="mt-4 flex items-center gap-4">
+								<button
+									onClick={async () => {
+										if (selectedBullets.length === 0) return
+
+										setSendingToBuilder(true)
+										try {
+											const res = await fetch('/resources/create-builder-from-analysis', {
+												method: 'POST',
+												headers: { 'Content-Type': 'application/json' },
+												body: JSON.stringify({
+													analysisId: analysis.id,
+													selectedBulletIds: selectedBullets,
+													bulletExperienceMap: bulletExperienceMap,
+												}),
+											})
+
+											if (res.status === 401) {
+												nav(`/login?redirectTo=/analyze/results/${analysis.id}`)
+												return
+											}
+
+											if (!res.ok) {
+												const errorData = await res.json()
+												throw new Error(errorData.error || 'Failed to create builder resume')
+											}
+
+											const { resumeId } = await res.json()
+
+											// Navigate to builder
+											nav('/builder')
+										} catch (error) {
+											console.error('Failed to open in builder:', error)
+											alert('Failed to open in builder. Please try again.')
+										} finally {
+											setSendingToBuilder(false)
+										}
+									}}
+									disabled={selectedBullets.length === 0 || sendingToBuilder}
+									className={`inline-flex items-center rounded-lg px-4 py-2 text-sm font-semibold transition
+										${
+											selectedBullets.length === 0 || sendingToBuilder
+												? 'cursor-not-allowed bg-primary/60 text-primary-foreground'
+												: 'bg-primary text-primary-foreground hover:bg-primary/90'
+										}`}
+								>
+									{sendingToBuilder && (
+										<svg
+											className="mr-2 h-4 w-4 animate-spin"
+											viewBox="0 0 24 24"
+											fill="none"
+										>
+											<circle
+												cx="12"
+												cy="12"
+												r="10"
+												stroke="currentColor"
+												strokeWidth="4"
+												opacity="0.25"
+											/>
+											<path
+												d="M22 12a10 10 0 0 1-10 10"
+												stroke="currentColor"
+												strokeWidth="4"
+												strokeLinecap="round"
+											/>
+										</svg>
+									)}
+									📝 Open in Builder with {selectedBullets.length} Selected Bullet{selectedBullets.length !== 1 ? 's' : ''}
+								</button>
+							</div>
+						</>
+					) : isStreamingActive ? (
+						<div className="space-y-3">
+							{[...Array(3)].map((_, i) => (
+								<div key={i} className="rounded-lg border border-border p-4">
+									<div className="flex gap-3">
+										<div className="mt-1 h-4 w-4 rounded bg-muted" />
+										<div className="flex-1 space-y-2">
+											<div className="h-4 w-full animate-pulse rounded bg-muted" />
+											<div className="h-3 w-3/4 animate-pulse rounded bg-muted" />
+											<div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
+										</div>
+									</div>
+								</div>
+							))}
 						</div>
-					</div>
+					) : null}
+				</div>
+
 				</div>
 			</section>
 

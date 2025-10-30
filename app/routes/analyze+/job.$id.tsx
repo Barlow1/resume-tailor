@@ -78,90 +78,79 @@ export default function JobPage() {
 	}
 
 	return (
-		<div className="mx-auto grid max-w-5xl gap-6 p-6 md:grid-cols-2">
-			{/* left: form */}
-			<div>
-				<h1 className="mb-2 text-3xl font-bold">
-					Add the Job You're Targeting
-				</h1>
-				<p className="text-muted-foreground">
-					Paste the job title, company, and description. We'll compare it
-					against your resume.
-				</p>
-				<form onSubmit={analyze} className="space-y-3">
-					<input
-						className="w-full rounded border border-input bg-background p-2 placeholder:text-muted-foreground"
-						placeholder="Job Title"
-						value={title}
-						onChange={e => setTitle(e.target.value)}
-					/>
-					<input
-						className="w-full rounded border border-input bg-background p-2 placeholder:text-muted-foreground"
-						placeholder="Company"
-						value={company}
-						onChange={e => setCompany(e.target.value)}
-					/>
-					<textarea
-						className="w-full rounded border border-input bg-background p-2 placeholder:text-muted-foreground"
-						rows={10}
-						placeholder="Paste the job description"
-						value={jdText}
-						onChange={e => setJdText(e.target.value)}
-					/>
-					<div className="flex items-center gap-3">
-						<button
-							className={`inline-flex items-center rounded px-4 py-2 transition ${
-								analyzing
-									? 'cursor-not-allowed bg-primary/60 text-primary-foreground opacity-60'
-									: 'bg-primary text-primary-foreground hover:bg-primary/90'
-							}`}
-							disabled={analyzing}
-							aria-busy={analyzing}
-							aria-live="polite"
-							type="submit"
-						>
-							{analyzing && (
-								<svg
-									className="mr-2 h-4 w-4 animate-spin"
-									viewBox="0 0 24 24"
-									fill="none"
-									aria-hidden="true"
-								>
-									<circle
-										cx="12"
-										cy="12"
-										r="10"
-										stroke="currentColor"
-										strokeWidth="4"
-										opacity="0.25"
-									/>
-									<path
-										d="M22 12 a10 10 0 0 1-10 10"
-										stroke="currentColor"
-										strokeWidth="4"
-										strokeLinecap="round"
-									/>
-								</svg>
-							)}
-							{analyzing ? 'Analyzing…' : 'Analyze'}
-						</button>
-						<Link
-							to="/resume"
-							className="text-muted-foreground hover:underline"
-						>
-							← Back
-						</Link>
-					</div>
-				</form>
-			</div>
-
-			{/* right: resume snapshot */}
-			<div>
-				<h2 className="mb-2 font-semibold">Your Resume</h2>
-				<pre className="whitespace-pre-wrap rounded border border-border bg-muted p-3 text-sm text-foreground">
-					{resumePreview}
-				</pre>
-			</div>
+		<div className="mx-auto max-w-3xl p-6">
+			<h1 className="mb-2 text-3xl font-bold">
+				Add the Job You're Targeting
+			</h1>
+			<p className="mb-6 text-muted-foreground">
+				Paste the job title, company, and description. We'll compare it
+				against your resume.
+			</p>
+			<form onSubmit={analyze} className="space-y-3">
+				<input
+					className="w-full rounded border border-input bg-background p-2 placeholder:text-muted-foreground"
+					placeholder="Job Title"
+					value={title}
+					onChange={e => setTitle(e.target.value)}
+				/>
+				<input
+					className="w-full rounded border border-input bg-background p-2 placeholder:text-muted-foreground"
+					placeholder="Company"
+					value={company}
+					onChange={e => setCompany(e.target.value)}
+				/>
+				<textarea
+					className="w-full rounded border border-input bg-background p-2 placeholder:text-muted-foreground"
+					rows={10}
+					placeholder="Paste the job description"
+					value={jdText}
+					onChange={e => setJdText(e.target.value)}
+				/>
+				<div className="flex items-center gap-3">
+					<button
+						className={`inline-flex items-center rounded px-4 py-2 transition ${
+							analyzing
+								? 'cursor-not-allowed bg-primary/60 text-primary-foreground opacity-60'
+								: 'bg-primary text-primary-foreground hover:bg-primary/90'
+						}`}
+						disabled={analyzing}
+						aria-busy={analyzing}
+						aria-live="polite"
+						type="submit"
+					>
+						{analyzing && (
+							<svg
+								className="mr-2 h-4 w-4 animate-spin"
+								viewBox="0 0 24 24"
+								fill="none"
+								aria-hidden="true"
+							>
+								<circle
+									cx="12"
+									cy="12"
+									r="10"
+									stroke="currentColor"
+									strokeWidth="4"
+									opacity="0.25"
+								/>
+								<path
+									d="M22 12 a10 10 0 0 1-10 10"
+									stroke="currentColor"
+									strokeWidth="4"
+									strokeLinecap="round"
+								/>
+							</svg>
+						)}
+						{analyzing ? 'Analyzing…' : 'Analyze'}
+					</button>
+					<Link
+						to="/resume"
+						className="text-muted-foreground hover:underline"
+					>
+						← Back
+					</Link>
+				</div>
+			</form>
 
 			{/* paywall modal */}
 			<SubscribeModal

@@ -340,6 +340,7 @@ model Analysis {
   company    String   @default("")
   jdText     String   @default("")
   resumeTxt  String
+  resumeData String?
   fitPct     Int?
   feedback   String?
   peopleJson String?

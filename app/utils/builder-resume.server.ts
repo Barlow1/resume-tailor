@@ -101,9 +101,9 @@ export async function createBuilderResume(
 					...exp,
 					descriptions: {
 						create: exp.descriptions?.map((desc, index) => ({
-							content: desc.content,
+							content: desc.content ?? '',
 							order: desc.order ?? index,
-						})),
+						})).filter(desc => desc.content !== '') ?? [],
 					},
 				})) || [],
 		},
@@ -117,7 +117,15 @@ export async function createBuilderResume(
 	return prisma.builderResume.create({
 		data: createInput,
 		include: {
-			experiences: true,
+			experiences: {
+				include: {
+					descriptions: {
+						orderBy: {
+							order: 'asc',
+						},
+					},
+				},
+			},
 			education: true,
 			skills: true,
 			hobbies: true,
