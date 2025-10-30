@@ -431,8 +431,8 @@ export default function ResultsPage() {
 
 						try {
 							const parsed = JSON.parse(wrapped) as { keywordPlan?: { top10?: any[] } }
-							if (parsed.keywordPlan?.top10?.length > 0) {
-								updates.keywordPlan = parsed.keywordPlan
+							if (parsed.keywordPlan?.top10 && parsed.keywordPlan.top10.length > 0) {
+								updates.keywordPlan = parsed.keywordPlan as { top10: any[] }
 								console.log('🔑 Parsed keywordPlan items:', parsed.keywordPlan.top10.length)
 							}
 						} catch (e) {

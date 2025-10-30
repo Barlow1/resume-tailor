@@ -67,7 +67,7 @@ export async function action({ request }: ActionFunctionArgs) {
 	console.log('Selected bullets:', selectedBullets)
 
 	// Add selected bullets to their respective experiences
-	const updatedExperiences = resumeData.experiences.map((exp: any, idx: number) => {
+	const updatedExperiences = (resumeData.experiences || []).map((exp: any, idx: number) => {
 		const bulletsForThisExp = selectedBullets.filter((b: any) => {
 			// Use user's selection from bulletExperienceMap if available, otherwise fall back to AI's suggestion
 			const targetExpIndex = bulletExperienceMap?.[b.id] ?? b.addToExperience
@@ -117,8 +117,8 @@ export async function action({ request }: ActionFunctionArgs) {
 		about: resumeData.about || '',
 		experiences: updatedExperiences,
 		education: resumeData.education || [],
-		skills: resumeData.skills?.length > 0 ? resumeData.skills : [{ name: '' }],
-		hobbies: resumeData.hobbies?.length > 0 ? resumeData.hobbies : [{ name: '' }],
+		skills: (resumeData.skills?.length ?? 0) > 0 ? resumeData.skills : [{ name: '' }],
+		hobbies: (resumeData.hobbies?.length ?? 0) > 0 ? resumeData.hobbies : [{ name: '' }],
 		visibleSections: defaultVisibleSections,
 	}
 
