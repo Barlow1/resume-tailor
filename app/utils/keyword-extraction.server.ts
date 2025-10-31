@@ -8,7 +8,7 @@
 import OpenAI from 'openai'
 
 const openai = new OpenAI({
-	apiKey: process.env.OPENAI_API_KEY,
+	apiKey: process.env.OPENAI_API_KEY || 'dummy-key-for-build',
 })
 
 /**
@@ -27,7 +27,7 @@ export async function extractKeywordsFromJobDescription(
 	try {
 		console.log('[Keyword Extraction] Starting OpenAI extraction for job description...')
 		const response = await openai.chat.completions.create({
-			model: 'gpt-4o-mini',
+			model: 'gpt-5-mini',
 			messages: [
 				{
 		role: 'system',
@@ -59,7 +59,7 @@ export async function extractKeywordsFromJobDescription(
 					content: jobDescription,
 				},
 			],
-			temperature: 0.3,
+			temperature: 1,
 			response_format: { type: 'json_object' },
 		})
 
