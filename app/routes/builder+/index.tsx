@@ -91,6 +91,9 @@ import {
 } from '~/components/ui/tooltip.tsx'
 import { FontSelector } from '~/components/font-selector.tsx'
 import { LayoutSelector } from '~/components/layout-selector.tsx'
+import { ResumeScoreCard } from '~/components/resume-score-card.tsx'
+import { ImprovementChecklist } from '~/components/improvement-checklist.tsx'
+import { useResumeScore } from '~/hooks/use-resume-score.ts'
 
 const { ChromePicker } = reactColor
 
@@ -275,6 +278,18 @@ export default function ResumeBuilder() {
 	const pdfFetcher = useFetcher<{ fileData: string; fileType: string }>()
 
 	const navigate = useNavigate()
+
+	// Calculate resume score in real-time for gamification
+	const extractedKeywords = formData.job?.extractedKeywords
+		? (JSON.parse(formData.job.extractedKeywords) as string[])
+		: null
+
+	const { scores, previousScore, checklist } = useResumeScore({
+		resumeData: formData,
+		jobDescription: formData.job?.content ?? undefined,
+		extractedKeywords,
+		debounceMs: 500,
+	})
 
 	// Debounced save function - will only fire after 1000ms of no changes
 	const debouncedSave = useDebouncedCallback(async (formData: ResumeData) => {
@@ -1134,7 +1149,8 @@ export default function ResumeBuilder() {
 			setSelectedJob(job)
 			const newFormData = {
 				...formData,
-				jobId: job.id,
+				jobId: job?.id ?? null,
+				job: job ?? null,
 			}
 			setFormData(newFormData)
 			debouncedSave(newFormData)
@@ -1526,6 +1542,10 @@ export default function ResumeBuilder() {
 							</div>
 						</div>
 
+						{/* Main content area with resume editor and gamification sidebar */}
+						<div className="flex gap-6">
+							{/* Left: Resume Editor */}
+							<div className="flex-1">
 						<Form key={`${formData.id}-${rerenderRef.current}`} method="post">
 							{/* Hidden inputs to store the actual form data */}
 							{Object.entries(formData)
@@ -2535,6 +2555,18 @@ export default function ResumeBuilder() {
 								)}
 							</div>
 						</Form>
+							</div>
+
+							{/* Right: Gamification Sidebar */}
+							<div className="w-80 flex-shrink-0 space-y-4 sticky top-4 self-start">
+								<ResumeScoreCard
+									scores={scores}
+									previousScore={previousScore}
+									hasJobDescription={!!(formData.job?.content && formData.job.content.trim().length > 0)}
+								/>
+								<ImprovementChecklist items={checklist} />
+							</div>
+						</div>
 					</div>
 				</div>
 				<DragOverlay dropAnimation={null}>

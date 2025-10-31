@@ -49,6 +49,7 @@ export type BuilderJob = {
 	id?: string | null
 	title?: string | null
 	content?: string | null
+	extractedKeywords?: string | null
 }
 
 export type ResumeData = {
