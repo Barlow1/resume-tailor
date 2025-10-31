@@ -28,6 +28,7 @@ const builderSkillSchema = z.object({
 	name: z.string().nullable().optional(),
 })
 
+
 const builderHobbySchema = z.object({
 	id: z.string().nullable().optional(),
 	name: z.string().nullable().optional(),
