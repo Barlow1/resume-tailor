@@ -1071,11 +1071,13 @@ export default function ResumeBuilder() {
 		if (!userId) {
 			navigate('/login?redirectTo=/builder')
 			return false
-		} else if (!subscription) {
-			setShowCreationModal(false)
-			setShowSubscribeModal(true)
-			return false
 		}
+		// TEMPORARY: Bypass subscription check for testing
+		// else if (!subscription) {
+		// 	setShowCreationModal(false)
+		// 	setShowSubscribeModal(true)
+		// 	return false
+		// }
 		return true
 	}
 

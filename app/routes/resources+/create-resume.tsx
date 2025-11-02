@@ -1,10 +1,9 @@
-import { type DataFunctionArgs, redirectDocument } from '@remix-run/node'
+import { type DataFunctionArgs, redirectDocument, json } from '@remix-run/node'
 import { getUserId } from '~/utils/auth.server.ts'
-import { parseResume } from '~/utils/hrflowai.server.ts'
+import { parseResumeWithOpenAI } from '~/utils/openai-resume-parser.server.ts'
 import {
 	createBuilderResume,
 	getBuilderResume,
-	type VisibleSections,
 } from '~/utils/builder-resume.server.ts'
 import { resumeCookie } from '~/utils/resume-cookie.server.ts'
 import {
@@ -14,16 +13,6 @@ import {
 import moment from 'moment'
 
 const MAX_SIZE = 1024 * 1024 * 10 // 10MB
-
-const defaultVisibleSections: VisibleSections = {
-	about: true,
-	experience: true,
-	education: true,
-	skills: true,
-	hobbies: true,
-	personalDetails: true,
-	photo: true,
-}
 
 export async function action({ request }: DataFunctionArgs) {
 	const userId = await getUserId(request)
@@ -38,63 +27,102 @@ export async function action({ request }: DataFunctionArgs) {
 		)
 
 		const resumeFile = formData.get('resumeFile') as File
-		if (!resumeFile) {
-			throw new Error('No file uploaded')
+		if (!resumeFile || resumeFile.size === 0) {
+			return json({ error: 'No file uploaded' }, { status: 400 })
 		}
 
-		const parsedResume = await parseResume(resumeFile)
+		try {
+			// Parse resume with OpenAI
+			const parsedResume = await parseResumeWithOpenAI(resumeFile)
 
-		// Convert parsed resume to builder format
-		const builderResume = {
-			name: `${parsedResume.profile.info.first_name} ${parsedResume.profile.info.last_name}`,
-			role: parsedResume.parsing.experiences[0]?.title ?? '',
-			email: parsedResume.parsing.emails[0] ?? '',
-			phone: parsedResume.parsing.phones[0] ?? '',
-			location: `${parsedResume.profile.info.location.fields.city}, ${parsedResume.profile.info.location.fields.state}`,
-			experiences: parsedResume.profile.experiences.map(exp => ({
-				role: exp.title,
-				company: exp.company,
-				startDate: moment(exp.date_start).format('MMM YYYY'),
-				endDate: moment(exp.date_end).format('MMM YYYY'),
-				descriptions: exp.tasks.map((task, index) => ({
-					// capitalize first letter of each task
-					content: capitalizeFirstLetter(task.name),
-					order: index,
+			// Transform OpenAI format to builder format
+			const builderResume = {
+				name: parsedResume.personal_info.full_name,
+				role: parsedResume.experiences[0]?.title ?? '',
+				email: parsedResume.personal_info.email,
+				phone: parsedResume.personal_info.phone,
+				location: parsedResume.personal_info.location,
+				website:
+					parsedResume.personal_info.linkedin ||
+					parsedResume.personal_info.portfolio ||
+					parsedResume.personal_info.github ||
+					null,
+				about: parsedResume.summary || null,
+
+				experiences: parsedResume.experiences.map(exp => ({
+					role: exp.title,
+					company: exp.company,
+					startDate: formatDate(exp.date_start, exp.date_start_precision),
+					endDate: exp.date_end
+						? formatDate(exp.date_end, exp.date_end_precision)
+						: 'Present',
+					descriptions: exp.bullet_points.map((bullet, index) => ({
+						content: bullet,
+						order: index,
+					})),
 				})),
-			})),
-			education: parsedResume.profile.educations.map(ed => ({
-				school: ed.school,
-				degree: ed.title,
-				startDate: moment(ed.date_start).format('MMM YYYY'),
-				endDate: moment(ed.date_end).format('MMM YYYY'),
-				description: ed.tasks.map(t => t.name).join('\n'),
-			})),
-			skills:
-				parsedResume.profile.skills.length > 0
-					? parsedResume.profile.skills.map(skill => ({
-							name: skill.name,
-					  }))
-					: [{ name: '' }],
-			hobbies:
-				parsedResume.profile.interests.length > 0
-					? parsedResume.profile.interests.map(hobby => ({
-							name: hobby.name,
-					  }))
-					: [{ name: '' }],
-			visibleSections: defaultVisibleSections,
+
+				education: parsedResume.education.map(ed => ({
+					school: ed.school,
+					degree: ed.major ? `${ed.degree} in ${ed.major}` : ed.degree,
+					startDate: ed.date_start
+						? formatDate(ed.date_start, ed.date_start_precision)
+						: null,
+					endDate: ed.date_end
+						? formatDate(ed.date_end, ed.date_end_precision)
+						: null,
+					description: [
+						ed.gpa ? `GPA: ${ed.gpa}` : null,
+						ed.honors?.join('\n'),
+						ed.relevant_coursework?.length
+							? `Relevant Coursework: ${ed.relevant_coursework.join(', ')}`
+							: null,
+					]
+						.filter(Boolean)
+						.join('\n') || null,
+				})),
+
+				skills:
+					parsedResume.skills.length > 0
+						? parsedResume.skills.map(skill => ({ name: skill }))
+						: [{ name: '' }],
+
+				hobbies: [{ name: '' }], // OpenAI parser doesn't extract hobbies by default
+
+				visibleSections: {
+					about: !!parsedResume.summary,
+					experience: parsedResume.experiences.length > 0,
+					education: parsedResume.education.length > 0,
+					skills: parsedResume.skills.length > 0,
+					hobbies: false,
+					personalDetails: true,
+					photo: false,
+				},
+			}
+
+			// Save to database
+			const resume = await createBuilderResume(userId, builderResume)
+
+			return redirectDocument('/builder', {
+				headers: {
+					'Set-Cookie': await resumeCookie.serialize({
+						resumeId: resume.id,
+						downloadPDFRequested: false,
+						subscribe: false,
+					}),
+				},
+			})
+		} catch (error: any) {
+			console.error('Resume parsing error:', error)
+			return json(
+				{
+					error:
+						error.message ||
+						'Failed to parse resume. Please try again or contact support.',
+				},
+				{ status: 500 },
+			)
 		}
-
-		const resume = await createBuilderResume(userId, builderResume)
-
-		return redirectDocument('/builder', {
-			headers: {
-				'Set-Cookie': await resumeCookie.serialize({
-					resumeId: resume.id,
-					downloadPDFRequested: false,
-					subscribe: false,
-				}),
-			},
-		})
 	}
 
 	if (type === 'existing') {
@@ -168,6 +196,16 @@ export async function action({ request }: DataFunctionArgs) {
 	throw new Error('Invalid creation type')
 }
 
-function capitalizeFirstLetter(str: string) {
-	return str.charAt(0).toUpperCase() + str.slice(1)
+// Helper function for date formatting
+function formatDate(
+	dateStr: string | null,
+	precision?: 'day' | 'month' | 'year',
+): string | null {
+	if (!dateStr) return null
+
+	try {
+		return moment(dateStr).format('MMM YYYY')
+	} catch {
+		return null
+	}
 }

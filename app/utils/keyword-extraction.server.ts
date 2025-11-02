@@ -27,60 +27,100 @@ export async function extractKeywordsFromJobDescription(
 	try {
 		console.log('[Keyword Extraction] Starting OpenAI extraction for job description...')
 		const response = await openai.chat.completions.create({
-			model: 'gpt-5-mini',
+			model: 'gpt-4o',
 			messages: [
 				{
-		role: 'system',
-		content: `Extract exactly 20 keywords and phrases from the job description that would appear in a candidate's resume.
+					role: 'system',
+					content: `Extract the most important keywords and phrases from this job description for ATS matching.
 
-		PRIORITIZATION (in order):
-		1. Technical skills, tools, frameworks (Python, React, Docker)
-		2. Certifications and credentials (AWS Certified, PMP)
-		3. Specific requirements (5+ years experience, Bachelor's degree)
-		4. Domain knowledge (machine learning, cloud architecture)
-		5. Soft skills only if explicitly required (leadership, communication)
+EXTRACTION RULES:
 
-		FORMATTING RULES:
-		- Keep acronyms uppercase (AWS, CI/CD, API)
-		- Keep proper nouns capitalized (Python, JavaScript, Salesforce)
-		- Use lowercase for common terms (leadership, agile, remote)
-		- Prefer multi-word phrases when meaningful ("machine learning" not "machine" + "learning")
-		- Remove generic words like "experience with" or "knowledge of" - just extract the skill itself
-		- If similar terms appear, pick the most specific one (use "React 18" not both "React" and "React 18")
+1. PRESERVE EXACT PHRASES - Do not split these:
+   - Multi-word technical terms: "machine learning", "natural language processing"
+   - Experience requirements: "5+ years experience", "3-5 years"
+   - Job titles: "Senior Software Engineer", "Product Manager"
+   - Degree requirements: "bachelor's degree", "master's degree"
+   - Compound tools: "REST API", "CI/CD", "AWS Lambda"
 
-		OUTPUT FORMAT:
-		Return ONLY valid JSON with no additional text:
-		{"keywords": ["Python", "AWS", "5+ years experience", "machine learning", "CI/CD", "leadership", "bachelor's degree"]}
+2. PRIORITIZATION (extract 15-30 keywords based on job complexity):
+   - Hard technical skills (Python, React, AWS, Kubernetes)
+   - Tools and frameworks (Docker, Jira, HubSpot, Salesforce)
+   - Certifications (AWS Certified, PMP)
+   - Experience levels (5+ years, senior, lead)
+   - Domain knowledge (insurtech, SaaS, B2B, compliance)
+   - Key soft skills only if emphasized (leadership, communication)
 
-		Extract exactly 20 items. If the job description has fewer distinct skills, pad with the most relevant repeated concepts.`
+3. FORMATTING:
+   - Keep acronyms uppercase: AWS, API, SDK, CI/CD, OCR, LLM
+   - Keep proper nouns capitalized: Python, JavaScript, React, TypeScript
+   - Keep multi-word phrases intact: "machine learning" not ["machine", "learning"]
+   - Preserve special characters in version/experience: "5+ years", "Node.js", "C#"
+   - Use lowercase for generic terms: leadership, agile, remote
+
+4. QUANTITY GUIDANCE:
+   - Technical roles (SWE, Data, DevOps): Extract 20-30 keywords (more tools/frameworks)
+   - Product/Business roles: Extract 15-20 keywords (fewer technical, more domain)
+   - Executive/Leadership roles: Extract 10-15 keywords (focus on experience/domain)
+
+OUTPUT FORMAT - Return valid JSON:
+{"keywords": ["Python", "5+ years experience", "machine learning", "AWS", ...]}
+
+CRITICAL: Each keyword must appear as-is in the job description. Do not invent or generalize terms.`,
 				},
 				{
 					role: 'user',
 					content: jobDescription,
 				},
 			],
-			temperature: 1,
+			temperature: 0.1, // Lower temperature for consistency
 			response_format: { type: 'json_object' },
 		})
 
 		const content = response.choices[0]?.message?.content
 		if (!content) {
-			console.error('No content returned from OpenAI')
+			console.error('[Keyword Extraction] No content returned from OpenAI')
 			return []
 		}
 
 		const parsed = JSON.parse(content) as { keywords?: unknown }
 		const keywords = parsed.keywords || []
 
-		// Validate and limit to 20 keywords
-		if (Array.isArray(keywords)) {
-			const extractedKeywords = keywords.slice(0, 20).map((k: any) => String(k))
-			console.log(`[Keyword Extraction] ✅ Extracted ${extractedKeywords.length} keywords:`, extractedKeywords)
-			return extractedKeywords
+		if (!Array.isArray(keywords)) {
+			console.log('[Keyword Extraction] ⚠️ No keywords array found in response')
+			return []
 		}
 
-		console.log('[Keyword Extraction] ⚠️ No keywords array found in response')
-		return []
+		// Validate keywords appear in job description
+		const jdLower = jobDescription.toLowerCase()
+		const validKeywords: string[] = []
+		const invalidKeywords: string[] = []
+
+		keywords.forEach((kw: any) => {
+			const keyword = String(kw)
+			if (jdLower.includes(keyword.toLowerCase())) {
+				validKeywords.push(keyword)
+			} else {
+				invalidKeywords.push(keyword)
+				console.warn(
+					`[Keyword Extraction] ⚠️ Keyword "${keyword}" not found in job description`,
+				)
+			}
+		})
+
+		if (invalidKeywords.length > 0) {
+			console.log(
+				`[Keyword Extraction] Filtered out ${invalidKeywords.length} invalid keywords`,
+			)
+		}
+
+		// Allow up to 30 keywords
+		const finalKeywords = validKeywords.slice(0, 30)
+		console.log(
+			`[Keyword Extraction] ✅ Extracted ${finalKeywords.length} valid keywords:`,
+			finalKeywords,
+		)
+
+		return finalKeywords
 	} catch (error) {
 		console.error('[Keyword Extraction] ❌ Error extracting keywords:', error)
 		return []

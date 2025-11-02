@@ -51,31 +51,57 @@ export interface ChecklistItem {
 }
 
 /**
- * Extract keywords from text (simple tokenization)
+ * Extract keywords from text (handles multi-word phrases)
  */
 function extractKeywords(text: string): Set<string> {
 	if (!text) return new Set()
 
-	return new Set(
-		text
-			.toLowerCase()
-			.replace(/[^a-z0-9+#.\-\s]/g, ' ') // Keep +, #, ., -
+	const normalized = text.toLowerCase()
+
+	// First, extract multi-word technical phrases (before tokenizing)
+	const multiWordPatterns = [
+		/\d+\+?\s*years?\s+(?:of\s+)?experience/g, // "5+ years experience"
+		/[a-z]+\s+[a-z]+\s+(?:engineer|developer|manager|analyst|designer|architect|scientist|lead)/g, // "Senior Software Engineer"
+		/(?:machine|deep|natural language|computer|data|artificial)\s+(?:learning|processing|science|intelligence|vision)/g, // "machine learning"
+		/\b[a-z]+\s+(?:API|SDK|CLI|UI|UX)\b/gi, // "REST API", "AWS SDK"
+		/[a-z]+'s\s+degree/g, // "bachelor's degree"
+		/full\s+stack|front\s+end|back\s+end/g, // "full stack"
+		/product\s+management|project\s+management|program\s+management/g, // PM terms
+		/customer\s+success|customer\s+service|sales\s+development/g, // CS/Sales terms
+		/\b(?:saas|b2b|b2c|fintech|insurtech|healthtech|edtech)\b/gi, // Industry terms
+	]
+
+	const multiWordMatches = new Set<string>()
+	multiWordPatterns.forEach(pattern => {
+		const matches = normalized.match(pattern)
+		if (matches) {
+			matches.forEach(m => multiWordMatches.add(m.trim()))
+		}
+	})
+
+	// Then tokenize remaining text
+	const tokens = new Set(
+		normalized
+			.replace(/[^a-z0-9+#.\-\s]/g, ' ')
 			.split(/\s+/)
-			.filter(word => word.length > 2 && !STOP_WORDS.has(word))
+			.filter(word => word.length > 2 && !STOP_WORDS.has(word)),
 	)
+
+	// Combine both sets
+	return new Set([...multiWordMatches, ...tokens])
 }
 
 /**
  * Calculate keyword match score (0-100)
- * Measures overlap between resume and job description
+ * Measures overlap between resume and job description using hybrid matching
  */
 function calculateKeywordScore(
 	resumeData: ResumeData,
 	jobDescription: string,
-	extractedKeywords?: string[] | null
+	extractedKeywords?: string[] | null,
 ): number {
-	if (!jobDescription || jobDescription.trim().length === 0) {
-		return 50 // Neutral score when no job selected
+	if (!jobDescription || !extractedKeywords || extractedKeywords.length === 0) {
+		return 50 // Neutral score when no job selected or no keywords
 	}
 
 	// Extract resume text
@@ -91,34 +117,41 @@ function calculateKeywordScore(
 		...(resumeData.education?.map((e: any) => `${e.degree} ${e.school}`) || []),
 	].join(' ')
 
+	const resumeLower = resumeText.toLowerCase()
 	const resumeKeywords = extractKeywords(resumeText)
 
-	// ONLY use AI-extracted keywords, no fallback
-	if (!extractedKeywords || extractedKeywords.length === 0) {
-		console.warn('[Resume Scoring] No extracted keywords available for job, returning neutral score')
-		return 50 // Return neutral score if no keywords extracted yet
-	}
+	// Match keywords with hybrid approach
+	let matchCount = 0
 
-	// Keep original casing from AI, but do case-insensitive matching
-	const jdKeywordsLower = new Set(extractedKeywords.map(k => k.toLowerCase()))
+	extractedKeywords.forEach(keyword => {
+		const kwLower = keyword.toLowerCase()
 
-	if (jdKeywordsLower.size === 0) return 50
+		// Strategy 1: Exact phrase match (for multi-word keywords)
+		if (kwLower.includes(' ')) {
+			if (resumeLower.includes(kwLower)) {
+				matchCount++
+			}
+		}
+		// Strategy 2: Token-based match (for single words)
+		else {
+			if (resumeKeywords.has(kwLower)) {
+				matchCount++
+			}
+		}
+	})
 
-	// Calculate Jaccard similarity (case-insensitive)
-	const intersection = new Set([...resumeKeywords].filter(k => jdKeywordsLower.has(k)))
-	const matchRatio = intersection.size / jdKeywordsLower.size
+	const matchRatio = matchCount / extractedKeywords.length
 
-	// Scale to 0-100: 60% match = 90 points, 85%+ match = 100 points
-	// Using piecewise linear scaling
+	// Scoring with adjusted thresholds (more forgiving)
 	let score: number
-	if (matchRatio >= 0.85) {
-		score = 100
-	} else if (matchRatio >= 0.60) {
-		// Linear interpolation between 60% (90pts) and 85% (100pts)
-		score = 90 + ((matchRatio - 0.60) / 0.25) * 10
+	if (matchRatio >= 0.8) {
+		score = 100 // 80%+ match = excellent
+	} else if (matchRatio >= 0.6) {
+		score = 85 + ((matchRatio - 0.6) / 0.2) * 15 // 60-80% = 85-100
+	} else if (matchRatio >= 0.4) {
+		score = 70 + ((matchRatio - 0.4) / 0.2) * 15 // 40-60% = 70-85
 	} else {
-		// Below 60%, scale linearly to 90
-		score = matchRatio * 150
+		score = matchRatio * 175 // Below 40% = 0-70
 	}
 
 	return Math.round(score)
@@ -313,32 +346,106 @@ export function generateChecklist(
 			return checklist
 		}
 
-		// Find missing keywords (case-insensitive match, but display with original casing)
-		const missingKeywords = extractedKeywords.filter(keyword =>
-			!resumeKeywords.has(keyword.toLowerCase())
-		)
+		// Find missing keywords with categorization (hybrid matching)
+		const resumeLower = resumeText.toLowerCase()
+		const missingByCategory = {
+			technical: [] as string[],
+			experience: [] as string[],
+			tools: [] as string[],
+			domain: [] as string[],
+			soft: [] as string[],
+		}
 
-		if (scores.keyword < 90) {
-			const summaryText = `Add ${missingKeywords.length} missing keyword${missingKeywords.length !== 1 ? 's' : ''}`
+		extractedKeywords.forEach(keyword => {
+			const kwLower = keyword.toLowerCase()
 
-			// Format all keywords as a nice grid/list
-			const keywordsList = missingKeywords
-				.map(k => `  • ${k}`)
-				.join('\n')
+			// Check if keyword is present (hybrid matching)
+			let isPresent = false
+			if (kwLower.includes(' ')) {
+				// Multi-word: exact phrase match
+				isPresent = resumeLower.includes(kwLower)
+			} else {
+				// Single word: token match
+				isPresent = resumeKeywords.has(kwLower)
+			}
+
+			if (!isPresent) {
+				// Categorize missing keyword
+				if (/\d+\+?\s*years?/i.test(keyword)) {
+					missingByCategory.experience.push(keyword)
+				} else if (
+					/^[A-Z]{2,}$/.test(keyword) ||
+					/API|SDK|CLI|UI|UX/i.test(keyword)
+				) {
+					missingByCategory.technical.push(keyword)
+				} else if (
+					/docker|kubernetes|jira|hubspot|salesforce|aws|azure|gcp/i.test(
+						keyword,
+					)
+				) {
+					missingByCategory.tools.push(keyword)
+				} else if (
+					/leadership|communication|agile|remote|team|collaboration/i.test(
+						keyword,
+					)
+				) {
+					missingByCategory.soft.push(keyword)
+				} else {
+					missingByCategory.domain.push(keyword)
+				}
+			}
+		})
+
+		const totalMissing = Object.values(missingByCategory).flat().length
+
+		if (scores.keyword < 90 && totalMissing > 0) {
+			let explanation =
+				'Add these keywords from the job description to improve your ATS match:\n\n'
+
+			if (missingByCategory.technical.length > 0) {
+				explanation +=
+					'**Technical Skills:**\n' +
+					missingByCategory.technical.map(k => `  • ${k}`).join('\n') +
+					'\n\n'
+			}
+			if (missingByCategory.tools.length > 0) {
+				explanation +=
+					'**Tools & Platforms:**\n' +
+					missingByCategory.tools.map(k => `  • ${k}`).join('\n') +
+					'\n\n'
+			}
+			if (missingByCategory.experience.length > 0) {
+				explanation +=
+					'**Experience Level:**\n' +
+					missingByCategory.experience.map(k => `  • ${k}`).join('\n') +
+					'\n\n'
+			}
+			if (missingByCategory.domain.length > 0) {
+				explanation +=
+					'**Domain Knowledge:**\n' +
+					missingByCategory.domain.map(k => `  • ${k}`).join('\n') +
+					'\n\n'
+			}
+			if (missingByCategory.soft.length > 0) {
+				explanation +=
+					'**Soft Skills:**\n' +
+					missingByCategory.soft.map(k => `  • ${k}`).join('\n')
+			}
 
 			checklist.push({
 				id: 'keywords-missing',
-				text: summaryText,
+				text: `Add ${totalMissing} missing keyword${totalMissing !== 1 ? 's' : ''}`,
 				completed: false,
-				explanation: `Add these keywords from the job description to improve your ATS match score:\n\n${keywordsList}`,
-				priority: 'high',
+				explanation: explanation.trim(),
+				priority: scores.keyword < 70 ? 'high' : 'medium',
 			})
-		} else {
+		} else if (scores.keyword >= 90) {
 			checklist.push({
 				id: 'keywords-good',
 				text: `Strong keyword match (${scores.keyword}/100)`,
 				completed: true,
-				explanation: 'Your resume has excellent keyword alignment with the job description.',
+				explanation:
+					'Your resume has excellent keyword alignment with the job description.',
 				priority: 'high',
 			})
 		}
