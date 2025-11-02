@@ -274,7 +274,7 @@ export async function getAiFeedback(
     const pre = buildPrepass(jdText, resumeTxt, title)
 
     const completion = await openai.chat.completions.create({
-      model: process.env.OPENAI_MODEL || 'o3',
+      model: process.env.OPENAI_MODEL || 'gpt-5-mini',
       temperature: 1,
       messages: [
         { role: 'system', content: buildSystemPrompt(title, company) },
@@ -314,7 +314,7 @@ export async function getAiFeedbackStreaming(
   // Note: streaming doesn't work well with response_format: { type: 'json_object' }
   // So we rely on strong prompting to ensure JSON output
   const stream = await openai.chat.completions.create({
-    model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+    model: process.env.OPENAI_MODEL || 'gpt-4.1-mini',
     temperature: 1,
     messages: [
       {

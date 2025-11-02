@@ -33,7 +33,7 @@ export function ResumeScoreCard({
 	const hasImproved = scoreImprovement && scoreImprovement > 0
 
 	return (
-		<div className={`rounded-lg border bg-background p-4 shadow-sm ${className}`}>
+		<div className={`rounded-lg border bg-white p-4 shadow-sm ${className}`}>
 			{/* Header */}
 			<div className="mb-4 flex items-center justify-between">
 				<h3 className="text-lg font-semibold text-foreground">

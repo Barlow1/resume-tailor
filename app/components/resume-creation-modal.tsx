@@ -142,17 +142,25 @@ export function ResumeCreationModal({
 										</div>
 									) : null}
 									<div className="flex w-full items-center gap-2">
-										<Icon name="upload" />
+										{fetcher.state !== 'idle' ? (
+											<Icon name="update" className="animate-spin" />
+										) : (
+											<Icon name="upload" />
+										)}
 										<span className="flex-1 font-semibold">
-											Upload existing resume
+											{fetcher.state !== 'idle' ? 'Uploading...' : 'Upload existing resume'}
 										</span>
-										<Icon
-											name="arrow-right"
-											className="text-muted-foreground"
-										/>
+										{fetcher.state === 'idle' && (
+											<Icon
+												name="arrow-right"
+												className="text-muted-foreground"
+											/>
+										)}
 									</div>
 									<p className="text-left text-sm text-muted-foreground">
-										Upload your current resume and we'll help you improve it
+										{fetcher.state !== 'idle'
+											? 'Processing your resume, please wait...'
+											: 'Upload your current resume and we\'ll help you improve it'}
 									</p>
 								</Button>
 							</div>

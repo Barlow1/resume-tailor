@@ -98,22 +98,53 @@ export async function createBuilderResume(
 		user: userId ? { connect: { id: userId } } : undefined,
 		experiences: {
 			create:
-				data.experiences?.map(exp => ({
-					...exp,
-					descriptions: {
-						create: exp.descriptions?.map((desc, index) => ({
-							content: desc.content ?? '',
-							order: desc.order ?? index,
-						})).filter(desc => desc.content !== '') ?? [],
-					},
-				})) || [],
+				data.experiences?.map(exp => {
+					const { id: expId, ...expData } = exp
+					return {
+						...expData,
+						descriptions: {
+							create: exp.descriptions?.map((desc, index) => {
+								const { id: descId, ...descData } = desc
+								return {
+									content: descData.content ?? '',
+									order: descData.order ?? index,
+								}
+							}).filter(desc => desc.content !== '') ?? [],
+						},
+					}
+				}) || [],
 		},
-		education: { create: data.education },
-		skills: { create: data.skills },
-		hobbies: { create: data.hobbies },
-		headers: data.headers ? { create: data.headers } : undefined,
+		education: {
+			create: data.education?.map(edu => {
+				const { id: eduId, ...eduData } = edu
+				return eduData
+			}) || []
+		},
+		skills: {
+			create: data.skills?.map(skill => {
+				const { id: skillId, ...skillData } = skill
+				return skillData
+			}) || []
+		},
+		hobbies: {
+			create: data.hobbies?.map(hobby => {
+				const { id: hobbyId, ...hobbyData } = hobby
+				return hobbyData
+			}) || []
+		},
+		headers: data.headers ? {
+			create: (() => {
+				const { id: headerId, ...headerData } = data.headers
+				return headerData
+			})()
+		} : undefined,
 		job: jobId ? { connect: { id: jobId } } : undefined,
-		visibleSections: data.visibleSections ? { create: data.visibleSections } : undefined,
+		visibleSections: data.visibleSections ? {
+			create: (() => {
+				const { id: visId, ...visData } = data.visibleSections
+				return visData
+			})()
+		} : undefined,
 	}
 	return prisma.builderResume.create({
 		data: createInput,
@@ -152,15 +183,21 @@ export async function updateBuilderResume(userId: string | null, resumeId: strin
 		user: userId ? { connect: { id: userId } } : undefined,
 		experiences: {
 			deleteMany: {},
-			create: data.experiences?.map(exp => ({
-				...exp,
-				descriptions: {
-					create: exp.descriptions?.map((desc, index) => ({
-						content: desc.content,
-						order: desc.order ?? index,
-					})),
-				},
-			})) || [],
+			create: data.experiences?.map(exp => {
+				const { id: expId, ...expData } = exp
+				return {
+					...expData,
+					descriptions: {
+						create: exp.descriptions?.map((desc, index) => {
+							const { id: descId, ...descData } = desc
+							return {
+								content: descData.content,
+								order: descData.order ?? index,
+							}
+						}),
+					},
+				}
+			}) || [],
 		},
 		education: {
 			deleteMany: {},
@@ -187,16 +224,28 @@ export async function updateBuilderResume(userId: string | null, resumeId: strin
 		headers: data.headers
 			? {
 					upsert: {
-						create: data.headers,
-						update: data.headers,
+						create: (() => {
+							const { id: headerId, ...headerData } = data.headers
+							return headerData
+						})(),
+						update: (() => {
+							const { id: headerId, ...headerData } = data.headers
+							return headerData
+						})(),
 					},
 			  }
 			: undefined,
 		job: data.jobId ? { connect: { id: data.jobId } } : undefined,
 		visibleSections: data.visibleSections ? {
 			upsert: {
-				create: data.visibleSections,
-				update: data.visibleSections,
+				create: (() => {
+					const { id: visId, ...visData } = data.visibleSections
+					return visData
+				})(),
+				update: (() => {
+					const { id: visId, ...visData } = data.visibleSections
+					return visData
+				})(),
 			},
 		} : undefined,
 	}

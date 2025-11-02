@@ -11,6 +11,11 @@ import {
 	unstable_parseMultipartFormData,
 } from '@remix-run/node'
 import moment from 'moment'
+import {
+	trackResumeUpload,
+	trackResumeParsing,
+	trackError,
+} from '~/utils/tracking.server.ts'
 
 const MAX_SIZE = 1024 * 1024 * 10 // 10MB
 
@@ -28,12 +33,35 @@ export async function action({ request }: DataFunctionArgs) {
 
 		const resumeFile = formData.get('resumeFile') as File
 		if (!resumeFile || resumeFile.size === 0) {
+			await trackResumeUpload({
+				method: 'upload',
+				success: false,
+				userId: userId || undefined,
+				error: 'No file uploaded',
+			})
 			return json({ error: 'No file uploaded' }, { status: 400 })
 		}
 
+		const parseStartTime = Date.now()
+
 		try {
+			// Track parsing start
+			await trackResumeParsing({
+				started: true,
+				userId: userId || undefined,
+				fileType: resumeFile.type,
+			})
+
 			// Parse resume with OpenAI
 			const parsedResume = await parseResumeWithOpenAI(resumeFile)
+
+			// Track parsing success
+			await trackResumeParsing({
+				success: true,
+				userId: userId || undefined,
+				fileType: resumeFile.type,
+				duration: Date.now() - parseStartTime,
+			})
 
 			// Transform OpenAI format to builder format
 			const builderResume = {
@@ -103,6 +131,15 @@ export async function action({ request }: DataFunctionArgs) {
 			// Save to database
 			const resume = await createBuilderResume(userId, builderResume)
 
+			// Track successful upload
+			await trackResumeUpload({
+				method: 'upload',
+				success: true,
+				userId: userId || undefined,
+				fileType: resumeFile.type,
+				fileSize: resumeFile.size,
+			})
+
 			return redirectDocument('/builder', {
 				headers: {
 					'Set-Cookie': await resumeCookie.serialize({
@@ -114,6 +151,32 @@ export async function action({ request }: DataFunctionArgs) {
 			})
 		} catch (error: any) {
 			console.error('Resume parsing error:', error)
+
+			// Track parsing failure
+			await trackResumeParsing({
+				failed: true,
+				error: error.message,
+				userId: userId || undefined,
+				fileType: resumeFile.type,
+				duration: Date.now() - parseStartTime,
+			})
+
+			// Track upload failure
+			await trackResumeUpload({
+				method: 'upload',
+				success: false,
+				userId: userId || undefined,
+				error: error.message,
+				fileType: resumeFile.type,
+			})
+
+			await trackError({
+				error: error.message,
+				context: 'resume_upload',
+				userId: userId || undefined,
+				stack: error.stack,
+			})
+
 			return json(
 				{
 					error:
@@ -129,12 +192,24 @@ export async function action({ request }: DataFunctionArgs) {
 		const formData = await request.formData()
 		const existingResumeId = formData.get('existingResumeId')
 		if (!existingResumeId) {
+			await trackResumeUpload({
+				method: 'existing',
+				success: false,
+				userId: userId || undefined,
+				error: 'No resume ID provided',
+			})
 			throw new Error('No resume ID provided')
 		}
 
 		let resume = await getBuilderResume(existingResumeId as string)
 
 		if (!resume) {
+			await trackResumeUpload({
+				method: 'existing',
+				success: false,
+				userId: userId || undefined,
+				error: 'Resume not found',
+			})
 			throw new Error('Resume not found')
 		}
 
@@ -182,6 +257,13 @@ export async function action({ request }: DataFunctionArgs) {
 			resumeCopy,
 		)
 
+		// Track successful resume clone
+		await trackResumeUpload({
+			method: 'existing',
+			success: true,
+			userId: userId || undefined,
+		})
+
 		return redirectDocument('/builder', {
 			headers: {
 				'Set-Cookie': await resumeCookie.serialize({
@@ -193,6 +275,12 @@ export async function action({ request }: DataFunctionArgs) {
 		})
 	}
 
+	await trackResumeUpload({
+		method: 'scratch',
+		success: false,
+		userId: userId || undefined,
+		error: 'Invalid creation type',
+	})
 	throw new Error('Invalid creation type')
 }
 

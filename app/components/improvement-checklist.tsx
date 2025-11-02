@@ -38,19 +38,19 @@ export function ImprovementChecklist({
 	const totalCount = items.length
 
 	return (
-		<div className={`rounded-lg border bg-background p-4 shadow-sm ${className}`}>
+		<div className={`rounded-lg border bg-white p-4 shadow-sm ${className}`}>
 			{/* Header */}
 			<div className="mb-4 flex items-center justify-between">
-				<h3 className="text-lg font-semibold text-foreground">
+				<h3 className="text-lg font-semibold text-gray-900">
 					Improvement Checklist
 				</h3>
-				<div className="text-sm text-muted-foreground">
+				<div className="text-sm text-gray-900">
 					{completedCount} / {totalCount}
 				</div>
 			</div>
 
 			{/* Progress bar */}
-			<div className="mb-4 h-2 w-full overflow-hidden rounded-full bg-muted">
+			<div className="mb-4 h-2 w-full overflow-hidden rounded-full bg-gray-200">
 				<div
 					className="h-full bg-brand-800 transition-all duration-300"
 					style={{ width: `${(completedCount / totalCount) * 100}%` }}
@@ -64,8 +64,8 @@ export function ImprovementChecklist({
 						key={item.id}
 						className={`rounded-md border p-3 transition-all ${
 							item.completed
-								? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/20'
-								: 'border-border bg-background hover:bg-muted/50'
+								? 'border-green-200 bg-green-50'
+								: 'border-gray-200 bg-white hover:bg-gray-50'
 						}`}
 					>
 						<button
@@ -79,7 +79,7 @@ export function ImprovementChecklist({
 									{item.completed ? (
 										<CheckCircleIconSolid className="h-5 w-5 text-green-600" />
 									) : (
-										<div className="h-5 w-5 rounded-full border-2 border-muted-foreground" />
+										<div className="h-5 w-5 rounded-full border-2 border-gray-900" />
 									)}
 								</div>
 
@@ -89,8 +89,8 @@ export function ImprovementChecklist({
 										<p
 											className={`text-sm font-medium ${
 												item.completed
-													? 'text-green-700 dark:text-green-400 line-through'
-													: 'text-foreground'
+													? 'text-green-700 line-through'
+													: 'text-gray-900'
 											}`}
 										>
 											{item.text}
@@ -104,7 +104,7 @@ export function ImprovementChecklist({
 											{item.id === 'keywords-missing' ? (
 												<KeywordsList explanation={item.explanation} />
 											) : (
-												<p className="text-xs text-muted-foreground">
+												<p className="text-xs text-gray-700">
 													{item.explanation}
 												</p>
 											)}
@@ -119,7 +119,7 @@ export function ImprovementChecklist({
 
 			{/* Completion message */}
 			{completedCount === totalCount && totalCount > 0 && (
-				<div className="mt-4 flex items-center gap-2 rounded-md bg-green-50 p-3 text-sm text-green-800 dark:bg-green-950/20 dark:text-green-400">
+				<div className="mt-4 flex items-center gap-2 rounded-md bg-green-50 p-3 text-sm text-green-800">
 					<CheckCircleIconSolid className="h-5 w-5" />
 					<span className="font-medium">
 						Great work! Your resume is optimized. Download it and start applying!
@@ -141,12 +141,12 @@ function KeywordsList({ explanation }: { explanation: string }) {
 
 	return (
 		<div className="space-y-2">
-			<p className="text-xs text-muted-foreground">{introText}</p>
+			<p className="text-xs text-gray-700">{introText}</p>
 			<div className="flex flex-wrap gap-2">
 				{keywords.map((keyword, index) => (
 					<span
 						key={index}
-						className="inline-flex items-center rounded-md bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-800 ring-1 ring-inset ring-brand-600/20 dark:bg-brand-900/30 dark:text-brand-300 dark:ring-brand-400/30"
+						className="inline-flex items-center rounded-md bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-800 ring-1 ring-inset ring-brand-600/20"
 					>
 						{keyword}
 					</span>
@@ -159,7 +159,7 @@ function KeywordsList({ explanation }: { explanation: string }) {
 function PriorityBadge({ priority }: { priority: 'high' | 'medium' | 'low' }) {
 	if (priority === 'high') {
 		return (
-			<span className="flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700 dark:bg-red-950/30 dark:text-red-400">
+			<span className="flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
 				<ExclamationCircleIcon className="h-3 w-3" />
 				High
 			</span>
@@ -168,7 +168,7 @@ function PriorityBadge({ priority }: { priority: 'high' | 'medium' | 'low' }) {
 
 	if (priority === 'medium') {
 		return (
-			<span className="flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400">
+			<span className="flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-700">
 				<InformationCircleIcon className="h-3 w-3" />
 				Medium
 			</span>
