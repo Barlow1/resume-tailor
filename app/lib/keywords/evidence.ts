@@ -1,4 +1,4 @@
-import { KeywordCandidate } from './types.ts';
+import type { KeywordCandidate } from './types.ts';
 
 export function attachEvidence(cands: KeywordCandidate[], resumeTxt: string) {
   return cands.map(c => {

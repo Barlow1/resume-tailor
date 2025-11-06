@@ -1,5 +1,5 @@
 import { redirect } from '@remix-run/router'
-import { DataFunctionArgs } from '@remix-run/server-runtime'
+import type { DataFunctionArgs } from '@remix-run/server-runtime'
 import {
 	requireStripeSubscription,
 	requireUserId,

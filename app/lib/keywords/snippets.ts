@@ -1,4 +1,4 @@
-import { KeywordCandidate, KeywordSnippet } from './types.ts'
+import type { KeywordCandidate, KeywordSnippet } from './types.ts'
 
 const clamp = (s: string, n: number) => (s.length > n ? s.slice(0, n - 1) + '…' : s)
 
