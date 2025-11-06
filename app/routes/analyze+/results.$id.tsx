@@ -9,6 +9,7 @@ import {
 import { prisma } from '~/utils/db.server.ts'
 import { KeywordPlan } from '~/components/keyword-plan.tsx'
 import type { KeywordSnippet } from '~/lib/keywords/types.ts'
+import { trackEvent } from '~/utils/analytics.ts'
 
 // ---------- Types (align with getAiFeedback) ----------
 type ImproveItem = { current?: string; suggest: string; why: string }
@@ -480,6 +481,16 @@ export default function ResultsPage() {
 			}
 
 			console.log('✅ Save successful, revalidating...')
+
+			// Track analyzer_completed event
+			const responseData = await response.json() as any
+			if (responseData.trackingData) {
+				trackEvent('analyzer_completed', {
+					user_id: responseData.trackingData.user_id,
+					plan_type: responseData.trackingData.plan_type,
+					match_score: responseData.trackingData.match_score,
+				})
+			}
 
 			// Clear streaming data from localStorage
 			localStorage.removeItem(`analysis-streaming-${analysis.id}`)
