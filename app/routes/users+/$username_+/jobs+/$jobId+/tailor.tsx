@@ -2,10 +2,7 @@ import { json, type DataFunctionArgs } from '@remix-run/node'
 import { Outlet, useLoaderData } from '@remix-run/react'
 import { GeneralErrorBoundary } from '~/components/error-boundary.tsx'
 import { z } from 'zod'
-import {
-	requireStripeSubscription,
-	requireUserId,
-} from '~/utils/auth.server.ts'
+import { requireUserId } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
 import React from 'react'
 import { trackEvent } from '~/utils/analytics.ts'
