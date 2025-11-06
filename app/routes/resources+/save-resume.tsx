@@ -6,7 +6,6 @@ import {
 } from '~/utils/builder-resume.server.ts'
 import { resumeCookie } from '~/utils/resume-cookie.server.ts'
 import { getUserId } from '~/utils/auth.server.ts'
-import { prisma } from '~/utils/db.server.ts'
 
 export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData()

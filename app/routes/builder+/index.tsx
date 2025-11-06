@@ -23,6 +23,7 @@ import {
 	PlusIcon,
 	ArrowDownTrayIcon,
 	ArrowUturnLeftIcon,
+	ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline'
 import { SubscribeModal } from '~/components/subscribe-modal.tsx'
 import { getStripeSubscription, getUserId } from '~/utils/auth.server.ts'
@@ -102,8 +103,6 @@ import {
 	type DiffSummary,
 } from '~/utils/tailor-diff.ts'
 import { trackEvent } from '~/utils/tracking.client.ts'
-import { ExclamationTriangleIcon } from '@heroicons/react/24/outline'
-
 const { ChromePicker } = reactColor
 
 function base64ToUint8Array(base64: string): Uint8Array {
@@ -685,7 +684,7 @@ export default function ResumeBuilder() {
 		}
 		const { fileData, fileType } = pdfFetcher.data
 		const byteArray = base64ToUint8Array(fileData)
-		const blob = new Blob([byteArray], { type: fileType })
+		const blob = new Blob([byteArray as BlobPart], { type: fileType })
 
 		// create a URL for the blob and trigger the download link
 		const url = window.URL.createObjectURL(blob)

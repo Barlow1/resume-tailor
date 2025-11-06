@@ -2,7 +2,7 @@
  * In-builder progress stepper to guide users through the tailoring flow
  */
 
-import { CheckCircleIcon, ArrowRightIcon } from '@heroicons/react/24/outline'
+import { ArrowRightIcon } from '@heroicons/react/24/outline'
 import { CheckCircleIcon as CheckCircleSolidIcon } from '@heroicons/react/24/solid'
 import type { BuilderJob } from '~/utils/builder-resume.server.ts'
 
