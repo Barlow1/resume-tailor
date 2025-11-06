@@ -49,7 +49,6 @@ import { makeTimings, time } from './utils/timing.server.ts'
 import { useToast } from './utils/useToast.tsx'
 import { useOptionalUser, useUser } from './utils/user.ts'
 import rdtStylesheetUrl from 'remix-development-tools/stylesheet.css'
-import * as gtag from './utils/gtags.client.ts'
 import clsx from 'clsx'
 import LogRocket from 'logrocket'
 import {
@@ -215,14 +214,6 @@ function Document({
 	theme?: 'dark' | 'light'
 	env?: Record<string, string>
 }) {
-	const location = useLocation()
-	const gaTrackingId = 'G-8JBRTFQ8PR'
-	const adsTrackingId = 'AW-16893834380'
-	useEffect(() => {
-		if (gaTrackingId?.length && process.env.NODE_ENV === 'production') {
-			gtag.pageview(location.pathname, gaTrackingId)
-		}
-	}, [location])
 	return (
 		<html lang="en" className={`${theme} h-full overflow-x-hidden`}>
 			<head>
@@ -239,27 +230,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 				/>
 				{/* End Google Tag Manager */}
 				<ClientHintCheck nonce={nonce} />
-				<script
-					nonce={nonce}
-					async
-					src={`https://www.googletagmanager.com/gtag/js?id=${gaTrackingId}`}
-				></script>
-				<script
-					nonce={nonce}
-					async
-					id="gtag-init"
-					dangerouslySetInnerHTML={{
-						__html: `
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', '${gaTrackingId}', {
-                  page_path: window.location.pathname,
-                });
-				gtag('config', '${adsTrackingId}');
-              `,
-					}}
-				/>
 				<Meta />
 				<meta charSet="utf-8" />
 				<meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -273,6 +243,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 						height="0"
 						width="0"
 						style={{ display: 'none', visibility: 'hidden' }}
+						title='Google Tag Manager'
 					></iframe>
 				</noscript>
 				{/* End Google Tag Manager (noscript) */}
