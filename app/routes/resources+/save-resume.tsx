@@ -6,7 +6,6 @@ import {
 } from '~/utils/builder-resume.server.ts'
 import { resumeCookie } from '~/utils/resume-cookie.server.ts'
 import { getUserId } from '~/utils/auth.server.ts'
-import { prisma } from '~/utils/db.server.ts'
 
 export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData()
@@ -44,23 +43,6 @@ export async function action({ request }: ActionFunctionArgs) {
 	const resume = resumeId
 		? await updateBuilderResume(userId, resumeId, resumeData)
 		: await createBuilderResume(userId, resumeData)
-
-	// Increment download count
-
-	if (userId) {
-	await prisma.gettingStartedProgress.upsert({
-		where: { ownerId: userId },
-		update: { downloadCount: { increment: 1 } },
-		create: { ownerId: userId, downloadCount: 1,
-			hasSavedJob: false,
-			hasSavedResume: false,
-			hasTailoredResume: false,
-			hasGeneratedResume: false,
-			tailorCount: 0,
-			generateCount: 0,
-			},
-		})	
-	}
 
 	// Store minimal data in cookie
 	const cookieData = {

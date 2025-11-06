@@ -1,10 +1,12 @@
 import { Menu } from '@headlessui/react'
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 import { Button } from './ui/button.tsx'
-import { TooltipProvider } from './ui/tooltip.tsx'
-import { TooltipTrigger } from './ui/tooltip.tsx'
-import { Tooltip } from './ui/tooltip.tsx'
-import { TooltipContent } from './ui/tooltip.tsx'
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from './ui/tooltip.tsx'
 
 interface Section {
 	id: string

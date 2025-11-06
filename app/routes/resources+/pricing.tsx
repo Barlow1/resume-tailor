@@ -37,8 +37,8 @@ const tiers = [
 		id: 'tier-pro',
 		href: '#',
 		price: {
-			monthly: { initial: '3 DAY FREE TRIAL', recurring: '$7.99' },
-			weekly: { initial: '3 DAY FREE TRIAL', recurring: '$2.99' },
+			monthly: { initial: '3 DAY FREE TRIAL', recurring: '$15' },
+			weekly: { initial: '3 DAY FREE TRIAL', recurring: '$4.99' },
 		},
 		description:
 			"Tailor unlimited resumes to all jobs you're applying to and download them in an ATS optimized PDF",

@@ -80,6 +80,11 @@ export function AIAssistantModal({
 		formData.append('experience', content ?? '')
 		formData.append('type', endpoint)
 
+		// Pass extracted keywords for better ATS optimization
+		if (job?.extractedKeywords) {
+			formData.append('extractedKeywords', job.extractedKeywords)
+		}
+
 		builderCompletionsFetcher.submit(formData, {
 			method: 'POST',
 			action: '/resources/builder-completions',
