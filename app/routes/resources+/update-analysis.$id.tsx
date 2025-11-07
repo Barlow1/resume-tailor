@@ -98,10 +98,18 @@ export async function action({ params, request }: ActionFunctionArgs) {
     headers['Set-Cookie'] = setCookieCount(currentUsage + 1, cookieKey)
   }
 
+  // Add tracking data for GA4
+  const planType = isPro ? 'pro' : 'free'
+
   return json(
     {
       ...updated,
       feedback: updated.feedback ? JSON.parse(updated.feedback) : null,
+      trackingData: {
+        user_id: userId,
+        plan_type: planType,
+        match_score: updated.fitPct || 0,
+      },
     },
     { headers },
   )

@@ -11,6 +11,7 @@ import React from 'react'
 import CopyButton from '~/components/copy-button.tsx'
 import { Button } from '~/components/ui/button.tsx'
 import { TextareaField, ErrorList } from '~/components/forms.tsx'
+import { trackEvent } from '~/utils/analytics.ts'
 
 export const ExperienceTailorSchema = z.object({
 	experience: z.string().min(1),
@@ -42,7 +43,35 @@ export async function action({ request }: DataFunctionArgs) {
 		}),
 	])
 
-	return json({ status: 'success', response: response } as const)
+	// Fetch updated progress and subscription for GA4 tracking
+	const [progress, subscription] = await Promise.all([
+		prisma.gettingStartedProgress.findUnique({
+			where: { ownerId: userId },
+			select: { tailorCount: true, generateCount: true, analysisCount: true },
+		}),
+		prisma.subscription.findFirst({
+			where: { ownerId: userId, active: true },
+			select: { id: true },
+		}),
+	])
+
+	const planType = subscription ? 'pro' : 'free'
+	const totalActions =
+		(progress?.tailorCount || 0) +
+		(progress?.generateCount || 0) +
+		(progress?.analysisCount || 0)
+	const actionsRemaining = planType === 'pro' ? 999 : Math.max(0, 2 - totalActions)
+
+	return json({
+		status: 'success',
+		response: response,
+		trackingData: {
+			user_id: userId,
+			plan_type: planType,
+			actions_remaining: actionsRemaining,
+			tailoring_type: 'bullet_points', // experience-tailor is for individual bullet points
+		},
+	} as const)
 }
 
 export function ExperienceTailor({
@@ -80,6 +109,23 @@ export function ExperienceTailor({
 	})
 	const [content, setContent] = React.useState('')
 	const [loading, setLoading] = React.useState(false)
+
+	// Track resume_tailored event when action completes
+	React.useEffect(() => {
+		if (
+			experienceTailorFetcher.state === 'idle' &&
+			experienceTailorFetcher.data?.status === 'success' &&
+			experienceTailorFetcher.data?.trackingData
+		) {
+			const { trackingData } = experienceTailorFetcher.data
+			trackEvent('resume_tailored', {
+				user_id: trackingData.user_id,
+				plan_type: trackingData.plan_type,
+				actions_remaining: trackingData.actions_remaining,
+				tailoring_type: trackingData.tailoring_type,
+			})
+		}
+	}, [experienceTailorFetcher.state, experienceTailorFetcher.data])
 
 	return (
 		<>

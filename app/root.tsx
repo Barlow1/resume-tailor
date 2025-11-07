@@ -48,6 +48,7 @@ import { useNonce } from './utils/nonce-provider.ts'
 import { makeTimings, time } from './utils/timing.server.ts'
 import { useToast } from './utils/useToast.tsx'
 import { useOptionalUser, useUser } from './utils/user.ts'
+import { trackEvent } from './utils/analytics.ts'
 import rdtStylesheetUrl from 'remix-development-tools/stylesheet.css'
 import clsx from 'clsx'
 import LogRocket from 'logrocket'
@@ -160,6 +161,7 @@ export async function loader({ request }: DataFunctionArgs) {
 
 	let firstJob = null
 	let gettingStartedProgress = null
+	let recentPurchase = null
 	if (userId) {
 		;[firstJob, gettingStartedProgress] = await Promise.all([
 			prisma.job.findFirst({ where: { ownerId: userId } }),
@@ -169,6 +171,36 @@ export async function loader({ request }: DataFunctionArgs) {
 				},
 			}),
 		])
+
+		// Check if coming from Stripe checkout (via query param)
+		const url = new URL(request.url)
+		const fromStripe = url.searchParams.has('session_id')
+
+		if (fromStripe) {
+			const subscription = await prisma.subscription.findFirst({
+				where: {
+					ownerId: userId,
+					active: true,
+				},
+				select: {
+					stripePriceId: true,
+				},
+			})
+
+			if (subscription) {
+				// Determine plan tier from stripePriceId
+				const isWeekly =
+					subscription.stripePriceId === process.env.STRIPE_PRICE_ID_WEEKLY
+				const planTier = isWeekly ? 'weekly' : 'monthly'
+				const priceUsd = isWeekly ? 4.99 : 15.0
+
+				recentPurchase = {
+					user_id: userId,
+					plan_tier: planTier,
+					price_usd: priceUsd,
+				}
+			}
+		}
 	}
 
 	return json(
@@ -186,6 +218,7 @@ export async function loader({ request }: DataFunctionArgs) {
 			flash,
 			firstJob,
 			gettingStartedProgress,
+			recentPurchase,
 		},
 		{
 			headers: combineHeaders(
@@ -315,6 +348,26 @@ function App() {
 			Crisp.configure('d2a311b1-5815-4ced-8d94-0376198c598c')
 		}
 	}, [])
+
+	// Track purchase_completed event for recent subscriptions
+	useEffect(() => {
+		if (data.recentPurchase) {
+			const sessionId = new URLSearchParams(window.location.search).get('session_id')
+
+			// Check if we've already tracked this session_id
+			const trackedKey = `tracked_purchase_${sessionId}`
+			if (sessionId && !sessionStorage.getItem(trackedKey)) {
+				trackEvent('purchase_completed', {
+					user_id: data.recentPurchase.user_id,
+					plan_tier: data.recentPurchase.plan_tier,
+					price_usd: data.recentPurchase.price_usd,
+				})
+
+				// Mark as tracked to prevent duplicates on refresh
+				sessionStorage.setItem(trackedKey, 'true')
+			}
+		}
+	}, [data.recentPurchase])
 
 	const [sidebarOpen, setSidebarOpen] = useState(false)
 	const [isCollapsed, setIsCollapsed] = useState(false)

@@ -6,6 +6,7 @@ import {
 	getBuilderResume,
 } from '~/utils/builder-resume.server.ts'
 import { resumeCookie } from '~/utils/resume-cookie.server.ts'
+import { prisma } from '~/utils/db.server.ts'
 import {
 	unstable_createMemoryUploadHandler,
 	unstable_parseMultipartFormData,
@@ -140,12 +141,23 @@ export async function action({ request }: DataFunctionArgs) {
 				fileSize: resumeFile.size,
 			})
 
+			// Get subscription status for GA4 tracking
+			const subscription = await prisma.subscription.findFirst({
+				where: { ownerId: userId, active: true },
+				select: { id: true },
+			})
+			const planType = subscription ? 'pro' : 'free'
+
 			return redirectDocument('/builder', {
 				headers: {
 					'Set-Cookie': await resumeCookie.serialize({
 						resumeId: resume.id,
 						downloadPDFRequested: false,
 						subscribe: false,
+						resumeUploadedTracking: {
+							user_id: userId,
+							plan_type: planType,
+						},
 					}),
 				},
 			})
