@@ -1,12 +1,12 @@
 import { json, type DataFunctionArgs } from '@remix-run/node'
-import { Outlet, useLoaderData } from '@remix-run/react'
+import { Outlet } from '@remix-run/react'
 import { GeneralErrorBoundary } from '~/components/error-boundary.tsx'
 import { z } from 'zod'
-import { requireUserId } from '~/utils/auth.server.ts'
+import {
+	requireStripeSubscription,
+	requireUserId,
+} from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
-import React from 'react'
-import { trackEvent } from '~/utils/analytics.ts'
-import { SubscribeModal } from '~/components/subscribe-modal.tsx'
 
 export const handle = {
 	breadcrumb: (data: FromLoader<typeof loader>) => 'Tailor',
@@ -25,88 +25,24 @@ export async function loader({ params, request }: DataFunctionArgs) {
 			where: {
 				ownerId: userId,
 			},
-			select: {
-				tailorCount: true,
-				generateCount: true,
-				analysisCount: true,
-			},
 		},
 	)
 
-	// Check if user has hit paywall
 	if (gettingStartedProgress && gettingStartedProgress?.tailorCount > 1) {
-		// Check if user has active subscription
-		const subscription = await prisma.subscription.findFirst({
-			where: { ownerId: userId, active: true },
-			select: { id: true },
-		})
-
-		// If no subscription, return paywall flag instead of redirecting
-		if (!subscription) {
-			const totalActions =
-				(gettingStartedProgress?.tailorCount || 0) +
-				(gettingStartedProgress?.generateCount || 0) +
-				(gettingStartedProgress?.analysisCount || 0)
-
-			return json({
-				jobId: params.jobId,
-				paywallRequired: true,
-				trackingData: {
-					user_id: userId,
-					plan_type: 'free',
-					actions_remaining: Math.max(0, 2 - totalActions),
-					blocked_feature: 'resume_tailoring',
-				},
-				successUrl: request.url,
-				cancelUrl: request.url.split('/tailor')[0],
-			})
-		}
+		const successUrl = request.url
+		const cancelUrl = request.url.split('/tailor')[0]
+		await requireStripeSubscription({ userId, successUrl, cancelUrl })
 	}
 
-	return json({
-		jobId: params.jobId,
-		paywallRequired: false,
-		trackingData: undefined,
-		successUrl: undefined,
-		cancelUrl: undefined,
-	})
+	return json({ jobId: params.jobId })
 }
 
 export default function ResumeTailorRoute() {
-	const data = useLoaderData<typeof loader>()
-	const [showSubscribe, setShowSubscribe] = React.useState(false)
-
-	// Track paywall_hit event when paywall is required
-	React.useEffect(() => {
-		if (data.paywallRequired && 'trackingData' in data && data.trackingData) {
-			trackEvent('paywall_hit', {
-				user_id: data.trackingData.user_id,
-				plan_type: data.trackingData.plan_type,
-				actions_remaining: data.trackingData.actions_remaining,
-				blocked_feature: data.trackingData.blocked_feature,
-			})
-			setShowSubscribe(true)
-		}
-	}, [data.paywallRequired, data])
-
 	return (
 		<div className="m-auto mb-36 max-w-3xl md:container">
 			<main>
 				<Outlet />
 			</main>
-			{data.paywallRequired &&
-				'successUrl' in data &&
-				data.successUrl &&
-				'cancelUrl' in data &&
-				data.cancelUrl && (
-					<SubscribeModal
-						isOpen={showSubscribe}
-						onClose={() => setShowSubscribe(false)}
-						successUrl={data.successUrl}
-						cancelUrl={data.cancelUrl}
-						redirectTo={data.successUrl}
-					/>
-				)}
 		</div>
 	)
 }

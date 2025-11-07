@@ -102,8 +102,7 @@ import {
 	extractJobKeywords,
 	type DiffSummary,
 } from '~/utils/tailor-diff.ts'
-import { trackEvent as trackLegacyEvent } from '~/utils/tracking.client.ts'
-import { trackEvent } from '~/utils/analytics.ts'
+import { trackEvent } from '~/utils/tracking.client.ts'
 const { ChromePicker } = reactColor
 
 function base64ToUint8Array(base64: string): Uint8Array {
@@ -183,12 +182,8 @@ const getDefaultFormData = (): ResumeData => {
 export async function loader({ request }: LoaderFunctionArgs) {
 	const userId = await getUserId(request)
 	const cookieHeader = request.headers.get('Cookie')
-	const {
-		resumeId,
-		subscribe,
-		downloadPDFRequested,
-		resumeUploadedTracking,
-	} = (await resumeCookie.parse(cookieHeader)) || {}
+	const { resumeId, subscribe, downloadPDFRequested } =
+		(await resumeCookie.parse(cookieHeader)) || {}
 
 	let savedData = getDefaultFormData()
 
@@ -249,31 +244,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
 			userId ? getUserBuilderResumes(userId) : ([] as ResumeData[]),
 		])
 
-	// Clear tracking data from cookie after reading
-	const headers: HeadersInit = {}
-	if (resumeUploadedTracking) {
-		headers['Set-Cookie'] = await resumeCookie.serialize({
-			resumeId,
-			subscribe: subscribe === 'true',
-			downloadPDFRequested: downloadPDFRequested === 'true',
-			resumeUploadedTracking: undefined,
-		})
-	}
-
-	return json(
-		{
-			userId,
-			subscription,
-			savedData,
-			subscribe: subscribe === 'true',
-			downloadPDFRequested: downloadPDFRequested === 'true',
-			jobs,
-			gettingStartedProgress,
-			resumes,
-			resumeUploadedTracking,
-		},
-		{ headers },
-	)
+	return json({
+		userId,
+		subscription,
+		savedData,
+		subscribe: subscribe === 'true',
+		downloadPDFRequested: downloadPDFRequested === 'true',
+		jobs,
+		gettingStartedProgress,
+		resumes,
+	})
 }
 
 export const DraggingContext = createContext<{
@@ -296,7 +276,6 @@ export default function ResumeBuilder() {
 		jobs,
 		gettingStartedProgress,
 		resumes,
-		resumeUploadedTracking,
 	} = useLoaderData<typeof loader>()
 
 	const [formData, setFormData] = useState(savedData)
@@ -742,16 +721,6 @@ export default function ResumeBuilder() {
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [downloadPDFRequested, subscribe])
-
-	// Track resume_uploaded event
-	useEffect(() => {
-		if (resumeUploadedTracking) {
-			trackEvent('resume_uploaded', {
-				user_id: resumeUploadedTracking.user_id,
-				plan_type: resumeUploadedTracking.plan_type,
-			})
-		}
-	}, [resumeUploadedTracking])
 
 	const addBulletPoint = (
 		experienceId: string,
@@ -1207,7 +1176,7 @@ export default function ResumeBuilder() {
 			debouncedSave(newFormData)
 
 			// Track job selection
-			trackLegacyEvent('job_selected', {
+			trackEvent('job_selected', {
 				jobId: job?.id,
 				hasJobDescription: !!(job?.content && job.content.trim().length > 0),
 				userId,
@@ -2763,7 +2732,7 @@ export default function ResumeBuilder() {
 					onKeepChanges={() => {
 						setShowDiffModal(false)
 						setPreTailoredResume(null)
-						trackLegacyEvent('post_tailor_action', {
+						trackEvent('post_tailor_action', {
 							action: 'keep',
 							userId,
 							category: 'Resume Tailoring',
@@ -2776,7 +2745,7 @@ export default function ResumeBuilder() {
 						}
 						setShowDiffModal(false)
 						setPreTailoredResume(null)
-						trackLegacyEvent('post_tailor_action', {
+						trackEvent('post_tailor_action', {
 							action: 'revert',
 							userId,
 							category: 'Resume Tailoring',

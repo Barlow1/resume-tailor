@@ -3,7 +3,6 @@ import {
 	createBuilderResume,
 	type ResumeData,
 	updateBuilderResume,
-	getBuilderResume,
 } from '~/utils/builder-resume.server.ts'
 import { resumeCookie } from '~/utils/resume-cookie.server.ts'
 import { getUserId } from '~/utils/auth.server.ts'
@@ -41,23 +40,9 @@ export async function action({ request }: ActionFunctionArgs) {
 	const { resumeId } = (await resumeCookie.parse(cookieHeader)) || {}
 
 	// Create or update resume in database
-	// Check if resume exists before trying to update (defensive against stale cookies)
-	let resume
-	if (resumeId) {
-		const existingResume = await getBuilderResume(resumeId)
-
-		if (existingResume) {
-			// Resume exists, update it
-			resume = await updateBuilderResume(userId, resumeId, resumeData)
-		} else {
-			// Resume doesn't exist (stale cookie), create new one instead
-			console.log(`Resume ${resumeId} not found, creating new one`)
-			resume = await createBuilderResume(userId, resumeData)
-		}
-	} else {
-		// No resumeId in cookie, create new resume
-		resume = await createBuilderResume(userId, resumeData)
-	}
+	const resume = resumeId
+		? await updateBuilderResume(userId, resumeId, resumeData)
+		: await createBuilderResume(userId, resumeData)
 
 	// Store minimal data in cookie
 	const cookieData = {

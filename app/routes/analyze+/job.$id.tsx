@@ -1,9 +1,7 @@
 import * as React from 'react'
-import { useLoaderData, useNavigate, Link, useRouteLoaderData } from '@remix-run/react'
+import { useLoaderData, useNavigate, Link } from '@remix-run/react'
 import { json, type LoaderFunctionArgs } from '@remix-run/node'
 import { SubscribeModal } from '~/components/subscribe-modal.tsx'
-import { trackEvent } from '~/utils/analytics.ts'
-import type { loader as rootLoader } from '~/root.tsx'
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
 	const id = params.id!
@@ -20,8 +18,6 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 export default function JobPage() {
 	const a = useLoaderData<any>()
 	const nav = useNavigate()
-	const rootData = useRouteLoaderData<typeof rootLoader>('root')
-	const userId = rootData?.user?.id
 	const [title, setTitle] = React.useState(a.title || '')
 	const [company, setCompany] = React.useState(a.company || '')
 	const [jdText, setJdText] = React.useState(a.jdText || '')
@@ -57,15 +53,6 @@ export default function JobPage() {
 				return
 			}
 			if (checkRes.status === 402) {
-				// Track paywall hit
-				if (userId) {
-					trackEvent('paywall_hit', {
-						user_id: userId,
-						plan_type: 'free',
-						actions_remaining: 0,
-						blocked_feature: 'analyzer',
-					})
-				}
 				setShowSubscribe(true)
 				setAnalyzing(false)
 				return
