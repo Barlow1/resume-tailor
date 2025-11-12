@@ -228,6 +228,18 @@ model Subscription {
   name                 String
 }
 
+model ConversionEvent {
+  id             String   @id @default(cuid())
+  userId         String
+  subscriptionId String
+  planTier       String
+  priceUsd       Float
+  tracked        Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  @@index([userId, tracked])
+}
+
 model BuilderResume {
   id              String                  @id @default(cuid())
   createdAt       DateTime                @default(now())

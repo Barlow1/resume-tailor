@@ -162,6 +162,7 @@ export async function loader({ request }: DataFunctionArgs) {
 	let firstJob = null
 	let gettingStartedProgress = null
 	let recentPurchase = null
+	let conversionEvent = null
 	if (userId) {
 		;[firstJob, gettingStartedProgress] = await Promise.all([
 			prisma.job.findFirst({ where: { ownerId: userId } }),
@@ -201,6 +202,26 @@ export async function loader({ request }: DataFunctionArgs) {
 				}
 			}
 		}
+
+		// Check for untracked conversion events (actual payments after trial)
+		const untrackedConversion = await prisma.conversionEvent.findFirst({
+			where: {
+				userId: userId,
+				tracked: false,
+			},
+			orderBy: {
+				createdAt: 'asc',
+			},
+		})
+
+		if (untrackedConversion) {
+			conversionEvent = {
+				id: untrackedConversion.id,
+				user_id: untrackedConversion.userId,
+				plan_tier: untrackedConversion.planTier,
+				price_usd: untrackedConversion.priceUsd,
+			}
+		}
 	}
 
 	return json(
@@ -219,6 +240,7 @@ export async function loader({ request }: DataFunctionArgs) {
 			firstJob,
 			gettingStartedProgress,
 			recentPurchase,
+			conversionEvent,
 		},
 		{
 			headers: combineHeaders(
@@ -349,15 +371,15 @@ function App() {
 		}
 	}, [])
 
-	// Track purchase_completed event for recent subscriptions
+	// Track subscription_started event for trial signups
 	useEffect(() => {
 		if (data.recentPurchase) {
 			const sessionId = new URLSearchParams(window.location.search).get('session_id')
 
 			// Check if we've already tracked this session_id
-			const trackedKey = `tracked_purchase_${sessionId}`
+			const trackedKey = `tracked_subscription_${sessionId}`
 			if (sessionId && !sessionStorage.getItem(trackedKey)) {
-				trackEvent('purchase_completed', {
+				trackEvent('subscription_started', {
 					user_id: data.recentPurchase.user_id,
 					plan_tier: data.recentPurchase.plan_tier,
 					price_usd: data.recentPurchase.price_usd,
@@ -368,6 +390,38 @@ function App() {
 			}
 		}
 	}, [data.recentPurchase])
+
+	// Track purchase_completed event for actual payments after trial
+	useEffect(() => {
+		if (data.conversionEvent) {
+			const trackedKey = `tracked_conversion_${data.conversionEvent.id}`
+
+			// Check if we've already tracked this conversion event
+			if (!sessionStorage.getItem(trackedKey)) {
+				trackEvent('purchase_completed', {
+					user_id: data.conversionEvent.user_id,
+					plan_tier: data.conversionEvent.plan_tier,
+					price_usd: data.conversionEvent.price_usd,
+				})
+
+				// Mark as tracked in sessionStorage to prevent duplicates on refresh
+				sessionStorage.setItem(trackedKey, 'true')
+
+				// Mark as tracked in database
+				fetch('/resources/conversion/mark-tracked', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({
+						conversionEventId: data.conversionEvent.id,
+					}),
+				}).catch(error => {
+					console.error('Failed to mark conversion event as tracked:', error)
+				})
+			}
+		}
+	}, [data.conversionEvent])
 
 	const [sidebarOpen, setSidebarOpen] = useState(false)
 	const [isCollapsed, setIsCollapsed] = useState(false)

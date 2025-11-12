@@ -5,6 +5,7 @@ import {
 	activateSubscription,
 	deactivateSubscription,
 } from '~/utils/subscription.server.ts'
+import { PrismaClient } from '@prisma/client'
 
 interface StripeEvent {
 	type: string
@@ -27,6 +28,11 @@ export async function action(args: DataFunctionArgs) {
 		case 'customer.subscription.deleted': {
 			const deletedSubscription: Stripe.Subscription = event.data.object as  Stripe.Subscription;
 			await handleCanceledSubscription(deletedSubscription)
+			break;
+		}
+		case 'invoice.payment_succeeded': {
+			const invoice: Stripe.Invoice = event.data.object as Stripe.Invoice;
+			await handleInvoicePaymentSucceeded(invoice)
 			break;
 		}
 		default:
@@ -58,4 +64,63 @@ async function handleCanceledSubscription(deletedSubscription: Stripe.Subscripti
 		'id must be present on the subscription deleted webhook',
 	)
 	await deactivateSubscription(deletedSubscription.id)
+}
+
+async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
+	// Only track subscription_cycle invoices (actual charges after trial)
+	// Skip subscription_create which is the initial $0 invoice
+	if (invoice.billing_reason !== 'subscription_cycle') {
+		console.log(`Skipping invoice with billing_reason: ${invoice.billing_reason}`)
+		return
+	}
+
+	invariant(
+		typeof invoice.subscription === 'string',
+		'subscription must be present on invoice.payment_succeeded webhook',
+	)
+
+	const prisma = new PrismaClient()
+	try {
+		await prisma.$connect()
+
+		// Find the subscription by Stripe subscription ID
+		const subscription = await prisma.subscription.findUnique({
+			where: {
+				stripeSubscriptionId: invoice.subscription,
+			},
+			select: {
+				id: true,
+				ownerId: true,
+				stripePriceId: true,
+			},
+		})
+
+		if (!subscription || !subscription.ownerId) {
+			console.error(`Subscription not found for invoice: ${invoice.id}`)
+			return
+		}
+
+		// Determine plan tier and price from stripePriceId
+		const isWeekly = subscription.stripePriceId === process.env.STRIPE_PRICE_ID_WEEKLY
+		const planTier = isWeekly ? 'weekly' : 'monthly'
+		const priceUsd = isWeekly ? 4.99 : 15.0
+
+		// Create conversion event (tracked: false by default)
+		await prisma.conversionEvent.create({
+			data: {
+				userId: subscription.ownerId,
+				subscriptionId: subscription.id,
+				planTier,
+				priceUsd,
+				tracked: false,
+			},
+		})
+
+		console.log(`Created conversion event for user ${subscription.ownerId}`)
+	} catch (e) {
+		console.error('Error handling invoice.payment_succeeded', e)
+		throw e
+	} finally {
+		await prisma.$disconnect()
+	}
 }
