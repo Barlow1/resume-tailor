@@ -43,7 +43,7 @@ async function readAllPosts(): Promise<BlogCard[]> {
   const dirents = await fs.readdir(dir, { withFileTypes: true });
 
   const mdxFiles = dirents
-    .filter((d) => d.isFile() && d.name.endsWith(".mdx") && !d.name.startsWith("_") && !d.name.startsWith("$"))
+    .filter((d) => d.isFile() && d.name.endsWith(".mdx") && (d.name.startsWith("_blog.") || (!d.name.startsWith("_") && !d.name.startsWith("$"))))
     .map((d) => d.name);
 
   const posts: BlogCard[] = [];
@@ -53,7 +53,7 @@ async function readAllPosts(): Promise<BlogCard[]> {
       const raw = await fs.readFile(path.join(dir, file), "utf8");
       const { data } = matter(raw) as { data: any };
 
-      const fileSlug = file.replace(/\.mdx$/i, "");
+      const fileSlug = file.replace(/\.mdx$/i, "").replace(/^_blog\./, "");
       const resolvedSlug = data?.slug ? safeSlug(String(data.slug)) : safeSlug(fileSlug);
 
       posts.push({
@@ -260,7 +260,7 @@ export default function BlogIndex() {
 
       {/* Grid of posts */}
       <section className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pb-10">
-        <ul className="grid gap-8 md:grid-cols-2">
+        <ul className="list-none grid gap-8 md:grid-cols-2">
           {posts.map((post: any) => {
             const mins = getReadingMinutes(post);
 
