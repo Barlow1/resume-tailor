@@ -31,6 +31,16 @@ export async function action({ params, request }: ActionFunctionArgs) {
   const existing = await prisma.analysis.findUnique({ where: { id } })
   if (!existing) return json({ error: 'Not found' }, { status: 404 })
 
+  type Body = {
+    title?: string
+    company?: string
+    jdText?: string
+    resumeTxt?: string
+    dryRun?: boolean
+    feedback?: any
+  }
+  const body = (await request.json().catch(() => ({}))) as Body
+
   // Check subscription (Stripe) first
   const isPro = await prisma.subscription.findFirst({
     where: { ownerId: userId, active: true },
@@ -38,24 +48,28 @@ export async function action({ params, request }: ActionFunctionArgs) {
   }).then(Boolean)
 
   // If not Pro, enforce a browser-based free limit (no DB changes required)
-  if (!isPro && FREE_ANALYSIS_LIMIT >= 0) {
-    const cookieKey = `rt_free_analysis_used_${userId}` // per-user cookie counter
-    const current = getCookieCount(request, cookieKey)
-    if (current >= FREE_ANALYSIS_LIMIT) {
-      return json({ upgradeRequired: true }, { status: 402 })
-    }
-  }
+  const cookieKey = `rt_free_analysis_used_${userId}` // per-user cookie counter
+  const currentUsage = !isPro && FREE_ANALYSIS_LIMIT >= 0
+    ? getCookieCount(request, cookieKey)
+    : 0
 
-  type Body = { title?: string; company?: string; jdText?: string; resumeTxt?: string }
-  const body = (await request.json().catch(() => ({}))) as Body
+  if (!isPro && FREE_ANALYSIS_LIMIT >= 0 && currentUsage >= FREE_ANALYSIS_LIMIT) {
+    return json({ upgradeRequired: true }, { status: 402 })
+  }
 
   const title = body.title ?? existing.title
   const company = body.company ?? existing.company
   const jdText = body.jdText ?? existing.jdText
   const resumeTxt = body.resumeTxt ?? existing.resumeTxt
 
-  // Run the AI
-  const feedback = await getAiFeedback(jdText, resumeTxt, title, company)
+  // If dryRun flag is set, just check permissions and return
+  if (body.dryRun) {
+    return json({ ok: true })
+  }
+
+  // If feedback is provided (from streaming), use it directly
+  // Otherwise run the AI
+  const feedback = body.feedback ?? await getAiFeedback(jdText, resumeTxt, title, company)
 
   const updated = await prisma.analysis.update({
     where: { id },
@@ -78,18 +92,24 @@ export async function action({ params, request }: ActionFunctionArgs) {
     },
   })
 
-  // If we’re counting free uses via cookie, bump it now (only when not Pro)
+  // If we're counting free uses via cookie, bump it now (only when not Pro)
   const headers: HeadersInit = {}
   if (!isPro && FREE_ANALYSIS_LIMIT >= 0) {
-    const cookieKey = `rt_free_analysis_used_${userId}`
-    const current = getCookieCount(request, cookieKey)
-    headers['Set-Cookie'] = setCookieCount(current + 1, cookieKey)
+    headers['Set-Cookie'] = setCookieCount(currentUsage + 1, cookieKey)
   }
+
+  // Add tracking data for GA4
+  const planType = isPro ? 'pro' : 'free'
 
   return json(
     {
       ...updated,
       feedback: updated.feedback ? JSON.parse(updated.feedback) : null,
+      trackingData: {
+        user_id: userId,
+        plan_type: planType,
+        match_score: updated.fitPct || 0,
+      },
     },
     { headers },
   )

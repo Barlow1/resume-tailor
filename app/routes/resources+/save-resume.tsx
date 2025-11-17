@@ -3,10 +3,10 @@ import {
 	createBuilderResume,
 	type ResumeData,
 	updateBuilderResume,
+	getBuilderResume,
 } from '~/utils/builder-resume.server.ts'
 import { resumeCookie } from '~/utils/resume-cookie.server.ts'
 import { getUserId } from '~/utils/auth.server.ts'
-import { prisma } from '~/utils/db.server.ts'
 
 export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData()
@@ -41,25 +41,22 @@ export async function action({ request }: ActionFunctionArgs) {
 	const { resumeId } = (await resumeCookie.parse(cookieHeader)) || {}
 
 	// Create or update resume in database
-	const resume = resumeId
-		? await updateBuilderResume(userId, resumeId, resumeData)
-		: await createBuilderResume(userId, resumeData)
+	// Check if resume exists before trying to update (defensive against stale cookies)
+	let resume
+	if (resumeId) {
+		const existingResume = await getBuilderResume(resumeId)
 
-	// Increment download count
-
-	if (userId) {
-	await prisma.gettingStartedProgress.upsert({
-		where: { ownerId: userId },
-		update: { downloadCount: { increment: 1 } },
-		create: { ownerId: userId, downloadCount: 1,
-			hasSavedJob: false,
-			hasSavedResume: false,
-			hasTailoredResume: false,
-			hasGeneratedResume: false,
-			tailorCount: 0,
-			generateCount: 0,
-			},
-		})	
+		if (existingResume) {
+			// Resume exists, update it
+			resume = await updateBuilderResume(userId, resumeId, resumeData)
+		} else {
+			// Resume doesn't exist (stale cookie), create new one instead
+			console.log(`Resume ${resumeId} not found, creating new one`)
+			resume = await createBuilderResume(userId, resumeData)
+		}
+	} else {
+		// No resumeId in cookie, create new resume
+		resume = await createBuilderResume(userId, resumeData)
 	}
 
 	// Store minimal data in cookie

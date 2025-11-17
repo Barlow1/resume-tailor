@@ -48,8 +48,8 @@ import { useNonce } from './utils/nonce-provider.ts'
 import { makeTimings, time } from './utils/timing.server.ts'
 import { useToast } from './utils/useToast.tsx'
 import { useOptionalUser, useUser } from './utils/user.ts'
+import { trackEvent } from './utils/analytics.ts'
 import rdtStylesheetUrl from 'remix-development-tools/stylesheet.css'
-import * as gtag from './utils/gtags.client.ts'
 import clsx from 'clsx'
 import LogRocket from 'logrocket'
 import {
@@ -161,6 +161,8 @@ export async function loader({ request }: DataFunctionArgs) {
 
 	let firstJob = null
 	let gettingStartedProgress = null
+	let recentPurchase = null
+	let conversionEvent = null
 	if (userId) {
 		;[firstJob, gettingStartedProgress] = await Promise.all([
 			prisma.job.findFirst({ where: { ownerId: userId } }),
@@ -170,6 +172,56 @@ export async function loader({ request }: DataFunctionArgs) {
 				},
 			}),
 		])
+
+		// Check if coming from Stripe checkout (via query param)
+		const url = new URL(request.url)
+		const fromStripe = url.searchParams.has('session_id')
+
+		if (fromStripe) {
+			const subscription = await prisma.subscription.findFirst({
+				where: {
+					ownerId: userId,
+					active: true,
+				},
+				select: {
+					stripePriceId: true,
+				},
+			})
+
+			if (subscription) {
+				// Determine plan tier from stripePriceId
+				const isWeekly =
+					subscription.stripePriceId === process.env.STRIPE_PRICE_ID_WEEKLY
+				const planTier = isWeekly ? 'weekly' : 'monthly'
+				const priceUsd = isWeekly ? 4.99 : 15.0
+
+				recentPurchase = {
+					user_id: userId,
+					plan_tier: planTier,
+					price_usd: priceUsd,
+				}
+			}
+		}
+
+		// Check for untracked conversion events (actual payments after trial)
+		const untrackedConversion = await prisma.conversionEvent.findFirst({
+			where: {
+				userId: userId,
+				tracked: false,
+			},
+			orderBy: {
+				createdAt: 'asc',
+			},
+		})
+
+		if (untrackedConversion) {
+			conversionEvent = {
+				id: untrackedConversion.id,
+				user_id: untrackedConversion.userId,
+				plan_tier: untrackedConversion.planTier,
+				price_usd: untrackedConversion.priceUsd,
+			}
+		}
 	}
 
 	return json(
@@ -187,6 +239,8 @@ export async function loader({ request }: DataFunctionArgs) {
 			flash,
 			firstJob,
 			gettingStartedProgress,
+			recentPurchase,
+			conversionEvent,
 		},
 		{
 			headers: combineHeaders(
@@ -215,45 +269,39 @@ function Document({
 	theme?: 'dark' | 'light'
 	env?: Record<string, string>
 }) {
-	const location = useLocation()
-	const gaTrackingId = 'G-8JBRTFQ8PR'
-	const adsTrackingId = 'AW-16893834380'
-	useEffect(() => {
-		if (gaTrackingId?.length && process.env.NODE_ENV === 'production') {
-			gtag.pageview(location.pathname, gaTrackingId)
-		}
-	}, [location])
 	return (
 		<html lang="en" className={`${theme} h-full overflow-x-hidden`}>
 			<head>
-				<ClientHintCheck nonce={nonce} />
+				{/* Google Tag Manager */}
 				<script
 					nonce={nonce}
-					async
-					src={`https://www.googletagmanager.com/gtag/js?id=${gaTrackingId}`}
-				></script>
-				<script
-					nonce={nonce}
-					async
-					id="gtag-init"
 					dangerouslySetInnerHTML={{
-						__html: `
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', '${gaTrackingId}', {
-                  page_path: window.location.pathname,
-                });
-				gtag('config', '${adsTrackingId}');
-              `,
+						__html: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-PSC247R2');`,
 					}}
 				/>
+				{/* End Google Tag Manager */}
+				<ClientHintCheck nonce={nonce} />
 				<Meta />
 				<meta charSet="utf-8" />
 				<meta name="viewport" content="width=device-width,initial-scale=1" />
 				<Links />
 			</head>
 			<body className="bg-background text-foreground">
+				{/* Google Tag Manager (noscript) */}
+				<noscript>
+					<iframe
+						src="https://www.googletagmanager.com/ns.html?id=GTM-PSC247R2"
+						height="0"
+						width="0"
+						style={{ display: 'none', visibility: 'hidden' }}
+						title='Google Tag Manager'
+					></iframe>
+				</noscript>
+				{/* End Google Tag Manager (noscript) */}
 				{children}
 				<script
 					nonce={nonce}
@@ -323,6 +371,58 @@ function App() {
 			Crisp.configure('d2a311b1-5815-4ced-8d94-0376198c598c')
 		}
 	}, [])
+
+	// Track subscription_started event for trial signups
+	useEffect(() => {
+		if (data.recentPurchase) {
+			const sessionId = new URLSearchParams(window.location.search).get('session_id')
+
+			// Check if we've already tracked this session_id
+			const trackedKey = `tracked_subscription_${sessionId}`
+			if (sessionId && !sessionStorage.getItem(trackedKey)) {
+				trackEvent('subscription_started', {
+					user_id: data.recentPurchase.user_id,
+					plan_tier: data.recentPurchase.plan_tier,
+					price_usd: data.recentPurchase.price_usd,
+				})
+
+				// Mark as tracked to prevent duplicates on refresh
+				sessionStorage.setItem(trackedKey, 'true')
+			}
+		}
+	}, [data.recentPurchase])
+
+	// Track purchase_completed event for actual payments after trial
+	useEffect(() => {
+		if (data.conversionEvent) {
+			const trackedKey = `tracked_conversion_${data.conversionEvent.id}`
+
+			// Check if we've already tracked this conversion event
+			if (!sessionStorage.getItem(trackedKey)) {
+				trackEvent('purchase_completed', {
+					user_id: data.conversionEvent.user_id,
+					plan_tier: data.conversionEvent.plan_tier,
+					price_usd: data.conversionEvent.price_usd,
+				})
+
+				// Mark as tracked in sessionStorage to prevent duplicates on refresh
+				sessionStorage.setItem(trackedKey, 'true')
+
+				// Mark as tracked in database
+				fetch('/resources/conversion/mark-tracked', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({
+						conversionEventId: data.conversionEvent.id,
+					}),
+				}).catch(error => {
+					console.error('Failed to mark conversion event as tracked:', error)
+				})
+			}
+		}
+	}, [data.conversionEvent])
 
 	const [sidebarOpen, setSidebarOpen] = useState(false)
 	const [isCollapsed, setIsCollapsed] = useState(false)

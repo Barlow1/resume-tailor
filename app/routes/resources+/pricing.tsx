@@ -1,7 +1,7 @@
 import { parse } from '@conform-to/zod'
 import { CheckIcon } from '@heroicons/react/20/solid'
 import { json } from '@remix-run/node'
-import { Form } from '@remix-run/react'
+import { Form, useRouteLoaderData } from '@remix-run/react'
 import { type ActionFunctionArgs, redirect } from '@remix-run/router'
 import { z } from 'zod'
 import { Button } from '~/components/ui/button.tsx'
@@ -9,6 +9,8 @@ import { getUserId, requireStripeSubscription } from '~/utils/auth.server.ts'
 import { useState } from 'react'
 import { Radio, RadioGroup } from '@headlessui/react'
 import { cn } from '~/utils/misc.ts'
+import { trackEvent } from '~/utils/analytics.ts'
+import type { loader as rootLoader } from '~/root.tsx'
 
 const frequencies = [
 	{ value: 'weekly' as const, label: 'Weekly', priceSuffix: '/week' },
@@ -37,8 +39,8 @@ const tiers = [
 		id: 'tier-pro',
 		href: '#',
 		price: {
-			monthly: { initial: '3 DAY FREE TRIAL', recurring: '$7.99' },
-			weekly: { initial: '3 DAY FREE TRIAL', recurring: '$2.99' },
+			monthly: { initial: '3 DAY FREE TRIAL', recurring: '$15' },
+			weekly: { initial: '3 DAY FREE TRIAL', recurring: '$4.99' },
 		},
 		description:
 			"Tailor unlimited resumes to all jobs you're applying to and download them in an ATS optimized PDF",
@@ -99,6 +101,8 @@ export function Pricing({
 	redirectTo?: string | undefined
 }) {
 	const [frequency, setFrequency] = useState(frequencies[0])
+	const rootData = useRouteLoaderData<typeof rootLoader>('root')
+	const userId = rootData?.user?.id
 
 	return (
 		<div className="mx-auto max-w-7xl">
@@ -191,6 +195,15 @@ export function Pricing({
 									/>
 									<Button
 										type="submit"
+										onClick={() => {
+											// Track free_trial_started event
+											if (userId) {
+												trackEvent('free_trial_started', {
+													user_id: userId,
+													plan_tier: frequency.value,
+												})
+											}
+										}}
 										className={cn(
 											tier.mostPopular
 												? 'bg-brand-800 text-primary-foreground hover:bg-brand-500'

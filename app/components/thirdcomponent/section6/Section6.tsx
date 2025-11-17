@@ -4,7 +4,7 @@ import svg from '../../thirdcomponent/assets/image 41.svg'
 const testimonial = {
 	name: 'Christian Barlow',
 	role: 'Software Engineer',
-	text: `"This might be the best ai resume builder I've used. Most cost $20-30 a month... For $7.99 I sent 20 resumes and got 3 interviews. Game-changer."`,
+	text: `"This might be the best ai resume builder I've used. Most cost $20-30 a month... For $15/mo I sent 20 resumes and got 3 interviews. Game-changer."`,
 	image: customer,
 }
 

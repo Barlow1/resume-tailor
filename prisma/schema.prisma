@@ -118,13 +118,15 @@ model Session {
 }
 
 model Job {
-  id        String   @id @unique @default(cuid())
-  title     String
-  content   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                String   @id @unique @default(cuid())
+  title             String
+  content           String
+  extractedKeywords String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   builderResumes BuilderResume[]
+  scores         ResumeScore[]
   owner          User?           @relation(fields: [ownerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   ownerId        String?
 }
@@ -226,6 +228,18 @@ model Subscription {
   name                 String
 }
 
+model ConversionEvent {
+  id             String   @id @default(cuid())
+  userId         String
+  subscriptionId String
+  planTier       String
+  priceUsd       Float
+  tracked        Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  @@index([userId, tracked])
+}
+
 model BuilderResume {
   id              String                  @id @default(cuid())
   createdAt       DateTime                @default(now())
@@ -251,6 +265,7 @@ model BuilderResume {
   skills          BuilderSkill[]
   hobbies         BuilderHobby[]
   headers         BuilderHeaders?
+  scores          ResumeScore[]
 
   @@index([userId])
 }
@@ -340,9 +355,30 @@ model Analysis {
   company    String   @default("")
   jdText     String   @default("")
   resumeTxt  String
+  resumeData String?
   fitPct     Int?
   feedback   String?
   peopleJson String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+}
+
+model ResumeScore {
+  id               String        @id @default(cuid())
+  resumeId         String
+  jobId            String?
+  overallScore     Int           @default(0)
+  keywordScore     Int           @default(0)
+  metricsScore     Int           @default(0)
+  actionVerbsScore Int           @default(0)
+  lengthScore      Int           @default(0)
+  formattingScore  Int           @default(0)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  resume           BuilderResume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  job              Job?          @relation(fields: [jobId], references: [id], onDelete: SetNull)
+
+  @@unique([resumeId, jobId])
+  @@index([resumeId])
+  @@index([createdAt])
 }

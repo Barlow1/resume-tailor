@@ -23,6 +23,7 @@ import {
 	PlusIcon,
 	ArrowDownTrayIcon,
 	ArrowUturnLeftIcon,
+	ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline'
 import { SubscribeModal } from '~/components/subscribe-modal.tsx'
 import { getStripeSubscription, getUserId } from '~/utils/auth.server.ts'
@@ -91,7 +92,18 @@ import {
 } from '~/components/ui/tooltip.tsx'
 import { FontSelector } from '~/components/font-selector.tsx'
 import { LayoutSelector } from '~/components/layout-selector.tsx'
-
+import { ResumeScoreCard } from '~/components/resume-score-card.tsx'
+import { ImprovementChecklist } from '~/components/improvement-checklist.tsx'
+import { useResumeScore } from '~/hooks/use-resume-score.ts'
+import { TailorDiffModal } from '~/components/tailor-diff-modal.tsx'
+import { TailorFlowStepper } from '~/components/tailor-flow-stepper.tsx'
+import {
+	createDiffSummary,
+	extractJobKeywords,
+	type DiffSummary,
+} from '~/utils/tailor-diff.ts'
+import { trackEvent as trackLegacyEvent } from '~/utils/tracking.client.ts'
+import { trackEvent } from '~/utils/analytics.ts'
 const { ChromePicker } = reactColor
 
 function base64ToUint8Array(base64: string): Uint8Array {
@@ -171,8 +183,12 @@ const getDefaultFormData = (): ResumeData => {
 export async function loader({ request }: LoaderFunctionArgs) {
 	const userId = await getUserId(request)
 	const cookieHeader = request.headers.get('Cookie')
-	const { resumeId, subscribe, downloadPDFRequested } =
-		(await resumeCookie.parse(cookieHeader)) || {}
+	const {
+		resumeId,
+		subscribe,
+		downloadPDFRequested,
+		resumeUploadedTracking,
+	} = (await resumeCookie.parse(cookieHeader)) || {}
 
 	let savedData = getDefaultFormData()
 
@@ -233,16 +249,31 @@ export async function loader({ request }: LoaderFunctionArgs) {
 			userId ? getUserBuilderResumes(userId) : ([] as ResumeData[]),
 		])
 
-	return json({
-		userId,
-		subscription,
-		savedData,
-		subscribe: subscribe === 'true',
-		downloadPDFRequested: downloadPDFRequested === 'true',
-		jobs,
-		gettingStartedProgress,
-		resumes,
-	})
+	// Clear tracking data from cookie after reading
+	const headers: HeadersInit = {}
+	if (resumeUploadedTracking) {
+		headers['Set-Cookie'] = await resumeCookie.serialize({
+			resumeId,
+			subscribe: subscribe === 'true',
+			downloadPDFRequested: downloadPDFRequested === 'true',
+			resumeUploadedTracking: undefined,
+		})
+	}
+
+	return json(
+		{
+			userId,
+			subscription,
+			savedData,
+			subscribe: subscribe === 'true',
+			downloadPDFRequested: downloadPDFRequested === 'true',
+			jobs,
+			gettingStartedProgress,
+			resumes,
+			resumeUploadedTracking,
+		},
+		{ headers },
+	)
 }
 
 export const DraggingContext = createContext<{
@@ -265,16 +296,41 @@ export default function ResumeBuilder() {
 		jobs,
 		gettingStartedProgress,
 		resumes,
+		resumeUploadedTracking,
 	} = useLoaderData<typeof loader>()
 
 	const [formData, setFormData] = useState(savedData)
 	const [showSubscribeModal, setShowSubscribeModal] = useState(false)
 	const [showCreateJob, setShowCreateJob] = useState(false)
 
+	// New state for diff modal
+	const [showDiffModal, setShowDiffModal] = useState(false)
+	const [diffSummary, setDiffSummary] = useState<DiffSummary | null>(null)
+
+	// New state for error handling
+	const [errorState, setErrorState] = useState<{
+		message: string
+		retryable: boolean
+		suggestion?: string
+		errorType: string
+	} | null>(null)
+
 	const fetcher = useFetcher<{ formData: Jsonify<ResumeData> }>()
 	const pdfFetcher = useFetcher<{ fileData: string; fileType: string }>()
 
 	const navigate = useNavigate()
+
+	// Calculate resume score in real-time for gamification
+	const extractedKeywords = formData.job?.extractedKeywords
+		? (JSON.parse(formData.job.extractedKeywords) as string[])
+		: null
+
+	const { scores, previousScore, checklist } = useResumeScore({
+		resumeData: formData,
+		jobDescription: formData.job?.content ?? undefined,
+		extractedKeywords,
+		debounceMs: 500,
+	})
 
 	// Debounced save function - will only fire after 1000ms of no changes
 	const debouncedSave = useDebouncedCallback(async (formData: ResumeData) => {
@@ -649,7 +705,7 @@ export default function ResumeBuilder() {
 		}
 		const { fileData, fileType } = pdfFetcher.data
 		const byteArray = base64ToUint8Array(fileData)
-		const blob = new Blob([byteArray], { type: fileType })
+		const blob = new Blob([byteArray as BlobPart], { type: fileType })
 
 		// create a URL for the blob and trigger the download link
 		const url = window.URL.createObjectURL(blob)
@@ -686,6 +742,16 @@ export default function ResumeBuilder() {
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [downloadPDFRequested, subscribe])
+
+	// Track resume_uploaded event
+	useEffect(() => {
+		if (resumeUploadedTracking) {
+			trackEvent('resume_uploaded', {
+				user_id: resumeUploadedTracking.user_id,
+				plan_type: resumeUploadedTracking.plan_type,
+			})
+		}
+	}, [resumeUploadedTracking])
 
 	const addBulletPoint = (
 		experienceId: string,
@@ -1134,12 +1200,21 @@ export default function ResumeBuilder() {
 			setSelectedJob(job)
 			const newFormData = {
 				...formData,
-				jobId: job.id,
+				jobId: job?.id ?? null,
+				job: job ?? null,
 			}
 			setFormData(newFormData)
 			debouncedSave(newFormData)
+
+			// Track job selection
+			trackLegacyEvent('job_selected', {
+				jobId: job?.id,
+				hasJobDescription: !!(job?.content && job.content.trim().length > 0),
+				userId,
+				category: 'Resume Builder',
+			})
 		},
-		[formData, setFormData, debouncedSave],
+		[formData, setFormData, debouncedSave, userId],
 	)
 
 	const handleCloseCreateJob = useCallback(() => {
@@ -1216,6 +1291,11 @@ export default function ResumeBuilder() {
 		form.append('entireResume', 'true')
 		form.append('resumeData', JSON.stringify(formData))
 
+		// Pass the pre-extracted keywords for better tailoring
+		if (extractedKeywords && extractedKeywords.length > 0) {
+			form.append('extractedKeywords', JSON.stringify(extractedKeywords))
+		}
+
 		await tailorFetcher.submit(form, {
 			method: 'POST',
 			action: '/resources/builder-completions',
@@ -1234,9 +1314,36 @@ export default function ResumeBuilder() {
 
 	useEffect(() => {
 		if (tailorFetcher.data && tailorFetcher.state === 'idle') {
+			// Check for errors first
+			const data = tailorFetcher.data as any
+			if (data.error) {
+				setErrorState({
+					message: data.error,
+					retryable: data.retryable || false,
+					suggestion: data.suggestion,
+					errorType: data.errorType || 'unknown',
+				})
+				return
+			}
+
+			// Success - parse AI response
 			const parsedData = JSON.parse(
 				tailorFetcher.data.choices[0].message.content ?? '{}',
 			) as Jsonify<ResumeData>
+
+			// Create diff summary if we have a pre-tailored resume
+			if (preTailoredResume && formData.job) {
+				const jobKeywords = formData.job.content
+					? extractJobKeywords(formData.job.content)
+					: []
+				const summary = createDiffSummary(
+					preTailoredResume,
+					parsedData as any,
+					jobKeywords,
+				)
+				setDiffSummary(summary)
+				setShowDiffModal(true)
+			}
 
 			setFormData(prevFormData => {
 				const newFormData = {
@@ -1261,7 +1368,14 @@ export default function ResumeBuilder() {
 			})
 			rerenderRef.current = true
 		}
-	}, [tailorFetcher.data, tailorFetcher.state, setFormData, debouncedSave])
+	}, [
+		tailorFetcher.data,
+		tailorFetcher.state,
+		setFormData,
+		debouncedSave,
+		preTailoredResume,
+		formData.job,
+	])
 
 	// Inside ResumeBuilder component, add state for font
 	const [selectedFont, setSelectedFont] = useState(formData.font ?? 'font-sans')
@@ -1352,49 +1466,52 @@ export default function ResumeBuilder() {
 									handleAddJob={() => setShowCreateJob(true)}
 									selectedJob={selectedJob}
 									setSelectedJob={handleJobChange}
+									isActiveStep={(gettingStartedProgress?.downloadCount ?? 0) === 0 && !!(formData.name || formData.role) && !selectedJob}
 								/>
 								{selectedJob ? (
-									<TooltipProvider>
-										<Tooltip>
-											<TooltipTrigger>
-												<StatusButton
-													type="button"
-													onClick={
-														preTailoredResume
-															? handleUndoTailor
-															: handleTailorEntireResume
-													}
-													className="flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-200"
-													status={
-														tailorFetcher.state === 'submitting'
-															? 'pending'
-															: 'idle'
-													}
-												>
+									<div className={(gettingStartedProgress?.downloadCount ?? 0) === 0 && selectedJob && !preTailoredResume && tailorFetcher.state === 'idle' && !tailorFetcher.data ? 'animate-rainbow-border rounded-lg' : ''}>
+										<TooltipProvider>
+											<Tooltip>
+												<TooltipTrigger>
+													<StatusButton
+														type="button"
+														onClick={
+															preTailoredResume
+																? handleUndoTailor
+																: handleTailorEntireResume
+														}
+														className={`flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-200 ${(gettingStartedProgress?.downloadCount ?? 0) === 0 && selectedJob && !preTailoredResume && tailorFetcher.state === 'idle' && !tailorFetcher.data ? 'relative z-[1] m-[2px]' : ''}`}
+														status={
+															tailorFetcher.state === 'submitting'
+																? 'pending'
+																: 'idle'
+														}
+													>
+														{preTailoredResume &&
+														tailorFetcher.state === 'idle' &&
+														tailorFetcher.data ? (
+															<>
+																<ArrowUturnLeftIcon className="h-5 w-5" />
+																Undo Tailor
+															</>
+														) : (
+															<>
+																<RainbowSparklesIcon className="h-5 w-5" />
+																Tailor to Job
+															</>
+														)}
+													</StatusButton>
+												</TooltipTrigger>
+												<TooltipContent>
 													{preTailoredResume &&
 													tailorFetcher.state === 'idle' &&
-													tailorFetcher.data ? (
-														<>
-															<ArrowUturnLeftIcon className="h-5 w-5" />
-															Undo Tailor
-														</>
-													) : (
-														<>
-															<RainbowSparklesIcon className="h-5 w-5" />
-															Tailor to Job
-														</>
-													)}
-												</StatusButton>
-											</TooltipTrigger>
-											<TooltipContent>
-												{preTailoredResume &&
-												tailorFetcher.state === 'idle' &&
-												tailorFetcher.data
-													? 'Undo tailoring and revert to your last saved version'
-													: 'Tailor your entire resume to the selected job description'}
-											</TooltipContent>
-										</Tooltip>
-									</TooltipProvider>
+													tailorFetcher.data
+														? 'Undo tailoring and revert to your last saved version'
+														: 'Tailor your entire resume to the selected job description'}
+												</TooltipContent>
+											</Tooltip>
+										</TooltipProvider>
+									</div>
 								) : null}
 							</div>
 							<div className="flex items-center gap-2">
@@ -1502,30 +1619,89 @@ export default function ResumeBuilder() {
 										<TooltipContent>Create a new resume</TooltipContent>
 									</Tooltip>
 								</TooltipProvider>
-								<TooltipProvider>
-									<Tooltip>
-										<TooltipTrigger>
-											<StatusButton
-												type="button"
-												onClick={handleClickDownloadPDF}
-												className="flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-200"
-												status={
-													pdfFetcher.state === 'submitting'
-														? 'pending'
-														: pdfFetcher.state === 'idle' && pdfFetcher.data
-														? 'success'
-														: 'idle'
-												}
-											>
-												<ArrowDownTrayIcon className="h-4 w-4" />
-											</StatusButton>
-										</TooltipTrigger>
-										<TooltipContent>Download PDF</TooltipContent>
-									</Tooltip>
-								</TooltipProvider>
+								<div className={(gettingStartedProgress?.downloadCount ?? 0) === 0 && tailorFetcher.state === 'idle' && tailorFetcher.data && selectedJob ? 'animate-rainbow-border rounded-lg' : ''}>
+									<TooltipProvider>
+										<Tooltip>
+											<TooltipTrigger>
+												<StatusButton
+													type="button"
+													onClick={handleClickDownloadPDF}
+													className={`flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-200 ${(gettingStartedProgress?.downloadCount ?? 0) === 0 && tailorFetcher.state === 'idle' && tailorFetcher.data && selectedJob ? 'relative z-[1] m-[2px]' : ''}`}
+													status={
+														pdfFetcher.state === 'submitting'
+															? 'pending'
+															: pdfFetcher.state === 'idle' && pdfFetcher.data
+															? 'success'
+															: 'idle'
+													}
+												>
+													<ArrowDownTrayIcon className="h-4 w-4" />
+												</StatusButton>
+											</TooltipTrigger>
+											<TooltipContent>Download PDF</TooltipContent>
+										</Tooltip>
+									</TooltipProvider>
+								</div>
 							</div>
 						</div>
 
+						{/* Error Handling UI */}
+						{errorState && (
+							<div className="mb-4 rounded-r-lg border-l-4 border-red-500 bg-red-50 p-4">
+								<div className="flex items-start">
+									<ExclamationTriangleIcon className="mt-0.5 h-5 w-5 text-red-500" />
+									<div className="ml-3 flex-1">
+										<p className="text-sm text-red-800">{errorState.message}</p>
+										<div className="mt-3 flex gap-2">
+											{errorState.retryable && (
+												<Button
+													onClick={() => {
+														setErrorState(null)
+														handleTailorEntireResume()
+													}}
+													size="sm"
+												>
+													Retry
+												</Button>
+											)}
+											{errorState.suggestion === 'use_bullet_tailoring' && (
+												<Button
+													onClick={() => {
+														setErrorState(null)
+														setShowAIModal(true)
+													}}
+													size="sm"
+													variant="outline"
+												>
+													Try Bullet Tailoring Instead
+												</Button>
+											)}
+											<Button
+												onClick={() => setErrorState(null)}
+												size="sm"
+												variant="ghost"
+											>
+												Dismiss
+											</Button>
+										</div>
+									</div>
+								</div>
+							</div>
+						)}
+
+						{/* Progress Stepper - Show until first download */}
+						{(gettingStartedProgress?.downloadCount ?? 0) === 0 && (
+							<TailorFlowStepper
+								hasResume={!!(formData.name || formData.role)}
+								selectedJob={selectedJob}
+								hasTailored={tailorFetcher.state === 'idle' && !!tailorFetcher.data && !!selectedJob}
+							/>
+						)}
+
+						{/* Main content area with resume editor and gamification sidebar */}
+						<div className="flex gap-6">
+							{/* Left: Resume Editor */}
+							<div className="flex-1">
 						<Form key={`${formData.id}-${rerenderRef.current}`} method="post">
 							{/* Hidden inputs to store the actual form data */}
 							{Object.entries(formData)
@@ -2535,6 +2711,18 @@ export default function ResumeBuilder() {
 								)}
 							</div>
 						</Form>
+							</div>
+
+							{/* Right: Gamification Sidebar */}
+							<div className="w-80 flex-shrink-0 space-y-4 sticky top-4 self-start">
+								<ResumeScoreCard
+									scores={scores}
+									previousScore={previousScore}
+									hasJobDescription={!!(formData.job?.content && formData.job.content.trim().length > 0)}
+								/>
+								<ImprovementChecklist items={checklist} />
+							</div>
+						</div>
 					</div>
 				</div>
 				<DragOverlay dropAnimation={null}>
@@ -2568,6 +2756,36 @@ export default function ResumeBuilder() {
 				userId={userId}
 				subscription={subscription}
 			/>
+			{diffSummary && (
+				<TailorDiffModal
+					isOpen={showDiffModal}
+					onClose={() => setShowDiffModal(false)}
+					onKeepChanges={() => {
+						setShowDiffModal(false)
+						setPreTailoredResume(null)
+						trackLegacyEvent('post_tailor_action', {
+							action: 'keep',
+							userId,
+							category: 'Resume Tailoring',
+						})
+					}}
+					onRevert={() => {
+						if (preTailoredResume) {
+							setFormData(preTailoredResume)
+							debouncedSave(preTailoredResume)
+						}
+						setShowDiffModal(false)
+						setPreTailoredResume(null)
+						trackLegacyEvent('post_tailor_action', {
+							action: 'revert',
+							userId,
+							category: 'Resume Tailoring',
+						})
+					}}
+					diffSummary={diffSummary}
+					scoreImprovement={previousScore ? scores.overall - previousScore : 0}
+				/>
+			)}
 		</DraggingContext.Provider>
 	)
 }
