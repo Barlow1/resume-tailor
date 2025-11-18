@@ -47,39 +47,42 @@ export async function extractKeywordsFromJobDescription(
 					role: 'system',
 					content: `You are a keyword extraction engine for ATS (Applicant Tracking System) optimization.
 
-YOUR JOB: Extract keywords that differentiate qualified candidates from unqualified ones.
+YOUR JOB: Extract ONLY skills and technologies that would actually appear in a resume's experience bullets or skills section.
 
 WHY THIS MATTERS:
 - ATS systems scan resumes for keyword matches against the job description
 - Candidates need these EXACT terms in their resume/skills section to pass screening
-- But not every word in a JD is a "keyword" - many are just noise
+- But not every word in a JD is a "keyword" - many are just requirements or noise
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-EXTRACTION ALGORITHM (4-tier priority system):
+🚨 CRITICAL: DO NOT EXTRACT (these appear in requirements but NOT in resumes):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-TIER 1: HARD REQUIREMENTS (always extract these first)
-- Years of experience: "5+ years", "3-7 years", "10+ years in management"
-- Education: "bachelor's degree", "MBA", "PhD", "high school diploma"
-- Certifications: "PMP", "CPA", "AWS Certified", "Six Sigma Black Belt"
-- Licenses: "driver's license", "RN license", "bar admission"
-- Required skills explicitly stated in requirements/qualifications section
+❌ Education requirements: "bachelor's degree", "computer science degree", "engineering degree", "MBA", "PhD", "high school diploma"
+❌ Years of experience: "4+ years", "5 years of experience", "10+ years in management"
+❌ Broad categories: "engineering", "technology", "software", "business"
+❌ Company benefits or perks: "401k", "health insurance", "remote work"
+❌ Generic soft skills: "communication", "teamwork", "problem solving" (unless VERY specific like "executive presence")
 
-TIER 2: CORE JOB FUNCTIONS (what they actually do day-to-day)
-- Extract 5-8 action-oriented phrases: "budget planning", "patient care", "software development", "sales forecasting"
-- Focus on verb + object combinations that describe the work
-- Skip generic terms that just restate the job title (e.g., don't extract "sales" for a "Sales Manager" role)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ EXTRACTION ALGORITHM (3-tier priority system):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-TIER 3: SPECIALIZED KNOWLEDGE (tools, technologies, domain expertise)
-- Extract 8-12 terms that require specific training or experience
-- Examples: "Python", "Salesforce", "GAAP", "HVAC systems", "EHR software", "forklift operation", "CAD software"
-- Include industry-specific terminology
-- Include specific methodologies, frameworks, or standards
+TIER 1: SPECIFIC TOOLS & PLATFORMS (highest value)
+- Extract 8-15 specific tools, platforms, and software
+- Examples: "JIRA", "Figma", "Salesforce", "AWS", "Python", "SQL", "Tableau", "Excel", "React"
+- Certifications that ARE skills: "PMP", "CPA", "AWS Certified", "Six Sigma Black Belt"
+- Licenses that ARE credentials: "RN license", "bar admission", "PE license"
 
-TIER 4: EMPHASIZED SOFT SKILLS (only if repeatedly mentioned)
-- Extract 2-4 max, and only if mentioned multiple times OR in requirements
-- Examples: "leadership", "client relationships", "negotiation", "team collaboration"
-- Skip generic terms everyone claims: "communication", "problem solving", "team player"
+TIER 2: METHODOLOGIES & DOMAIN EXPERTISE (medium value)
+- Extract 5-10 methodologies, frameworks, and domain areas
+- Examples: "agile", "scrum", "waterfall", "design thinking", "SaaS", "fintech", "healthcare", "machine learning", "API design"
+- Include specific processes: "A/B testing", "user research", "roadmap planning", "budget forecasting"
+
+TIER 3: CONCRETE RESPONSIBILITIES (if very specific)
+- Extract 3-5 specific, action-oriented responsibilities
+- Examples: "roadmap planning", "stakeholder management", "vendor negotiation", "SQL query optimization"
+- Skip vague terms: "manage", "lead", "develop", "collaborate"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 FILTERING RULES (what NOT to extract):
@@ -118,14 +121,14 @@ FORMATTING RULES:
 - Preserve special characters: "C++", "C#", "Node.js", "3+ years"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-OUTPUT QUANTITY (scale based on role complexity):
+OUTPUT QUANTITY (return 15-25 keywords maximum):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-- Technical roles (engineering, data, IT): 20-30 keywords (more tools/frameworks)
-- Skilled trades (electrician, nurse, machinist): 15-20 keywords (certifications + equipment)
-- Business roles (sales, marketing, operations): 15-25 keywords (balanced mix)
-- Executive/leadership roles: 12-18 keywords (experience + domain focus)
-- Entry-level roles: 10-15 keywords (education + basic skills)
+- Focus on QUALITY over quantity
+- Aim for 15-25 highly relevant keywords that would actually appear in a resume
+- Prioritize specific tools, platforms, and methodologies over generic terms
+- If the job is very technical (engineering, data science), lean towards 20-25
+- If the job is non-technical (sales, operations), lean towards 15-20
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 RESPONSE FORMAT:

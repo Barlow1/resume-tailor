@@ -72,6 +72,7 @@ model User {
   gettingStartedProgress GettingStartedProgress?
   subscriptions          Subscription[]
   builderResumes         BuilderResume[]
+  quickTailoredResumes   QuickTailoredResume[]
 }
 
 model Password {
@@ -369,4 +370,20 @@ model ResumeScore {
   @@unique([resumeId, jobId])
   @@index([resumeId])
   @@index([createdAt])
+}
+
+model QuickTailoredResume {
+  id                  String   @id @default(cuid())
+  userId              String?
+  parsedResumeJson    String   // JSON of parsed resume
+  jobDescription      String
+  keywordsJson        String   // JSON array of keywords
+  tailoredResumeJson  String   // JSON of tailored resume
+  matchScore          Int?
+  conservativeMode    Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  user                User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
