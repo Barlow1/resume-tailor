@@ -72,6 +72,13 @@ export interface OpenAIResumeData {
 export async function parseResumeWithOpenAI(
 	file: File,
 ): Promise<OpenAIResumeData> {
+	console.log('🔍 PARSE: Starting resume parse')
+	console.log('🔍 PARSE: File name:', file.name)
+	console.log('🔍 PARSE: File size:', file.size, 'bytes')
+	console.log('🔍 PARSE: File type:', file.type)
+
+	const startTime = Date.now()
+
 	try {
 		// Extract text from PDF
 		const buffer = Buffer.from(await file.arrayBuffer())
@@ -82,7 +89,7 @@ export async function parseResumeWithOpenAI(
 			throw new Error('No text content found in PDF')
 		}
 
-		console.log('Extracted text length:', resumeText.length)
+		console.log('🔍 PARSE: Extracted text length:', resumeText.length)
 
 		// Call OpenAI API
 		const response = await openai.chat.completions.create({
@@ -149,6 +156,10 @@ REMEMBER: Extract EVERY detail. Never summarize or condense bullet points. Prese
 			max_tokens: 16384,
 		})
 
+		const elapsed = Date.now() - startTime
+		console.log(`✅ PARSE: Completed in ${elapsed}ms`)
+		console.log('✅ PARSE: Token usage:', response.usage)
+
 		const content = response.choices[0]?.message?.content
 		if (!content) {
 			throw new Error('No content returned from OpenAI')
@@ -178,10 +189,10 @@ REMEMBER: Extract EVERY detail. Never summarize or condense bullet points. Prese
 		result.education = result.education || []
 		result.skills = result.skills || []
 
-		console.log('Successfully parsed resume for:', result.personal_info.full_name)
-		console.log('Found experiences:', result.experiences.length)
-		console.log('Found education:', result.education.length)
-		console.log('Found skills:', result.skills.length)
+		console.log('✅ PARSE: Extracted name:', result.personal_info?.full_name)
+		console.log('✅ PARSE: Extracted experiences:', result.experiences?.length || 0)
+		console.log('✅ PARSE: Extracted skills:', result.skills?.length || 0)
+		console.log('✅ PARSE: Extracted education:', result.education?.length || 0)
 
 		return result
 	} catch (error: any) {
