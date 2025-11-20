@@ -2,8 +2,10 @@ import { json, type LoaderFunctionArgs } from '@remix-run/node';
 import { useLoaderData, Link } from '@remix-run/react';
 import { prisma } from '~/utils/db.server';
 import { useState } from 'react';
+import { getUserId, getStripeSubscription } from '~/utils/auth.server';
+import { SubscribeModal } from '~/components/subscribe-modal';
 
-export async function loader({ params }: LoaderFunctionArgs) {
+export async function loader({ params, request }: LoaderFunctionArgs) {
   const { id } = params;
 
   if (!id) {
@@ -24,12 +26,25 @@ export async function loader({ params }: LoaderFunctionArgs) {
   // Extract job title from job description if available
   const jobTitle = extractJobTitle(record.jobDescription);
 
+  // Get user subscription and progress data
+  const userId = await getUserId(request);
+  const [subscription, gettingStartedProgress] = userId
+    ? await Promise.all([
+        getStripeSubscription(userId),
+        prisma.gettingStartedProgress.findUnique({
+          where: { ownerId: userId },
+        }),
+      ])
+    : [null, null];
+
   return json({
     id: record.id,
     originalResume,
     tailoredResume,
     jobTitle,
-    jobDescription: record.jobDescription
+    jobDescription: record.jobDescription,
+    subscription,
+    gettingStartedProgress,
   });
 }
 
@@ -40,8 +55,42 @@ function extractJobTitle(jobDescription: string): string {
 }
 
 export default function TailorResults() {
-  const { id, originalResume, tailoredResume, jobTitle } = useLoaderData<typeof loader>();
+  const { id, originalResume, tailoredResume, jobTitle, subscription, gettingStartedProgress } = useLoaderData<typeof loader>();
   const [showFullAnalysis, setShowFullAnalysis] = useState(false);
+  const [showSubscribeModal, setShowSubscribeModal] = useState(false);
+
+  const handleDownloadClick = async (e: React.MouseEvent<HTMLAnchorElement>, format: 'pdf' | 'docx') => {
+    e.preventDefault();
+
+    try {
+      const endpoint = format === 'pdf' ? '/resources/download-pdf' : '/resources/download-docx';
+      const response = await fetch(`${endpoint}?id=${id}`);
+
+      if (response.status === 403) {
+        // Hit download limit - show subscribe modal
+        setShowSubscribeModal(true);
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error('Download failed');
+      }
+
+      // Download successful - trigger file download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = format === 'pdf' ? `Resume.pdf` : `Resume.docx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Download error:', error);
+      alert(`Failed to download ${format.toUpperCase()}. Please try again.`);
+    }
+  };
 
   // Get preview data (first 10 lines worth of content)
   const resumePreview = getResumePreview(originalResume);
@@ -151,12 +200,22 @@ export default function TailorResults() {
 
         {/* Action Buttons */}
         <div className="flex flex-col items-center gap-4">
-          <a
-            href={`/resources/download-pdf?id=${id}`}
-            className="bg-[#7957FE] text-white px-12 py-4 rounded-lg font-medium text-lg hover:bg-[#6847ED] transition-colors"
-          >
-            Download PDF
-          </a>
+          <div className="flex gap-4">
+            <a
+              href={`/resources/download-pdf?id=${id}`}
+              onClick={(e) => handleDownloadClick(e, 'pdf')}
+              className="bg-[#7957FE] text-white px-12 py-4 rounded-lg font-medium text-lg hover:bg-[#6847ED] transition-colors"
+            >
+              Download PDF
+            </a>
+            <a
+              href={`/resources/download-docx?id=${id}`}
+              onClick={(e) => handleDownloadClick(e, 'docx')}
+              className="bg-white text-[#7957FE] border-2 border-[#7957FE] px-12 py-4 rounded-lg font-medium text-lg hover:bg-[#F3F3F8] transition-colors"
+            >
+              Download DOCX
+            </a>
+          </div>
 
           <p className="text-gray-600 text-sm">
             Your tailored resume is ready to send
@@ -170,6 +229,14 @@ export default function TailorResults() {
           </Link>
         </div>
       </main>
+
+      {/* Subscribe Modal */}
+      <SubscribeModal
+        isOpen={showSubscribeModal}
+        onClose={() => setShowSubscribeModal(false)}
+        successUrl="/welcome"
+        cancelUrl={`/tailor/results/${id}`}
+      />
     </div>
   );
 }

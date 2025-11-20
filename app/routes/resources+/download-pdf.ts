@@ -5,6 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import type { OpenAIResumeData } from '~/utils/openai-resume-parser.server';
 import type { TailoredResume } from '~/utils/resume-tailor.server';
+import { getUserId, getStripeSubscription } from '~/utils/auth.server';
 
 // Helper function to format dates for resume display
 function formatResumeDate(isoDate: string | null, precision?: 'day' | 'month' | 'year'): string {
@@ -207,6 +208,27 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		throw new Response('Missing ID', { status: 400 });
 	}
 
+	// Check user subscription and download limit
+	const userId = await getUserId(request);
+
+	if (userId) {
+		const [subscription, gettingStartedProgress] = await Promise.all([
+			getStripeSubscription(userId),
+			db.gettingStartedProgress.findUnique({
+				where: { ownerId: userId },
+			}),
+		]);
+
+		// If no subscription, check download limit (1 free download)
+		if (!subscription) {
+			const quickTailorDownloads = gettingStartedProgress?.quickTailorDownloadCount ?? 0;
+
+			if (quickTailorDownloads >= 1) {
+				throw new Response('Download limit reached. Please subscribe to continue.', { status: 403 });
+			}
+		}
+	}
+
 	const record = await db.tailoredResume.findUnique({
 		where: { id },
 	});
@@ -239,6 +261,27 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		const pdfBuffer = await htmlPdf.generatePdf(file, options);
 
 		console.log('✅ DOWNLOAD PDF: Converted to PDF, size:', pdfBuffer.length, 'bytes');
+
+		// Increment quickTailorDownloadCount after successful generation
+		if (userId) {
+			await db.gettingStartedProgress.upsert({
+				where: { ownerId: userId },
+				update: { quickTailorDownloadCount: { increment: 1 } },
+				create: {
+					ownerId: userId,
+					quickTailorDownloadCount: 1,
+					hasSavedJob: false,
+					hasSavedResume: false,
+					hasTailoredResume: false,
+					hasGeneratedResume: false,
+					tailorCount: 0,
+					generateCount: 0,
+					downloadCount: 0,
+					analysisCount: 0,
+					outreachCount: 0,
+				},
+			});
+		}
 
 		const filename = `${originalResume.personal_info.full_name.replace(/\s+/g, '_')}_Resume.pdf`;
 

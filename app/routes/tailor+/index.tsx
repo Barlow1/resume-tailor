@@ -8,8 +8,15 @@ import { useState } from 'react';
 export async function action({ request }: ActionFunctionArgs) {
   console.log('📤 UPLOAD: Action called');
 
+  // Check auth when user submits the form (clicks Continue)
   const userId = await getUserId(request);
-  console.log('📤 UPLOAD: User ID:', userId || 'anonymous');
+
+  if (!userId) {
+    // Redirect to login with return URL
+    return redirect(`/login?redirectTo=${encodeURIComponent('/tailor')}`);
+  }
+
+  console.log('📤 UPLOAD: User ID:', userId);
 
   const formData = await request.formData();
   const file = formData.get('resume') as File;
