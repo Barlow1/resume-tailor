@@ -7,7 +7,7 @@
  * - We need to extract DIFFERENTIATING terms that signal candidate fit
  *
  * ARCHITECTURE:
- * - Use GPT-4o with structured output (response_format: json_object) for consistency
+ * - Use GPT-4.1 with structured output (response_format: json_object) for consistency
  * - Implement validation layer to ensure extracted keywords actually exist in JD
  * - Temperature=0.1 for deterministic results across same JD inputs
  */
@@ -38,8 +38,6 @@ export async function extractKeywordsFromJobDescription(
 	}
 
 	try {
-		console.log('[Keyword Extraction] Starting OpenAI extraction...')
-
 		const response = await openai.chat.completions.create({
 			model: 'gpt-4.1',
 			messages: [
@@ -149,7 +147,6 @@ CRITICAL: Every keyword must appear verbatim in the job description. Do NOT inve
 
 		const content = response.choices[0]?.message?.content
 		if (!content) {
-			console.error('[Keyword Extraction] No content returned from OpenAI')
 			return []
 		}
 
@@ -157,7 +154,6 @@ CRITICAL: Every keyword must appear verbatim in the job description. Do NOT inve
 		const keywords = parsed.keywords || []
 
 		if (!Array.isArray(keywords)) {
-			console.log('[Keyword Extraction] ⚠️ No keywords array found in response')
 			return []
 		}
 
@@ -165,37 +161,20 @@ CRITICAL: Every keyword must appear verbatim in the job description. Do NOT inve
 		// WHY: Prevents LLM hallucinations that would mislead candidates
 		const jdLower = jobDescription.toLowerCase()
 		const validKeywords: string[] = []
-		const invalidKeywords: string[] = []
 
 		keywords.forEach((kw: any) => {
 			const keyword = String(kw)
 			if (jdLower.includes(keyword.toLowerCase())) {
 				validKeywords.push(keyword)
-			} else {
-				invalidKeywords.push(keyword)
-				console.warn(
-					`[Keyword Extraction] ⚠️ Keyword "${keyword}" not found in JD (filtered out)`,
-				)
 			}
 		})
-
-		if (invalidKeywords.length > 0) {
-			console.log(
-				`[Keyword Extraction] Filtered out ${invalidKeywords.length} invalid keywords`,
-			)
-		}
 
 		// Cap at 30 keywords - beyond this you get diminishing returns
 		const finalKeywords = validKeywords.slice(0, 30)
 
-		console.log(
-			`[Keyword Extraction] ✅ Extracted ${finalKeywords.length} keywords`,
-		)
-
 		return finalKeywords
 
 	} catch (error) {
-		console.error('[Keyword Extraction] ❌ Error extracting keywords:', error)
 		return []
 	}
 }

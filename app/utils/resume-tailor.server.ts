@@ -53,14 +53,6 @@ export async function tailorResume({
 	const startTime = Date.now();
 	const version = promptVersion || ACTIVE_PROMPT.version;
 
-	console.log('🎨 TAILOR: Starting resume tailoring');
-	console.log('🎨 TAILOR: Prompt version:', version);
-	console.log('🎨 TAILOR: Model: gpt-4o-mini');
-	console.log('🎨 TAILOR: Job description length:', jobDescription.length);
-	console.log('🎨 TAILOR: Resume experiences:', resume.experiences?.length || 0);
-	console.log('🎨 TAILOR: Resume name:', resume.personal_info?.full_name);
-	console.log('🎨 TAILOR: Additional context:', additionalContext ? 'Yes' : 'No');
-
 	const openai = new OpenAI({
 		apiKey: process.env.OPENAI_API_KEY,
 	});
@@ -71,9 +63,6 @@ export async function tailorResume({
 		jobDescription,
 		additionalContext,
 	);
-
-	console.log('🎨 TAILOR: System prompt length:', systemPrompt.length);
-	console.log('🎨 TAILOR: User message length:', userMessage.length);
 
 	// Save request to file in debug mode
 	if (
@@ -96,7 +85,7 @@ export async function tailorResume({
 			JSON.stringify(
 				{
 					timestamp: new Date().toISOString(),
-					model: 'gpt-4o-mini',
+					model: 'gpt-4.1',
 					promptVersion: version,
 					jobDescriptionLength: jobDescription.length,
 					resumeExperiences: resume.experiences?.length || 0,
@@ -108,14 +97,12 @@ export async function tailorResume({
 				2,
 			),
 		);
-
-		console.log('🔍 DEBUG: Saved request to', requestFile);
 	}
 
 	try {
 		const response = await openai.chat.completions.create({
-			model: 'gpt-4o-mini',
-			temperature: 0.1,
+			model: 'gpt-4.1',
+			temperature: 0.4,
 			response_format: { type: 'json_object' },
 			messages: [
 				{
@@ -130,14 +117,6 @@ export async function tailorResume({
 		});
 
 		const elapsed = Date.now() - startTime;
-		console.log(`✅ TAILOR: Completed in ${elapsed}ms`);
-		console.log('✅ TAILOR: Prompt tokens:', response.usage?.prompt_tokens);
-		console.log(
-			'✅ TAILOR: Completion tokens:',
-			response.usage?.completion_tokens,
-		);
-		console.log('✅ TAILOR: Total tokens:', response.usage?.total_tokens);
-		console.log('✅ TAILOR: Finish reason:', response.choices[0].finish_reason);
 
 		const content = response.choices[0].message.content;
 		if (!content) {
@@ -161,7 +140,7 @@ export async function tailorResume({
 				JSON.stringify(
 					{
 						timestamp: new Date().toISOString(),
-						model: 'gpt-4o-mini',
+						model: 'gpt-4.1',
 						promptVersion: version,
 						latency: elapsed,
 						usage: response.usage,
@@ -171,92 +150,12 @@ export async function tailorResume({
 					2,
 				),
 			);
-
-			console.log('🔍 DEBUG: Saved response to', responseFile);
 		}
 
 		const parsed = JSON.parse(content) as TailoredResume;
 
-		// Validation and logging
-		console.log(
-			'✅ TAILOR: Enhanced bullets:',
-			parsed.enhanced_bullets?.length || 0,
-		);
-		console.log(
-			'✅ TAILOR: Suggested bullets:',
-			parsed.suggested_bullets?.length || 0,
-		);
-		console.log('✅ TAILOR: Gaps identified:', parsed.gaps?.length || 0);
-		console.log(
-			'✅ TAILOR: Summary enhanced:',
-			parsed.enhanced_summary ? 'Yes' : 'No',
-		);
-
-		// Log confidence distribution
-		if (parsed.suggested_bullets?.length > 0) {
-			const confidenceCounts = parsed.suggested_bullets.reduce(
-				(acc: any, b: any) => {
-					acc[b.confidence] = (acc[b.confidence] || 0) + 1;
-					return acc;
-				},
-				{},
-			);
-			console.log(
-				'✅ TAILOR: Suggestion confidence distribution:',
-				confidenceCounts,
-			);
-
-			// Log sample suggestions
-			console.log(
-				'✅ TAILOR: Sample high confidence suggestion:',
-				parsed.suggested_bullets
-					.find((b: any) => b.confidence === 'high')
-					?.bullet?.substring(0, 80) || 'none',
-			);
-		}
-
-		// Log gap severity distribution
-		if (parsed.gaps?.length > 0) {
-			const severityCounts = parsed.gaps.reduce((acc: any, g: any) => {
-				acc[g.severity] = (acc[g.severity] || 0) + 1;
-				return acc;
-			}, {});
-			console.log('✅ TAILOR: Gap severity distribution:', severityCounts);
-
-			// Log critical gaps
-			const criticalGaps = parsed.gaps.filter(
-				(g: any) => g.severity === 'critical',
-			);
-			if (criticalGaps.length > 0) {
-				console.log('⚠️ TAILOR: Critical gaps found:', criticalGaps.length);
-				criticalGaps.forEach((g: any) => {
-					console.log('⚠️ TAILOR: Critical gap:', g.missing);
-				});
-			}
-		}
-
 		return parsed as TailoredResume;
 	} catch (error) {
-		console.error('❌ TAILOR: Error:', error);
-		console.error(
-			'❌ TAILOR: Stack:',
-			error instanceof Error ? error.stack : 'No stack',
-		);
-
-		if (error instanceof Error) {
-			if (error.message.includes('JSON')) {
-				console.error('❌ TAILOR: Failed to parse JSON response');
-				console.error(
-					'❌ TAILOR: This usually means the AI returned invalid JSON',
-				);
-			}
-			if (error.message.includes('API key')) {
-				console.error(
-					'❌ TAILOR: OpenAI API key issue - check OPENAI_API_KEY in .env',
-				);
-			}
-		}
-
 		throw error;
 	}
 }
@@ -377,9 +276,6 @@ export async function retailorWithContext({
 	additionalContext: string;
 	promptVersion?: string;
 }): Promise<TailoredResume> {
-	console.log('🔄 RETAILOR: Starting re-tailor with additional context');
-	console.log('🔄 RETAILOR: Additional context length:', additionalContext.length);
-
 	return tailorResume({
 		resume: originalResume,
 		jobDescription,

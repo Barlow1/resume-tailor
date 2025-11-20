@@ -230,16 +230,8 @@ export function getPromptVersion(version?: string): string {
 		PROMPT_VERSIONS[v as keyof typeof PROMPT_VERSIONS];
 
 	if (!promptData) {
-		console.warn(
-			`⚠️ PROMPT: Version ${v} not found, using active version`,
-		);
 		return ACTIVE_PROMPT.prompt;
 	}
-
-	console.log(
-		`📝 PROMPT: Using version ${promptData.version} (${promptData.date})`,
-	);
-	console.log(`📝 PROMPT: ${promptData.description}`);
 
 	return promptData.prompt;
 }

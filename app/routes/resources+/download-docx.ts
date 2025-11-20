@@ -240,8 +240,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 	const url = new URL(request.url);
 	const id = url.searchParams.get('id');
 
-	console.log('📄 DOWNLOAD DOCX: Request for', id);
-
 	if (!id) {
 		throw new Response('Missing ID', { status: 400 });
 	}
@@ -278,21 +276,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
 	const originalResume = JSON.parse(record.originalResume) as OpenAIResumeData;
 	const tailored = JSON.parse(record.tailoredResume) as TailoredResume;
 
-	console.log(
-		'📄 DOWNLOAD DOCX: Generating for:',
-		originalResume.personal_info.full_name,
-	);
-
 	try {
 		// Generate DOCX
 		const doc = generateResumeDocx(originalResume, tailored);
 
-		console.log('📄 DOWNLOAD DOCX: Document generated, converting to buffer...');
-
 		// Convert to buffer
 		const buffer = await Packer.toBuffer(doc);
-
-		console.log('✅ DOWNLOAD DOCX: Converted to buffer, size:', buffer.length, 'bytes');
 
 		// Increment quickTailorDownloadCount after successful generation
 		if (userId) {
@@ -325,7 +314,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 			},
 		});
 	} catch (error) {
-		console.error('❌ DOWNLOAD DOCX: Error:', error);
 		throw new Response('Failed to generate DOCX', { status: 500 });
 	}
 }

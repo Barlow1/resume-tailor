@@ -89,7 +89,6 @@ export default function TailorResults() {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (error) {
-      console.error('Download error:', error);
       alert(`Failed to download ${format.toUpperCase()}. Please try again.`);
     }
   };

@@ -200,8 +200,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 	const url = new URL(request.url);
 	const id = url.searchParams.get('id');
 
-	console.log('📄 DOWNLOAD PDF: Request for', id);
-
 	if (!id) {
 		throw new Response('Missing ID', { status: 400 });
 	}
@@ -238,16 +236,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 	const originalResume = JSON.parse(record.originalResume) as OpenAIResumeData;
 	const tailored = JSON.parse(record.tailoredResume) as TailoredResume;
 
-	console.log(
-		'📄 DOWNLOAD PDF: Generating for:',
-		originalResume.personal_info.full_name,
-	);
-
 	try {
 		// Generate HTML
 		const html = generateResumeHTML(originalResume, tailored);
-
-		console.log('📄 DOWNLOAD PDF: HTML generated, converting to PDF...');
 
 		// Convert HTML to PDF
 		const options = {
@@ -257,8 +248,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 		const file = { content: html };
 		const pdfBuffer = await htmlPdf.generatePdf(file, options);
-
-		console.log('✅ DOWNLOAD PDF: Converted to PDF, size:', pdfBuffer.length, 'bytes');
 
 		// Increment quickTailorDownloadCount after successful generation
 		if (userId) {
@@ -291,7 +280,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 			},
 		});
 	} catch (error) {
-		console.error('❌ DOWNLOAD PDF: Error:', error);
 		throw new Response('Failed to generate PDF. Please try downloading DOCX instead.', { status: 500 });
 	}
 }

@@ -172,12 +172,8 @@ export async function updateBuilderResume(userId: string | null, resumeId: strin
 	const existingResume = await prisma.builderResume.findUnique({
 		where: { id: resumeId },
 	});
-	console.log('Attempting to update resume:', resumeId);
-	console.log('Resume exists?', !!existingResume);
 
 	const { id, job, jobId, ...updateData } = data
-	console.log('resume id', resumeId);
-	console.log('id', id);
 	const updateInput: Prisma.BuilderResumeUpdateInput = {
 		...updateData,
 		user: userId ? { connect: { id: userId } } : undefined,
@@ -249,7 +245,6 @@ export async function updateBuilderResume(userId: string | null, resumeId: strin
 			},
 		} : undefined,
 	}
-	console.log('updateInput', JSON.stringify(updateInput, null, 2));
 	return prisma.builderResume.update({
 		where: { id: resumeId },
 		data: updateInput,
