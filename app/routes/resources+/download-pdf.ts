@@ -1,11 +1,9 @@
 import { type LoaderFunctionArgs } from '@remix-run/node';
-import { prisma as db } from '~/utils/db.server';
+import { prisma as db } from '~/utils/db.server.ts';
 import htmlPdf from 'html-pdf-node';
-import fs from 'fs';
-import path from 'path';
-import type { OpenAIResumeData } from '~/utils/openai-resume-parser.server';
-import type { TailoredResume } from '~/utils/resume-tailor.server';
-import { getUserId, getStripeSubscription } from '~/utils/auth.server';
+import type { OpenAIResumeData } from '~/utils/openai-resume-parser.server.ts';
+import type { TailoredResume } from '~/utils/resume-tailor.server.ts';
+import { getUserId, getStripeSubscription } from '~/utils/auth.server.ts';
 
 // Helper function to format dates for resume display
 function formatResumeDate(isoDate: string | null, precision?: 'day' | 'month' | 'year'): string {
@@ -237,8 +235,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		throw new Response('Not found', { status: 404 });
 	}
 
-	const originalResume: OpenAIResumeData = JSON.parse(record.originalResume);
-	const tailored: TailoredResume = JSON.parse(record.tailoredResume);
+	const originalResume = JSON.parse(record.originalResume) as OpenAIResumeData;
+	const tailored = JSON.parse(record.tailoredResume) as TailoredResume;
 
 	console.log(
 		'📄 DOWNLOAD PDF: Generating for:',

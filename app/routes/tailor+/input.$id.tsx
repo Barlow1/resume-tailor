@@ -1,7 +1,8 @@
 import { json, redirect, type ActionFunctionArgs, type LoaderFunctionArgs } from '@remix-run/node';
 import { Form, useLoaderData, useNavigation, useActionData } from '@remix-run/react';
-import { prisma } from '~/utils/db.server';
-import { tailorResume } from '~/utils/resume-tailor.server';
+import { prisma } from '~/utils/db.server.ts';
+import { tailorResume } from '~/utils/resume-tailor.server.ts';
+import type { OpenAIResumeData } from '~/utils/openai-resume-parser.server.ts';
 
 export async function loader({ params }: LoaderFunctionArgs) {
   console.log('📝 INPUT: Loading resume', params.id);
@@ -14,7 +15,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
     throw new Response('Not found', { status: 404 });
   }
 
-  const originalResume = JSON.parse(record.originalResume);
+  const originalResume = JSON.parse(record.originalResume) as OpenAIResumeData;
 
   console.log('📝 INPUT: Resume loaded for:', originalResume.personal_info.full_name);
 
@@ -54,7 +55,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw new Response('Not found', { status: 404 });
   }
 
-  const originalResume = JSON.parse(record.originalResume);
+  const originalResume = JSON.parse(record.originalResume) as OpenAIResumeData;
 
   console.log('📝 INPUT: Starting tailor process...');
 
@@ -88,7 +89,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function TailorInput() {
-  const { id, resumeName, experienceCount, skillCount } = useLoaderData<typeof loader>();
+  const { experienceCount, skillCount } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
 

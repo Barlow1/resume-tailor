@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
-import type { OpenAIResumeData } from './openai-resume-parser.server';
-import { getPromptVersion, ACTIVE_PROMPT } from '~/prompts/tailor-prompts';
+import type { OpenAIResumeData } from './openai-resume-parser.server.ts';
+import { getPromptVersion, ACTIVE_PROMPT } from '~/prompts/tailor-prompts.ts';
 import fs from 'fs';
 import path from 'path';
 
@@ -175,7 +175,7 @@ export async function tailorResume({
 			console.log('🔍 DEBUG: Saved response to', responseFile);
 		}
 
-		const parsed = JSON.parse(content);
+		const parsed = JSON.parse(content) as TailoredResume;
 
 		// Validation and logging
 		console.log(
@@ -330,7 +330,7 @@ function buildUserMessage(
 	}
 
 	// Certifications
-	if (resume.certifications?.length > 0) {
+	if (resume.certifications && resume.certifications.length > 0) {
 		message += `CERTIFICATIONS:\n`;
 		resume.certifications.forEach(cert => {
 			message += `• ${cert.name} - ${cert.issuer}`;
@@ -341,7 +341,7 @@ function buildUserMessage(
 	}
 
 	// Projects
-	if (resume.projects?.length > 0) {
+	if (resume.projects && resume.projects.length > 0) {
 		message += `PROJECTS:\n`;
 		resume.projects.forEach(proj => {
 			message += `• ${proj.name}: ${proj.description}\n`;

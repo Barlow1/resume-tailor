@@ -1,8 +1,8 @@
 import { json, redirect, type ActionFunctionArgs } from '@remix-run/node';
 import { Form, useActionData, useNavigation } from '@remix-run/react';
-import { parseResumeWithOpenAI } from '~/utils/openai-resume-parser.server';
-import { prisma } from '~/utils/db.server';
-import { getUserId } from '~/utils/auth.server';
+import { parseResumeWithOpenAI } from '~/utils/openai-resume-parser.server.ts';
+import { prisma } from '~/utils/db.server.ts';
+import { getUserId } from '~/utils/auth.server.ts';
 import { useState } from 'react';
 
 export async function action({ request }: ActionFunctionArgs) {

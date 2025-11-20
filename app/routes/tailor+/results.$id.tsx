@@ -1,9 +1,11 @@
 import { json, type LoaderFunctionArgs } from '@remix-run/node';
 import { useLoaderData, Link } from '@remix-run/react';
-import { prisma } from '~/utils/db.server';
+import { prisma } from '~/utils/db.server.ts';
 import { useState } from 'react';
-import { getUserId, getStripeSubscription } from '~/utils/auth.server';
-import { SubscribeModal } from '~/components/subscribe-modal';
+import { getUserId, getStripeSubscription } from '~/utils/auth.server.ts';
+import { SubscribeModal } from '~/components/subscribe-modal.tsx';
+import type { OpenAIResumeData } from '~/utils/openai-resume-parser.server.ts';
+import type { TailoredResume } from '~/utils/resume-tailor.server.ts';
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
   const { id } = params;
@@ -20,8 +22,8 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     throw new Response('Not Found', { status: 404 });
   }
 
-  const originalResume = JSON.parse(record.originalResume);
-  const tailoredResume = JSON.parse(record.tailoredResume);
+  const originalResume = JSON.parse(record.originalResume) as OpenAIResumeData;
+  const tailoredResume = JSON.parse(record.tailoredResume) as TailoredResume;
 
   // Extract job title from job description if available
   const jobTitle = extractJobTitle(record.jobDescription);
@@ -55,11 +57,11 @@ function extractJobTitle(jobDescription: string): string {
 }
 
 export default function TailorResults() {
-  const { id, originalResume, tailoredResume, jobTitle, subscription, gettingStartedProgress } = useLoaderData<typeof loader>();
+  const { id, originalResume, tailoredResume } = useLoaderData<typeof loader>();
   const [showFullAnalysis, setShowFullAnalysis] = useState(false);
   const [showSubscribeModal, setShowSubscribeModal] = useState(false);
 
-  const handleDownloadClick = async (e: React.MouseEvent<HTMLAnchorElement>, format: 'pdf' | 'docx') => {
+  const handleDownloadClick = async (e: React.MouseEvent<HTMLButtonElement>, format: 'pdf' | 'docx') => {
     e.preventDefault();
 
     try {
@@ -201,20 +203,18 @@ export default function TailorResults() {
         {/* Action Buttons */}
         <div className="flex flex-col items-center gap-4">
           <div className="flex gap-4">
-            <a
-              href={`/resources/download-pdf?id=${id}`}
+            <button
               onClick={(e) => handleDownloadClick(e, 'pdf')}
               className="bg-[#7957FE] text-white px-12 py-4 rounded-lg font-medium text-lg hover:bg-[#6847ED] transition-colors"
             >
               Download PDF
-            </a>
-            <a
-              href={`/resources/download-docx?id=${id}`}
+            </button>
+            <button
               onClick={(e) => handleDownloadClick(e, 'docx')}
               className="bg-white text-[#7957FE] border-2 border-[#7957FE] px-12 py-4 rounded-lg font-medium text-lg hover:bg-[#F3F3F8] transition-colors"
             >
               Download DOCX
-            </a>
+            </button>
           </div>
 
           <p className="text-gray-600 text-sm">
