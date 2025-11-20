@@ -169,10 +169,6 @@ export async function createBuilderResume(
 }
 
 export async function updateBuilderResume(userId: string | null, resumeId: string, data: Omit<ResumeData, 'userId' | 'createdAt' | 'updatedAt'>) {
-	const existingResume = await prisma.builderResume.findUnique({
-		where: { id: resumeId },
-	});
-
 	const { id, job, jobId, ...updateData } = data
 	const updateInput: Prisma.BuilderResumeUpdateInput = {
 		...updateData,
