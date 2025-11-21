@@ -32,7 +32,6 @@ export async function action({ request }: DataFunctionArgs) {
 
 		return json({ success: true })
 	} catch (e) {
-		console.error('Error marking conversion event as tracked', e)
 		return json({ error: 'Failed to mark event as tracked' }, { status: 500 })
 	} finally {
 		await prisma.$disconnect()
