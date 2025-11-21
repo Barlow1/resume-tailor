@@ -215,11 +215,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 			}),
 		]);
 
-		// If no subscription, check download limit (20 free downloads)
+		// If no subscription, check download limit (2 free downloads)
 		if (!subscription) {
 			const quickTailorDownloads = gettingStartedProgress?.quickTailorDownloadCount ?? 0;
 
-			if (quickTailorDownloads >= 20) {
+			if (quickTailorDownloads >= 2) {
 				throw new Response('Download limit reached. Please subscribe to continue.', { status: 403 });
 			}
 		}
