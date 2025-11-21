@@ -1,6 +1,6 @@
 import { type LoaderFunctionArgs } from '@remix-run/node';
 import { prisma as db } from '~/utils/db.server.ts';
-import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle, convertInchesToTwip, TabStopType, TabStopPosition } from 'docx';
+import { Document, Packer, Paragraph, TextRun, AlignmentType, BorderStyle, convertInchesToTwip, TabStopType } from 'docx';
 import type { OpenAIResumeData } from '~/utils/openai-resume-parser.server.ts';
 import type { TailoredResume } from '~/utils/resume-tailor.server.ts';
 import { getUserId, getStripeSubscription } from '~/utils/auth.server.ts';
