@@ -61,6 +61,9 @@ export default function TailorResults() {
   const [showFullAnalysis, setShowFullAnalysis] = useState(false);
   const [showSubscribeModal, setShowSubscribeModal] = useState(false);
 
+  // Count suggested bullets
+  const suggestedBulletsCount = tailoredResume.suggested_bullets?.length || 0;
+
   const handleDownloadClick = async (e: React.MouseEvent<HTMLButtonElement>, format: 'pdf' | 'docx') => {
     e.preventDefault();
 
@@ -206,13 +209,13 @@ export default function TailorResults() {
               onClick={(e) => handleDownloadClick(e, 'pdf')}
               className="bg-[#7957FE] text-white px-12 py-4 rounded-lg font-medium text-lg hover:bg-[#6847ED] transition-colors"
             >
-              Download PDF
+              Download PDF (Final)
             </button>
             <button
               onClick={(e) => handleDownloadClick(e, 'docx')}
               className="bg-white text-[#7957FE] border-2 border-[#7957FE] px-12 py-4 rounded-lg font-medium text-lg hover:bg-[#F3F3F8] transition-colors"
             >
-              Download DOCX
+              Download DOCX (With {suggestedBulletsCount} Potential Bullet{suggestedBulletsCount !== 1 ? 's' : ''})
             </button>
           </div>
 

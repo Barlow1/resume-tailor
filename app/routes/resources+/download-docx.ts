@@ -1,6 +1,6 @@
 import { type LoaderFunctionArgs } from '@remix-run/node';
 import { prisma as db } from '~/utils/db.server.ts';
-import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle, convertInchesToTwip, TabStopType, TabStopPosition } from 'docx';
 import type { OpenAIResumeData } from '~/utils/openai-resume-parser.server.ts';
 import type { TailoredResume } from '~/utils/resume-tailor.server.ts';
 import { getUserId, getStripeSubscription } from '~/utils/auth.server.ts';
@@ -43,37 +43,55 @@ function generateResumeDocx(originalResume: OpenAIResumeData, tailored: Tailored
 
 	const children: Paragraph[] = [];
 
-	// Header - Name
+	// Header - Name (20pt, bold, uppercase, centered)
 	children.push(
 		new Paragraph({
-			text: personalInfo.full_name.toUpperCase(),
-			heading: HeadingLevel.TITLE,
+			children: [
+				new TextRun({
+					text: personalInfo.full_name.toUpperCase(),
+					bold: true,
+					size: 40, // 20pt
+					font: 'Georgia',
+				})
+			],
 			alignment: AlignmentType.CENTER,
-			spacing: { after: 100 },
+			spacing: { after: 140 }, // 7pt
 		})
 	);
 
-	// Contact info
+	// Contact info (10pt, centered)
 	children.push(
 		new Paragraph({
-			text: contactLine,
+			children: [
+				new TextRun({
+					text: contactLine,
+					size: 20, // 10pt
+					font: 'Georgia',
+				})
+			],
 			alignment: AlignmentType.CENTER,
-			spacing: { after: 200 },
+			spacing: { after: 280 }, // 14pt
 		})
 	);
 
-	// Summary section
+	// Summary section (12pt bold section title with border)
 	if (summary) {
 		children.push(
 			new Paragraph({
-				text: 'SUMMARY',
-				heading: HeadingLevel.HEADING_1,
-				spacing: { before: 200, after: 100 },
+				children: [
+					new TextRun({
+						text: 'SUMMARY',
+						bold: true,
+						size: 24, // 12pt
+						font: 'Georgia',
+					})
+				],
+				spacing: { before: 280, after: 140 }, // 14pt before, 7pt after
 				border: {
 					bottom: {
 						color: '000000',
 						space: 1,
-						style: 'single',
+						style: BorderStyle.SINGLE,
 						size: 6,
 					},
 				},
@@ -81,92 +99,151 @@ function generateResumeDocx(originalResume: OpenAIResumeData, tailored: Tailored
 		);
 		children.push(
 			new Paragraph({
-				text: summary,
-				spacing: { after: 200 },
+				children: [
+					new TextRun({
+						text: summary,
+						size: 22, // 11pt
+						font: 'Georgia',
+					})
+				],
+				spacing: { after: 280, line: 276 }, // 14pt after, 1.15 line height
 			})
 		);
 	}
 
-	// Professional Experience
+	// Professional Experience (12pt bold section title with border)
 	children.push(
 		new Paragraph({
-			text: 'PROFESSIONAL EXPERIENCE',
-			heading: HeadingLevel.HEADING_1,
-			spacing: { before: 200, after: 100 },
+			children: [
+				new TextRun({
+					text: 'PROFESSIONAL EXPERIENCE',
+					bold: true,
+					size: 24, // 12pt
+					font: 'Georgia',
+				})
+			],
+			spacing: { before: 280, after: 140 }, // 14pt before, 7pt after
 			border: {
 				bottom: {
 					color: '000000',
 					space: 1,
-					style: 'single',
+					style: BorderStyle.SINGLE,
 					size: 6,
 				},
 			},
 		})
 	);
 
-	originalResume.experiences.forEach((exp: any) => {
+	originalResume.experiences.forEach((exp: any, expIndex: number) => {
 		const bullets = exp.bullet_points || [];
 		const enhancedBullets = bullets.map((bullet: string) =>
 			enhancedMap.get(bullet.trim()) || bullet
 		);
 
-		// Company and dates
+		// Get suggested bullets for this experience
+		const suggestedBullets = tailored.suggested_bullets?.filter((sb: any) =>
+			sb.section === `experiences[${expIndex}]`
+		) || [];
+
+		// Company and dates (12pt, bold company, dates right-aligned)
 		children.push(
 			new Paragraph({
 				children: [
 					new TextRun({
 						text: exp.company,
 						bold: true,
-						size: 24,
+						size: 24, // 12pt
+						font: 'Georgia',
 					}),
 					new TextRun({
 						text: `\t${formatResumeDate(exp.date_start, exp.date_start_precision)} – ${formatResumeDate(exp.date_end, exp.date_end_precision)}`,
-						size: 24,
+						size: 24, // 12pt
+						font: 'Georgia',
 					}),
 				],
-				spacing: { before: 150, after: 50 },
+				spacing: { before: 200, after: 80 }, // 10pt before, 4pt after
+				tabStops: [
+					{
+						type: TabStopType.RIGHT,
+						position: 10800, // Right align at content edge (7.5 inches = 10800 twips)
+					}
+				],
 			})
 		);
 
-		// Title and location
+		// Title and location (11pt, italic)
 		children.push(
 			new Paragraph({
 				children: [
 					new TextRun({
 						text: exp.title,
 						italics: true,
-						size: 22,
+						size: 22, // 11pt
+						font: 'Georgia',
 					}),
-					...(exp.location ? [new TextRun({ text: ` | ${exp.location}`, size: 22 })] : []),
+					...(exp.location ? [new TextRun({ text: ` | ${exp.location}`, size: 22, font: 'Georgia' })] : []),
 				],
-				spacing: { after: 50 },
+				spacing: { after: 80 }, // 4pt after
 			})
 		);
 
-		// Bullet points
+		// Bullet points (11pt)
 		enhancedBullets.forEach((bullet: string) => {
 			children.push(
 				new Paragraph({
-					text: bullet,
+					children: [
+						new TextRun({
+							text: bullet,
+							size: 22, // 11pt
+							font: 'Georgia',
+						})
+					],
 					bullet: { level: 0 },
-					spacing: { after: 30 },
+					spacing: { after: 40, line: 276 }, // 2pt after, 1.15 line height
 				})
 			);
 		});
+
+		// Add suggested bullets for this experience (highlighted in yellow, italic)
+		if (suggestedBullets.length > 0) {
+			suggestedBullets.forEach((item: any) => {
+				children.push(
+					new Paragraph({
+						children: [
+							new TextRun({
+								text: item.bullet,
+								size: 22, // 11pt
+								font: 'Georgia',
+								italics: true,
+								highlight: 'yellow',
+							})
+						],
+						bullet: { level: 0 },
+						spacing: { after: 40, line: 276 }, // 2pt after, 1.15 line height
+					})
+				);
+			});
+		}
 	});
 
-	// Education
+	// Education (12pt bold section title with border)
 	if (originalResume.education && originalResume.education.length > 0) {
 		children.push(
 			new Paragraph({
-				text: 'EDUCATION',
-				heading: HeadingLevel.HEADING_1,
-				spacing: { before: 200, after: 100 },
+				children: [
+					new TextRun({
+						text: 'EDUCATION',
+						bold: true,
+						size: 24, // 12pt
+						font: 'Georgia',
+					})
+				],
+				spacing: { before: 280, after: 140 }, // 14pt before, 7pt after
 				border: {
 					bottom: {
 						color: '000000',
 						space: 1,
-						style: 'single',
+						style: BorderStyle.SINGLE,
 						size: 6,
 					},
 				},
@@ -180,38 +257,58 @@ function generateResumeDocx(originalResume: OpenAIResumeData, tailored: Tailored
 						new TextRun({
 							text: `${edu.degree}${edu.major ? ` in ${edu.major}` : ''}`,
 							bold: true,
-							size: 22,
+							size: 22, // 11pt
+							font: 'Georgia',
 						}),
 						new TextRun({
 							text: `\t${formatResumeDate(edu.date_start, edu.date_start_precision)} – ${formatResumeDate(edu.date_end, edu.date_end_precision)}`,
-							size: 22,
+							size: 22, // 11pt
+							font: 'Georgia',
 						}),
 					],
-					spacing: { before: 100, after: 30 },
+					spacing: { before: 200, after: 60 }, // 10pt before, 3pt after
+					tabStops: [
+						{
+							type: TabStopType.RIGHT,
+							position: 10800, // Right align at content edge (7.5 inches = 10800 twips)
+						}
+					],
 				})
 			);
 
 			children.push(
 				new Paragraph({
-					text: `${edu.school}${edu.gpa ? ` | GPA: ${edu.gpa}` : ''}`,
-					spacing: { after: 100 },
+					children: [
+						new TextRun({
+							text: `${edu.school}${edu.gpa ? ` | GPA: ${edu.gpa}` : ''}`,
+							size: 22, // 11pt
+							font: 'Georgia',
+						})
+					],
+					spacing: { after: 140 }, // 7pt after
 				})
 			);
 		});
 	}
 
-	// Skills
+	// Skills (12pt bold section title with border)
 	if (originalResume.skills && originalResume.skills.length > 0) {
 		children.push(
 			new Paragraph({
-				text: 'SKILLS',
-				heading: HeadingLevel.HEADING_1,
-				spacing: { before: 200, after: 100 },
+				children: [
+					new TextRun({
+						text: 'SKILLS',
+						bold: true,
+						size: 24, // 12pt
+						font: 'Georgia',
+					})
+				],
+				spacing: { before: 280, after: 140 }, // 14pt before, 7pt after
 				border: {
 					bottom: {
 						color: '000000',
 						space: 1,
-						style: 'single',
+						style: BorderStyle.SINGLE,
 						size: 6,
 					},
 				},
@@ -220,8 +317,14 @@ function generateResumeDocx(originalResume: OpenAIResumeData, tailored: Tailored
 
 		children.push(
 			new Paragraph({
-				text: originalResume.skills.join(', '),
-				spacing: { after: 100 },
+				children: [
+					new TextRun({
+						text: originalResume.skills.join(', '),
+						size: 22, // 11pt
+						font: 'Georgia',
+					})
+				],
+				spacing: { after: 200, line: 276 }, // 10pt after, 1.15 line height
 			})
 		);
 	}
@@ -229,7 +332,16 @@ function generateResumeDocx(originalResume: OpenAIResumeData, tailored: Tailored
 	return new Document({
 		sections: [
 			{
-				properties: {},
+				properties: {
+					page: {
+						margin: {
+							top: convertInchesToTwip(0.5),
+							right: convertInchesToTwip(0.5),
+							bottom: convertInchesToTwip(0.5),
+							left: convertInchesToTwip(0.5),
+						},
+					},
+				},
 				children: children,
 			},
 		],
@@ -255,11 +367,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 			}),
 		]);
 
-		// If no subscription, check download limit (1 free download)
+		// If no subscription, check download limit (20 free downloads)
 		if (!subscription) {
 			const quickTailorDownloads = gettingStartedProgress?.quickTailorDownloadCount ?? 0;
 
-			if (quickTailorDownloads >= 1) {
+			if (quickTailorDownloads >= 20) {
 				throw new Response('Download limit reached. Please subscribe to continue.', { status: 403 });
 			}
 		}
