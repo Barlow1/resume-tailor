@@ -115,7 +115,7 @@ export default function TailorResults() {
       <main className="max-w-[1200px] mx-auto px-8 pt-[80px] pb-16 relative z-10">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-black">
+          <h1 className="text-4xl font-bold text-black dark:text-white">
             Here is your tailored resume
           </h1>
         </div>
@@ -216,7 +216,7 @@ export default function TailorResults() {
             </button>
           </div>
 
-          <p className="text-gray-600 text-sm">
+          <p className="text-gray-600 dark:text-gray-300 text-sm">
             Your tailored resume is ready to send
           </p>
 

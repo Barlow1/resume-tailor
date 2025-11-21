@@ -110,21 +110,21 @@ export default function TailorInput() {
       <main className="max-w-[800px] mx-auto px-8 pt-[80px] pb-16 relative z-10">
         {/* Header Section */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-black mb-4">
+          <h1 className="text-4xl font-bold text-black dark:text-white mb-4">
             We found {experienceCount} experiences and {skillCount} skills
             <br />
             in your resume
           </h1>
-          <p className="text-xl text-gray-700 mt-6">
+          <p className="text-xl text-gray-700 dark:text-gray-300 mt-6">
             What job are you targeting?
           </p>
         </div>
 
         {/* Form */}
         <Form method="post" className="mb-8">
-          <div className="bg-white rounded-2xl p-8 shadow-sm border-2 border-[#B4A4F4] mb-6">
+          <div className="bg-white dark:bg-white rounded-2xl p-8 shadow-sm border-2 border-[#B4A4F4] mb-6">
             <label htmlFor="jobDescription" className="block mb-4">
-              <span className="text-lg font-medium text-gray-900">
+              <span className="text-lg font-medium text-gray-900 dark:text-gray-900">
                 Paste the full job description here...
               </span>
             </label>
@@ -134,19 +134,19 @@ export default function TailorInput() {
               rows={12}
               required
               placeholder="Example:&#10;Senior Product Manager – Stripe&#10;We're looking for a PM to lead our payments infrastructure...&#10;• 5+ years PM experience&#10;• Technical background with APIs&#10;• Experience with fintech preferred"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7957FE] focus:border-transparent resize-none text-gray-700 placeholder-gray-400 font-mono text-sm"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7957FE] focus:border-transparent resize-none text-gray-700 dark:text-gray-700 placeholder-gray-400 font-mono text-sm bg-white dark:bg-white"
             />
 
             {/* Optional additional context - kept but styled cleaner */}
             <details className="mt-4">
-              <summary className="cursor-pointer text-gray-600 hover:text-gray-900 font-medium mb-3">
+              <summary className="cursor-pointer text-gray-600 dark:text-gray-600 hover:text-gray-900 dark:hover:text-gray-900 font-medium mb-3">
                 + Add additional context (optional)
               </summary>
               <textarea
                 name="additionalContext"
                 rows={5}
                 placeholder="Any additional information that would help tailor your resume..."
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7957FE] focus:border-transparent resize-none text-gray-700 placeholder-gray-400 text-sm"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7957FE] focus:border-transparent resize-none text-gray-700 dark:text-gray-700 placeholder-gray-400 text-sm bg-white dark:bg-white"
               />
             </details>
           </div>
@@ -161,7 +161,7 @@ export default function TailorInput() {
             <button
               type="submit"
               disabled={isTailoring}
-              className="bg-[#B4A4F4] text-white px-12 py-4 rounded-lg font-medium text-lg hover:bg-[#A494E4] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-[#7957FE] text-white px-12 py-4 rounded-lg font-medium text-lg hover:bg-[#6847ED] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isTailoring ? 'Tailoring resume (20-30 seconds)...' : 'Tailor my resume'}
             </button>

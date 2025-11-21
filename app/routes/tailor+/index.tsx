@@ -118,7 +118,7 @@ export default function TailorUpload() {
       <main className="max-w-[1200px] mx-auto px-8 py-12">
         {/* Hero Section */}
         <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold text-black mb-2">
+          <h1 className="text-5xl font-bold text-black dark:text-white mb-2">
             Upload your resume,{' '}
             <span className="text-[#7957FE]">we'll show you what's missing.</span>
           </h1>
@@ -129,8 +129,8 @@ export default function TailorUpload() {
           <Form method="post" encType="multipart/form-data">
             <div
               className={`border-2 border-dashed ${
-                isDragging ? 'border-[#7957FE] bg-purple-50' : 'border-[#7957FE]'
-              } rounded-2xl bg-white/50 backdrop-blur-sm p-12 transition-all duration-200`}
+                isDragging ? 'border-[#7957FE] bg-purple-50 dark:bg-purple-900/30' : 'border-[#7957FE]'
+              } rounded-2xl bg-white/50 dark:bg-white backdrop-blur-sm p-12 transition-all duration-200`}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
@@ -203,7 +203,7 @@ export default function TailorUpload() {
 
         {/* Subheading */}
         <div className="text-center mt-12 mb-16">
-          <p className="text-2xl font-semibold text-black">
+          <p className="text-2xl font-semibold text-black dark:text-white">
             Then fix it in one click. 30 seconds.
           </p>
         </div>
@@ -211,11 +211,11 @@ export default function TailorUpload() {
         {/* Bottom Section */}
         <div className="max-w-[1000px] mx-auto mt-24 pb-24">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-black mb-4">
+            <h2 className="text-4xl font-bold text-black dark:text-white mb-4">
               Your resume isn't broken.{' '}
               <span className="text-[#7957FE]">It just wasn't written for this job.</span>
             </h2>
-            <p className="text-lg text-gray-600">
+            <p className="text-lg text-gray-600 dark:text-gray-300">
               Generic resumes get auto-rejected. Tailored ones get interviews.
             </p>
           </div>
