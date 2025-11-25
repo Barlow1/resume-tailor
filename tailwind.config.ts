@@ -3,7 +3,6 @@ import defaultTheme from 'tailwindcss/defaultTheme.js'
 import animatePlugin from 'tailwindcss-animate'
 import radixPlugin from 'tailwindcss-radix'
 import typography from '@tailwindcss/typography'
-import lineClamp from '@tailwindcss/line-clamp'
 
 export default {
 	content: ['./app/**/*.{ts,tsx,jsx,js,mdx}'],
@@ -201,7 +200,6 @@ export default {
 		animatePlugin,
 		radixPlugin,
 		typography,
-		lineClamp,
 		function ({ addUtilities }: { addUtilities: (utilities: Record<string, any>) => void }) {
 			addUtilities({
 				'.bg-clip-text': {
