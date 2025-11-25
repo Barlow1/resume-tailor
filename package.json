@@ -131,7 +131,8 @@
     "twitter-api-v2": "^1.17.2",
     "use-debounce": "^10.0.4",
     "zod": "^3.21.4",
-    "zustand": "^4.5.4"
+    "zustand": "^4.5.4",
+    "@tailwindcss/typography": "^0.5.16"
   },
   "devDependencies": {
     "@faker-js/faker": "^8.0.2",
@@ -141,7 +142,6 @@
     "@remix-run/serve": "^2.3.0",
     "@sly-cli/sly": "^1.4.5",
     "@tailwindcss/line-clamp": "^0.4.4",
-    "@tailwindcss/typography": "^0.5.16",
     "@testing-library/jest-dom": "^5.17.0",
     "@total-typescript/ts-reset": "^0.4.2",
     "@types/bcryptjs": "^2.4.2",
