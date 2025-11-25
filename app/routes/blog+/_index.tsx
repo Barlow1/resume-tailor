@@ -248,8 +248,8 @@ export default function BlogIndex() {
   return (
     <main className="min-h-screen">
       {/* Header */}
-      <section className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 pt-12 pb-6 text-center">
-        <p className="text-sm text-muted-foreground">The Blog</p>
+      <section className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pt-12 pb-6 text-center">
+        <p className="text-xl text-muted-foreground font-bold">The Blog</p>
         <h1 className="mt-2 text-4xl md:text-5xl font-bold tracking-tight">
           Insights, guides, and updates to help you land more interviews.
         </h1>
@@ -259,8 +259,8 @@ export default function BlogIndex() {
       </section>
 
       {/* Grid of posts */}
-      <section className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pb-10">
-        <ul className="list-none grid gap-8 md:grid-cols-2">
+      <section className="mx-auto px-4 sm:px-6 lg:px-8 pb-10">
+        <ul className="list-none grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {posts.map((post: any) => {
             const mins = getReadingMinutes(post);
 
@@ -274,7 +274,7 @@ export default function BlogIndex() {
                   <article className="h-full overflow-hidden rounded-2xl border bg-card transition hover:shadow-lg">
                     {/* Optional cover */}
                     {post.cover ? (
-                      <div className="aspect-[16/9] overflow-hidden">
+                      <div className="aspect-[16/9] overflow-hidden rounded-t-2xl">
                         <img
                           src={post.cover}
                           alt={post.title}
@@ -283,7 +283,7 @@ export default function BlogIndex() {
                           loading="lazy"
                           decoding="async"
                           sizes="(max-width: 768px) 100vw, 50vw"
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02] not-prose"
                         />
                       </div>
                     ) : null}
