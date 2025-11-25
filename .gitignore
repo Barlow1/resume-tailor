@@ -21,3 +21,10 @@ node_modules
 # Easy way to create temporary files/folders that won't accidentally be added to git
 *.local.*
 secrets/*
+
+# Debug logs containing PII and AI requests/responses
+debug-logs/
+
+# Personal resume files and Word HTML exports
+*.htm
+Final_*

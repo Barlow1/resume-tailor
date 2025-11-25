@@ -72,6 +72,7 @@ model User {
   gettingStartedProgress GettingStartedProgress?
   subscriptions          Subscription[]
   builderResumes         BuilderResume[]
+  tailoredResumes        TailoredResume[]
 }
 
 model Password {
@@ -207,13 +208,14 @@ model GettingStartedProgress {
   hasSavedResume     Boolean
   hasTailoredResume  Boolean
   hasGeneratedResume Boolean
-  tailorCount        Int      @default(0)
-  generateCount      Int      @default(0)
-  analysisCount      Int      @default(0)
-  downloadCount      Int      @default(0)
-  outreachCount      Int      @default(0)
-  owner              User     @relation(fields: [ownerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  ownerId            String   @unique
+  tailorCount              Int      @default(0)
+  generateCount            Int      @default(0)
+  analysisCount            Int      @default(0)
+  downloadCount            Int      @default(0)
+  outreachCount            Int      @default(0)
+  quickTailorDownloadCount Int      @default(0)
+  owner                    User     @relation(fields: [ownerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  ownerId                  String   @unique
 }
 
 model Subscription {
@@ -380,5 +382,27 @@ model ResumeScore {
 
   @@unique([resumeId, jobId])
   @@index([resumeId])
+  @@index([createdAt])
+}
+
+model TailoredResume {
+  id             String   @id @default(cuid())
+  userId         String?
+
+  // Original data
+  originalResume String // JSON: ParsedResume from OpenAI
+  jobDescription String // Raw JD text
+
+  // AI outputs
+  tailoredResume String // JSON: TailoredResume from OpenAI
+
+  // Metadata
+  promptVersion  String   // e.g., "v1", "v2_nov19"
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
   @@index([createdAt])
 }
