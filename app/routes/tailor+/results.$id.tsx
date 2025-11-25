@@ -105,20 +105,11 @@ export default function TailorResults() {
 
   return (
     <div className="min-h-screen relative">
-      {/* Background pattern */}
-      <div className="fixed inset-0 pointer-events-none -z-10">
-        <img
-          src="/background-pattern.svg"
-          alt=""
-          className="w-full h-full object-cover"
-        />
-      </div>
-
       {/* Main Content */}
       <main className="max-w-[1200px] mx-auto px-8 pt-[80px] pb-16 relative z-10">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-black dark:text-white">
+          <h1 className="text-4xl font-bold text-foreground">
             Here is your tailored resume
           </h1>
         </div>
@@ -126,22 +117,22 @@ export default function TailorResults() {
         {/* Two Column Layout */}
         <div className="grid grid-cols-2 gap-6 mb-8">
           {/* Left Column - Resume Preview */}
-          <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm">
-            <div className="mb-4 pb-4 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-black mb-2">
+          <div className="bg-background rounded-2xl p-8 border-2 border-border shadow-lg ring-1 ring-border/50">
+            <div className="mb-4 pb-4 border-b border-border">
+              <h2 className="text-xl font-bold text-foreground mb-2">
                 {originalResume.personal_info?.full_name || 'Your Resume'}
               </h2>
-              <p className="text-gray-600 text-sm">
+              <p className="text-muted-foreground text-sm">
                 {originalResume.personal_info?.email || ''}
               </p>
-              <p className="text-gray-600 text-sm">
+              <p className="text-muted-foreground text-sm">
                 {originalResume.personal_info?.location || ''}
               </p>
             </div>
 
             <div className="pt-2">
-              <h3 className="font-semibold text-black mb-4 text-base">Experience</h3>
-              <div className="text-sm text-gray-700 leading-relaxed">
+              <h3 className="font-semibold text-foreground mb-4 text-base">Experience</h3>
+              <div className="text-sm text-foreground leading-relaxed">
                 {showFullAnalysis ? (
                   <div className="whitespace-pre-line">{fullResume}</div>
                 ) : (
@@ -154,7 +145,7 @@ export default function TailorResults() {
               <div className="mt-4 text-center">
                 <button
                   onClick={() => setShowFullAnalysis(true)}
-                  className="text-[#7957FE] hover:text-[#6847ED] font-medium text-sm"
+                  className="text-brand-500 hover:text-brand-800 font-medium text-sm"
                 >
                   View full resume →
                 </button>
@@ -163,8 +154,8 @@ export default function TailorResults() {
           </div>
 
           {/* Right Column - Enhanced Bullets */}
-          <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm">
-            <h2 className="text-xl font-bold text-black mb-6">
+          <div className="bg-background rounded-2xl p-8 border-2 border-border shadow-lg ring-1 ring-border/50">
+            <h2 className="text-xl font-bold text-foreground mb-6">
               Enhanced Bullets
             </h2>
 
@@ -178,10 +169,10 @@ export default function TailorResults() {
                   {analysisPreview}
                 </div>
 
-                <div className="mt-6 pt-6 border-t border-gray-200">
+                <div className="mt-6 pt-6 border-t border-border">
                   <button
                     onClick={() => setShowFullAnalysis(true)}
-                    className="w-full bg-[#7957FE] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#6847ED] transition-colors"
+                    className="w-full bg-brand-500 text-primary-foreground px-6 py-3 rounded-lg font-medium hover:bg-brand-800 transition-colors"
                   >
                     View detailed analysis
                   </button>
@@ -207,25 +198,25 @@ export default function TailorResults() {
           <div className="flex gap-4">
             <button
               onClick={(e) => handleDownloadClick(e, 'pdf')}
-              className="bg-[#7957FE] text-white px-12 py-4 rounded-lg font-medium text-lg hover:bg-[#6847ED] transition-colors"
+              className="bg-brand-500 text-primary-foreground px-12 py-4 rounded-lg font-medium text-lg hover:bg-brand-800 transition-colors"
             >
               Download PDF (Final)
             </button>
             <button
               onClick={(e) => handleDownloadClick(e, 'docx')}
-              className="bg-white text-[#7957FE] border-2 border-[#7957FE] px-12 py-4 rounded-lg font-medium text-lg hover:bg-[#F3F3F8] transition-colors"
+              className="bg-card text-brand-500 border-2 border-brand-500 px-12 py-4 rounded-lg font-medium text-lg hover:bg-accent transition-colors"
             >
               Download DOCX (With {suggestedBulletsCount} Potential Bullet{suggestedBulletsCount !== 1 ? 's' : ''})
             </button>
           </div>
 
-          <p className="text-gray-600 dark:text-gray-300 text-sm">
+          <p className="text-muted-foreground text-sm">
             Your tailored resume is ready to send
           </p>
 
           <Link
             to="/tailor"
-            className="bg-white text-[#7957FE] border-2 border-[#7957FE] px-12 py-4 rounded-lg font-medium text-lg hover:bg-[#F3F3F8] transition-colors mt-4"
+            className="bg-card text-brand-500 border-2 border-brand-500 px-12 py-4 rounded-lg font-medium text-lg hover:bg-accent transition-colors mt-4"
           >
             Create another tailored resume
           </Link>
@@ -307,19 +298,19 @@ function getAnalysisPreview(resume: any): JSX.Element {
   return (
     <>
       {enhanced.slice(0, 3).map((item: any, i: number) => (
-        <div key={i} className="bg-gray-50 rounded-lg p-4">
+        <div key={i} className="bg-muted rounded-lg p-4">
           <div className="mb-2">
-            <span className="text-xs font-semibold text-gray-500 uppercase">Original:</span>
-            <p className="text-sm text-gray-600 line-through mt-1">{item.original}</p>
+            <span className="text-xs font-semibold text-muted-foreground uppercase">Original:</span>
+            <p className="text-sm text-muted-foreground line-through mt-1">{item.original}</p>
           </div>
           <div>
-            <span className="text-xs font-semibold text-gray-500 uppercase">Enhanced:</span>
-            <p className="text-sm text-gray-900 mt-1">{item.enhanced}</p>
+            <span className="text-xs font-semibold text-muted-foreground uppercase">Enhanced:</span>
+            <p className="text-sm text-foreground mt-1">{item.enhanced}</p>
           </div>
         </div>
       ))}
       {enhanced.length > 3 && (
-        <p className="text-sm text-gray-500 text-center mt-4">
+        <p className="text-sm text-muted-foreground text-center mt-4">
           +{enhanced.length - 3} more enhanced bullets
         </p>
       )}
@@ -334,14 +325,14 @@ function getFullAnalysis(resume: any): JSX.Element {
   return (
     <>
       {enhanced.map((item: any, i: number) => (
-        <div key={i} className="bg-gray-50 rounded-lg p-4">
+        <div key={i} className="bg-muted rounded-lg p-4">
           <div className="mb-2">
-            <span className="text-xs font-semibold text-gray-500 uppercase">Original:</span>
-            <p className="text-sm text-gray-600 line-through mt-1">{item.original}</p>
+            <span className="text-xs font-semibold text-muted-foreground uppercase">Original:</span>
+            <p className="text-sm text-muted-foreground line-through mt-1">{item.original}</p>
           </div>
           <div>
-            <span className="text-xs font-semibold text-gray-500 uppercase">Enhanced:</span>
-            <p className="text-sm text-gray-900 mt-1">{item.enhanced}</p>
+            <span className="text-xs font-semibold text-muted-foreground uppercase">Enhanced:</span>
+            <p className="text-sm text-foreground mt-1">{item.enhanced}</p>
           </div>
         </div>
       ))}
@@ -355,17 +346,17 @@ function getSuggestedBullets(resume: any): JSX.Element | null {
   if (suggestions.length === 0) return null;
 
   return (
-    <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm">
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-        <h3 className="font-semibold text-black text-lg mb-3">Suggested Additional Bullets ({suggestions.length})</h3>
-        <p className="text-sm text-gray-600 mb-4">These are AI-generated suggestions. Please verify and customize before using.</p>
+    <div className="bg-background rounded-2xl p-8 border-2 border-border shadow-lg ring-1 ring-border/50">
+      <div className="bg-accent border border-border rounded-lg p-4">
+        <h3 className="font-semibold text-foreground text-lg mb-3">Suggested Additional Bullets ({suggestions.length})</h3>
+        <p className="text-sm text-muted-foreground mb-4">These are AI-generated suggestions. Please verify and customize before using.</p>
         <div className="space-y-3">
           {suggestions.map((item: any, i: number) => (
-            <div key={i} className="bg-white rounded p-3">
-              <p className="text-sm text-gray-900 mb-2">• {item.bullet}</p>
+            <div key={i} className="bg-background rounded p-3">
+              <p className="text-sm text-foreground mb-2">• {item.bullet}</p>
               {item.evidence && (
-                <details className="text-xs text-gray-600">
-                  <summary className="cursor-pointer text-blue-600">Why we think this fits</summary>
+                <details className="text-xs text-muted-foreground">
+                  <summary className="cursor-pointer text-brand-500">Why we think this fits</summary>
                   <p className="mt-2">{item.evidence}</p>
                 </details>
               )}
@@ -383,23 +374,23 @@ function getGapAnalysis(resume: any): JSX.Element | null {
   if (gaps.length === 0) return null;
 
   return (
-    <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm">
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+    <div className="bg-background rounded-2xl p-8 border-2 border-border shadow-lg ring-1 ring-border/50">
+      <div className="bg-muted border border-border rounded-lg p-4">
         <div className="flex items-center gap-2 mb-3">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="#D97706" strokeWidth="2" strokeLinecap="round"/>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-foreground">
+            <path d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
           </svg>
-          <h3 className="font-semibold text-black text-lg">Gap Analysis</h3>
+          <h3 className="font-semibold text-foreground text-lg">Gap Analysis</h3>
         </div>
-        <p className="text-sm text-gray-600 mb-4">Things to address in your application or cover letter:</p>
+        <p className="text-sm text-muted-foreground mb-4">Things to address in your application or cover letter:</p>
         <div className="space-y-3">
           {gaps.map((gap: any, i: number) => (
-            <div key={i} className="bg-white rounded p-3">
-              <p className="text-sm font-medium text-gray-900 mb-1">Missing: {gap.missing}</p>
-              <p className="text-xs text-gray-600">Required by JD: "{gap.required_by_jd}"</p>
+            <div key={i} className="bg-background rounded p-3">
+              <p className="text-sm font-medium text-foreground mb-1">Missing: {gap.missing}</p>
+              <p className="text-xs text-muted-foreground">Required by JD: "{gap.required_by_jd}"</p>
               {gap.suggestion && (
-                <details className="text-xs text-gray-600 mt-2">
-                  <summary className="cursor-pointer text-blue-600">Details & suggestions</summary>
+                <details className="text-xs text-muted-foreground mt-2">
+                  <summary className="cursor-pointer text-brand-500">Details & suggestions</summary>
                   <p className="mt-2">{gap.suggestion}</p>
                 </details>
               )}

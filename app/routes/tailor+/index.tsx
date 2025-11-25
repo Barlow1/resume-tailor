@@ -107,20 +107,15 @@ export default function TailorUpload() {
           alt=""
           className="absolute right-[59px] top-[213px] w-[336px] h-[169px]"
         />
-        <img
-          src="/background-pattern.svg"
-          alt=""
-          className="w-full h-full object-cover"
-        />
       </div>
 
       {/* Main Content */}
       <main className="max-w-[1200px] mx-auto px-8 py-12">
         {/* Hero Section */}
         <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold text-black dark:text-white mb-2">
+          <h1 className="text-5xl font-bold text-primary mb-2">
             Upload your resume,{' '}
-            <span className="text-[#7957FE]">we'll show you what's missing.</span>
+            <span className="text-brand-500">we'll show you what's missing.</span>
           </h1>
         </div>
 
@@ -129,30 +124,30 @@ export default function TailorUpload() {
           <Form method="post" encType="multipart/form-data">
             <div
               className={`border-2 border-dashed ${
-                isDragging ? 'border-[#7957FE] bg-purple-50 dark:bg-purple-900/30' : 'border-[#7957FE]'
-              } rounded-2xl bg-white/50 dark:bg-white backdrop-blur-sm p-12 transition-all duration-200`}
+                isDragging ? 'border-brand-500 bg-accent/50' : 'border-brand-500'
+              } rounded-2xl bg-accent backdrop-blur-sm p-12 transition-all duration-200`}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
             >
               <div className="flex flex-col items-center">
                 {/* Upload Icon */}
-                <div className="mb-6">
+                <div className="mb-6 text-brand-500">
                   <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="12" y="8" width="40" height="48" rx="4" stroke="#7957FE" strokeWidth="2" fill="none"/>
-                    <path d="M20 16h24M20 24h24M20 32h16" stroke="#7957FE" strokeWidth="2" strokeLinecap="round"/>
-                    <circle cx="44" cy="44" r="12" fill="#7957FE"/>
+                    <rect x="12" y="8" width="40" height="48" rx="4" stroke="currentColor" strokeWidth="2" fill="none"/>
+                    <path d="M20 16h24M20 24h24M20 32h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                    <circle cx="44" cy="44" r="12" fill="currentColor"/>
                     <path d="M44 38v12M38 44h12" stroke="white" strokeWidth="2" strokeLinecap="round"/>
                   </svg>
                 </div>
 
                 {/* Text */}
                 <div className="text-center mb-6">
-                  <p className="text-lg text-gray-700 mb-2">Drag file or click</p>
+                  <p className="text-lg text-foreground">Drag file or click</p>
                   <div className="flex items-center gap-3 justify-center">
-                    <div className="h-px w-12 bg-gray-300" />
-                    <span className="text-sm text-gray-500">OR</span>
-                    <div className="h-px w-12 bg-gray-300" />
+                    <div className="h-px w-12 bg-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">OR</span>
+                    <div className="h-px w-12 bg-muted-foreground" />
                   </div>
                 </div>
 
@@ -171,19 +166,19 @@ export default function TailorUpload() {
                 {!selectedFile ? (
                   <label
                     htmlFor="resume-upload"
-                    className="bg-[#7957FE] text-white px-8 py-3 rounded-lg font-medium cursor-pointer hover:bg-[#6847ED] transition-colors"
+                    className="bg-brand-500 text-primary-foreground px-8 py-3 rounded-lg font-medium cursor-pointer hover:bg-brand-800 transition-colors"
                   >
                     Choose File
                   </label>
                 ) : (
                   <div className="text-center">
-                    <p className="text-sm text-gray-600 mb-4">
+                    <p className="text-sm text-muted-foreground mb-4">
                       Selected: <span className="font-medium">{selectedFile.name}</span>
                     </p>
                     <button
                       type="submit"
                       disabled={isUploading}
-                      className="bg-[#7957FE] text-white px-8 py-3 rounded-lg font-medium hover:bg-[#6847ED] transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                      className="bg-brand-500 text-primary-foreground px-8 py-3 rounded-lg font-medium hover:bg-brand-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isUploading ? 'Parsing resume...' : 'Continue'}
                     </button>
@@ -192,7 +187,7 @@ export default function TailorUpload() {
 
                 {/* Error Message */}
                 {actionData?.error && (
-                  <div className="mt-6 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+                  <div className="mt-6 bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-lg text-sm">
                     {actionData.error}
                   </div>
                 )}
@@ -202,20 +197,20 @@ export default function TailorUpload() {
         </div>
 
         {/* Subheading */}
-        <div className="text-center mt-12 mb-16">
-          <p className="text-2xl font-semibold text-black dark:text-white">
+        <div className="text-center mt-6 mb-6">
+          <p className="text-2xl font-semibold text-primary">
             Then fix it in one click. 30 seconds.
           </p>
         </div>
 
         {/* Bottom Section */}
-        <div className="max-w-[1000px] mx-auto mt-24 pb-24">
+        <div className="max-w-[1000px] mx-auto mt-12 mb-6">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-black dark:text-white mb-4">
+            <h2 className="text-4xl font-bold text-primary mb-4">
               Your resume isn't broken.{' '}
-              <span className="text-[#7957FE]">It just wasn't written for this job.</span>
+              <span className="text-brand-500">It just wasn't written for this job.</span>
             </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-300">
+            <p className="text-lg text-muted-foreground">
               Generic resumes get auto-rejected. Tailored ones get interviews.
             </p>
           </div>
@@ -223,9 +218,9 @@ export default function TailorUpload() {
           {/* Comparison Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Generic Resume Card */}
-            <div className="bg-white rounded-2xl p-8 shadow-sm border border-red-100 relative">
+            <div className="bg-background rounded-2xl p-8 shadow-lg border-2 border-destructive/30 ring-1 ring-destructive/20 relative">
               <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                <div className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-destructive flex items-center justify-center">
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M15 5L5 15M5 5l10 10" stroke="white" strokeWidth="2" strokeLinecap="round"/>
                   </svg>
@@ -233,31 +228,31 @@ export default function TailorUpload() {
               </div>
 
               <div className="flex items-start gap-3 mb-6">
-                <div className="w-12 h-12 flex-shrink-0">
+                <div className="w-12 h-12 flex-shrink-0 text-destructive">
                   <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="8" y="6" width="32" height="36" rx="2" stroke="#EF4444" strokeWidth="2" fill="none"/>
-                    <path d="M14 14h6M14 20h10M14 26h8" stroke="#EF4444" strokeWidth="1.5" strokeLinecap="round"/>
-                    <circle cx="18" cy="33" r="2" fill="#EF4444"/>
+                    <rect x="8" y="6" width="32" height="36" rx="2" stroke="currentColor" strokeWidth="2" fill="none"/>
+                    <path d="M14 14h6M14 20h10M14 26h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                    <circle cx="18" cy="33" r="2" fill="currentColor"/>
                   </svg>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-lg text-black mb-1">Generic Resume</h3>
-                  <p className="text-gray-600 font-medium">John Developer</p>
-                  <p className="text-sm text-gray-500">Software Engineer</p>
+                  <h3 className="font-semibold text-lg text-foreground mb-1">Generic Resume</h3>
+                  <p className="text-muted-foreground font-medium">John Developer</p>
+                  <p className="text-sm text-muted-foreground">Software Engineer</p>
                 </div>
               </div>
 
               <div className="mb-6">
-                <h4 className="font-semibold text-black mb-2">Experience</h4>
-                <ul className="text-sm text-gray-600 space-y-1">
+                <h4 className="font-semibold text-foreground mb-2">Experience</h4>
+                <ul className="text-sm text-muted-foreground space-y-1">
                   <li>• Built API product</li>
                   <li>• Worked on features</li>
                   <li>• Collaborated with team</li>
                 </ul>
               </div>
 
-              <div className="pt-4 border-t border-red-100">
-                <div className="flex items-center gap-2 text-red-500">
+              <div className="pt-4 border-t border-destructive/20">
+                <div className="flex items-center gap-2 text-destructive">
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M12 4L4 12M4 4l8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                   </svg>
@@ -267,9 +262,9 @@ export default function TailorUpload() {
             </div>
 
             {/* Tailored Resume Card */}
-            <div className="bg-white rounded-2xl p-8 shadow-sm border border-green-100 relative">
+            <div className="bg-background rounded-2xl p-8 shadow-lg border-2 border-brand-500/30 ring-1 ring-brand-500/20 relative">
               <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-brand-500 flex items-center justify-center">
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M16 6L7 15l-4-4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
@@ -277,31 +272,31 @@ export default function TailorUpload() {
               </div>
 
               <div className="flex items-start gap-3 mb-6">
-                <div className="w-12 h-12 flex-shrink-0">
+                <div className="w-12 h-12 flex-shrink-0 text-brand-500">
                   <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="8" y="6" width="32" height="36" rx="2" stroke="#22C55E" strokeWidth="2" fill="none"/>
-                    <path d="M14 14h6M14 20h10M14 26h8" stroke="#22C55E" strokeWidth="1.5" strokeLinecap="round"/>
-                    <circle cx="18" cy="33" r="2" fill="#22C55E"/>
+                    <rect x="8" y="6" width="32" height="36" rx="2" stroke="currentColor" strokeWidth="2" fill="none"/>
+                    <path d="M14 14h6M14 20h10M14 26h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                    <circle cx="18" cy="33" r="2" fill="currentColor"/>
                   </svg>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-lg text-black mb-1">Tailored Resume</h3>
-                  <p className="text-gray-600 font-medium">John Developer</p>
-                  <p className="text-sm text-gray-500">Software Backend Engineer</p>
+                  <h3 className="font-semibold text-lg text-foreground mb-1">Tailored Resume</h3>
+                  <p className="text-muted-foreground font-medium">John Developer</p>
+                  <p className="text-sm text-muted-foreground">Software Backend Engineer</p>
                 </div>
               </div>
 
               <div className="mb-6">
-                <h4 className="font-semibold text-black mb-2">Experience</h4>
-                <ul className="text-sm text-gray-600 space-y-1">
+                <h4 className="font-semibold text-foreground mb-2">Experience</h4>
+                <ul className="text-sm text-muted-foreground space-y-1">
                   <li>• Built rest API serving 50k requests/day with 99.9% uptime</li>
                   <li>• Shipped 3 major features reducing latency by 40%</li>
                   <li>• Led 5-person team in agile environment</li>
                 </ul>
               </div>
 
-              <div className="pt-4 border-t border-green-100">
-                <div className="flex items-center gap-2 text-green-600">
+              <div className="pt-4 border-t border-accent">
+                <div className="flex items-center gap-2 text-brand-500">
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <rect x="2" y="3" width="12" height="10" rx="1" stroke="currentColor" strokeWidth="1.5" fill="none"/>
                     <path d="M5 7h6M5 10h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
