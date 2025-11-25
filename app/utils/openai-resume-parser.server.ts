@@ -82,8 +82,6 @@ export async function parseResumeWithOpenAI(
 			throw new Error('No text content found in PDF')
 		}
 
-		console.log('Extracted text length:', resumeText.length)
-
 		// Call OpenAI API
 		const response = await openai.chat.completions.create({
 			model: 'gpt-4o',
@@ -178,14 +176,8 @@ REMEMBER: Extract EVERY detail. Never summarize or condense bullet points. Prese
 		result.education = result.education || []
 		result.skills = result.skills || []
 
-		console.log('Successfully parsed resume for:', result.personal_info.full_name)
-		console.log('Found experiences:', result.experiences.length)
-		console.log('Found education:', result.education.length)
-		console.log('Found skills:', result.skills.length)
-
 		return result
 	} catch (error: any) {
-		console.error('Error parsing resume with OpenAI:', error)
 		throw new Error(
 			`Failed to parse resume: ${error.message || 'Unknown error'}`,
 		)

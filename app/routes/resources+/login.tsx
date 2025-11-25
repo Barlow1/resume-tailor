@@ -125,11 +125,13 @@ export async function action({ request }: DataFunctionArgs) {
 			responseInit,
 		)
 	} else if (user?.username) {
-		throw redirect(safeRedirect(`/builder`), responseInit)
-	} else if (!redirectTo) {
-		return json({ status: 'success', submission } as const, responseInit)
+		if (redirectTo) {
+			throw redirect(safeRedirect(redirectTo), responseInit)
+		} else {
+			throw redirect(safeRedirect(`/builder`), responseInit)
+		}
 	} else {
-		throw redirect(safeRedirect(redirectTo), responseInit)
+		return json({ status: 'success', submission } as const, responseInit)
 	}
 }
 
