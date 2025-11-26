@@ -169,9 +169,9 @@ export default function JobPage() {
 			<SubscribeModal
 				isOpen={showSubscribe}
 				onClose={() => setShowSubscribe(false)}
-				successUrl="/welcome"
-				redirectTo="/resume"
-				cancelUrl="/resume"
+				successUrl={`/welcome`}
+				redirectTo={`/resume`}
+				cancelUrl={`/resume`}
 			/>
 		</div>
 	)
