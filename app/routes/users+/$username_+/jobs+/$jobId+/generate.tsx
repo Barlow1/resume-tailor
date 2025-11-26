@@ -57,8 +57,9 @@ export async function loader({ params, request }: DataFunctionArgs) {
 					actions_remaining: Math.max(0, 2 - totalActions),
 					blocked_feature: 'resume_generation',
 				},
-				successUrl: request.url,
+				successUrl: '/welcome',
 				cancelUrl: request.url.split('/generate')[0],
+				redirectTo: request.url,
 			})
 		}
 	}
@@ -69,6 +70,7 @@ export async function loader({ params, request }: DataFunctionArgs) {
 		trackingData: undefined,
 		successUrl: undefined,
 		cancelUrl: undefined,
+		redirectTo: undefined,
 	})
 }
 
@@ -104,7 +106,7 @@ export default function ResumeTailorRoute() {
 						onClose={() => setShowSubscribe(false)}
 						successUrl={data.successUrl}
 						cancelUrl={data.cancelUrl}
-						redirectTo={data.successUrl}
+						redirectTo={data.redirectTo}
 					/>
 				)}
 		</div>

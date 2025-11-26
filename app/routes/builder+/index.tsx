@@ -1432,9 +1432,9 @@ export default function ResumeBuilder() {
 						<SubscribeModal
 							isOpen={showSubscribeModal}
 							onClose={() => setShowSubscribeModal(false)}
-							successUrl={`/builder`}
-							redirectTo={`/builder`}
-							cancelUrl={'/builder'}
+							successUrl="/welcome"
+							redirectTo="/builder"
+							cancelUrl="/builder"
 						/>
 
 						<AIAssistantModal
