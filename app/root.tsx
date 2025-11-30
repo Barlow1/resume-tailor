@@ -73,6 +73,12 @@ import {
 } from '@heroicons/react/24/outline'
 import { redirect } from '@remix-run/router'
 import { Crisp } from 'crisp-sdk-web'
+
+declare global {
+	interface Window {
+		__LOGROCKET_INITIALIZED__?: boolean
+	}
+}
 import {
 	Tooltip,
 	TooltipContent,
@@ -348,13 +354,12 @@ function App() {
 	const path = location.pathname
 
 	useEffect(() => {
-		if (user) {
+		if (user && !window.__LOGROCKET_INITIALIZED__) {
+			window.__LOGROCKET_INITIALIZED__ = true
+			LogRocket.init('cnp1eb/resume-tailor')
 			LogRocket.identify(user.id, {
 				name: user.name ?? user.email,
 				email: user.email,
-
-				// Add your own custom user variables here, ie:
-				subscriptionType: 'pro',
 			})
 			Crisp.user.setEmail(user.email)
 			if (user.name) {
