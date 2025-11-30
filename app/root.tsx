@@ -354,7 +354,12 @@ function App() {
 	const path = location.pathname
 
 	useEffect(() => {
-		if (user && !window.__LOGROCKET_INITIALIZED__) {
+		if (
+			user &&
+			!window.__LOGROCKET_INITIALIZED__ &&
+			data.ENV.MODE === 'production' &&
+			!data.ENV.CI
+		) {
 			window.__LOGROCKET_INITIALIZED__ = true
 			LogRocket.init('cnp1eb/resume-tailor')
 			LogRocket.identify(user.id, {
@@ -369,7 +374,7 @@ function App() {
 				Crisp.session.setData({ username: user.username })
 			}
 		}
-	}, [user])
+	}, [user, data.ENV.MODE, data.ENV.CI])
 
 	useEffect(() => {
 		if (typeof window !== 'undefined') {
