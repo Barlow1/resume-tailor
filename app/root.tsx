@@ -81,6 +81,11 @@ import {
 } from './components/ui/tooltip.tsx'
 import { NewBadge } from './components/ui/badge.tsx'
 import { RecaptchaProvider } from './components/recaptcha-provider.tsx'
+declare global {
+	interface Window {
+		__LOGROCKET_INITIALIZED__?: boolean
+	}
+}
 
 export const links: LinksFunction = () => {
 	return [
@@ -348,13 +353,12 @@ function App() {
 	const path = location.pathname
 
 	useEffect(() => {
-		if (user) {
+		if (user && !window.__LOGROCKET_INITIALIZED__) {
+			window.__LOGROCKET_INITIALIZED__ = true
+			LogRocket.init('cnp1eb/resume-tailor')
 			LogRocket.identify(user.id, {
 				name: user.name ?? user.email,
 				email: user.email,
-
-				// Add your own custom user variables here, ie:
-				subscriptionType: 'pro',
 			})
 			Crisp.user.setEmail(user.email)
 			if (user.name) {
@@ -381,6 +385,9 @@ function App() {
 			const trackedKey = `tracked_subscription_${sessionId}`
 			if (sessionId && !sessionStorage.getItem(trackedKey)) {
 				trackEvent('subscription_started', {
+					transaction_id: sessionId,
+					value: 0,
+					currency: 'USD',
 					user_id: data.recentPurchase.user_id,
 					plan_tier: data.recentPurchase.plan_tier,
 					price_usd: data.recentPurchase.price_usd,
@@ -400,9 +407,11 @@ function App() {
 			// Check if we've already tracked this conversion event
 			if (!sessionStorage.getItem(trackedKey)) {
 				trackEvent('purchase_completed', {
+					transaction_id: data.conversionEvent.id,
+					value: data.conversionEvent.price_usd,
+					currency: 'USD',
 					user_id: data.conversionEvent.user_id,
 					plan_tier: data.conversionEvent.plan_tier,
-					price_usd: data.conversionEvent.price_usd,
 				})
 
 				// Mark as tracked in sessionStorage to prevent duplicates on refresh
