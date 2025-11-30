@@ -73,12 +73,6 @@ import {
 } from '@heroicons/react/24/outline'
 import { redirect } from '@remix-run/router'
 import { Crisp } from 'crisp-sdk-web'
-
-declare global {
-	interface Window {
-		__LOGROCKET_INITIALIZED__?: boolean
-	}
-}
 import {
 	Tooltip,
 	TooltipContent,
@@ -87,6 +81,11 @@ import {
 } from './components/ui/tooltip.tsx'
 import { NewBadge } from './components/ui/badge.tsx'
 import { RecaptchaProvider } from './components/recaptcha-provider.tsx'
+declare global {
+	interface Window {
+		__LOGROCKET_INITIALIZED__?: boolean
+	}
+}
 
 export const links: LinksFunction = () => {
 	return [
@@ -354,12 +353,7 @@ function App() {
 	const path = location.pathname
 
 	useEffect(() => {
-		if (
-			user &&
-			!window.__LOGROCKET_INITIALIZED__ &&
-			data.ENV.MODE === 'production' &&
-			!data.ENV.CI
-		) {
+		if (user && !window.__LOGROCKET_INITIALIZED__) {
 			window.__LOGROCKET_INITIALIZED__ = true
 			LogRocket.init('cnp1eb/resume-tailor')
 			LogRocket.identify(user.id, {
@@ -374,7 +368,7 @@ function App() {
 				Crisp.session.setData({ username: user.username })
 			}
 		}
-	}, [user, data.ENV.MODE, data.ENV.CI])
+	}, [user])
 
 	useEffect(() => {
 		if (typeof window !== 'undefined') {
