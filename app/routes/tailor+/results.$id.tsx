@@ -1,5 +1,5 @@
 import { json, type LoaderFunctionArgs } from '@remix-run/node';
-import { useLoaderData, Link } from '@remix-run/react';
+import { useLoaderData, Link, useLocation } from '@remix-run/react';
 import { prisma } from '~/utils/db.server.ts';
 import { useState } from 'react';
 import { getUserId, getStripeSubscription } from '~/utils/auth.server.ts';
@@ -60,6 +60,8 @@ export default function TailorResults() {
   const { id, originalResume, tailoredResume } = useLoaderData<typeof loader>();
   const [showFullAnalysis, setShowFullAnalysis] = useState(false);
   const [showSubscribeModal, setShowSubscribeModal] = useState(false);
+  const location = useLocation();
+  const currentPath = location.pathname;
 
   // Count suggested bullets
   const suggestedBulletsCount = tailoredResume.suggested_bullets?.length || 0;
@@ -227,8 +229,9 @@ export default function TailorResults() {
       <SubscribeModal
         isOpen={showSubscribeModal}
         onClose={() => setShowSubscribeModal(false)}
-        successUrl="/welcome"
-        cancelUrl={`/tailor/results/${id}`}
+        successUrl={currentPath}
+        redirectTo={currentPath}
+        cancelUrl={currentPath}
       />
     </div>
   );

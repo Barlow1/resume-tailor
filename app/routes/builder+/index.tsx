@@ -1432,7 +1432,7 @@ export default function ResumeBuilder() {
 						<SubscribeModal
 							isOpen={showSubscribeModal}
 							onClose={() => setShowSubscribeModal(false)}
-							successUrl={`/welcome`}
+							successUrl={`/builder`}
 							redirectTo={`/builder`}
 							cancelUrl={`/builder`}
 						/>

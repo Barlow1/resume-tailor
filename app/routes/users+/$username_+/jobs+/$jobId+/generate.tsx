@@ -57,7 +57,7 @@ export async function loader({ params, request }: DataFunctionArgs) {
 					actions_remaining: Math.max(0, 2 - totalActions),
 					blocked_feature: 'resume_generation',
 				},
-				successUrl: '/welcome',
+				successUrl: request.url,
 				cancelUrl: request.url.split('/generate')[0],
 				redirectTo: request.url,
 			})

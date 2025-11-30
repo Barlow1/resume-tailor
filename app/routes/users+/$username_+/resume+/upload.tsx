@@ -561,7 +561,7 @@ export default function FileUploaderModal() {
 				<SubscribeModal
 					isOpen={showSubscribeModal}
 					onClose={() => setShowSubscribeModal(false)}
-					successUrl="/welcome"
+					successUrl={`/users/${data.user?.username}/resume/upload`}
 					redirectTo={`/users/${data.user?.username}/resume/upload`}
 					cancelUrl={`/users/${data.user?.username}/resume/upload`}
 				/>

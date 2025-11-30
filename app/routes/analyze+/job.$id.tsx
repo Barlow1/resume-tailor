@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { useLoaderData, useNavigate, Link, useRouteLoaderData } from '@remix-run/react'
+import { useLoaderData, useNavigate, Link, useRouteLoaderData, useLocation } from '@remix-run/react'
 import { json, type LoaderFunctionArgs } from '@remix-run/node'
 import { SubscribeModal } from '~/components/subscribe-modal.tsx'
 import { trackEvent } from '~/utils/analytics.ts'
@@ -27,6 +27,8 @@ export default function JobPage() {
 	const [jdText, setJdText] = React.useState(a.jdText || '')
 	const [analyzing, setAnalyzing] = React.useState(false)
 	const [showSubscribe, setShowSubscribe] = React.useState(false)
+	const location = useLocation()
+	const currentPath = location.pathname
 
 	const resumePreview =
 		(typeof window !== 'undefined' &&
@@ -169,9 +171,9 @@ export default function JobPage() {
 			<SubscribeModal
 				isOpen={showSubscribe}
 				onClose={() => setShowSubscribe(false)}
-				successUrl={`/welcome`}
-				redirectTo={`/resume`}
-				cancelUrl={`/resume`}
+				successUrl={currentPath}
+				redirectTo={currentPath}
+				cancelUrl={currentPath}
 			/>
 		</div>
 	)

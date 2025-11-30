@@ -381,6 +381,9 @@ function App() {
 			const trackedKey = `tracked_subscription_${sessionId}`
 			if (sessionId && !sessionStorage.getItem(trackedKey)) {
 				trackEvent('subscription_started', {
+					transaction_id: sessionId,
+					value: 0,
+					currency: 'USD',
 					user_id: data.recentPurchase.user_id,
 					plan_tier: data.recentPurchase.plan_tier,
 					price_usd: data.recentPurchase.price_usd,
@@ -400,9 +403,11 @@ function App() {
 			// Check if we've already tracked this conversion event
 			if (!sessionStorage.getItem(trackedKey)) {
 				trackEvent('purchase_completed', {
+					transaction_id: data.conversionEvent.id,
+					value: data.conversionEvent.price_usd,
+					currency: 'USD',
 					user_id: data.conversionEvent.user_id,
 					plan_tier: data.conversionEvent.plan_tier,
-					price_usd: data.conversionEvent.price_usd,
 				})
 
 				// Mark as tracked in sessionStorage to prevent duplicates on refresh

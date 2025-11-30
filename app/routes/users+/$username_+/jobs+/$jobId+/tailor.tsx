@@ -57,7 +57,7 @@ export async function loader({ params, request }: DataFunctionArgs) {
 					actions_remaining: Math.max(0, 2 - totalActions),
 					blocked_feature: 'resume_tailoring',
 				},
-				successUrl: '/welcome',
+				successUrl: request.url,
 				cancelUrl: request.url.split('/tailor')[0],
 				redirectTo: request.url,
 			})

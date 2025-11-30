@@ -3,7 +3,7 @@ import { Pricing as PricingComponent } from '~/routes/resources+/pricing.tsx'
 
 export default function Pricing() {
 	const location = useLocation()
-	const successUrl = '/welcome'
+	const successUrl = location.pathname
 	const cancelUrl = location.pathname
 	return (
 		<div className="py-24 sm:py-32">

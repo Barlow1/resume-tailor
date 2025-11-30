@@ -372,7 +372,7 @@ export default function RecruiterOutreachPage() {
 			<SubscribeModal
 				isOpen={showSubscribeModal}
 				onClose={() => setShowSubscribeModal(false)}
-				successUrl="/welcome"
+				successUrl={here}
 				redirectTo={here}
 				cancelUrl={here}
 			/>
