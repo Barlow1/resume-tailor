@@ -53,10 +53,41 @@ async function handleCheckoutSessionCompleted(
 		typeof completedCheckout.subscription === 'string',
 		'subscription string must be present on checkout complete webhook',
 	)
-	await activateSubscription(
+	const subscription = await activateSubscription(
 		completedCheckout.metadata.subscriptionId,
 		completedCheckout.subscription,
 	)
+
+	// Create conversion event for subscription_started tracking
+	if (!subscription.ownerId) {
+		console.error(`Subscription ${subscription.id} has no ownerId - cannot track conversion`)
+		return
+	}
+
+	const prisma = new PrismaClient()
+	try {
+		await prisma.$connect()
+
+		const isWeekly = subscription.stripePriceId === process.env.STRIPE_PRICE_ID_WEEKLY
+		const planTier = isWeekly ? 'weekly' : 'monthly'
+
+		await prisma.conversionEvent.create({
+			data: {
+				userId: subscription.ownerId,
+				subscriptionId: subscription.id,
+				planTier,
+				priceUsd: 0,
+				eventType: 'subscription_started',
+			},
+		})
+
+		console.log(`Created subscription_started conversion event for user ${subscription.ownerId}`)
+	} catch (e) {
+		console.error('Error creating subscription_started conversion event', e)
+		throw e
+	} finally {
+		await prisma.$disconnect()
+	}
 }
 async function handleCanceledSubscription(deletedSubscription: Stripe.Subscription) {
 	invariant(
@@ -112,6 +143,7 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
 				subscriptionId: subscription.id,
 				planTier,
 				priceUsd,
+				eventType: 'purchase_completed',
 				tracked: false,
 			},
 		})
