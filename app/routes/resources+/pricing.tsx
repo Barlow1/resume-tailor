@@ -80,7 +80,7 @@ export async function action({ request }: ActionFunctionArgs) {
 	}
 	const baseUrl = new URL(request.url).origin
 
-	const fullSuccessUrl = `${baseUrl}${redirectTo || successUrl}?session_id={CHECKOUT_SESSION_ID}`
+	const fullSuccessUrl = `${baseUrl}${redirectTo || successUrl}`
 	const fullCancelUrl = `${baseUrl}${cancelUrl}`
 	await requireStripeSubscription({
 		userId,
