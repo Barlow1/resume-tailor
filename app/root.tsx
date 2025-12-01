@@ -166,7 +166,6 @@ export async function loader({ request }: DataFunctionArgs) {
 
 	let firstJob = null
 	let gettingStartedProgress = null
-	let recentPurchase = null
 	let conversionEvent = null
 	if (userId) {
 		;[firstJob, gettingStartedProgress] = await Promise.all([
@@ -178,37 +177,7 @@ export async function loader({ request }: DataFunctionArgs) {
 			}),
 		])
 
-		// Check if coming from Stripe checkout (via query param)
-		const url = new URL(request.url)
-		const fromStripe = url.searchParams.has('session_id')
-
-		if (fromStripe) {
-			const subscription = await prisma.subscription.findFirst({
-				where: {
-					ownerId: userId,
-					active: true,
-				},
-				select: {
-					stripePriceId: true,
-				},
-			})
-
-			if (subscription) {
-				// Determine plan tier from stripePriceId
-				const isWeekly =
-					subscription.stripePriceId === process.env.STRIPE_PRICE_ID_WEEKLY
-				const planTier = isWeekly ? 'weekly' : 'monthly'
-				const priceUsd = isWeekly ? 4.99 : 15.0
-
-				recentPurchase = {
-					user_id: userId,
-					plan_tier: planTier,
-					price_usd: priceUsd,
-				}
-			}
-		}
-
-		// Check for untracked conversion events (actual payments after trial)
+		// Check for untracked conversion events (subscription_started or purchase_completed)
 		const untrackedConversion = await prisma.conversionEvent.findFirst({
 			where: {
 				userId: userId,
@@ -225,6 +194,7 @@ export async function loader({ request }: DataFunctionArgs) {
 				user_id: untrackedConversion.userId,
 				plan_tier: untrackedConversion.planTier,
 				price_usd: untrackedConversion.priceUsd,
+				event_type: untrackedConversion.eventType,
 			}
 		}
 	}
@@ -244,7 +214,6 @@ export async function loader({ request }: DataFunctionArgs) {
 			flash,
 			firstJob,
 			gettingStartedProgress,
-			recentPurchase,
 			conversionEvent,
 		},
 		{
@@ -376,37 +345,18 @@ function App() {
 		}
 	}, [])
 
-	// Track subscription_started event for trial signups
-	useEffect(() => {
-		if (data.recentPurchase) {
-			const sessionId = new URLSearchParams(window.location.search).get('session_id')
-
-			// Check if we've already tracked this session_id
-			const trackedKey = `tracked_subscription_${sessionId}`
-			if (sessionId && !sessionStorage.getItem(trackedKey)) {
-				trackEvent('subscription_started', {
-					transaction_id: sessionId,
-					value: 0,
-					currency: 'USD',
-					user_id: data.recentPurchase.user_id,
-					plan_tier: data.recentPurchase.plan_tier,
-					price_usd: data.recentPurchase.price_usd,
-				})
-
-				// Mark as tracked to prevent duplicates on refresh
-				sessionStorage.setItem(trackedKey, 'true')
-			}
-		}
-	}, [data.recentPurchase])
-
-	// Track purchase_completed event for actual payments after trial
+	// Track conversion events (subscription_started or purchase_completed)
 	useEffect(() => {
 		if (data.conversionEvent) {
 			const trackedKey = `tracked_conversion_${data.conversionEvent.id}`
 
 			// Check if we've already tracked this conversion event
 			if (!sessionStorage.getItem(trackedKey)) {
-				trackEvent('purchase_completed', {
+				const eventName = data.conversionEvent.event_type === 'subscription_started'
+					? 'subscription_started'
+					: 'purchase_completed'
+
+				trackEvent(eventName, {
 					transaction_id: data.conversionEvent.id,
 					value: data.conversionEvent.price_usd,
 					currency: 'USD',

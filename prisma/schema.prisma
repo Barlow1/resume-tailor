@@ -236,6 +236,7 @@ model ConversionEvent {
   subscriptionId String
   planTier       String
   priceUsd       Float
+  eventType      String   @default("purchase_completed")
   tracked        Boolean  @default(false)
   createdAt      DateTime @default(now())
 
