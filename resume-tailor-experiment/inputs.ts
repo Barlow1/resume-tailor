@@ -2,115 +2,111 @@
 // INPUTS - Paste your real resume and job description here
 // =============================================================================
 
-export const RESUME = `
-Ryan Marsh
-Lead Senior Software Engineer
-Summary
-Experienced and result-driven Lead Senior Software Engineer with over 6.5 years of expertise in Android system development. Proven track record of enhancing performance and user experience for Android, Ubuntu Core, Yocto (Linux Embedded), and Wearables-based IoT products. Proficient in Python scripting, executing kernel modifications, and developing frameworks for Linux OS/Android/Yocto. Successfully oversee and manage a team for seamless execution of all aforementioned tasks across multiple products.
-
-Skills
-C/C++, Java, Python, C#
-Linux Embedded, Wearables, Ubuntu Core, Kernel
-Linux, Windows, Android, Yocto
-Memory Management
-Android Frameworks
-OpenCV, EmguCV, Image Analysis
-Data Structure and Algorithm
-Leadership, Mentor
-Work Experience
-Lead Senior Software Engineer
-Qualcomm
-Present
-Mentored and coached junior engineers, providing technical guidance and fostering a culture of continuous learning and professional development, resulting in significant improvement in team productivity.
-Leading a team for improving the performance of RAM, CPU and GPU to improve user experience.
-Working on new ideas to derive more IP through patents or process optimization.
-Senior Software Engineer
-Qualcomm
-Nov 2023
-Collaborated with cross-functional development team members to analyze potential system solutions based on evolving client requirements.
-Directly responsible for device performance of 3 IOT products which were launched on time and meeting the performance goals set by clients.
-Working on creating a tool to autonomously give all the details in case any SMMU fault occurs.
-Responsible for the work of people working under me and providing mentorship to all the new joinees for our team.
-Working on kernel Drivers, debugging and setting up right parameters for different products.
-Software Engineer
-Qualcomm
-Nov 2020
-Worked with RAM memory parameters in Kernel to eﬀectively utilize RAM.
-Reduced the usage of RAM by 50% on IOT Smart Speaker based on Linux OS.
-Changed the full ﬁle system of a Linux based IOT device to reduce the RAM and ROM requirements of the product.(UBIFS -> SQUASHFS) Analyzed/Improved the user experience on Android watches by reducing the latencies of Apps and Janks which appeared. Directly responsible for device performance of 3 IOT products which were launched on time and meeting the performance goals set by clients.
-Working on creating a tool to autonomously give all the details incase any SMMU fault occurs.
-Conducted regression testing, analyzed results and submitted observations to owner teams.
-Associate Software Engineer
-Qualcomm
-Nov 2018
-Debugged code and located root causes of problems by reviewing configuration files and logs.
-Tested troubleshooting methods, devised innovative solutions, and documented resolutions for inclusion in knowledge base for support team use.
-Collaborated with developers and product owners to stay current on product features and intended functionality.
-Android Performance Optimization on Qualcomm IoT chipsets by improving the kernel performance.
-Reduce the Launch Latency of diﬀerent apps on Android platform by using perf boost and power hints in Android frameworks.
-Created Kernel configs for smart speaker.
-Education
-B. Tech Computer Science
-San Jose State University
-May 2017
-7.48 CGPA
-
-12th
-Northeastern University
-2013
-93.8 %
-
-10th
-Arizona State University
-2011
-9.4 CGPA
-
-Languages
-English
-French
-Arabic
-German
-`;
+export const RESUME = `ELLIE SANTOS
+SENIOR PRODUCT MANAGER
+CONTACT
+ellie.santos@email.com
+(123) 456-7890
+San Antonio, TX
+LinkedIn
+EDUCATION
+B.S.
+Mathematics and Economics
+University of Texas
+September 2009 - April 2013
+San Antonio, TX
+SKILLS
+Google Analytics & Adobe
+Analytics
+SQL, Tableau, Excel, Google
+Sheets
+A/B testing and
+experimentation
+Agile Development, Github
+WORK EXPERIENCE
+Senior Product Manager
+IXL Learning
+January 2018 - current / San Antonio, TX
+· Supervised the planning, development, and implementation of B2C
+SaaS product to enable students to submit essays and assignments
+to tutors for support in real time, which grew to 100K+ daily users
+·
+Interpreted data to understand KPI failures, and worked with crossfunctional teams to remedy issues from coding enhancements to
+loading speed, increasing positive user feedback by 16%
+· Traveled 20% of the time to meet with stakeholders across the
+nation to assist in vision, development, and evolution of platform
+· Managed all client, vendor, and stakeholder relationships,
+negotiating terms, scope, and deadlines
+Product Manager
+Rocket Mortgage
+May 2015 - January 2018 / San Antonio, TX
+·
+Implemented A/B testing to determine reasoning behind
+customers'top financial services choices, and suggested solutions
+to improve underperforming services, increasing revenue by $1.5M
+· Executed long-term signup test, boosting paying customers by 38%
+· Studied market trends and user feedback, and extrapolated data in
+Excel to understand customer needs, and presented key insights to
+management and stakeholders
+· Worked with leadership to present key indicators of product
+growth and adoption, leading to the close of a $4.1M Series B
+Assistant Product Manager
+ArchPoint Group
+April 2013 - May 2015 / San Antonio, TX
+· Communicated, negotiated, and partnered with vendors in product
+development phase, considering scope, requirements, and cost
+· Worked closely with 7 sales staff to present key insights derived
+from reports created in SQL and Tableau to customers
+· Conducted in-depth market analyses, and presented reports to
+stakeholders, suggesting development strategies that saved $8K+
+· Collaborated with product management team, ensuring supply of
+proposals and contributing to documentation of objectives`;
 
 export const JOB_DESCRIPTION = `
-Software Developer Engineer - iOS, Ring
-Job ID: 3011028 | Amazon.com Services LLC
-Description
-The Ring team is looking for a passionate and talented iOS Software Development Engineer who has experience building world-class mobile apps. You will be responsible for developing mobile applications that interact seamlessly with our devices and delight our customers.
+(Bilingual Spanish- Remote- Anywhere USA) 
 
-You will join a team that owns some of the most important functionality in the Ring app. With a huge audience and an exciting roadmap, this is a rare opportunity to shape the community experience for millions of users.
+The Product Manager is responsible for overseeing the full product development lifecycle, including product definition, go-to-market planning, operational execution, and lifecycle management. This role combines strong technical expertise with project management skills to define and deliver high-quality product functionalities, coordinate implementation across regional teams, and ensure the successful launch of international offerings.
 
-Our goal is to provide the best possible experience to our customers, building solutions and supporting new products that help Ring on their mission to make neighborhoods safer.
+This Product Manager applies deep technical knowledge to analyze market trends, assess the competitive landscape, and guide product direction and value proposition. This role works closely with Engineering, Presales, Commercial, and Marketing teams to ensure alignment between technical capabilities, product messaging, and business objectives. Additional responsibilities include supporting the development of technical documentation and collateral such as white papers and presentations, while maintaining a comprehensive understanding of organizational priorities, industry developments, and customer requirements.
 
+Responsibilities
 
+Develop product documentation, including technical requirements, product descriptions, commercial presentations, and use cases, tailored to both internal and external customers, to create comprehensive product collateral.
+Create and update homologation requirements to test new services with different platforms, providers, and vendors based on client requests.
+End-to-End Product Development Management
+This Technical Product Manager serves as a knowledgeable Subject Matter Expert (SME) internal and customer interactions
+Guided new product development, including gap and competitive analysis, end-user research, and pricing analysis benchmarking
+Collaborate with coordinating departments, including Presales, Engineering, Marketing, and Finance, to develop and execute a comprehensive project plan and strategy that spans product development through to launch.
+Project Tracking, supervise team members’ documentation and task completion to ensure accurate status, provide accurate Project Scopes and Meeting Minutes to all stakeholders, and provide feedback to internal organizations.
+Ensure that various stages of product development are completed on time by leading, organizing, and requesting constant updates from cross-functional teams.
+Collect, analyze, and report on data, making adjustments to development plans as needed to facilitate a successful new product rollout.
+Represent the voice of the end consumer throughout the development process.
+Ensure that high standards of reliability, quality, usability, and measurement are adhered to throughout each phase of product development.
 
+Qualifications
 
+Education
 
+Bachelor's Degree Required
+Master's Degree, MBA Preferred
 
-Key job responsibilities
-* Design, develop and maintain our iOS mobile applications
-* Work with team members to investigate design approaches, prototype technology and evaluate technical feasibility
-* Lead architecture and design of features, from conception to launch
-* Help to improve engineering processes and tools to increase team effectiveness
-* Be part of an agile development process to deliver high-quality software
+Work Experience
 
+4-6 years of Product Management experience required
+4-6 years Strong technical knowledge for Unified Communications, SIP Trunking, MS Teams, and Voice integration technologies Required
+4-6 years of Sound experience with connectivity and cloud technologies, such as SDWAN, Ethernet, MPLS, Internet and Cloud Connect Required
 
-A day in the life
-This role provides a unique opportunity to be a key part in shaping the core of Ring's offerings to our customers. You will work across teams to prototype ideas and solve complex problems, and raise the bar of our applications by advocating and driving software best practices, automating tasks and identifying pitfalls. As part of the team, you will continue to learn and become an expert in challenging fields. You will have the opportunity to contribute your creative ideas and energy, working with world-class experts, distributed cloud systems and home security devices.
+Skills Required
 
+ Outcome-driven with the ability to define concrete metrics to measure the success of product initiatives. 
+ Program management experience 
 
-About the team
-Working on exciting new features and fully owning some of the most visited and core experiences in the Ring app, our team is always looking to learn and innovate. We frequently collaborate with cloud, firmware and other mobile teams to solve problems, come up with solutions and delight our customers. We are data driven, value and promote ownership, working backwards from our customers to bring them an innovative and seamless home security experience.
+Language Skills
 
-Basic Qualifications
-- 5+ years of non-internship professional software development experience
-- 5+ years of programming with at least one software programming language experience
-- 5+ years of leading design or architecture (design patterns, reliability and scaling) of new and existing systems experience
-- Experience as a mentor, tech lead or leading an engineering team
+Fluency in English and Spanish. Portuguese is a plus
 
-Preferred Qualifications
-- 5+ years of full software development life cycle, including coding standards, code reviews, source control management, build processes, testing, and operations experience
-- Bachelor's degree in computer science or equivalent
-- 5+ years of programming using a modern programming language such as Java, C++, or C#, including object-oriented design experience
+Licenses and Certifications
 
+CCNA - Cisco Certified Network Technician, preferred
+Certified Project Management Professional (PMP)-PMI, prefer
 `;

@@ -1,7 +1,9 @@
+// core.ts
+
 import OpenAI from 'openai';
 
 // =============================================================================
-// OPENAI CLIENT (lazy initialization)
+// OPENAI CLIENT
 // =============================================================================
 
 let _openai: OpenAI | null = null;
@@ -37,7 +39,6 @@ export interface ResumeEducationEntry {
 export interface ResumeSkills {
   product?: string[];
   technical?: string[];
-  domain?: string[];
   [key: string]: string[] | undefined;
 }
 
@@ -50,53 +51,60 @@ export interface ResumeJSON {
   certifications?: string[];
 }
 
+// A gap is something the JD wants that the resume doesn't clearly show
+export interface Gap {
+  skill: string;
+  jdContext: string;
+  question: string; // The question to ask the human
+}
+
+// Human's response to a gap question
+export interface GapResponse {
+  skill: string;
+  hasExperience: boolean;
+  context?: string; // Optional context provided by user
+}
+
+// A language pattern: resume already has the experience, but phrased differently than JD
+export interface JDLanguagePattern {
+  jdTerm: string; // How the JD phrases it
+  resumeEquivalent: string; // What in the resume maps to this
+  bulletLocations: { company: string; bulletIndex: number }[];
+}
+
+export interface AnalysisResult {
+  parsedResume: ResumeJSON;
+  gaps: Gap[];
+  languagePatterns: JDLanguagePattern[];
+}
+
+export interface HumanReviewInput {
+  gapResponses: GapResponse[];
+  languagePatterns: JDLanguagePattern[];
+}
+
+// A single bullet change for diff review
+export interface BulletChange {
+  company: string;
+  role: string;
+  bulletIndex: number;
+  original: string;
+  tailored: string;
+}
+
 export interface TailoredResumeResult {
   finalResume: ResumeJSON;
-  matchScore?: number;
-  keyChanges: string[];
-  issues?: { type: string; description: string }[];
+  bulletChanges: BulletChange[];
 }
 
 // =============================================================================
-// HUMAN-FIRST STYLE CONSTANT
-// =============================================================================
-
-const HUMAN_FIRST_STYLE = `
-You write resume bullets that are clear, human, and credible.
-
-NON-NEGOTIABLE RULES:
-- Max 24 words per bullet.
-- Max 2 clauses (split by commas/semicolons).
-- Structure: Problem → Action → Result.
-- Preserve ALL metrics from original bullets (%, $, user counts, time reductions, Xx).
-- Do NOT invent new metrics or specific numbers.
-- Do NOT invent context (no "rough idea", "urgent crisis", etc. unless present).
-- Tone: crisp, analytical, founder-like, professional.
-
-FORBIDDEN LANGUAGE (remove or replace if present):
-- "alignment", "stakeholders", "workflows", "ceremonies", "synergy", "end-to-end",
-  "leveraged", "utilized", "spearheaded", "orchestrated".
-
-If an original bullet is already clear, short, and metric-driven, keep it close to the original.
-Clarity > keyword density.
-`;
-
-// =============================================================================
-// CALL #1: PARSE RESUME TO JSON
+// STAGE 1: PARSE RESUME
 // =============================================================================
 
 async function parseResumeToJSON(rawResume: string): Promise<ResumeJSON> {
   const systemPrompt = `You are an expert resume parser.
 
-Your job is to convert a free-form resume into a strict JSON structure.
-
-RULES:
-- Do NOT invent accomplishments, companies, or dates. Only use what is present.
-- If a field is missing (e.g., no summary), omit it or set it to null.
-- Preserve bullets as separate strings. Do not merge or rewrite them.
-- Try to extract start/end dates when available. Use ISO-like "YYYY-MM" when possible.
-- Use this JSON shape:
-
+Convert the resume into this JSON structure:
 {
   "summary": string | null,
   "experience": [
@@ -109,246 +117,99 @@ RULES:
       "bullets": string[]
     }
   ],
-  "education": [
-    {
-      "school": string,
-      "degree": string,
-      "details": string | null
-    }
-  ],
-  "skills": {
-    "product": string[],
-    "technical": string[],
-    "domain": string[]
-  },
+  "education": [{ "school": string, "degree": string, "details": string | null }],
+  "skills": { "product": string[], "technical": string[] },
   "projects": string[],
   "certifications": string[]
 }
 
-- It's OK if some arrays are empty or missing.
-- Only include fields you can infer from the text.`;
-
-  const userPrompt = `RESUME:\n${rawResume}\n\nConvert this resume into the JSON format specified.`;
+Rules:
+- Do NOT invent anything. Only use what's present.
+- Preserve bullets exactly as written.
+- Use "YYYY-MM" for dates when possible.`;
 
   const response = await getOpenAI().chat.completions.create({
     model: 'gpt-5.1',
     messages: [
       { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt },
+      { role: 'user', content: `RESUME:\n${rawResume}\n\nParse this resume into JSON.` },
     ],
     response_format: { type: 'json_object' },
     temperature: 0.1,
   });
 
   const content = response.choices[0].message.content;
-  if (!content) throw new Error('No response from OpenAI in parseResumeToJSON');
+  if (!content) throw new Error('No response from OpenAI');
 
   const parsed = JSON.parse(content);
-
-  // Basic normalization: ensure experience array exists
-  if (!parsed.experience || !Array.isArray(parsed.experience)) {
-    parsed.experience = [];
-  }
+  if (!parsed.experience) parsed.experience = [];
 
   return parsed as ResumeJSON;
 }
 
 // =============================================================================
-// VALIDATION HELPERS
+// STAGE 1: IDENTIFY GAPS AND LANGUAGE PATTERNS
 // =============================================================================
 
-function extractMetrics(text: string): string[] {
-  const metrics: string[] = [];
+async function analyzeGapsAndLanguage(
+  jobDescription: string,
+  resume: ResumeJSON
+): Promise<{ gaps: Gap[]; languagePatterns: JDLanguagePattern[] }> {
+  const systemPrompt = `You analyze a job description against a resume to find TWO things:
 
-  // Percentages: 15%, 30%, etc.
-  const percentages = text.match(/\d+(?:\.\d+)?%/g) || [];
-  metrics.push(...percentages);
+1. GAPS: Things the JD wants that the resume does NOT demonstrate
+2. LANGUAGE PATTERNS: Things the resume ALREADY demonstrates but phrases differently than the JD
 
-  // Dollar values: $4.1M, $200K, $12M ARR
-  const dollars = text.match(/\$[\d,.]+[KMB]?(?:\s*ARR)?/gi) || [];
-  metrics.push(...dollars);
+## GAPS
 
-  // User counts: 100K users, 110K MAU, 50k daily users
-  const users = text.match(/\d+[KMk]?\+?\s*(?:users|MAU|DAU|daily users)/gi) || [];
-  metrics.push(...users);
+A gap is something genuinely missing. Examples:
+- JD wants "Kubernetes" but resume only mentions Docker → GAP
+- JD requires "healthcare industry" but resume is all fintech → GAP
+- JD asks for "team leadership" but resume shows only IC work → GAP
 
-  // Time reductions: 45 to 12 days, 4s to 1s
-  const timeReductions = text.match(/\d+\s*(?:to|→)\s*\d+\s*(?:days?|hours?|minutes?|seconds?|s|min)/gi) || [];
-  metrics.push(...timeReductions);
+NOT a gap (skip these):
+- JD wants SQL and resume mentions SQL → not a gap, exact match
+- JD wants "data visualization" and resume shows Tableau dashboards → not a gap, it's a LANGUAGE PATTERN
 
-  // Counts with context: 100+ interviews, 8-user test
-  const counts = text.match(/\d+\+?\s*(?:interviews?|users?|tests?|features?|engineers?|sprints?|weeks?)/gi) || [];
-  metrics.push(...counts);
+Return 3-8 gaps maximum. For each, create a direct yes/no question.
 
-  // Plain large numbers: 100K+, 10M+
-  const largeNumbers = text.match(/\d+[KMB]\+?/g) || [];
-  metrics.push(...largeNumbers);
+## LANGUAGE PATTERNS
 
-  // X improvements: 2x, 3x
-  const multipliers = text.match(/\d+x/gi) || [];
-  metrics.push(...multipliers);
+These are places where the resume ALREADY has the experience but uses different words than the JD.
 
-  return [...new Set(metrics)];
-}
+Examples:
+- JD says "cross-functional collaboration" / Resume says "worked with engineering and design teams" → PATTERN
+- JD says "program management" / Resume says "led a team of 5 to launch" → PATTERN
+- JD says "data visualization" / Resume says "built Tableau dashboards" → PATTERN
+- JD says "stakeholder management" / Resume says "presented to executives" → PATTERN
 
-function checkMetricPreservation(
-  original: string,
-  enhanced: string
-): { preserved: boolean; missing: string[] } {
-  const originalMetrics = extractMetrics(original);
-  const enhancedText = enhanced.toLowerCase();
+For each pattern, note which bullets could be reframed.
 
-  const missing: string[] = [];
-  for (const metric of originalMetrics) {
-    const coreNumber = metric.match(/[\d,.]+/)?.[0];
-    if (coreNumber && !enhancedText.includes(coreNumber.toLowerCase())) {
-      missing.push(metric);
-    }
-  }
-
-  return { preserved: missing.length === 0, missing };
-}
-
-function detectInventedContext(original: string, enhanced: string): string[] {
-  const inventedPhrases: string[] = [];
-  const enhancedLower = enhanced.toLowerCase();
-  const originalLower = original.toLowerCase();
-
-  const casualPhrases = [
-    'rough idea', 'vague idea', 'unclear direction', 'chaotic', 'messy',
-    'random', 'figured it out', 'scrappy', 'from scratch', 'ground up'
-  ];
-
-  const contextQualifiers = [
-    'urgent crisis', 'critical issue', 'major problem', 'significant challenge',
-    'complex situation', 'difficult environment', 'high-pressure'
-  ];
-
-  for (const phrase of [...casualPhrases, ...contextQualifiers]) {
-    if (enhancedLower.includes(phrase) && !originalLower.includes(phrase)) {
-      inventedPhrases.push(phrase);
-    }
-  }
-
-  return inventedPhrases;
-}
-
-function validateEnhancedBullets(
-  rawEnhancedBullets: { original: string; enhanced: string }[]
-): { issues: { type: string; description: string }[] } {
-  const issues: { type: string; description: string }[] = [];
-
-  rawEnhancedBullets.forEach((b, i) => {
-    const metricsCheck = checkMetricPreservation(b.original, b.enhanced);
-    if (!metricsCheck.preserved) {
-      issues.push({
-        type: 'metric_removed',
-        description: `Bullet #${i + 1}: removed metrics: ${metricsCheck.missing.join(', ')}`,
-      });
-    }
-
-    const invented = detectInventedContext(b.original, b.enhanced);
-    if (invented.length > 0) {
-      issues.push({
-        type: 'invented_context',
-        description: `Bullet #${i + 1}: added new qualifiers: ${invented.join(', ')}`,
-      });
-    }
-  });
-
-  return { issues };
-}
-
-// =============================================================================
-// CALL #2: ALL-IN-ONE TAILOR AND SYNTHESIZE
-// =============================================================================
-
-async function tailorAndSynthesize(
-  baseResume: ResumeJSON,
-  jobDescription: string
-): Promise<{
-  finalResume: ResumeJSON;
-  matchScore?: number;
-  keyChanges: string[];
-  rawEnhancedBullets: { original: string; enhanced: string }[];
-}> {
-  const systemPrompt = `${HUMAN_FIRST_STYLE}
-
-You are an expert recruiter + resume writer.
-
-You will:
-1) Analyze the job description to understand what actually matters.
-2) Improve or rewrite bullets in the resume to match the role, obeying the rules above.
-3) Produce a new ResumeJSON that is tailored but honest.
-4) Return a simple matchScore (0-100) and a short list of keyChanges.
-
-DO NOT fabricate experience, companies, or metrics.
-Only rephrase or surface what is already present or clearly implied.
-
-IMPORTANT:
-- Keep the same roles and companies as the original resume.
-- You may drop obviously low-value bullets if you replace them with stronger ones.
-- Bullets must obey the HUMAN-FIRST rules above.
-- The finalResume must be valid JSON matching the ResumeJSON schema.`;
+Return 5-15 language patterns. These are the PRIMARY way to improve a resume without lying.`;
 
   const userPrompt = `JOB DESCRIPTION:
 ${jobDescription}
 
-PARSED RESUME JSON:
-${JSON.stringify(baseResume, null, 2)}
+RESUME:
+${JSON.stringify(resume, null, 2)}
 
-TASK:
-1) Briefly infer what the role cares about (no need to return this explicitly).
-2) Decide which bullets to keep as-is and which to improve.
-3) Rewrite or add bullets to better match the role, following the HUMAN-FIRST rules.
-4) Return a JSON object with this exact shape:
-
+Analyze and return JSON:
 {
-  "finalResume": {
-    "summary": string | null,
-    "experience": [
-      {
-        "role": string,
-        "company": string,
-        "location": string | null,
-        "start": string | null,
-        "end": string | null,
-        "bullets": string[]
-      }
-    ],
-    "education": [
-      {
-        "school": string,
-        "degree": string,
-        "details": string | null
-      }
-    ],
-    "skills": {
-      "product": string[],
-      "technical": string[],
-      "domain": string[]
-    },
-    "projects": string[],
-    "certifications": string[]
-  },
-  "matchScore": number,
-  "keyChanges": [
-    "string description of a notable change",
-    "another notable change"
-  ],
-  "rawEnhancedBullets": [
+  "gaps": [
     {
-      "original": "original bullet text from resume",
-      "enhanced": "final bullet text you used"
+      "skill": "the missing skill",
+      "jdContext": "how JD mentions it",
+      "question": "Do you have experience with X?"
+    }
+  ],
+  "languagePatterns": [
+    {
+      "jdTerm": "cross-functional collaboration",
+      "resumeEquivalent": "worked with engineering and design teams",
+      "bulletLocations": [{ "company": "Company Name", "bulletIndex": 0 }]
     }
   ]
-}
-
-Rules:
-- matchScore should be 0-100 reflecting how well the tailored resume matches the job.
-- keyChanges should list 3-6 notable improvements you made.
-- rawEnhancedBullets should include EVERY bullet you changed (original vs final version).
-- If you kept a bullet unchanged, do NOT include it in rawEnhancedBullets.`;
+}`;
 
   const response = await getOpenAI().chat.completions.create({
     model: 'gpt-5.1',
@@ -357,58 +218,153 @@ Rules:
       { role: 'user', content: userPrompt },
     ],
     response_format: { type: 'json_object' },
-    temperature: 0.5,
+    temperature: 0.4,
   });
 
   const content = response.choices[0].message.content;
-  if (!content) throw new Error('No response from OpenAI in tailorAndSynthesize');
+  if (!content) throw new Error('No response from OpenAI');
 
-  const parsed = JSON.parse(content) as {
-    finalResume: ResumeJSON;
-    matchScore?: number;
-    keyChanges?: string[];
-    rawEnhancedBullets?: { original: string; enhanced: string }[];
-  };
-
-  // Ensure finalResume has required fields
-  if (!parsed.finalResume || !parsed.finalResume.experience) {
-    throw new Error('Invalid response: finalResume missing or malformed');
-  }
-
+  const parsed = JSON.parse(content);
   return {
-    finalResume: parsed.finalResume,
-    matchScore: parsed.matchScore,
-    keyChanges: parsed.keyChanges ?? [],
-    rawEnhancedBullets: parsed.rawEnhancedBullets ?? [],
+    gaps: parsed.gaps ?? [],
+    languagePatterns: parsed.languagePatterns ?? [],
   };
 }
 
 // =============================================================================
-// MAIN API: tailorResumeForJob
+// STAGE 1: PUBLIC API
 // =============================================================================
 
-export async function tailorResumeForJob(
+export async function analyzeResumeAndJob(
   rawResume: string,
   jobDescription: string
-): Promise<TailoredResumeResult> {
-  // Call #1: Parse resume into structured JSON
-  const baseResume = await parseResumeToJSON(rawResume);
-
-  // Call #2: All-in-one tailor + synthesize
-  const {
-    finalResume,
-    matchScore,
-    keyChanges,
-    rawEnhancedBullets,
-  } = await tailorAndSynthesize(baseResume, jobDescription);
-
-  // Validate enhanced bullets for quality issues
-  const { issues } = validateEnhancedBullets(rawEnhancedBullets);
+): Promise<AnalysisResult> {
+  const parsedResume = await parseResumeToJSON(rawResume);
+  const { gaps, languagePatterns } = await analyzeGapsAndLanguage(jobDescription, parsedResume);
 
   return {
-    finalResume,
-    matchScore,
-    keyChanges,
-    issues: issues.length > 0 ? issues : undefined,
+    parsedResume,
+    gaps,
+    languagePatterns,
+  };
+}
+
+// =============================================================================
+// STAGE 2: TAILOR WITH HUMAN INPUT
+// =============================================================================
+
+export async function tailorWithHumanInput(
+  parsedResume: ResumeJSON,
+  jobDescription: string,
+  humanInput: HumanReviewInput
+): Promise<TailoredResumeResult> {
+  const confirmedGaps = humanInput.gapResponses.filter((g) => g.hasExperience);
+  const languagePatterns = humanInput.languagePatterns;
+
+  const systemPrompt = `You tailor resumes to job descriptions with MINIMAL changes.
+
+YOUR TWO JOBS:
+
+1. MIRROR JD LANGUAGE (PRIMARY)
+   Reframe existing bullets to use JD terminology. The candidate already has the experience — just phrase it the way the JD does.
+
+   Example:
+   - Resume says: "Led a team of 5 to launch a new product"
+   - JD talks about: "program management", "cross-functional coordination"
+   - Tailored: "Managed cross-functional team of 5 through full product lifecycle to launch"
+
+   Same experience, JD language. Not lying.
+
+2. INCORPORATE CONFIRMED GAPS (if any)
+   The human confirmed certain skills with context. Weave this in naturally.
+
+PHILOSOPHY:
+- Change as little as possible while achieving language alignment
+- Write like a human, not like an ATS optimizer
+- Keywords should be INVISIBLE — integrated naturally
+- Preserve the candidate's original voice
+- If you can't fit a keyword naturally, skip it
+
+STRICT RULES:
+
+1. BULLETS
+   - Reframe to use JD terminology where experience exists
+   - Each bullet MUST be ≤25 words. No exceptions.
+   - NEVER use slashes like "data pipeline / ETL development"
+   - NEVER insert phrases awkwardly
+   - Preserve ALL metrics with full context
+   - Do NOT add new bullets
+   - Do NOT invent experience
+
+2. SKILLS SECTION
+   - Add JD terms the resume demonstrates
+   - Remove redundancy
+
+3. SUMMARY
+   - Light touch. 2-3 sentences max.
+   - Mirror key JD language naturally.
+
+4. EDUCATION & CERTIFICATIONS
+   - No changes.
+
+RETURN FORMAT:
+Return the tailored resume AND a list of bullet changes.
+Only include bullets that were actually modified.`;
+
+  // Build language pattern instructions
+  const patternInstructions = languagePatterns.length > 0
+    ? `LANGUAGE PATTERNS TO APPLY:
+These show JD terminology and where the resume already demonstrates this experience. Reframe these bullets:
+
+${languagePatterns.map((p) => `• "${p.jdTerm}" ← currently "${p.resumeEquivalent}" in ${p.bulletLocations.map((b) => `${b.company} bullet ${b.bulletIndex + 1}`).join(', ')}`).join('\n')}`
+    : '';
+
+  const gapInstructions = confirmedGaps.length > 0
+    ? `CONFIRMED GAP CONTEXT (human verified they have this):
+${confirmedGaps.map((g) => `• ${g.skill}${g.context ? `: ${g.context}` : ''}`).join('\n')}`
+    : '';
+
+  const userPrompt = `ORIGINAL RESUME:
+${JSON.stringify(parsedResume, null, 2)}
+
+JOB DESCRIPTION:
+${jobDescription}
+
+${patternInstructions}
+
+${gapInstructions}
+
+Tailor the resume. Return JSON:
+{
+  "finalResume": { ... same structure as input ... },
+  "bulletChanges": [
+    {
+      "company": "Company Name",
+      "role": "Role Title",
+      "bulletIndex": 0,
+      "original": "original bullet text",
+      "tailored": "tailored bullet text"
+    }
+  ]
+}`;
+
+  const response = await getOpenAI().chat.completions.create({
+    model: 'gpt-5.1',
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+    ],
+    response_format: { type: 'json_object' },
+    temperature: 0.3,
+  });
+
+  const content = response.choices[0].message.content;
+  if (!content) throw new Error('No response from OpenAI');
+
+  const parsed = JSON.parse(content);
+
+  return {
+    finalResume: parsed.finalResume,
+    bulletChanges: parsed.bulletChanges ?? [],
   };
 }
