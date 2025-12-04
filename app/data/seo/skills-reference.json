@@ -1,0 +1,572 @@
+[
+  {
+    "slug": "python",
+    "skillName": "Python",
+    "category": "Programming Languages",
+    "metaDescription": "Showcase Python skills on your resume. Learn how to describe Python experience for data science, web development, automation, and machine learning roles.",
+    "relatedSkills": ["SQL", "Machine Learning", "Data Analysis", "Pandas", "Django", "Flask", "NumPy"],
+    "commonTools": ["PyCharm", "Jupyter Notebooks", "VS Code", "Anaconda", "pip", "virtualenv", "pytest"],
+    "industryApplications": ["Data Science", "Web Development", "Automation", "Machine Learning", "Scientific Computing", "DevOps"],
+    "proficiencyIndicators": ["Built production applications", "Contributed to open source", "Automated workflows", "Developed ML models", "Created data pipelines", "Wrote unit tests"],
+    "actionVerbs": ["Developed", "Automated", "Built", "Optimized", "Implemented", "Engineered", "Created", "Designed"],
+    "exampleBullets": [
+      "Developed Python automation scripts that reduced manual data processing time by 80%, saving 15+ hours weekly",
+      "Built RESTful APIs using Flask and SQLAlchemy, serving 100K+ daily requests with 99.9% uptime",
+      "Implemented machine learning pipeline in Python/scikit-learn, improving prediction accuracy from 72% to 89%",
+      "Created data analysis workflows using Pandas and NumPy, enabling stakeholders to make data-driven decisions 3x faster",
+      "Automated ETL processes with Python and Airflow, processing 2M+ records daily with zero manual intervention"
+    ],
+    "relatedJobTitles": ["Software Engineer", "Data Scientist", "Data Analyst", "Machine Learning Engineer", "Backend Developer", "DevOps Engineer"]
+  },
+  {
+    "slug": "sql",
+    "skillName": "SQL",
+    "category": "Data & Databases",
+    "metaDescription": "Present SQL skills effectively on your resume. Cover database querying, optimization, and data analysis for analyst, engineering, and business intelligence roles.",
+    "relatedSkills": ["PostgreSQL", "MySQL", "Data Analysis", "Python", "Tableau", "ETL", "Data Warehousing"],
+    "commonTools": ["PostgreSQL", "MySQL", "SQL Server", "Oracle", "BigQuery", "Redshift", "DBeaver", "DataGrip"],
+    "industryApplications": ["Business Intelligence", "Data Analytics", "Backend Development", "Data Engineering", "Reporting", "Financial Analysis"],
+    "proficiencyIndicators": ["Complex query optimization", "Database design", "Stored procedures", "Performance tuning", "Data modeling", "ETL development"],
+    "actionVerbs": ["Queried", "Optimized", "Designed", "Migrated", "Analyzed", "Built", "Automated", "Developed"],
+    "exampleBullets": [
+      "Optimized SQL queries reducing report generation time from 45 minutes to under 3 minutes for 10M+ row datasets",
+      "Designed normalized database schema supporting 500K+ users with efficient indexing and query patterns",
+      "Built complex analytical queries with CTEs and window functions, enabling self-service reporting for business teams",
+      "Migrated legacy Oracle database to PostgreSQL, improving query performance by 40% while reducing licensing costs",
+      "Developed stored procedures and views that standardized data access patterns across 5 product teams"
+    ],
+    "relatedJobTitles": ["Data Analyst", "Data Engineer", "Business Intelligence Analyst", "Database Administrator", "Backend Developer", "Financial Analyst"]
+  },
+  {
+    "slug": "javascript",
+    "skillName": "JavaScript",
+    "category": "Programming Languages",
+    "metaDescription": "Highlight JavaScript expertise on your resume. Cover frontend, backend, and full-stack development skills for modern web application roles.",
+    "relatedSkills": ["TypeScript", "React", "Node.js", "HTML/CSS", "REST APIs", "Vue.js", "Angular"],
+    "commonTools": ["VS Code", "npm", "Webpack", "ESLint", "Jest", "Chrome DevTools", "Git"],
+    "industryApplications": ["Web Development", "Frontend Engineering", "Full-Stack Development", "Mobile Apps", "Server-Side Development", "Interactive Applications"],
+    "proficiencyIndicators": ["Built production SPAs", "Optimized performance", "Written unit tests", "Implemented state management", "Created reusable components", "Integrated APIs"],
+    "actionVerbs": ["Developed", "Built", "Implemented", "Optimized", "Designed", "Integrated", "Created", "Refactored"],
+    "exampleBullets": [
+      "Developed responsive web applications using JavaScript and React, achieving 95+ Lighthouse performance scores",
+      "Built interactive data visualizations with D3.js, improving user engagement metrics by 35%",
+      "Implemented real-time features using WebSockets and Node.js, supporting 10K+ concurrent users",
+      "Optimized JavaScript bundle size by 60% through code splitting and lazy loading, reducing initial load time to under 2 seconds",
+      "Created reusable component library used across 4 product teams, reducing frontend development time by 40%"
+    ],
+    "relatedJobTitles": ["Frontend Developer", "Full-Stack Developer", "Software Engineer", "Web Developer", "UI Engineer", "React Developer"]
+  },
+  {
+    "slug": "react",
+    "skillName": "React",
+    "category": "Frameworks & Libraries",
+    "metaDescription": "Showcase React.js skills on your resume. Learn to present component architecture, state management, and modern frontend development experience effectively.",
+    "relatedSkills": ["JavaScript", "TypeScript", "Redux", "HTML/CSS", "REST APIs", "Next.js", "GraphQL"],
+    "commonTools": ["VS Code", "React DevTools", "npm/yarn", "Webpack", "Jest", "Storybook", "ESLint"],
+    "industryApplications": ["Web Applications", "Single Page Applications", "E-commerce", "SaaS Products", "Dashboard Development", "Mobile Apps (React Native)"],
+    "proficiencyIndicators": ["Built production apps", "Implemented state management", "Created custom hooks", "Optimized rendering", "Wrote component tests", "Used TypeScript with React"],
+    "actionVerbs": ["Developed", "Built", "Implemented", "Designed", "Optimized", "Refactored", "Architected", "Created"],
+    "exampleBullets": [
+      "Developed React application with Redux state management serving 50K+ monthly active users",
+      "Built reusable component library with Storybook documentation, adopted by 3 product teams",
+      "Implemented server-side rendering with Next.js, improving SEO scores by 40% and reducing time-to-interactive by 50%",
+      "Optimized React app performance using memoization and code splitting, reducing bundle size by 45%",
+      "Created custom React hooks for data fetching and form handling, standardizing patterns across 15+ features"
+    ],
+    "relatedJobTitles": ["Frontend Developer", "React Developer", "Full-Stack Developer", "UI Engineer", "Software Engineer", "Web Developer"]
+  },
+  {
+    "slug": "data-analysis",
+    "skillName": "Data Analysis",
+    "category": "Analytics & Business Intelligence",
+    "metaDescription": "Present data analysis skills on your resume. Cover statistical analysis, visualization, and business insights for analyst and data science positions.",
+    "relatedSkills": ["SQL", "Excel", "Python", "Tableau", "Statistics", "Data Visualization", "Power BI"],
+    "commonTools": ["Excel", "Tableau", "Power BI", "Python", "R", "SQL", "Google Analytics", "Looker"],
+    "industryApplications": ["Business Intelligence", "Marketing Analytics", "Financial Analysis", "Product Analytics", "Operations Research", "Customer Insights"],
+    "proficiencyIndicators": ["Delivered actionable insights", "Built dashboards", "Conducted A/B tests", "Performed statistical analysis", "Created automated reports", "Presented to stakeholders"],
+    "actionVerbs": ["Analyzed", "Discovered", "Identified", "Quantified", "Investigated", "Measured", "Evaluated", "Presented"],
+    "exampleBullets": [
+      "Analyzed customer behavior data across 1M+ transactions, identifying patterns that increased retention by 18%",
+      "Built interactive Tableau dashboards tracking 25+ KPIs, reducing executive reporting time from 8 hours to 30 minutes weekly",
+      "Conducted A/B test analysis for pricing experiments, generating $2.5M additional annual revenue",
+      "Developed automated reporting pipeline in Python, eliminating 20+ hours of manual data compilation monthly",
+      "Identified cost optimization opportunities through spend analysis, saving $400K annually in operational expenses"
+    ],
+    "relatedJobTitles": ["Data Analyst", "Business Analyst", "Product Analyst", "Marketing Analyst", "Financial Analyst", "BI Analyst"]
+  },
+  {
+    "slug": "excel",
+    "skillName": "Excel",
+    "category": "Analytics & Business Intelligence",
+    "metaDescription": "Demonstrate Excel proficiency on your resume. Cover formulas, pivot tables, data analysis, and automation skills for business and analyst roles.",
+    "relatedSkills": ["Data Analysis", "VBA", "Power Query", "Financial Modeling", "SQL", "Power BI", "Google Sheets"],
+    "commonTools": ["Microsoft Excel", "Power Query", "Power Pivot", "VBA Editor", "Google Sheets", "Office 365"],
+    "industryApplications": ["Financial Analysis", "Business Operations", "Reporting", "Data Management", "Project Tracking", "Budgeting"],
+    "proficiencyIndicators": ["Complex formulas (INDEX/MATCH, array formulas)", "Pivot tables and charts", "VBA automation", "Power Query ETL", "Financial modeling", "Dashboard creation"],
+    "actionVerbs": ["Developed", "Automated", "Built", "Analyzed", "Created", "Modeled", "Streamlined", "Designed"],
+    "exampleBullets": [
+      "Built financial models in Excel tracking $50M+ budget with scenario analysis and automated variance reporting",
+      "Automated weekly reporting using VBA macros, reducing preparation time from 6 hours to 15 minutes",
+      "Created dynamic dashboards with pivot tables and charts, providing real-time visibility into 30+ KPIs",
+      "Developed Power Query workflows to consolidate data from 12 sources, eliminating manual copy-paste errors",
+      "Designed Excel templates adopted company-wide, standardizing analysis methods across 5 departments"
+    ],
+    "relatedJobTitles": ["Financial Analyst", "Business Analyst", "Operations Analyst", "Accountant", "Project Manager", "Administrative Assistant"]
+  },
+  {
+    "slug": "project-management",
+    "skillName": "Project Management",
+    "category": "Management & Leadership",
+    "metaDescription": "Highlight project management skills on your resume. Cover planning, execution, stakeholder management, and delivery for PM and leadership positions.",
+    "relatedSkills": ["Agile", "Scrum", "Stakeholder Management", "Risk Management", "Budgeting", "Communication", "Jira"],
+    "commonTools": ["Jira", "Asana", "Microsoft Project", "Trello", "Monday.com", "Confluence", "Smartsheet", "Slack"],
+    "industryApplications": ["Software Development", "Product Launch", "Operations", "Marketing Campaigns", "Construction", "Consulting"],
+    "proficiencyIndicators": ["Delivered projects on time/budget", "Managed cross-functional teams", "Mitigated project risks", "Led stakeholder communication", "Implemented PM methodologies", "Tracked project KPIs"],
+    "actionVerbs": ["Managed", "Led", "Delivered", "Coordinated", "Executed", "Planned", "Oversaw", "Directed"],
+    "exampleBullets": [
+      "Managed $2M software implementation project, delivering 2 weeks ahead of schedule and 10% under budget",
+      "Led cross-functional team of 15 members across engineering, design, and marketing to launch product feature used by 100K+ users",
+      "Coordinated 5 concurrent workstreams using Agile methodology, maintaining 95% on-time delivery rate",
+      "Developed project risk mitigation strategies that reduced scope creep by 40% and prevented $500K in potential delays",
+      "Implemented standardized PM processes adopted across organization, improving project visibility and stakeholder satisfaction scores by 30%"
+    ],
+    "relatedJobTitles": ["Project Manager", "Program Manager", "Product Manager", "Scrum Master", "Operations Manager", "Delivery Manager"]
+  },
+  {
+    "slug": "machine-learning",
+    "skillName": "Machine Learning",
+    "category": "Data Science & AI",
+    "metaDescription": "Present machine learning skills on your resume. Cover algorithms, model development, and deployment for data science and ML engineering positions.",
+    "relatedSkills": ["Python", "Deep Learning", "TensorFlow", "PyTorch", "Statistics", "Data Science", "NLP"],
+    "commonTools": ["scikit-learn", "TensorFlow", "PyTorch", "Jupyter", "MLflow", "AWS SageMaker", "Keras", "XGBoost"],
+    "industryApplications": ["Predictive Analytics", "Recommendation Systems", "Natural Language Processing", "Computer Vision", "Fraud Detection", "Personalization"],
+    "proficiencyIndicators": ["Deployed production models", "Improved model accuracy", "Built ML pipelines", "Feature engineering", "Model evaluation", "A/B tested models"],
+    "actionVerbs": ["Developed", "Trained", "Deployed", "Optimized", "Built", "Engineered", "Implemented", "Designed"],
+    "exampleBullets": [
+      "Developed machine learning models achieving 92% accuracy for customer churn prediction, enabling proactive retention saving $3M annually",
+      "Built recommendation engine using collaborative filtering, increasing average order value by 25% and click-through rates by 40%",
+      "Deployed real-time fraud detection model processing 50K+ transactions/hour with 99.7% precision and 0.1% false positive rate",
+      "Engineered 50+ features from raw data using domain expertise, improving model performance by 15% over baseline",
+      "Implemented MLOps pipeline with MLflow for model versioning and monitoring, reducing deployment time from days to hours"
+    ],
+    "relatedJobTitles": ["Machine Learning Engineer", "Data Scientist", "AI Engineer", "Research Scientist", "ML Platform Engineer", "Applied Scientist"]
+  },
+  {
+    "slug": "aws",
+    "skillName": "AWS",
+    "category": "Cloud & Infrastructure",
+    "metaDescription": "Showcase AWS cloud skills on your resume. Cover infrastructure, services, and architecture for cloud engineering and DevOps positions.",
+    "relatedSkills": ["Cloud Architecture", "Docker", "Kubernetes", "Terraform", "Linux", "DevOps", "CI/CD"],
+    "commonTools": ["EC2", "S3", "Lambda", "RDS", "CloudFormation", "EKS", "IAM", "CloudWatch"],
+    "industryApplications": ["Cloud Migration", "Infrastructure Automation", "Serverless Applications", "Data Storage", "Container Orchestration", "High Availability Systems"],
+    "proficiencyIndicators": ["Architected cloud solutions", "Reduced infrastructure costs", "Implemented security best practices", "Automated deployments", "Managed production workloads", "Obtained AWS certifications"],
+    "actionVerbs": ["Architected", "Deployed", "Migrated", "Automated", "Optimized", "Configured", "Implemented", "Managed"],
+    "exampleBullets": [
+      "Architected AWS infrastructure supporting 10M+ monthly requests with 99.99% uptime using EC2, RDS, and ElastiCache",
+      "Migrated on-premise applications to AWS, reducing infrastructure costs by 45% and improving deployment frequency by 10x",
+      "Implemented serverless architecture using Lambda and API Gateway, processing 1M+ events daily at 80% lower cost than EC2",
+      "Automated infrastructure provisioning with CloudFormation and Terraform, reducing environment setup from 2 days to 30 minutes",
+      "Designed multi-region disaster recovery solution achieving 15-minute RTO and ensuring business continuity"
+    ],
+    "relatedJobTitles": ["Cloud Engineer", "DevOps Engineer", "Solutions Architect", "Site Reliability Engineer", "Platform Engineer", "Infrastructure Engineer"]
+  },
+  {
+    "slug": "communication",
+    "skillName": "Communication",
+    "category": "Soft Skills",
+    "metaDescription": "Demonstrate communication skills on your resume. Show written, verbal, and cross-functional communication abilities valued across all professional roles.",
+    "relatedSkills": ["Presentation", "Stakeholder Management", "Writing", "Collaboration", "Active Listening", "Negotiation", "Public Speaking"],
+    "commonTools": ["Slack", "Microsoft Teams", "Zoom", "PowerPoint", "Google Docs", "Confluence", "Email"],
+    "industryApplications": ["Client Relations", "Team Leadership", "Cross-Functional Collaboration", "Executive Reporting", "Technical Documentation", "Change Management"],
+    "proficiencyIndicators": ["Presented to executives", "Led stakeholder meetings", "Wrote technical documentation", "Facilitated cross-team alignment", "Delivered training sessions", "Managed client relationships"],
+    "actionVerbs": ["Communicated", "Presented", "Collaborated", "Facilitated", "Articulated", "Documented", "Briefed", "Aligned"],
+    "exampleBullets": [
+      "Presented quarterly business reviews to C-suite executives, translating technical metrics into actionable strategic insights",
+      "Led weekly cross-functional meetings with engineering, product, and design teams, improving project alignment and reducing blockers by 50%",
+      "Authored technical documentation and runbooks adopted by 30+ engineers, reducing onboarding time from 4 weeks to 1 week",
+      "Facilitated stakeholder alignment sessions for $5M initiative, securing buy-in from 8 department heads within 2 weeks",
+      "Delivered training sessions to 100+ employees on new systems, achieving 95% adoption within first month"
+    ],
+    "relatedJobTitles": ["Project Manager", "Product Manager", "Account Manager", "Business Analyst", "Team Lead", "Consultant"]
+  },
+  {
+    "slug": "leadership",
+    "skillName": "Leadership",
+    "category": "Soft Skills",
+    "metaDescription": "Showcase leadership skills on your resume. Cover team management, mentoring, and strategic direction for management and senior individual contributor roles.",
+    "relatedSkills": ["Team Management", "Mentoring", "Strategic Thinking", "Decision Making", "Communication", "Conflict Resolution", "Performance Management"],
+    "commonTools": ["Lattice", "15Five", "Workday", "Slack", "Microsoft Teams", "Jira", "Culture Amp"],
+    "industryApplications": ["Team Management", "Organizational Development", "Change Leadership", "Talent Development", "Strategic Planning", "Cross-Functional Leadership"],
+    "proficiencyIndicators": ["Managed direct reports", "Mentored team members", "Led organizational initiatives", "Improved team performance", "Made strategic decisions", "Developed talent"],
+    "actionVerbs": ["Led", "Managed", "Mentored", "Directed", "Guided", "Developed", "Built", "Transformed"],
+    "exampleBullets": [
+      "Led team of 12 engineers, achieving 40% improvement in sprint velocity and maintaining 95% employee retention over 2 years",
+      "Mentored 5 junior developers through structured 1:1s and growth plans, with 3 receiving promotions within 18 months",
+      "Directed organizational transformation initiative affecting 200+ employees, successfully implementing new processes with 85% adoption",
+      "Built and scaled engineering team from 4 to 20 members, establishing interview processes and onboarding programs",
+      "Developed team charter and operating principles that reduced cross-team conflicts by 60% and improved collaboration scores"
+    ],
+    "relatedJobTitles": ["Engineering Manager", "Director", "VP", "Team Lead", "Department Head", "Chief of Staff"]
+  },
+  {
+    "slug": "agile-scrum",
+    "skillName": "Agile/Scrum",
+    "category": "Methodologies & Processes",
+    "metaDescription": "Present Agile and Scrum skills on your resume. Cover sprint planning, ceremonies, and iterative delivery for product and engineering team roles.",
+    "relatedSkills": ["Project Management", "Sprint Planning", "Kanban", "User Stories", "Retrospectives", "Continuous Improvement", "JIRA"],
+    "commonTools": ["Jira", "Confluence", "Trello", "Azure DevOps", "Monday.com", "Miro", "Asana"],
+    "industryApplications": ["Software Development", "Product Management", "IT Operations", "Marketing", "Hardware Development", "Business Operations"],
+    "proficiencyIndicators": ["Facilitated Scrum ceremonies", "Improved team velocity", "Managed sprint backlogs", "Coached Agile teams", "Implemented Agile transformations", "Certified Scrum Master/PO"],
+    "actionVerbs": ["Facilitated", "Coached", "Implemented", "Led", "Improved", "Managed", "Delivered", "Transformed"],
+    "exampleBullets": [
+      "Facilitated Scrum ceremonies for 3 development teams, improving sprint commitment accuracy from 65% to 92%",
+      "Implemented Agile transformation for 50-person department, reducing time-to-market by 40% and improving team satisfaction scores",
+      "Coached product owners on backlog refinement and user story writing, resulting in 30% fewer mid-sprint scope changes",
+      "Led bi-weekly retrospectives identifying process improvements that increased team velocity by 25% over 6 months",
+      "Managed cross-team dependencies across 5 Scrum teams using scaled Agile framework, maintaining predictable quarterly releases"
+    ],
+    "relatedJobTitles": ["Scrum Master", "Agile Coach", "Product Owner", "Project Manager", "Engineering Manager", "Delivery Manager"]
+  },
+  {
+    "slug": "tableau",
+    "skillName": "Tableau",
+    "category": "Analytics & Business Intelligence",
+    "metaDescription": "Highlight Tableau skills on your resume. Cover data visualization, dashboard creation, and business intelligence for analyst and BI positions.",
+    "relatedSkills": ["Data Visualization", "SQL", "Data Analysis", "Power BI", "Business Intelligence", "Analytics", "Statistics"],
+    "commonTools": ["Tableau Desktop", "Tableau Server", "Tableau Prep", "Tableau Public", "SQL databases", "Excel", "Snowflake"],
+    "industryApplications": ["Executive Dashboards", "Sales Analytics", "Financial Reporting", "Marketing Analytics", "Operations Monitoring", "Customer Analytics"],
+    "proficiencyIndicators": ["Built production dashboards", "Optimized query performance", "Created calculated fields", "Implemented row-level security", "Published to Tableau Server", "Trained end users"],
+    "actionVerbs": ["Designed", "Built", "Developed", "Created", "Visualized", "Automated", "Optimized", "Delivered"],
+    "exampleBullets": [
+      "Designed executive dashboard suite in Tableau tracking $100M+ revenue across 5 business units, used in weekly leadership meetings",
+      "Built self-service analytics platform with 50+ interactive dashboards, reducing ad-hoc reporting requests by 70%",
+      "Created advanced visualizations with custom calculations and parameters, enabling drill-down analysis across 2M+ customer records",
+      "Optimized Tableau extracts and live connections, reducing dashboard load times from 30 seconds to under 3 seconds",
+      "Trained 100+ business users on Tableau best practices, increasing self-service analytics adoption from 20% to 75%"
+    ],
+    "relatedJobTitles": ["Data Analyst", "BI Developer", "Business Intelligence Analyst", "Analytics Engineer", "Data Visualization Specialist", "Reporting Analyst"]
+  },
+  {
+    "slug": "docker",
+    "skillName": "Docker",
+    "category": "Cloud & Infrastructure",
+    "metaDescription": "Present Docker containerization skills on your resume. Cover container development, orchestration, and DevOps practices for engineering roles.",
+    "relatedSkills": ["Kubernetes", "DevOps", "CI/CD", "Linux", "AWS", "Microservices", "Container Orchestration"],
+    "commonTools": ["Docker Compose", "Docker Hub", "Kubernetes", "AWS ECS", "GitHub Actions", "Jenkins", "Terraform"],
+    "industryApplications": ["Application Deployment", "Microservices", "CI/CD Pipelines", "Development Environments", "Cloud Migration", "Testing Automation"],
+    "proficiencyIndicators": ["Built production containers", "Optimized image sizes", "Implemented multi-stage builds", "Managed container orchestration", "Created Docker Compose workflows", "Containerized legacy applications"],
+    "actionVerbs": ["Containerized", "Deployed", "Optimized", "Built", "Migrated", "Automated", "Orchestrated", "Configured"],
+    "exampleBullets": [
+      "Containerized 15+ microservices with Docker, reducing deployment inconsistencies by 90% and enabling consistent local development",
+      "Optimized Docker images using multi-stage builds, reducing image sizes by 75% and improving deployment times by 60%",
+      "Built Docker Compose development environment replicating production, reducing 'works on my machine' issues to near zero",
+      "Migrated legacy monolith to containerized microservices, improving deployment frequency from monthly to daily releases",
+      "Implemented container security scanning in CI/CD pipeline, identifying and remediating 200+ vulnerabilities before production"
+    ],
+    "relatedJobTitles": ["DevOps Engineer", "Software Engineer", "Platform Engineer", "Site Reliability Engineer", "Cloud Engineer", "Backend Developer"]
+  },
+  {
+    "slug": "git",
+    "skillName": "Git",
+    "category": "Development Tools",
+    "metaDescription": "Demonstrate Git version control skills on your resume. Cover branching strategies, collaboration workflows, and code management for developer roles.",
+    "relatedSkills": ["GitHub", "GitLab", "CI/CD", "Code Review", "Version Control", "DevOps", "Collaboration"],
+    "commonTools": ["GitHub", "GitLab", "Bitbucket", "GitHub Actions", "Git CLI", "VS Code", "SourceTree"],
+    "industryApplications": ["Software Development", "Code Collaboration", "Release Management", "Open Source", "Documentation", "Infrastructure as Code"],
+    "proficiencyIndicators": ["Managed branching strategies", "Resolved merge conflicts", "Conducted code reviews", "Maintained clean git history", "Implemented Git workflows", "Contributed to open source"],
+    "actionVerbs": ["Managed", "Implemented", "Maintained", "Collaborated", "Reviewed", "Established", "Resolved", "Contributed"],
+    "exampleBullets": [
+      "Established Git branching strategy (GitFlow) for 20+ developer team, improving release predictability and reducing merge conflicts by 60%",
+      "Conducted 500+ code reviews on GitHub, maintaining code quality standards and mentoring junior developers on best practices",
+      "Implemented Git hooks and automated checks, catching 95% of linting and test failures before code review",
+      "Migrated 50+ repositories from SVN to Git, creating documentation and training materials for 100+ developers",
+      "Contributed to 5+ open source projects, with 10+ merged pull requests improving documentation and fixing bugs"
+    ],
+    "relatedJobTitles": ["Software Engineer", "DevOps Engineer", "Full-Stack Developer", "Frontend Developer", "Backend Developer", "Release Engineer"]
+  },
+  {
+    "slug": "typescript",
+    "skillName": "TypeScript",
+    "category": "Programming Languages",
+    "metaDescription": "Showcase TypeScript skills on your resume. Cover type-safe development, large-scale applications, and modern JavaScript development for engineering roles.",
+    "relatedSkills": ["JavaScript", "React", "Node.js", "Angular", "Vue.js", "REST APIs", "GraphQL"],
+    "commonTools": ["VS Code", "ESLint", "TSConfig", "Jest", "Webpack", "npm", "tsc"],
+    "industryApplications": ["Enterprise Applications", "Full-Stack Development", "Frontend Development", "Backend Services", "API Development", "Large-Scale Systems"],
+    "proficiencyIndicators": ["Migrated JavaScript to TypeScript", "Designed type systems", "Built type-safe APIs", "Reduced runtime errors", "Created generic utilities", "Configured strict TypeScript"],
+    "actionVerbs": ["Developed", "Migrated", "Designed", "Built", "Implemented", "Refactored", "Typed", "Architected"],
+    "exampleBullets": [
+      "Migrated 100K+ LOC JavaScript codebase to TypeScript, reducing production bugs by 40% and improving developer productivity",
+      "Designed type-safe API layer using TypeScript generics, eliminating entire classes of runtime errors in data handling",
+      "Built full-stack TypeScript application with shared types between frontend and backend, ensuring end-to-end type safety",
+      "Implemented strict TypeScript configuration with 100% type coverage, catching bugs at compile time rather than production",
+      "Created reusable TypeScript utility types and helper functions adopted by 4 teams, standardizing type patterns across organization"
+    ],
+    "relatedJobTitles": ["Full-Stack Developer", "Frontend Developer", "Software Engineer", "Backend Developer", "React Developer", "Node.js Developer"]
+  },
+  {
+    "slug": "node-js",
+    "skillName": "Node.js",
+    "category": "Frameworks & Libraries",
+    "metaDescription": "Present Node.js backend skills on your resume. Cover server-side development, APIs, and scalable applications for full-stack and backend engineering roles.",
+    "relatedSkills": ["JavaScript", "TypeScript", "Express", "REST APIs", "MongoDB", "PostgreSQL", "AWS"],
+    "commonTools": ["Express", "NestJS", "npm", "yarn", "PM2", "Docker", "Jest", "Postman"],
+    "industryApplications": ["API Development", "Real-Time Applications", "Microservices", "Server-Side Rendering", "CLI Tools", "Serverless Functions"],
+    "proficiencyIndicators": ["Built production APIs", "Handled high traffic", "Implemented authentication", "Optimized performance", "Created microservices", "Deployed to cloud"],
+    "actionVerbs": ["Developed", "Built", "Deployed", "Scaled", "Optimized", "Implemented", "Architected", "Designed"],
+    "exampleBullets": [
+      "Developed Node.js REST API handling 1M+ daily requests with 99.9% uptime and sub-100ms response times",
+      "Built real-time notification system using Node.js and WebSockets, supporting 50K+ concurrent connections",
+      "Implemented microservices architecture with Node.js and Express, enabling independent scaling and deployment of services",
+      "Optimized Node.js application performance, reducing memory usage by 50% and improving throughput by 3x",
+      "Deployed Node.js applications to AWS Lambda, reducing infrastructure costs by 70% while maintaining performance SLAs"
+    ],
+    "relatedJobTitles": ["Backend Developer", "Full-Stack Developer", "Node.js Developer", "Software Engineer", "API Developer", "Platform Engineer"]
+  },
+  {
+    "slug": "java",
+    "skillName": "Java",
+    "category": "Programming Languages",
+    "metaDescription": "Highlight Java programming skills on your resume. Cover enterprise development, microservices, and scalable applications for software engineering positions.",
+    "relatedSkills": ["Spring Boot", "Microservices", "SQL", "AWS", "Kubernetes", "Maven", "JUnit"],
+    "commonTools": ["IntelliJ IDEA", "Spring Boot", "Maven", "Gradle", "JUnit", "Docker", "Jenkins", "Eclipse"],
+    "industryApplications": ["Enterprise Software", "Backend Services", "Microservices", "Android Development", "Financial Systems", "E-commerce Platforms"],
+    "proficiencyIndicators": ["Built enterprise applications", "Designed microservices", "Optimized JVM performance", "Implemented design patterns", "Wrote comprehensive tests", "Managed large codebases"],
+    "actionVerbs": ["Developed", "Architected", "Optimized", "Designed", "Implemented", "Built", "Refactored", "Deployed"],
+    "exampleBullets": [
+      "Developed Java microservices processing 5M+ transactions daily with 99.99% availability using Spring Boot and Kafka",
+      "Architected enterprise Java application serving 200K+ users, implementing clean architecture and domain-driven design",
+      "Optimized JVM garbage collection and memory settings, reducing application latency by 40% and memory footprint by 25%",
+      "Implemented comprehensive test suite with JUnit and Mockito, achieving 90%+ code coverage and catching regressions early",
+      "Refactored legacy Java monolith into microservices, improving deployment frequency from quarterly to weekly releases"
+    ],
+    "relatedJobTitles": ["Java Developer", "Software Engineer", "Backend Developer", "Senior Engineer", "Solutions Architect", "Tech Lead"]
+  },
+  {
+    "slug": "salesforce",
+    "skillName": "Salesforce",
+    "category": "Business Applications",
+    "metaDescription": "Demonstrate Salesforce skills on your resume. Cover CRM administration, development, and customization for Salesforce admin and developer positions.",
+    "relatedSkills": ["Apex", "Lightning", "SOQL", "CRM", "Workflows", "Process Builder", "Integration"],
+    "commonTools": ["Salesforce Lightning", "Apex", "SOQL", "VS Code", "Data Loader", "Flow Builder", "Workbench"],
+    "industryApplications": ["Sales Operations", "Customer Service", "Marketing Automation", "Business Process Automation", "Reporting", "Integration"],
+    "proficiencyIndicators": ["Configured Salesforce orgs", "Developed custom solutions", "Built integrations", "Created reports/dashboards", "Managed data migrations", "Obtained Salesforce certifications"],
+    "actionVerbs": ["Configured", "Developed", "Automated", "Integrated", "Customized", "Implemented", "Designed", "Migrated"],
+    "exampleBullets": [
+      "Configured Salesforce Lightning for 500+ user organization, reducing sales cycle time by 20% through automated workflows",
+      "Developed custom Apex triggers and Lightning components, extending Salesforce functionality to meet complex business requirements",
+      "Automated lead routing and assignment using Flow Builder, improving lead response time from 4 hours to 15 minutes",
+      "Integrated Salesforce with 5+ external systems using REST APIs and MuleSoft, creating single source of truth for customer data",
+      "Built executive dashboards and reports tracking $50M+ pipeline, enabling data-driven sales forecasting with 95% accuracy"
+    ],
+    "relatedJobTitles": ["Salesforce Administrator", "Salesforce Developer", "CRM Manager", "Sales Operations Manager", "Business Systems Analyst", "Solutions Architect"]
+  },
+  {
+    "slug": "power-bi",
+    "skillName": "Power BI",
+    "category": "Analytics & Business Intelligence",
+    "metaDescription": "Showcase Power BI skills on your resume. Cover data visualization, DAX, and business reporting for BI analyst and data visualization positions.",
+    "relatedSkills": ["DAX", "SQL", "Data Modeling", "Excel", "Data Analysis", "Azure", "Power Query"],
+    "commonTools": ["Power BI Desktop", "Power BI Service", "DAX Studio", "Power Query", "Azure SQL", "Excel", "SharePoint"],
+    "industryApplications": ["Business Reporting", "Executive Dashboards", "Financial Analysis", "Sales Analytics", "Operations Monitoring", "Self-Service BI"],
+    "proficiencyIndicators": ["Built production reports", "Created DAX measures", "Designed data models", "Published to Power BI Service", "Implemented row-level security", "Trained business users"],
+    "actionVerbs": ["Designed", "Developed", "Built", "Created", "Modeled", "Automated", "Optimized", "Published"],
+    "exampleBullets": [
+      "Designed Power BI dashboards for C-suite executives, visualizing $200M+ in revenue data with drill-through capabilities",
+      "Created complex DAX measures for financial calculations, enabling accurate margin and profitability analysis across 10+ product lines",
+      "Built data model connecting 15+ data sources, reducing report refresh time from 2 hours to 10 minutes",
+      "Implemented row-level security for 500+ users, ensuring data governance while enabling self-service analytics",
+      "Trained 50+ business users on Power BI best practices, increasing self-service adoption and reducing IT reporting requests by 60%"
+    ],
+    "relatedJobTitles": ["BI Developer", "Data Analyst", "Business Intelligence Analyst", "Reporting Analyst", "Analytics Engineer", "Power BI Developer"]
+  },
+  {
+    "slug": "kubernetes",
+    "skillName": "Kubernetes",
+    "category": "Cloud & Infrastructure",
+    "metaDescription": "Present Kubernetes orchestration skills on your resume. Cover container management, scaling, and cloud-native development for DevOps and platform roles.",
+    "relatedSkills": ["Docker", "AWS", "DevOps", "CI/CD", "Helm", "Terraform", "Linux"],
+    "commonTools": ["kubectl", "Helm", "EKS", "GKE", "AKS", "Prometheus", "Grafana", "ArgoCD"],
+    "industryApplications": ["Container Orchestration", "Microservices Deployment", "Auto-Scaling", "High Availability", "Cloud-Native Development", "Platform Engineering"],
+    "proficiencyIndicators": ["Managed production clusters", "Implemented auto-scaling", "Configured networking", "Set up monitoring", "Created Helm charts", "Designed deployment strategies"],
+    "actionVerbs": ["Deployed", "Managed", "Orchestrated", "Scaled", "Configured", "Automated", "Monitored", "Designed"],
+    "exampleBullets": [
+      "Managed Kubernetes clusters running 200+ microservices, achieving 99.99% uptime through automated failover and self-healing",
+      "Implemented horizontal pod autoscaling, handling 10x traffic spikes during peak periods without manual intervention",
+      "Designed Helm charts and GitOps workflows with ArgoCD, reducing deployment time from hours to minutes",
+      "Configured Kubernetes networking and service mesh, enabling secure communication between 50+ services",
+      "Set up comprehensive monitoring with Prometheus and Grafana, reducing mean time to detection from 30 minutes to 2 minutes"
+    ],
+    "relatedJobTitles": ["DevOps Engineer", "Platform Engineer", "Site Reliability Engineer", "Cloud Engineer", "Infrastructure Engineer", "Kubernetes Administrator"]
+  },
+  {
+    "slug": "figma",
+    "skillName": "Figma",
+    "category": "Design & UX",
+    "metaDescription": "Highlight Figma design skills on your resume. Cover UI/UX design, prototyping, and design systems for product design and UX positions.",
+    "relatedSkills": ["UI Design", "UX Design", "Prototyping", "Design Systems", "User Research", "Wireframing", "Adobe XD"],
+    "commonTools": ["Figma", "FigJam", "Figma Plugins", "Zeplin", "Abstract", "Principle", "Lottie"],
+    "industryApplications": ["Product Design", "Mobile App Design", "Web Design", "Design Systems", "Prototyping", "User Testing"],
+    "proficiencyIndicators": ["Created design systems", "Built interactive prototypes", "Collaborated with developers", "Conducted design reviews", "Maintained component libraries", "Used auto-layout and variants"],
+    "actionVerbs": ["Designed", "Created", "Prototyped", "Built", "Developed", "Collaborated", "Led", "Established"],
+    "exampleBullets": [
+      "Designed UI for mobile app with 500K+ downloads, achieving 4.8-star rating through user-centered design process",
+      "Created comprehensive design system with 200+ components, reducing design-to-development handoff time by 50%",
+      "Built interactive Figma prototypes for user testing, validating designs before development and reducing iteration cycles",
+      "Collaborated with engineering teams using Figma dev mode, ensuring pixel-perfect implementation of designs",
+      "Established design review process and component library standards, improving design consistency across 10+ product surfaces"
+    ],
+    "relatedJobTitles": ["Product Designer", "UI Designer", "UX Designer", "Visual Designer", "Design Lead", "Interaction Designer"]
+  },
+  {
+    "slug": "seo",
+    "skillName": "SEO",
+    "category": "Marketing & Digital",
+    "metaDescription": "Demonstrate SEO skills on your resume. Cover search optimization, content strategy, and analytics for digital marketing and content positions.",
+    "relatedSkills": ["Content Marketing", "Google Analytics", "Keyword Research", "Technical SEO", "Link Building", "Content Strategy", "SEM"],
+    "commonTools": ["Google Search Console", "Ahrefs", "SEMrush", "Moz", "Screaming Frog", "Google Analytics", "Yoast"],
+    "industryApplications": ["Digital Marketing", "Content Marketing", "E-commerce", "Publishing", "SaaS Marketing", "Lead Generation"],
+    "proficiencyIndicators": ["Increased organic traffic", "Improved search rankings", "Conducted keyword research", "Performed technical audits", "Built backlink profiles", "Analyzed competitor SEO"],
+    "actionVerbs": ["Optimized", "Increased", "Improved", "Analyzed", "Developed", "Implemented", "Audited", "Researched"],
+    "exampleBullets": [
+      "Increased organic traffic by 150% over 12 months through comprehensive SEO strategy spanning technical, on-page, and content optimization",
+      "Improved search rankings for 50+ target keywords, with 15 keywords reaching position 1 and driving 40% increase in qualified leads",
+      "Conducted technical SEO audit identifying 200+ issues, implementing fixes that improved crawlability and page speed scores",
+      "Developed keyword strategy and content roadmap, publishing 100+ optimized articles generating 500K+ monthly pageviews",
+      "Built quality backlink profile through outreach campaigns, earning 200+ referring domains and improving domain authority by 20 points"
+    ],
+    "relatedJobTitles": ["SEO Specialist", "SEO Manager", "Digital Marketing Manager", "Content Strategist", "Growth Marketer", "Marketing Manager"]
+  },
+  {
+    "slug": "customer-service",
+    "skillName": "Customer Service",
+    "category": "Customer Success",
+    "metaDescription": "Showcase customer service skills on your resume. Cover client relations, problem resolution, and support excellence for customer-facing positions.",
+    "relatedSkills": ["Communication", "Problem Solving", "CRM", "Conflict Resolution", "Active Listening", "Empathy", "Time Management"],
+    "commonTools": ["Zendesk", "Salesforce", "Intercom", "Freshdesk", "HubSpot", "Slack", "Phone Systems"],
+    "industryApplications": ["Customer Support", "Client Success", "Account Management", "Help Desk", "Retail", "Hospitality"],
+    "proficiencyIndicators": ["Resolved customer issues", "Improved satisfaction scores", "Handled escalations", "Trained team members", "Managed high volumes", "Reduced response times"],
+    "actionVerbs": ["Resolved", "Assisted", "Supported", "Managed", "Delivered", "Improved", "Trained", "Handled"],
+    "exampleBullets": [
+      "Resolved 50+ customer inquiries daily with 98% satisfaction rating, consistently exceeding department benchmarks",
+      "Reduced average response time from 24 hours to 4 hours through process improvements and prioritization strategies",
+      "Handled escalated customer complaints, de-escalating 95% of situations and retaining at-risk accounts worth $2M ARR",
+      "Trained 10 new customer service representatives, developing onboarding materials that reduced ramp time by 30%",
+      "Improved NPS score from 35 to 55 by identifying pain points and collaborating with product team on solutions"
+    ],
+    "relatedJobTitles": ["Customer Service Representative", "Customer Success Manager", "Support Specialist", "Client Relations Manager", "Account Manager", "Help Desk Technician"]
+  },
+  {
+    "slug": "financial-modeling",
+    "skillName": "Financial Modeling",
+    "category": "Finance & Accounting",
+    "metaDescription": "Present financial modeling skills on your resume. Cover valuation, forecasting, and analysis for investment banking, FP&A, and finance positions.",
+    "relatedSkills": ["Excel", "Valuation", "Financial Analysis", "Forecasting", "Accounting", "DCF Analysis", "M&A"],
+    "commonTools": ["Excel", "PowerPoint", "Bloomberg", "Capital IQ", "Factset", "Power BI", "Python"],
+    "industryApplications": ["Investment Banking", "Corporate Finance", "Private Equity", "FP&A", "Venture Capital", "Strategic Planning"],
+    "proficiencyIndicators": ["Built 3-statement models", "Performed DCF valuations", "Created LBO models", "Developed forecasts", "Conducted sensitivity analysis", "Presented to executives"],
+    "actionVerbs": ["Built", "Developed", "Modeled", "Analyzed", "Forecasted", "Valued", "Presented", "Created"],
+    "exampleBullets": [
+      "Built integrated 3-statement financial models for $500M+ revenue companies, enabling strategic decision-making for M&A transactions",
+      "Developed DCF and comparable company valuations supporting $50M acquisition, accurate within 5% of final transaction price",
+      "Created rolling 12-month forecast models, improving forecast accuracy from 75% to 92% through driver-based methodology",
+      "Modeled 5-year strategic plan scenarios, identifying $20M cost optimization opportunities presented to board of directors",
+      "Built LBO models for private equity transactions, evaluating 15+ potential investments with IRR and cash-on-cash analysis"
+    ],
+    "relatedJobTitles": ["Financial Analyst", "Investment Banking Analyst", "FP&A Analyst", "Private Equity Associate", "Corporate Development Analyst", "Valuation Analyst"]
+  },
+  {
+    "slug": "content-writing",
+    "skillName": "Content Writing",
+    "category": "Marketing & Digital",
+    "metaDescription": "Highlight content writing skills on your resume. Cover copywriting, content strategy, and brand voice for marketing and content positions.",
+    "relatedSkills": ["SEO", "Copywriting", "Content Strategy", "Editing", "Social Media", "Brand Voice", "Storytelling"],
+    "commonTools": ["Google Docs", "WordPress", "Grammarly", "Hemingway", "SEMrush", "Ahrefs", "Canva"],
+    "industryApplications": ["Content Marketing", "Brand Marketing", "Social Media", "Email Marketing", "Blog Publishing", "Product Marketing"],
+    "proficiencyIndicators": ["Published regularly", "Grew audience", "Improved engagement", "Developed content calendars", "Adapted brand voice", "Drove conversions"],
+    "actionVerbs": ["Wrote", "Created", "Developed", "Published", "Edited", "Produced", "Crafted", "Authored"],
+    "exampleBullets": [
+      "Wrote 200+ blog posts generating 1M+ pageviews annually, establishing thought leadership in B2B SaaS space",
+      "Created email marketing content achieving 35% open rates and 8% click-through rates, 2x industry benchmarks",
+      "Developed content strategy and editorial calendar, publishing 4 articles weekly with consistent brand voice across channels",
+      "Produced landing page copy that increased conversion rates by 40%, contributing to $500K in attributed pipeline",
+      "Authored whitepapers and case studies downloaded 5,000+ times, generating 500+ qualified leads for sales team"
+    ],
+    "relatedJobTitles": ["Content Writer", "Copywriter", "Content Marketing Manager", "Content Strategist", "Marketing Writer", "Brand Writer"]
+  },
+  {
+    "slug": "ux-research",
+    "skillName": "UX Research",
+    "category": "Design & UX",
+    "metaDescription": "Present UX research skills on your resume. Cover user testing, interviews, and insights generation for UX researcher and product design positions.",
+    "relatedSkills": ["User Testing", "Interviews", "Surveys", "Data Analysis", "Personas", "Journey Mapping", "A/B Testing"],
+    "commonTools": ["UserTesting", "Lookback", "Optimal Workshop", "Dovetail", "Miro", "Figma", "SurveyMonkey"],
+    "industryApplications": ["Product Development", "Design Strategy", "Customer Experience", "Digital Products", "Service Design", "Accessibility"],
+    "proficiencyIndicators": ["Conducted user interviews", "Ran usability tests", "Synthesized research findings", "Created personas", "Presented insights", "Influenced product decisions"],
+    "actionVerbs": ["Researched", "Conducted", "Analyzed", "Synthesized", "Discovered", "Presented", "Identified", "Validated"],
+    "exampleBullets": [
+      "Conducted 100+ user interviews and usability tests, generating insights that informed product roadmap for 500K+ user platform",
+      "Identified critical usability issues through research, leading to redesign that improved task completion rates by 45%",
+      "Created research-backed personas and journey maps adopted by product and design teams, aligning stakeholders on user needs",
+      "Synthesized qualitative and quantitative research into actionable recommendations, influencing $2M product investment decisions",
+      "Established UX research practice including templates, participant recruitment, and reporting standards used by 10+ researchers"
+    ],
+    "relatedJobTitles": ["UX Researcher", "User Researcher", "Design Researcher", "Product Researcher", "Research Lead", "Insights Manager"]
+  },
+  {
+    "slug": "crm-management",
+    "skillName": "CRM Management",
+    "category": "Business Applications",
+    "metaDescription": "Demonstrate CRM management skills on your resume. Cover sales enablement, data management, and pipeline tracking for sales operations roles.",
+    "relatedSkills": ["Salesforce", "HubSpot", "Sales Operations", "Data Management", "Reporting", "Process Optimization", "Lead Management"],
+    "commonTools": ["Salesforce", "HubSpot", "Zoho CRM", "Pipedrive", "Microsoft Dynamics", "Outreach", "SalesLoft"],
+    "industryApplications": ["Sales Operations", "Marketing Operations", "Customer Success", "Account Management", "Business Development", "Revenue Operations"],
+    "proficiencyIndicators": ["Managed CRM data quality", "Built reports and dashboards", "Automated workflows", "Improved adoption rates", "Trained sales teams", "Integrated with other tools"],
+    "actionVerbs": ["Managed", "Administered", "Optimized", "Automated", "Integrated", "Configured", "Trained", "Analyzed"],
+    "exampleBullets": [
+      "Managed Salesforce CRM for 100+ user sales organization, maintaining 95% data accuracy and enabling accurate pipeline forecasting",
+      "Built custom reports and dashboards tracking $50M+ pipeline, providing real-time visibility into sales performance and forecasts",
+      "Automated lead routing and follow-up workflows, reducing lead response time from 24 hours to 1 hour and improving conversion by 30%",
+      "Integrated CRM with marketing automation and customer success tools, creating unified view of customer lifecycle",
+      "Trained 50+ sales reps on CRM best practices, improving adoption rate from 60% to 95% and data entry compliance"
+    ],
+    "relatedJobTitles": ["Sales Operations Manager", "CRM Administrator", "Revenue Operations Manager", "Marketing Operations Manager", "Business Systems Analyst", "Sales Enablement Manager"]
+  },
+  {
+    "slug": "graphic-design",
+    "skillName": "Graphic Design",
+    "category": "Design & UX",
+    "metaDescription": "Showcase graphic design skills on your resume. Cover visual design, branding, and creative development for design and marketing positions.",
+    "relatedSkills": ["Adobe Creative Suite", "Branding", "Typography", "Color Theory", "Layout Design", "Illustration", "Print Design"],
+    "commonTools": ["Adobe Photoshop", "Adobe Illustrator", "Adobe InDesign", "Figma", "Canva", "Sketch", "After Effects"],
+    "industryApplications": ["Brand Identity", "Marketing Collateral", "Digital Design", "Print Design", "Social Media", "Packaging"],
+    "proficiencyIndicators": ["Created brand identities", "Designed marketing materials", "Managed brand consistency", "Produced print-ready files", "Developed style guides", "Collaborated with stakeholders"],
+    "actionVerbs": ["Designed", "Created", "Developed", "Produced", "Illustrated", "Branded", "Conceptualized", "Executed"],
+    "exampleBullets": [
+      "Designed brand identity for startup, including logo, color palette, and typography system used across all customer touchpoints",
+      "Created 500+ pieces of marketing collateral (ads, brochures, social graphics), maintaining consistent brand voice and visual standards",
+      "Developed comprehensive style guide ensuring brand consistency across 50+ marketing channels and materials",
+      "Produced award-winning annual report design, recognized with industry design award and 40% increase in stakeholder engagement",
+      "Designed email templates achieving 25% higher click-through rates than previous versions through improved visual hierarchy"
+    ],
+    "relatedJobTitles": ["Graphic Designer", "Visual Designer", "Brand Designer", "Marketing Designer", "Creative Designer", "Art Director"]
+  },
+  {
+    "slug": "data-visualization",
+    "skillName": "Data Visualization",
+    "category": "Analytics & Business Intelligence",
+    "metaDescription": "Present data visualization skills on your resume. Cover dashboard design, storytelling with data, and business insights for analyst and BI roles.",
+    "relatedSkills": ["Tableau", "Power BI", "D3.js", "Data Analysis", "SQL", "Statistics", "Storytelling"],
+    "commonTools": ["Tableau", "Power BI", "D3.js", "Looker", "Plotly", "Google Data Studio", "Excel"],
+    "industryApplications": ["Executive Reporting", "Business Intelligence", "Data Journalism", "Scientific Communication", "Financial Analysis", "Marketing Analytics"],
+    "proficiencyIndicators": ["Created executive dashboards", "Told stories with data", "Designed for accessibility", "Improved data literacy", "Selected appropriate chart types", "Received stakeholder feedback"],
+    "actionVerbs": ["Visualized", "Designed", "Created", "Developed", "Communicated", "Presented", "Illustrated", "Built"],
+    "exampleBullets": [
+      "Designed data visualization strategy for executive team, creating dashboards that reduced decision-making time by 50%",
+      "Created interactive visualizations in D3.js for public-facing website, increasing user engagement by 60% and time on page by 3x",
+      "Developed visualization best practices and templates adopted company-wide, improving data storytelling consistency",
+      "Built real-time dashboards displaying 100+ metrics, enabling operations team to identify and resolve issues 5x faster",
+      "Presented data findings to board of directors using compelling visualizations, securing approval for $10M strategic initiative"
+    ],
+    "relatedJobTitles": ["Data Visualization Specialist", "BI Developer", "Data Analyst", "Analytics Engineer", "Visualization Designer", "Insights Analyst"]
+  }
+]

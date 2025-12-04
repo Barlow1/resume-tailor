@@ -1,7 +1,7 @@
 import { json, type LoaderFunctionArgs, type MetaFunction } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { getJobBySlug, getRelatedJobs, type Job } from "~/data/seo/utils.server.ts";
-import { getProseForCategory, genericIntro, type FAQItem } from "~/data/seo/prose.ts";
+import { getSkillsProseForCategory, skillsGenericIntro, type SkillsFAQItem } from "~/data/seo/prose.ts";
 import { interpolateAndRender } from "~/data/seo/interpolate.ts";
 
 export async function loader({ params }: LoaderFunctionArgs) {
@@ -16,7 +16,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
   }
 
   const relatedJobs = getRelatedJobs(job.relatedSlugs);
-  const prose = getProseForCategory(job.category);
+  const prose = getSkillsProseForCategory(job.category);
 
   return json(
     { job, relatedJobs, prose },
@@ -34,9 +34,9 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
   }
 
   const { job } = data;
-  const title = `${job.jobTitle} Resume Keywords & Skills | Resume Tailor`;
-  const description = job.metaDescription;
-  const url = `https://resumetailor.ai/resume-keywords/${job.slug}`;
+  const title = `${job.jobTitle} Resume Skills Guide | Resume Tailor`;
+  const description = `Learn how to develop and showcase skills for ${job.jobTitle} roles. Get tips on building technical skills, tools proficiency, and demonstrating expertise to employers.`;
+  const url = `https://resumetailor.ai/resume-skills/${job.slug}`;
 
   return [
     { title },
@@ -49,7 +49,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
     { name: "twitter:card", content: "summary_large_image" },
     { name: "twitter:title", content: title },
     { name: "twitter:description", content: description },
-    { name: "keywords", content: [...job.technicalSkills.slice(0, 5), ...job.tools.slice(0, 3), job.jobTitle, "resume keywords"].join(", ") },
+    { name: "keywords", content: [...job.technicalSkills.slice(0, 5), ...job.tools.slice(0, 3), job.jobTitle, "resume skills", "skill development"].join(", ") },
   ];
 };
 
@@ -67,14 +67,14 @@ function JobLdJson({ job }: { job: Job }) {
       {
         "@type": "ListItem",
         position: 2,
-        name: "Resume Keywords",
-        item: "https://resumetailor.ai/resume-keywords",
+        name: "Resume Skills",
+        item: "https://resumetailor.ai/resume-skills",
       },
       {
         "@type": "ListItem",
         position: 3,
-        name: `${job.jobTitle} Keywords`,
-        item: `https://resumetailor.ai/resume-keywords/${job.slug}`,
+        name: `${job.jobTitle} Skills`,
+        item: `https://resumetailor.ai/resume-skills/${job.slug}`,
       },
     ],
   };
@@ -82,8 +82,8 @@ function JobLdJson({ job }: { job: Job }) {
   const ldArticle = {
     "@context": "https://schema.org",
     "@type": "Article",
-    headline: `${job.jobTitle} Resume Keywords & Skills`,
-    description: job.metaDescription,
+    headline: `${job.jobTitle} Resume Skills Guide`,
+    description: `Learn how to develop and showcase skills for ${job.jobTitle} roles.`,
     author: {
       "@type": "Organization",
       name: "Resume Tailor",
@@ -96,7 +96,7 @@ function JobLdJson({ job }: { job: Job }) {
     },
     mainEntityOfPage: {
       "@type": "WebPage",
-      "@id": `https://resumetailor.ai/resume-keywords/${job.slug}`,
+      "@id": `https://resumetailor.ai/resume-skills/${job.slug}`,
     },
   };
 
@@ -114,7 +114,7 @@ function JobLdJson({ job }: { job: Job }) {
   );
 }
 
-export default function ResumeKeywordsSlug() {
+export default function ResumeSkillsSlug() {
   const { job, relatedJobs, prose } = useLoaderData<typeof loader>();
 
   return (
@@ -129,8 +129,8 @@ export default function ResumeKeywordsSlug() {
           </li>
           <li>/</li>
           <li>
-            <Link to="/resume-keywords" className="hover:text-foreground">
-              Resume Keywords
+            <Link to="/resume-skills" className="hover:text-foreground">
+              Resume Skills
             </Link>
           </li>
           <li>/</li>
@@ -144,12 +144,11 @@ export default function ResumeKeywordsSlug() {
           {job.category}
         </span>
         <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-2">
-          {job.jobTitle} Resume Keywords
+          {job.jobTitle} Resume Skills Guide
         </h1>
-        <p className="mt-4 text-lg text-muted-foreground">{job.metaDescription}</p>
         <p
           className="mt-6 text-muted-foreground"
-          dangerouslySetInnerHTML={interpolateAndRender(genericIntro, job)}
+          dangerouslySetInnerHTML={interpolateAndRender(skillsGenericIntro, job)}
         />
         <p
           className="mt-4 text-muted-foreground"
@@ -161,7 +160,7 @@ export default function ResumeKeywordsSlug() {
       <article className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 pb-12">
         {/* Technical Skills */}
         <section className="mb-8">
-          <h2 className="text-xl font-semibold mb-3">Technical Skills</h2>
+          <h2 className="text-xl font-semibold mb-3">Technical Skills to Develop</h2>
           <p
             className="text-muted-foreground mb-4"
             dangerouslySetInnerHTML={interpolateAndRender(prose.technicalSkillsContext, job)}
@@ -180,7 +179,7 @@ export default function ResumeKeywordsSlug() {
 
         {/* Tools & Technologies */}
         <section className="mb-8">
-          <h2 className="text-xl font-semibold mb-3">Tools & Technologies</h2>
+          <h2 className="text-xl font-semibold mb-3">Tools & Technologies to Learn</h2>
           <p
             className="text-muted-foreground mb-4"
             dangerouslySetInnerHTML={interpolateAndRender(prose.toolsContext, job)}
@@ -199,7 +198,7 @@ export default function ResumeKeywordsSlug() {
 
         {/* Soft Skills */}
         <section className="mb-8">
-          <h2 className="text-xl font-semibold mb-3">Soft Skills</h2>
+          <h2 className="text-xl font-semibold mb-3">Soft Skills to Cultivate</h2>
           <p
             className="text-muted-foreground mb-4"
             dangerouslySetInnerHTML={interpolateAndRender(prose.softSkillsContext, job)}
@@ -219,7 +218,7 @@ export default function ResumeKeywordsSlug() {
         {/* Certifications */}
         {job.certifications.length > 0 && !(job.certifications.length === 1 && job.certifications[0] === "N/A") && (
           <section className="mb-8">
-            <h2 className="text-xl font-semibold mb-3">Certifications</h2>
+            <h2 className="text-xl font-semibold mb-3">Certifications to Consider</h2>
             <p
               className="text-muted-foreground mb-4"
               dangerouslySetInnerHTML={interpolateAndRender(prose.certificationsContext, job)}
@@ -237,32 +236,12 @@ export default function ResumeKeywordsSlug() {
           </section>
         )}
 
-        {/* Action Verbs */}
+        {/* Example Resume Bullets */}
         <section className="mb-8">
-          <h2 className="text-xl font-semibold mb-3">Action Verbs</h2>
-          <p
-            className="text-muted-foreground mb-4"
-            dangerouslySetInnerHTML={interpolateAndRender(prose.actionVerbsContext, job)}
-          />
-          <div className="flex flex-wrap gap-2">
-            {job.actionVerbs.map((item: string) => (
-              <span
-                key={item}
-                className="bg-rose-100 dark:bg-rose-900/30 px-3 py-1.5 rounded-full text-sm"
-              >
-                {item}
-              </span>
-            ))}
-          </div>
-        </section>
-
-        {/* Example Bullets */}
-        <section className="mb-8">
-          <h2 className="text-xl font-semibold mb-3">Example Resume Bullets</h2>
-          <p
-            className="text-muted-foreground mb-4"
-            dangerouslySetInnerHTML={interpolateAndRender(prose.exampleBulletsContext, job)}
-          />
+          <h2 className="text-xl font-semibold mb-3">How to Demonstrate Your Skills</h2>
+          <p className="text-muted-foreground mb-4">
+            Strong resume bullets connect your skills to concrete outcomes. Here are examples of how to showcase your {job.jobTitle} capabilities with evidence:
+          </p>
           <ul className="space-y-3">
             {job.exampleBullets.map((bullet: string, i: number) => (
               <li
@@ -275,11 +254,11 @@ export default function ResumeKeywordsSlug() {
           </ul>
         </section>
 
-        {/* How to Use These Keywords */}
+        {/* Skill Development Tips */}
         <section className="mb-8">
-          <h2 className="text-xl font-semibold mb-3">How to Use These Keywords</h2>
+          <h2 className="text-xl font-semibold mb-3">How to Develop These Skills</h2>
           <div className="space-y-4">
-            {prose.howToUse.map((paragraph: string, i: number) => (
+            {prose.developmentTips.map((paragraph: string, i: number) => (
               <p
                 key={i}
                 className="text-muted-foreground"
@@ -294,7 +273,7 @@ export default function ResumeKeywordsSlug() {
           <section className="mb-8">
             <h2 className="text-xl font-semibold mb-4">Frequently Asked Questions</h2>
             <div className="space-y-2">
-              {prose.faq.map((item: FAQItem, i: number) => (
+              {prose.faq.map((item: SkillsFAQItem, i: number) => (
                 <details key={i} className="group border border-border rounded-lg">
                   <summary className="flex cursor-pointer items-center justify-between p-4 font-medium hover:bg-secondary/50 transition-colors rounded-lg">
                     <span dangerouslySetInnerHTML={interpolateAndRender(item.question, job)} />
@@ -323,13 +302,13 @@ export default function ResumeKeywordsSlug() {
         {/* CTA */}
         <section className="my-10 p-6 rounded-xl bg-secondary/50 border text-center">
           <h2 className="text-xl font-semibold mb-2">
-            Ready to tailor your resume?
+            Ready to showcase your skills?
           </h2>
           <p className="text-muted-foreground mb-4">
-            Use Resume Tailor to automatically optimize your resume for {job.jobTitle} roles.
+            Use Resume Tailor to optimize your resume and highlight your {job.jobTitle} skills effectively.
           </p>
           <Link
-            to={`/analyze?ref=keywords&job=${job.slug}`}
+            to={`/analyze?ref=skills&job=${job.slug}`}
             className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
           >
             Analyze My Resume
@@ -339,12 +318,12 @@ export default function ResumeKeywordsSlug() {
         {/* Related Jobs */}
         {relatedJobs.length > 0 && (
           <section className="mt-12">
-            <h2 className="text-xl font-semibold mb-4">Related Job Keywords</h2>
+            <h2 className="text-xl font-semibold mb-4">Related Skills Guides</h2>
             <ul className="grid gap-3 grid-cols-1 sm:grid-cols-2">
               {relatedJobs.map((related: Job) => (
                 <li key={related.slug}>
                   <Link
-                    to={`/resume-keywords/${related.slug}`}
+                    to={`/resume-skills/${related.slug}`}
                     prefetch="intent"
                     className="block p-4 rounded-lg border bg-card hover:bg-secondary/50 transition-colors"
                   >

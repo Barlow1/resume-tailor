@@ -36,14 +36,7 @@ test('Fail to verify TOTP outside the specified time window', () => {
 	expect(result).toBeNull()
 })
 
-test('Clock drift is handled by window', () => {
-	vi.useFakeTimers()
-	const { otp, secret: key } = totp.generateTOTP({ period: 60 })
-	const futureDate = new Date(Date.now() + 1000 * 61)
-	vi.setSystemTime(futureDate)
-	const result = totp.verifyTOTP({ otp, secret: key, window: 1, period: 60 })
-	expect(result).toEqual({ delta: -1 })
-})
+test('Clock drift is handled by window', () => {	vi.useFakeTimers()	// Set a fixed starting time at the beginning of a period to ensure consistent behavior	const startTime = new Date('2024-01-01T00:00:00Z')	vi.setSystemTime(startTime)	const { otp, secret: key } = totp.generateTOTP({ period: 60 })	// Move 61 seconds forward (just past one period)	const futureDate = new Date(startTime.getTime() + 1000 * 61)	vi.setSystemTime(futureDate)	const result = totp.verifyTOTP({ otp, secret: key, window: 1, period: 60 })	expect(result).toEqual({ delta: -1 })})
 
 test('Setting a different seconds config for generating and verifying will fail', () => {
 	const desiredperiod = 60
