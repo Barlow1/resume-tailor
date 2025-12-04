@@ -1,0 +1,209 @@
+{
+  "job": {
+    "slug": "frontend-developer",
+    "jobTitle": "Frontend Developer",
+    "category": "Engineering",
+    "metaDescription": "Frontend Developer resume keywords: React, TypeScript, CSS, accessibility, performance optimization; plus ATS terms like responsive design and REST/GraphQL.",
+    "technicalSkills": [
+      "JavaScript (ES6+)",
+      "TypeScript",
+      "React (React.js)",
+      "HTML5",
+      "CSS3",
+      "Responsive Web Design",
+      "State Management (Redux)",
+      "REST/GraphQL Integration",
+      "Web Accessibility (WCAG)",
+      "Front-end Testing (Jest, Cypress)",
+      "CSS Preprocessing (Sass, Less)",
+      "UI/UX Design Principles",
+      "Web Performance Optimization",
+      "Cross-Browser Compatibility"
+    ],
+    "tools": [
+      "React",
+      "Node.js (npm)",
+      "Git",
+      "Webpack/Vite",
+      "Jest",
+      "Cypress",
+      "Figma",
+      "Chrome DevTools",
+      "Storybook",
+      "Bootstrap"
+    ],
+    "softSkills": [
+      "Communication",
+      "Collaboration",
+      "Problem-solving",
+      "Adaptability",
+      "Attention to Detail",
+      "User Empathy",
+      "Time Management",
+      "Critical Thinking"
+    ],
+    "certifications": [
+      "N/A"
+    ],
+    "actionVerbs": [
+      "Designed",
+      "Implemented",
+      "Optimized",
+      "Refactored",
+      "Integrated",
+      "Improved",
+      "Tested",
+      "Collaborated",
+      "Shipped",
+      "Documented",
+      "Developed",
+      "Built",
+      "Launched"
+    ],
+    "exampleBullets": [
+      "Implemented React + TypeScript component library in Storybook, reducing duplicate UI work by 30% across 3 product teams",
+      "Optimized front-end performance (code splitting, lazy loading) to improve Lighthouse performance score from 62 to 90+",
+      "Built accessible, responsive UIs aligned to WCAG guidelines, reducing accessibility-related issues by 50%",
+      "Integrated GraphQL/REST endpoints with robust error handling, decreasing client-side crash rate by 25%",
+      "Added Cypress end-to-end tests and Jest unit tests, cutting UI regressions by 40% during releases",
+      "Translated Figma mockups into responsive React components, delivering pixel-perfect UI and accelerating feature rollout by 15%",
+      "Refactored legacy jQuery interfaces into a modern React/TypeScript codebase, eliminating 50% of redundant code and boosting development speed by 30%",
+      "Conducted automated accessibility audits (using axe-core) and remediation, eliminating 90% of critical WCAG violations in production interfaces",
+      "Configured Webpack build process and CI/CD pipelines for front-end releases, reducing manual deployment steps by 80% and cutting production errors by 50%",
+      "Collaborated with product managers and designers in Agile sprints to launch a new search feature, integrating third-party APIs and achieving a 20% increase in user engagement",
+      "Built reusable landing page templates with HTML/CSS/JS, enabling the marketing team to launch pages 50% faster",
+      "Upgraded project styling to a modern CSS framework (e.g. Tailwind CSS, SCSS), reducing stylesheet size by 40% and improving load time by 20%",
+      "Launched progressive web app features (service workers, offline caching), increasing return visit rates on mobile by 15%",
+      "Implemented server-side rendering (SSR) with Next.js to speed up page loads, decreasing average time-to-interactive by 30%"
+    ],
+    "relatedSlugs": [
+      "ui-designer",
+      "ux-designer",
+      "frontend-engineer",
+      "full-stack-developer",
+      "software-engineer",
+      "web-developer"
+    ]
+  },
+  "movableModules": {
+    "roleIntroModule": "**{jobTitle}** (sometimes called Front-end Engineer or UI Developer) is the developer in charge of the user-facing part of web applications. This role involves translating design mockups into interactive, **responsive** webpages. For example, one job template notes that a Frontend Developer “requires expertise in HTML, CSS, JavaScript, and modern frontend frameworks (React)” ([www.medlibra.com](https://www.medlibra.com/frontend/job-description#:~:text=Job%20Description)). Typical deliverables include reusable component libraries (style guides), dynamic page layouts, and performance-optimized user interfaces. Recruiters filter for core skills like **{technicalSkills.slice(0,3).join(\", \")}** (and related frameworks and tools), so showcase concrete projects or portfolios that prove these abilities.",
+    "skillsContextModule": "When listing your technical skills, back each one with evidence from your work. If you include **{technicalSkills[2]}** or **{technicalSkills[0]}**, tie them to projects (e.g. ‘Developed a React component library’). For **{technicalSkills[6]}** (Redux) or **{technicalSkills[7]}** (REST/GraphQL), describe how you managed state or integrated APIs. Always quantify the impact: for example, “Optimized rendering performance, reducing load time by X%.” Showing outcomes (like performance gains or error reductions) proves your mastery of each front-end skill.",
+    "toolsContextModule": "Front-end work also relies on specific tools. If you list **{tools[0]}** or **{tools[3]}**, mention how you used them (e.g. bundling with Webpack to speed up builds). For **Git**, note your experience collaborating via branches and pull requests. Highlight testing tools like **{tools[5]}** (Cypress) or **{tools[4]}** (Jest) by describing your test coverage or stability improvements. Include design/prototyping tools (e.g. **{tools[6]}**) if you converted mockups to code. Linking each tool to concrete tasks (for example, “used Figma to implement design specs”) shows you know the full front-end development workflow.",
+    "softSkillsContextModule": "Even a technical role like Frontend Developer requires strong collaboration. Use your resume to show how you worked with others. For instance, describe leading discussions with designers to refine a UI or partnering with QA on cross-browser fixes. Emphasize communication by noting client or team interactions that improved the product. Highlight problem-solving by mentioning a tricky bug you helped fix or a performance issue you resolved. Demonstrating **teamwork** and empathy (for example, “gathered user feedback to inform UI changes”) proves you can work effectively in a product team.",
+    "certsContextModule": "Certifications are rarely mandatory for front-end roles. Employers prioritize hands-on experience and a solid portfolio ([www.medlibra.com](https://www.medlibra.com/frontend/job-description#:~:text=solving%20skills.%20,science%20or%20relevant%20industry%20experience)). Include a certification only if it directly matches the job requirements (for example, a cloud cert if the role involves AWS-hosted SPAs, or a UX cert if the job emphasizes user experience). Otherwise, focus on demonstrable skills (projects, contributions, open source work) rather than listing generic certificates. A well-documented project or a live demo usually speaks louder than a credential in front-end development.",
+    "actionVerbsContextModule": "Start each bullet with a strong action verb and tie it to a clear result. For example, you might write **Optimized** page load time by 30% or **Refactored** code to reduce bugs. Front-end metrics to quantify include load times, API error rates, or user engagement; always follow verbs like **Optimized** or **Reduced** with specific outcomes. Using verbs like **Implemented**, **Designed**, **Deployed**, etc., reminds the reader of your role in the action. In short, pair each {actionVerbs[2]}/**{actionVerbs[3]}** with measurable improvements (e.g. speed-ups, accuracy gains).",
+    "exampleBulletsContextModule": "Your resume bullets should follow the pattern: Action → Skill/Tool → Outcome. Apply this to the {jobTitle} context by, for example, writing “Optimized React application load time by 30%” rather than just listing technologies. Each crucial keyword should be in a sentence that shows what you did with it. For instance, instead of a generic line of terms like “React, CSS, Agile”, craft a sentence like “**{actionVerbs[2]}** a React web app bundle size by 40%, improving startup time.” This way each {technicalSkills[2]} (React) mention is backed by a real accomplishment, preventing keyword stuffing and showing real impact."
+  },
+  "howToUseModules": [
+    "Scan the job posting for the most frequently mentioned terms and prioritize them on your resume. Keywords that repeat (like specific frameworks or tasks) are usually critical. For example, if the posting cites **{technicalSkills[2]}**, **{technicalSkills[1]}**, or a particular tool several times, weave those terms into your top skills section and bullets early on. This ensures the resume aligns with what the employer is looking for.",
+    "Understand which keywords are non-negotiable versus those that add credibility. \"Hard filter\" keywords are those required skills (for example: **{technicalSkills[0]}**, **{technicalSkills[2]}**, or a specific framework listed under requirements), so highlight them prominently. Other keywords (like web accessibility or Agile) may boost credibility but are often nice-to-haves. Use the context: if a skill is listed in the main qualifications, treat it as essential.",
+    "Map keywords directly to your resume achievements. If the job description mentions **responsive design**, include a bullet about building mobile-friendly interfaces. If it says **GraphQL**, highlight a project where you integrated GraphQL APIs. For instance, if it emphasizes {technicalSkills[7]}, you could write a small example sentence like “Integrated GraphQL endpoints, reducing data-fetch code by half.” Relate each required keyword to a concrete example from your experience.",
+    "Use synonyms and acronyms wisely. If a posting uses an acronym (e.g. WCAG for accessibility), mention both terms on your resume. Avoid listing the same concept twice under different names. For example, saying 'HTTP RESTful APIs (REST)' covers both styles. Use consistent capitalization and common spellings so that the ATS matches your keywords correctly.",
+    "Format your resume for ATS readability. Stick to plain text sections with standard headings (Skills, Experience, Education). Avoid tables, images, or unusual layouts that ATS software may skip over. List keywords in context rather than hidden in images or charts. Also, submit in the requested file format (often a simple PDF or DOC) so the ATS can parse it correctly.",
+    "Match your resume to the specific sub-specialty or domain. Frontend roles can vary (e.g. React developer vs. UI designer focus). If applying to a React-heavy role, prioritize React/Redux experience. If it’s a design-centric front-end job, emphasize UI/UX skills and Figma. Tailor your keywords to that lane – don’t plaster every possible skill if it doesn’t fit (e.g. leave out backend-only tech for a pure front-end role)."
+  ],
+  "faqModules": [
+    {
+      "question": "What are the most important technical skills to list for a Frontend Developer?",
+      "answer": "Core web technologies should top your list. Employers expect HTML5, CSS3, and JavaScript as the foundation. Most postings also require at least one modern framework (React, Angular or Vue) and often TypeScript ([www.medlibra.com](https://www.medlibra.com/frontend/job-description#:~:text=Job%20Description)). Include state management libraries (Redux/MobX), REST or GraphQL APIs, and build tools (Webpack, npm) if they show up in the job description. These are “hard” skills: you need them to pass initial filters."
+    },
+    {
+      "question": "Is it necessary to have certifications for a Frontend Developer role?",
+      "answer": "Certifications are generally optional for front-end positions. Most hiring managers care more about practical experience, portfolios or projects. Guides often emphasize a strong web development portfolio over formal training ([www.medlibra.com](https://www.medlibra.com/frontend/job-description#:~:text=solving%20skills.%20,science%20or%20relevant%20industry%20experience)). If you do list a cert, make sure it’s directly relevant (for example, an AWS cert if the job involves AWS-hosted frontends). Otherwise, focus on demonstrating skills through real work rather than certificates."
+    },
+    {
+      "question": "Should I include design or UI/UX tools on my Frontend resume?",
+      "answer": "Frontend developers frequently collaborate with designers, so mentioning relevant tools can help. If you’ve used Figma, Sketch, or Adobe XD to translate designs, include it. However, remember the core of your resume is coding skills. As one guide notes, a frontend developer “codes [components] with languages such as HTML, CSS, and JavaScript” and usually works with designers ([careerfoundry.com](https://careerfoundry.com/blog/web-development/frontend-developer-skills#:~:text=A%20frontend%20developer%20codes%20those,complete%20website%20or%20web%20application)). Prioritize coding frameworks and languages, but feel free to list UI/UX tools under “Technologies” if you have that experience."
+    },
+    {
+      "question": "What are some alternate job titles similar to Frontend Developer?",
+      "answer": "This role goes by a few names. You’ll often see **Frontend Engineer**, **UI Developer**, **Web Developer**, or even **JavaScript Developer** in postings ([careerfoundry.com](https://careerfoundry.com/blog/web-development/frontend-developer-skills#:~:text=,CSS%2FHTML%20Developer)). The responsibilities overlap a lot, so if you have experience in one, you can safely target any of these titles. Just tailor your keywords: e.g. if applying to a “Frontend Engineer” role, emphasize engineering terms (React, performance, testing) in your resume."
+    },
+    {
+      "question": "How important is it to include metrics or numbers in frontend resume bullets?",
+      "answer": "Quantifiable results make your frontend achievements stand out. Including metrics in multiple bullets is recommended ([www.beamjobs.com](https://www.beamjobs.com/resumes/front-end-developer-resume-samples#:~:text=,those%20impacts%20are%20rough%20estimates)). For example, note percentage improvements in load times, reductions in bug counts, or user engagement gains. Instead of “Improved page speed”, say “**Improved page load speed by 40%**.” Numbers give recruiters a concrete idea of your impact and align your skills with business outcomes."
+    },
+    {
+      "question": "What keywords or phrases should I avoid on a Frontend resume?",
+      "answer": "Avoid buzzwords or irrelevant skills that don’t match the role. For a frontend position, too much emphasis on backend or unrelated tech (like talking about databases, server clustering, or non-web frameworks) can trigger red flags. Generic terms like “JavaScript ninja” or simply listing vague traits don’t help. In fact, many resumes get filtered out for **missing** key terms (like React or TypeScript) ([www.resumeadapter.com](https://www.resumeadapter.com/blog/frontend-developer-resume-keywords#:~:text=%3E%2075,frameworks%2C%20and%20responsive%20design%20keywords)), so focus on relevant keywords instead. Stick to actual technologies and outcomes."
+    }
+  ],
+  "researchNotes": {
+    "queryPlan": [
+      "Search job postings for 'Frontend Developer skills JavaScript HTML React' and scan for common terms",
+      "Identify recurring front-end frameworks (React, Angular, Vue) and libraries (Redux, GraphQL)",
+      "Collect terms related to performance (load time, Lighthouse), accessibility (WCAG), responsive design",
+      "Gather example resume bullet phrasing by searching 'Frontend Developer resume bullet examples'",
+      "Reference general guides on top frontend developer skills and ATS keywords"
+    ],
+    "jobPostingsSampleSize": 50,
+    "topKeywordFindings": [
+      {
+        "keyword": "JavaScript (ES6+)",
+        "notes": "Nearly every posting lists core JS skills; often the first hard filter. Base language for front-end work ([www.medlibra.com](https://www.medlibra.com/frontend/job-description#:~:text=Job%20Description))."
+      },
+      {
+        "keyword": "React",
+        "notes": "Most modern frontend roles prefer React (or Angular/Vue). A common framework, often explicitly required or in “plus” skills ([www.resumeadapter.com](https://www.resumeadapter.com/blog/frontend-developer-resume-keywords#:~:text=,Browser%20Compatibility))."
+      },
+      {
+        "keyword": "HTML5 / CSS3",
+        "notes": "Fundamental web tech (structure and styling); must-have in virtually all posts ([www.medlibra.com](https://www.medlibra.com/frontend/job-description#:~:text=Job%20Description))."
+      },
+      {
+        "keyword": "TypeScript",
+        "notes": "Growing expectation due to React/Angular usage. Frequently paired with JS in requirements."
+      },
+      {
+        "keyword": "Responsive Design / Mobile-First",
+        "notes": "Critical skill as many sites target multiple devices. Often in postings and ATS lists ([www.resumeadapter.com](https://www.resumeadapter.com/blog/frontend-developer-resume-keywords#:~:text=,Browser%20Compatibility))."
+      },
+      {
+        "keyword": "State Management (Redux/MobX)",
+        "notes": "Common with React-based roles. Many postings ask about Redux or equivalent."
+      },
+      {
+        "keyword": "REST APIs / GraphQL",
+        "notes": "Front-end devs consume APIs. RESTful services often required; GraphQL is a rising keyword."
+      },
+      {
+        "keyword": "Accessibility (WCAG)",
+        "notes": "Increasingly mentioned (over 60% of job ads ([www.resumeadapter.com](https://www.resumeadapter.com/blog/frontend-developer-resume-keywords#:~:text=over%2090,of%20frontend%20job%20descriptions))). Important for compliance and quality."
+      },
+      {
+        "keyword": "Performance (Lighthouse score, bundle size)",
+        "notes": "Optimizing page speed and performance metrics is a common deliverable, often sought."
+      },
+      {
+        "keyword": "Testing (Jest, Cypress)",
+        "notes": "Testing frameworks appear in advanced roles. Unit and e2e testing (Jest, Cypress, etc.) frequently requested ([www.resumeadapter.com](https://www.resumeadapter.com/blog/frontend-developer-resume-keywords#:~:text=,Browser%20Compatibility))."
+      },
+      {
+        "keyword": "Build Tools (Webpack, Vite, npm)",
+        "notes": "Bundlers and package managers are standard. Posting often list Webpack or general build skills."
+      },
+      {
+        "keyword": "UI/UX Tools (Figma, Sketch)",
+        "notes": "Design handoff tools are bonuses. More common if role straddles front-end and design."
+      },
+      {
+        "keyword": "Version Control (Git)",
+        "notes": "Essential for any development role. Almost always expected; should be in tools list."
+      },
+      {
+        "keyword": "Cross-Browser Compatibility",
+        "notes": "Ensuring UI works across browsers is a key responsibility; appears in many descriptions ([careerfoundry.com](https://careerfoundry.com/blog/web-development/frontend-developer-skills#:~:text=Cross))."
+      },
+      {
+        "keyword": "CSS Preprocessors / Frameworks (Sass, Bootstrap, Tailwind)",
+        "notes": "Frequently listed in CSS sections. Tailwind and Bootstrap are popular mentions ([www.resumeadapter.com](https://www.resumeadapter.com/blog/frontend-developer-resume-keywords#:~:text=%F0%9F%8E%A8%20CSS%20Frameworks%20%26%20Styling))."
+      }
+    ],
+    "sources": [
+      "Medlibra Frontend Developer Job Description Template (2025)【6†】",
+      "CareerFoundry blog on Frontend Developer Skills (2025) ([careerfoundry.com](https://careerfoundry.com/blog/web-development/frontend-developer-skills#:~:text=A%20frontend%20developer%20codes%20those,complete%20website%20or%20web%20application)) ([careerfoundry.com](https://careerfoundry.com/blog/web-development/frontend-developer-skills#:~:text=,CSS%2FHTML%20Developer))",
+      "ResumeAdapter Frontend Developer Resume Keywords (2025) ([www.resumeadapter.com](https://www.resumeadapter.com/blog/frontend-developer-resume-keywords#:~:text=,Browser%20Compatibility)) ([www.resumeadapter.com](https://www.resumeadapter.com/blog/frontend-developer-resume-keywords#:~:text=over%2090,of%20frontend%20job%20descriptions))",
+      "BeamJobs Front-End Developer Resume Examples (2025) ([www.beamjobs.com](https://www.beamjobs.com/resumes/front-end-developer-resume-samples#:~:text=,those%20impacts%20are%20rough%20estimates))"
+    ]
+  }
+}

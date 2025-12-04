@@ -1,4 +1,4 @@
-import jobsData from "./jobs.json";
+import jobsData from "../seo/jobs.json";
 
 export type Job = {
   slug: string;

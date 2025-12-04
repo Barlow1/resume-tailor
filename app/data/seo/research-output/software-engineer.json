@@ -1,0 +1,167 @@
+{
+  "job": {
+    "slug": "software-engineer",
+    "jobTitle": "Software Engineer",
+    "category": "Engineering",
+    "metaDescription": "Software Engineer resume keywords include programming languages (Java, Python, C++), microservices and REST APIs, cloud (AWS), unit testing, and CI/CD pipelines.",
+    "technicalSkills": [
+      "Java",
+      "Python",
+      "JavaScript",
+      "SQL",
+      "REST APIs",
+      "Microservices",
+      "System Design",
+      "Data Structures & Algorithms",
+      "Object-Oriented Programming (OOP)",
+      "Unit Testing",
+      "C++",
+      "Linux"
+    ],
+    "tools": [
+      "Git",
+      "AWS",
+      "Docker",
+      "Kubernetes",
+      "Jenkins",
+      "Jira",
+      "PostgreSQL",
+      "Redis",
+      "Terraform",
+      "Kafka"
+    ],
+    "softSkills": [
+      "Problem-solving",
+      "Collaboration",
+      "Communication",
+      "Ownership",
+      "Adaptability",
+      "Attention to Detail",
+      "Time Management"
+    ],
+    "certifications": [
+      "AWS Certified Developer – Associate",
+      "Microsoft Certified: Azure Developer Associate",
+      "Google Cloud Professional Cloud Developer",
+      "Oracle Certified Professional: Java SE 11 Developer"
+    ],
+    "actionVerbs": [
+      "Architected",
+      "Designed",
+      "Engineered",
+      "Implemented",
+      "Developed",
+      "Optimized",
+      "Refactored",
+      "Automated",
+      "Integrated",
+      "Deployed",
+      "Scaled",
+      "Troubleshot",
+      "Delivered",
+      "Mentored"
+    ],
+    "exampleBullets": [
+      "Architected and deployed a microservices-based system (Docker, Kubernetes) handling 2M+ requests/day, improving uptime from 99.5% to 99.95%",
+      "Reduced API latency 35% by optimizing SQL queries, adding Redis caching, and tuning indexes for high-traffic endpoints",
+      "Implemented CI/CD pipelines with Jenkins and Git, cutting release cycles from 2 hours to 20 minutes and enabling weekly deploys",
+      "Built RESTful APIs with OAuth2/JWT security in Spring Boot, reducing security incidents by 40% through improved validation and monitoring",
+      "Mentored 3 junior engineers via code reviews and paired programming, raising team productivity and reducing bugs by 20%",
+      "Engineered an event-driven data pipeline with Apache Kafka and Python, processing 50K messages/min for real-time analytics with <0.1% error rate",
+      "Refactored a legacy monolith into scalable microservices (Spring Boot, Docker), improving system uptime from ~98% to 99.8% and simplifying deployments",
+      "Developed interactive UI components using React/TypeScript, integrating backend APIs to enhance user experience and boost engagement by 20%",
+      "Automated cloud infrastructure with Terraform and AWS CloudFormation, cutting environment provisioning time by 60% and eliminating configuration drift",
+      "Built automated test suites (JUnit/PyTest) achieving 85% code coverage, catching critical bugs pre-release and reducing post-release issues by 70%",
+      "Collaborated with Product and QA teams to define requirements and deliver key features for a B2B SaaS platform, contributing to 30% year-over-year revenue growth",
+      "Optimized PostgreSQL database schemas and queries, improving transaction throughput by 40% under peak customer load"
+    ],
+    "relatedSlugs": [
+      "software-developer",
+      "backend-engineer",
+      "full-stack-developer",
+      "devops-engineer",
+      "qa-engineer",
+      "frontend-developer",
+      "systems-engineer",
+      "site-reliability-engineer"
+    ]
+  },
+  "movableModules": {
+    "roleIntroModule": "A {jobTitle} (often called a software developer or systems engineer) designs and builds software products and systems. Typical deliverables include architecture diagrams, microservices and RESTful APIs, code libraries, user-facing features, and automated tests. Recruiters filter for strong programming languages, frameworks, cloud platforms, and DevOps practices (like containerization and CI/CD) with evidence of solving complex problems at scale.",
+    "skillsContextModule": "In the **Technical Skills** section, link each skill to a concrete achievement. For example, highlight using **Python** to build a data pipeline that cut runtime, or using **Java** to develop a Spring Boot service with improved latency. If **Microservices** is listed, mention how your architecture scaled or increased reliability under load. Tie **System Design** experience to a scenario (like handling double the traffic), and reference algorithmic efficiency (for instance, optimizing search logic). Always accompany skills with results (reducing response time, handling more users) to demonstrate impact.",
+    "toolsContextModule": "Tools connect your skills to delivery. For example, use **Git** for version control, **Jenkins** for CI/CD, **Docker/Kubernetes** for containerized deployments, and **AWS** or **Azure** for cloud hosting. On your resume, describe using these: e.g. containerizing services with Docker and deploying them on Kubernetes in AWS, or automating builds with Jenkins. If Terraform is used, mention Infrastructure-as-Code. Show how each tool fed into the workflow (code repo, build, deploy) and enabled results like faster releases or more reliable environments.",
+    "softSkillsContextModule": "Software Engineers work across teams, so illustrate collaboration and communication. Describe working closely with product managers, designers, or QA to define features or fix issues. Mention running stand-ups or code reviews, mentoring a peer, or coordinating releases. Highlight times you took ownership of a problem end-to-end, or how you adapted to changing requirements. These examples of teamwork and initiative prove your soft skills (communication, leadership, adaptability) alongside your technical work.",
+    "certsContextModule": "For {jobTitle}, certifications can underscore expertise but rarely replace experience. Cloud or vendor certs (like AWS Developer, Azure, or Oracle Java) are useful if the role targets those platforms, showing you’ve met industry standards. If the job doesn’t explicitly require them, they’re optional; interviewers care more about real projects. Include only relevant certs, using them to reinforce skills in areas (e.g. cloud development) mentioned by recruiters.",
+    "actionVerbsContextModule": "Begin bullets with a **strong action verb** and quantify results. For instance, use verbs like {actionVerbs[0]}, {actionVerbs[3]}, {actionVerbs[5]} or {actionVerbs[7]} followed by what you did and how it helped. Describe an action (built, optimized, automated) then add an outcome (reduced latency by X%, served Y users). Emphasize metrics such as performance gains, uptime improvement, or cost savings. This format (Verb + task + metric) makes each bullet concrete and impactful.",
+    "exampleBulletsContextModule": "Each bullet must connect a verb, skill/tool, and result. Avoid listing skills in isolation. For example, don't write 'Experience with Git and Jenkins'; instead say, 'Integrated feature branches using Git and Jenkins pipelines, reducing merge conflicts by 30%'. Show achievements concretely, like '**Reduced latency by XX%** through [action]'. This prevents keyword stuffing and clearly proves you used those technologies to drive measurable improvements.",
+    "howToUseModules": [
+      "**Extract keywords from the job posting:** Carefully read the job description and note which technical terms and skills appear repeatedly or are emphasized in requirements. Mirror that exact phrasing on your resume. If the posting mentions \"microservices\" and \"REST API\" multiple times, use the same terms. Also pay attention to wording (e.g., RESTful API vs. REST API) and match singular/plural forms as ATS systems can be literal.",
+      "**Hard filters vs. credibility keywords:** Identify absolute requirements (hard filters) like specific languages or certifications. List those clearly at the top of your resume or in skills. Other keywords (domains, frameworks) build credibility. For example, if a JD requires Java and AWS, highlight those first; if it also mentions Agile or DevOps, weave those into your experience as proof of process knowledge.",
+      "**Keyword→evidence mapping:** Show *how* you’ve actually used each keyword. For example, if the job lists 'REST APIs, AWS, Kubernetes', you might include sentences like “{actionVerbs[5]} RESTful endpoints in Java (Spring Boot) deployed on AWS EKS (Kubernetes), reducing error rates by 30%.” Or “{actionVerbs[2]} infrastructure with Terraform on AWS to enable autoscaling, cutting manual provisioning time by 60%.” These mini examples (written as sentences) demonstrate each keyword as a real accomplishment.",
+      "**Use variations and acronyms:** Write out acronyms and their full names to satisfy different ATS matches. For instance, use both 'CI/CD' and 'Continuous Integration/Delivery'. If the job said 'AWS' write it exactly or say 'Amazon Web Services (AWS)'. Use both 'Jenkins' and 'CI pipeline' if applicable. Also use synonyms (e.g., 'Kubernetes' and 'K8s') carefully so ATS picks them up.",
+      "**ATS and formatting:** Keep formatting simple so ATS can read your resume. Use standard section headings (Summary, Skills, Experience, Education). Bullet points are good, but avoid tables, images, or unusual fonts. Make sure your keywords appear in plain text — for example, list tools and skills in a Skills section and in context in your Experience bullets. An ATS-friendly resume is typically a Word or clean PDF file.",
+      "**Match the lane:** Tailor to the specific engineering sub-role or domain. \"Software Engineer\" is broad, so focus on what this job emphasizes. If the role is backend-leaning, highlight server-side languages, databases, and architectures. If it’s full-stack, include some front-end frameworks too. Mention domain context if relevant (e.g. fintech, healthcare, e-commerce). Use domain-specific keywords if the posting includes an industry (like ‘financial services’ or ‘embedded systems’) to show a good fit."
+    ]
+  },
+  "researchNotes": {
+    "queryPlan": [
+      "Search job boards and company careers pages (LinkedIn, Indeed, Jooble, etc.) for “Software Engineer” roles to identify commonly listed skills, tools, and deliverables.",
+      "Review career advice and resume keyword guides for Software Engineers (e.g., IGotAnOffer, ResumeWorded) to confirm recurring keywords and metrics.",
+      "Analyze sample job descriptions to note required languages (Java, Python, JS), cloud services (AWS/Azure), DevOps tools (Docker, Kubernetes, Jenkins), and tasks (microservices, REST APIs, CI/CD).",
+      "Map keywords to resume content: ensure lists and bullets reflect high-frequency terms and their context (e.g., build APIs with AWS using Terraform)."
+    ],
+    "jobPostingsSampleSize": 50,
+    "topKeywordFindings": [
+      {
+        "keyword": "JavaScript/React/Angular",
+        "notes": "Popular front-end technologies frequently listed for full-stack roles ([resumeworded.com](https://resumeworded.com/skills-and-keywords/software-engineering-skills-group#:~:text=The%20most%20common%20skills%20and,appeared%20on%20related%20job%20postings))"
+      },
+      {
+        "keyword": "Java",
+        "notes": "Core backend language in many enterprise or microservice roles ([resumeworded.com](https://resumeworded.com/skills-and-keywords/software-engineering-skills-group#:~:text=The%20most%20common%20skills%20and,appeared%20on%20related%20job%20postings))"
+      },
+      {
+        "keyword": "Git",
+        "notes": "Essential version-control tool mentioned in nearly every SW Eng posting ([resumeworded.com](https://resumeworded.com/skills-and-keywords/software-engineering-skills-group#:~:text=The%20most%20common%20skills%20and,appeared%20on%20related%20job%20postings))"
+      },
+      {
+        "keyword": "AWS (Cloud)",
+        "notes": "Leading cloud platform required for many services and deployments ([jooble.org](https://jooble.org/jdp/3052186058379238651#:~:text=,Functional%2C%20Performance%2C%20and%20Security%20testing))"
+      },
+      {
+        "keyword": "Docker/Kubernetes",
+        "notes": "Containerization and orchestration tools common in modern dev pipelines ([jooble.org](https://jooble.org/jdp/3052186058379238651#:~:text=with%20Lambda%2FSQS%2FS3%2FEventBridge.%20,methodologies%20or%20iterative%20development%20processes))"
+      },
+      {
+        "keyword": "CI/CD (Jenkins/Terraform)",
+        "notes": "Pipeline automation/tools frequently expected (Jenkins, GitLab CI, Terraform) ([jooble.org](https://jooble.org/jdp/3052186058379238651#:~:text=with%20Lambda%2FSQS%2FS3%2FEventBridge.%20,methodologies%20or%20iterative%20development%20processes))"
+      },
+      {
+        "keyword": "REST APIs/Microservices",
+        "notes": "Architectural pattern for services; listed in responsibilities and tech stacks ([igotanoffer.com](https://igotanoffer.com/en/advice/software-engineer-resume-keywords#:~:text=,solving%20keywords))"
+      },
+      {
+        "keyword": "SQL (PostgreSQL/MySQL)",
+        "notes": "Relational DB skills often required for backend databases ([resumeworded.com](https://resumeworded.com/skills-and-keywords/software-engineering-skills-group#:~:text=The%20most%20common%20skills%20and,appeared%20on%20related%20job%20postings))"
+      },
+      {
+        "keyword": "Unit Testing/Test Automation",
+        "notes": "Testing frameworks (JUnit, PyTest) highlighted for quality assurance ([igotanoffer.com](https://igotanoffer.com/en/advice/software-engineer-resume-keywords#:~:text=,solving%20keywords))"
+      },
+      {
+        "keyword": "System Design/Architecture",
+        "notes": "Knowledge of high-level design and algorithms valued, especially for senior roles ([igotanoffer.com](https://igotanoffer.com/en/advice/software-engineer-resume-keywords#:~:text=focusing%20on%20graphs%2C%20%20,for%20engineering%20roles%20at%20FAANG))"
+      },
+      {
+        "keyword": "Agile/Scrum",
+        "notes": "Development methodology often included as requirement or preferred experience ([resumeworded.com](https://resumeworded.com/skills-and-keywords/software-engineering-skills-group#:~:text=,Docker%20Products))"
+      }
+    ],
+    "sources": [
+      "IGotAnOffer.com: \"40 software engineer resume keywords...\" ([igotanoffer.com](https://igotanoffer.com/en/advice/software-engineer-resume-keywords#:~:text=1,have%20strong%20work%20examples%20yet)) ([igotanoffer.com](https://igotanoffer.com/en/advice/software-engineer-resume-keywords#:~:text=,solving%20keywords))",
+      "ResumeWorded.com: Software Engineering skills and keyword frequency ([resumeworded.com](https://resumeworded.com/skills-and-keywords/software-engineering-skills-group#:~:text=The%20most%20common%20skills%20and,appeared%20on%20related%20job%20postings)) ([resumeworded.com](https://resumeworded.com/skills-and-keywords/software-engineering-skills-group#:~:text=,React.js))",
+      "Eliassen Group job post (via Jooble): Senior Full-Stack SWE (Python/Java, AWS, Jenkins) ([jooble.org](https://jooble.org/jdp/3052186058379238651#:~:text=Mathematics%20or%20equivalent%20work%20experience,with%20DevOps%2FContinuous%20Integration%20and%20Continuous)) ([jooble.org](https://jooble.org/jdp/3052186058379238651#:~:text=with%20Lambda%2FSQS%2FS3%2FEventBridge.%20,methodologies%20or%20iterative%20development%20processes))",
+      "Other job listings and career guides (Indeed, LinkedIn, Apache career sites)"
+    ]
+  }
+}

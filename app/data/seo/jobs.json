@@ -131,8 +131,7 @@
       "software-engineer",
       "full-stack-developer",
       "backend-engineer",
-      "qa-engineer",
-      "project-manager"
+      "qa-engineer"
     ]
   },
   {
@@ -535,7 +534,6 @@
     "relatedSlugs": [
       "software-developer",
       "software-engineer",
-      "project-manager",
       "product-manager",
       "business-analyst"
     ]
@@ -1223,7 +1221,6 @@
       "Facilitated workshops with leadership and engineering to align scope, reducing scope creep incidents by 25%"
     ],
     "relatedSlugs": [
-      "project-manager",
       "product-manager",
       "data-analyst",
       "account-manager",
@@ -1499,80 +1496,10 @@
       "Ran discovery interviews and usability tests, translating insights into prioritized improvements that lifted conversion by 7%"
     ],
     "relatedSlugs": [
-      "project-manager",
       "ux-designer",
       "product-designer",
       "business-analyst",
       "growth-marketing-manager"
-    ]
-  },
-  {
-    "slug": "project-manager",
-    "jobTitle": "Project Manager",
-    "category": "Product & Design",
-    "metaDescription": "Essential keywords for Project Manager resumes. Include planning, Agile, and ATS keywords from real job postings to boost match rate and win interviews.",
-    "technicalSkills": [
-      "Project Planning & Scheduling",
-      "Scope Management",
-      "Risk Management",
-      "Budget Tracking",
-      "Agile/Scrum Delivery",
-      "Stakeholder Communication",
-      "Resource Management",
-      "RAID Logs (Risks/Assumptions/Issues/Dependencies)",
-      "Change Control",
-      "Status Reporting"
-    ],
-    "tools": [
-      "Microsoft Project",
-      "Jira",
-      "Confluence",
-      "Asana",
-      "Smartsheet",
-      "Trello",
-      "Microsoft Excel",
-      "Slack"
-    ],
-    "softSkills": [
-      "Leadership",
-      "Organization",
-      "Negotiation",
-      "Conflict Resolution",
-      "Communication",
-      "Problem-solving"
-    ],
-    "certifications": [
-      "Project Management Professional (PMP)",
-      "Certified Associate in Project Management (CAPM)",
-      "PRINCE2 Practitioner",
-      "Certified ScrumMaster (CSM)",
-      "PMI Agile Certified Practitioner (PMI-ACP)"
-    ],
-    "actionVerbs": [
-      "Planned",
-      "Coordinated",
-      "Delivered",
-      "Mitigated",
-      "Escalated",
-      "Aligned",
-      "Tracked",
-      "Facilitated",
-      "Managed",
-      "Executed"
-    ],
-    "exampleBullets": [
-      "Planned and delivered a cross-functional launch across 5 teams, meeting a fixed deadline and reducing schedule variance from 18% to 6%",
-      "Managed $1.2M project budget and vendor milestones, delivering 9% under budget through scope control and renegotiations",
-      "Facilitated Agile ceremonies and removed blockers, improving sprint predictability from 70% to 90% over two quarters",
-      "Built RAID logs and executive status reports, reducing surprise escalations by 40% and improving stakeholder alignment",
-      "Coordinated UAT and release readiness, cutting post-release defects by 25% through tighter acceptance criteria"
-    ],
-    "relatedSlugs": [
-      "product-manager",
-      "business-analyst",
-      "operations-manager",
-      "marketing-manager",
-      "customer-success-manager"
     ]
   },
   {
@@ -2917,7 +2844,6 @@
       "Improved labor scheduling and capacity planning, reducing overtime spend by 14% while maintaining service levels"
     ],
     "relatedSlugs": [
-      "project-manager",
       "office-manager",
       "administrative-assistant",
       "finance-manager",
@@ -2987,7 +2913,6 @@
       "executive-assistant",
       "office-manager",
       "operations-manager",
-      "project-manager",
       "hr-manager"
     ]
   },
@@ -3054,7 +2979,6 @@
       "administrative-assistant",
       "office-manager",
       "operations-manager",
-      "project-manager",
       "hr-manager"
     ]
   },
@@ -3188,8 +3112,7 @@
       "medical-assistant",
       "operations-manager",
       "office-manager",
-      "hr-manager",
-      "project-manager"
+      "hr-manager"
     ]
   },
   {

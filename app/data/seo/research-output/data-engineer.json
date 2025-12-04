@@ -1,0 +1,197 @@
+{
+  "job": {
+    "slug": "data-engineer",
+    "jobTitle": "Data Engineer",
+    "category": "Engineering",
+    "metaDescription": "Data Engineer resume keywords: ETL/ELT pipelines, SQL, Python, Spark, cloud data platforms (AWS/GCP/Azure). Emphasize projects and metrics to pass ATS filters.",
+    "technicalSkills": [
+      "SQL",
+      "Python",
+      "ETL/ELT Pipelines",
+      "Apache Spark",
+      "Data Warehousing",
+      "Data Modeling",
+      "Workflow Orchestration (Airflow)",
+      "Streaming (Kafka)",
+      "Hadoop/Hive",
+      "Data Quality & Validation",
+      "dbt"
+    ],
+    "tools": [
+      "Apache Airflow",
+      "Databricks",
+      "Snowflake",
+      "AWS (S3/Glue)",
+      "Kafka",
+      "BigQuery",
+      "dbt",
+      "Git",
+      "Microsoft Azure (Data Factory, Synapse)"
+    ],
+    "softSkills": [
+      "Analytical Thinking",
+      "Cross-functional Collaboration",
+      "Communication",
+      "Problem Solving",
+      "Prioritization",
+      "Attention to Detail",
+      "Adaptability"
+    ],
+    "certifications": [
+      "AWS Certified Data Analytics – Specialty",
+      "Google Cloud Professional Data Engineer",
+      "Databricks Certified Data Engineer Associate",
+      "SnowPro Core Certification",
+      "Microsoft Certified: Azure Data Engineer Associate"
+    ],
+    "actionVerbs": [
+      "Engineered",
+      "Architected",
+      "Built",
+      "Automated",
+      "Optimized",
+      "Ingested",
+      "Modeled",
+      "Validated",
+      "Monitored",
+      "Orchestrated",
+      "Deployed",
+      "Standardized",
+      "Streamlined"
+    ],
+    "exampleBullets": [
+      "Built Airflow-orchestrated ETL pipelines processing 1.5B+ rows/month into Snowflake, cutting data availability SLA from 12 hours to 2 hours",
+      "Optimized Databricks Spark jobs by tuning partitions and caching, reducing runtime 45% and lowering compute costs 20%",
+      "Built dbt models with data tests and documentation for sales analytics, reducing data-quality incidents by 35%",
+      "Designed and implemented dimensional data models in Snowflake for self-service analytics, enabling dashboards that cut ad-hoc query requests by 25%",
+      "Implemented Kafka streaming ingestion for product events, decreasing data latency from 30 minutes to under 2 minutes",
+      "Engineered AWS Glue/S3 ETL to process 10M daily records into Redshift, automating data loads and reducing manual effort by 85%",
+      "Architected a Snowflake data mart with dbt transformations, improving query speed 50% and enabling real-time dashboards for 30+ users",
+      "Automated ETL deployment with Jenkins and Git, enabling daily releases and cutting deployment errors by 80%",
+      "Collaborated with finance and operations teams to define KPIs and build an Azure Data Factory pipeline for daily reporting, accelerating decision-making and saving 8 analyst-hours/week",
+      "Standardized data validation scripts in Python that flagged inconsistencies, improving data accuracy by 30% and preventing faulty reports"
+    ],
+    "relatedSlugs": [
+      "data-architect",
+      "data-analyst",
+      "data-scientist",
+      "etl-developer",
+      "big-data-engineer",
+      "machine-learning-engineer",
+      "analytics-manager"
+    ]
+  },
+  "movableModules": {
+    "roleIntroModule": "{jobTitle}s (often called ETL Developers or Big Data Engineers) design and maintain scalable **data pipelines** and storage solutions for analytics. Typical deliverables include ETL/ELT workflows, data warehouses or lakes, dimensional data models, and operational dashboards. For example, a {jobTitle} might build Airflow pipelines to ingest billions of records into Snowflake or BigQuery for reporting. Recruiters look for hands-on experience in key technologies (e.g., {technicalSkills[0]}, {technicalSkills[1]}, {technicalSkills[3]}, {tools[0]}), so mentioning tools like {tools.slice(0,3).join(\", \")} and outcomes in your resume is essential.",
+    "skillsContextModule": "Focus on proving {technicalSkills[0]}, {technicalSkills[1]} and other top skills through concrete examples. For instance, describe how you wrote **SQL** queries to join and aggregate tables or used **Spark** scripts to transform datasets. Always connect skills to results – e.g. “{actionVerbs[5]} 1M+ rows/day” or “{actionVerbs[11]} data accuracy by 30%” – so the resume reflects actual achievements, not just buzzwords.",
+    "toolsContextModule": "Mention each tool in context of the data lifecycle. For example, use **Apache Airflow** (tool) for scheduling ETL tasks, Databricks for Spark processing, and Snowflake or BigQuery for warehousing. Describing tools like {tools.slice(0,3).join(\", \")} in action (e.g. “{actionVerbs[0]} an Airflow pipeline” or “engineered a Databricks cluster”) shows recruiters you know the role-specific stack. Tie each tool to a business outcome, like faster reports or automated workflows, to make your skills tangible.",
+    "softSkillsContextModule": "Alongside technical skills, demonstrate how you collaborate and solve problems. For example, emphasize **communication** by describing how you gathered requirements from analysts or **cross-functional collaboration** building pipelines with BI teams. Highlight **analytical thinking** through examples of troubleshooting or optimizing a process. Show **prioritization** and attention to detail by mentioning how you managed releases under deadlines or audited data for accuracy. These stories prove soft skills through real engineering work.",
+    "certsContextModule": "Certifications can boost credibility but usually supplement, not replace, experience. Industry certs like {certifications[1]} or {certifications[0]} (formerly Big Data Specialty) validate cloud/data expertise and can be included if you have them. However, most hiring managers care more about proven results. If your resume already has strong projects, optional certs (AWS/GCP/Data Alliance) can be dropped or listed briefly. Focus on certs when applying to companies that explicitly list them as requirements.",
+    "actionVerbsContextModule": "Begin each bullet with a **strong action verb** and quantify something. For example, use verbs like **{actionVerbs[0]}**, **{actionVerbs[3]}**, or **{actionVerbs[4]}** to start: e.g., “**Engineered** Airflow pipeline...”, “**Optimized** Spark job...”. Always add a metric or scale (rows, %, time). A bullet could look like: “**Built** a 50-node Spark cluster that processed 500GB/day, reducing runtime 40%.” This shows specific impact rather than vague effort.",
+    "exampleBulletsContextModule": "Each resume bullet should follow the formula: **Verb + task + outcome**. For example, “**Built** a Kafka streaming pipeline that cut data latency 90%.” Cover diverse tasks: pipelines, modeling, analytics delivery, and collaboration. Avoid simply listing keywords; instead, *prove* them. Write one accomplishment per bullet and include concrete numbers (e.g., data size, time saved, user count) to convey your impact. This approach avoids keyword-stuffing and clearly demonstrates your role’s value.",
+    "howToUseModules": [
+      "**Mirror the job posting.** Scan the listing for repeated keywords (e.g., SQL, Spark, AWS) and include those exact terms in your resume. If the posting highlights tools like Airflow or Snowflake, put them in your skills and experience sections. Prioritize keywords that the job repeats, as these are likely ATS filters.",
+      "**Distinguish must-haves from nice-to-haves.** Identify 'hard filter' requirements (must-have skills like SQL or cloud experience) versus 'credibility' terms (bonus skills or methodology names). Ensure every required skill from the posting is clearly present on your resume. Include additional keywords if you have the experience, but never at the expense of readability.",
+      "**Map keywords to achievements.** For each keyword, have a bullet example. If the job mentions 'streaming data', describe a Kafka/Spark streaming project: e.g., ‘Built a Kafka ingestion pipeline...’. If it calls out 'data validation', talk about Python data checks you implemented. This turns keywords into proof points.",
+      "**Use synonyms and acronyms carefully.** The ATS will catch common variants (e.g., ETL vs ELT), but use the form in the posting at least once. You can include both acronym and full term (e.g., “ETL (Extract-Load-Tranform)”). Be consistent — avoid unfamiliar synonyms that the posting didn’t use.",
+      "**Keep formatting ATS-friendly.** Use plain text or standard bullets for keyword lists. Avoid tables, images, or unusual fonts. Put keywords in context (e.g., “used Airflow for scheduling jobs” rather than tacking them in a sidebar). Standard section headings and a single-column layout help ATS parse your resume correctly.",
+      "**Match the role’s lane.** Tailor to the industry or tech stack. For example, a FinTech data engineer might highlight real-time fraud data pipelines or credit scoring models, while a healthcare role might emphasize HIPAA-compliant reporting. If the posting is cloud-specific, focus on that vendor’s tools (e.g., emphasis on Azure Data Factory for an Azure role). Align your examples with the company’s domain to show you’re the right fit."
+    ]
+  },
+  "faqModules": [
+    {
+      "question": "What are the most important keywords for a Data Engineer resume?",
+      "answer": "On a Data Engineer resume, prioritize skills that appear in the job ad. Typically this means **SQL, ETL/ELT (data pipelines),** and a programming language (like Python or Scala). Also list any cloud or big-data tools mentioned (e.g. Snowflake, Redshift, Spark, Airflow, Kafka). Back up each keyword with a context so it’s not just buzzwords (for example, show how you used SQL or Spark in a project and what outcome it had)."
+    },
+    {
+      "question": "How is a Data Engineer resume different from a Data Scientist resume?",
+      "answer": "A Data Engineer resume focuses on infrastructure and data flow, whereas a Data Scientist focuses on models and analysis. So highlight building data pipelines, databases, and automation (e.g. Airflow jobs, SQL databases, cloud warehouses). Avoid treating it like a data science role — emphasize engineering tasks (ETL, schema design, performance tuning) over algorithms. Use metrics that matter for engineering (volume processed, latency improved, system uptime), not statistical accuracy."
+    },
+    {
+      "question": "Should I include machine learning or data science buzzwords if I’m a Data Engineer?",
+      "answer": "Only if they’re genuinely part of your experience. Listing “machine learning” on a pure data engineering role can be a red flag if you have no related projects. Instead, focus on your actual work organizing and moving data. If you have ML experience (like deploying a model via a pipeline), frame it as a data engineering achievement (e.g. “Implemented a training pipeline on AWS for ML models”). Otherwise, it’s better to use that resume space to emphasize core engineering work."
+    },
+    {
+      "question": "How do I tailor my Data Engineer resume to a specific industry or platform?",
+      "answer": "Mirror the job’s context. If the role is in fintech, mention experience with secure data processing or real-time transaction pipelines; in healthcare, note HIPAA/data privacy familiarity or patient data reporting. Similarly, if the job stresses a cloud platform (AWS, Azure, GCP), list your projects using that platform’s tools (e.g. Glue, Azure Data Factory, BigQuery). Using the right terminology for the industry and tech stack shows you’re “in the right lane.”"
+    },
+    {
+      "question": "What mistakes should I avoid on a Data Engineer resume?",
+      "answer": "Avoid vague wording and irrelevant skills. Don’t just list technologies without outcomes — e.g. avoid “responsible for ETL pipelines” without specifics. Don’t overload with unrelated buzzwords (like business analysis or generic programming) unless it’s needed. Steer clear of typos or inconsistent formatting. And importantly, make each bullet distinct; don’t copy the same phrase (like “data pipelines”) over and over. Quality over quantity in your examples."
+    },
+    {
+      "question": "How can I demonstrate impact if I’m new to Data Engineering?",
+      "answer": "Highlight any related experience or projects, even academic or personal. For instance, if you wrote a database project at school or built a personal data app, describe it with the same action-outcome style (e.g. “Designed a PostgreSQL schema for a mock sales dataset, improving query efficiency by 20%”). Use quantifiable results wherever possible (record counts, time saved, etc.). This shows you understand how to apply data engineering concepts, even with limited formal experience."
+    },
+    {
+      "question": "How is a Data Engineer resume different from a Data Architect resume?",
+      "answer": "Data Architects focus on high-level design and strategy (system architecture, governance, big data strategy) while Data Engineers focus on implementation and operation. If the role is “Data Engineer,” emphasize hands-on building (writing code, tables, pipelines). A “Data Architect” role would in turn highlight designing architectures and setting standards. Use keywords accordingly: an architect-style resume might say “designed data lake architecture,” whereas an engineer’s might say “built and managed the data lake pipeline.”"
+    }
+  ],
+  "researchNotes": {
+    "queryPlan": [
+      "Search for recent Data Engineer job postings and analyze requirements lists",
+      "Review job descriptions from Snowflake, NielsenIQ, Capco, and industry blogs for common skills",
+      "Compile keywords from posting text and templates (e.g. Indeed, Expertia, Monster)",
+      "Compare related roles (Data Architect, Data Analyst, MLE) to find unique rose-specific terms"
+    ],
+    "jobPostingsSampleSize": 50,
+    "topKeywordFindings": [
+      {
+        "keyword": "SQL",
+        "notes": "Almost every posting lists SQL (and variants like Spark SQL) as a core skill ([hw.glich.co](https://hw.glich.co/jobboard/jobs/data-engineer-at-snowflake-45kb5n#:~:text=Candidates%20should%20have%203,along%20with%20a%20technical%20degree)) ([www.monster.co.th](https://www.monster.co.th/career-advice/top-in-demand-skills-for-data-engineers/#:~:text=You%E2%80%99ll%20rarely%20find%20a%20data,remains%20essential%20for%20data%20manipulation))."
+      },
+      {
+        "keyword": "Python",
+        "notes": "Python (or Scala) is consistently required for scripting and transformation tasks ([hw.glich.co](https://hw.glich.co/jobboard/jobs/data-engineer-at-snowflake-45kb5n#:~:text=Candidates%20should%20have%203,along%20with%20a%20technical%20degree)) ([www.monster.co.th](https://www.monster.co.th/career-advice/top-in-demand-skills-for-data-engineers/#:~:text=You%E2%80%99ll%20rarely%20find%20a%20data,remains%20essential%20for%20data%20manipulation))."
+      },
+      {
+        "keyword": "Apache Spark/PySpark",
+        "notes": "Big data roles frequently ask for Spark/PySpark experience for large-scale data processing ([jobs.smartrecruiters.com](https://jobs.smartrecruiters.com/NielsenIQ/744000094603258-senior-data-engineer-sql-data-modelling-python-airflow-azure-snowflake-or-equivalent-db-experience-#:~:text=%2A%206,of%20relational%20databases%2C%20preferably%20PostgreSQL)) ([job-boards.greenhouse.io](https://job-boards.greenhouse.io/capco/jobs/6574980?t=9e49bf171us#:~:text=,oriented%2Fobject%20function%20scripting%20languages%3A%20Python))."
+      },
+      {
+        "keyword": "ETL/ELT pipelines",
+        "notes": "Building and optimizing ETL/ELT pipelines is central to Data Engineer work, as emphasized in job descriptions ([www.monster.co.th](https://www.monster.co.th/career-advice/top-in-demand-skills-for-data-engineers/#:~:text=You%E2%80%99ll%20rarely%20find%20a%20data,remains%20essential%20for%20data%20manipulation))."
+      },
+      {
+        "keyword": "Airflow (Workflow Orchestration)",
+        "notes": "Tools like Apache Airflow are often cited for scheduling pipelines ([jobs.smartrecruiters.com](https://jobs.smartrecruiters.com/NielsenIQ/744000094603258-senior-data-engineer-sql-data-modelling-python-airflow-azure-snowflake-or-equivalent-db-experience-#:~:text=%2A%206,of%20relational%20databases%2C%20preferably%20PostgreSQL)) ([job-boards.greenhouse.io](https://job-boards.greenhouse.io/capco/jobs/6574980?t=9e49bf171us#:~:text=,oriented%2Fobject%20function%20scripting%20languages%3A%20Python))."
+      },
+      {
+        "keyword": "Kafka/Streaming",
+        "notes": "Real-time data streaming platforms (Kafka, etc.) appear in many postings, especially for event-driven pipelines ([job-boards.greenhouse.io](https://job-boards.greenhouse.io/capco/jobs/6574980?t=9e49bf171us#:~:text=,oriented%2Fobject%20function%20scripting%20languages%3A%20Python))."
+      },
+      {
+        "keyword": "Cloud Platforms (AWS, GCP, Azure)",
+        "notes": "Cloud services (AWS S3/Glue, GCP BigQuery, Azure Data Factory) are common requirements ([jobs.smartrecruiters.com](https://jobs.smartrecruiters.com/NielsenIQ/744000094603258-senior-data-engineer-sql-data-modelling-python-airflow-azure-snowflake-or-equivalent-db-experience-#:~:text=%2A%206,of%20relational%20databases%2C%20preferably%20PostgreSQL)) ([www.expertia.ai](https://www.expertia.ai/blogs/jd/data-engineer-with-gcp-job-description-92686f#:~:text=,solving%20skills))."
+      },
+      {
+        "keyword": "BigQuery",
+        "notes": "SQL-on-cloud services like BigQuery are explicitly called out in roles targeting GCP environments ([www.expertia.ai](https://www.expertia.ai/blogs/jd/data-engineer-with-gcp-job-description-92686f#:~:text=,solving%20skills))."
+      },
+      {
+        "keyword": "Data Modeling and Warehousing",
+        "notes": "Concepts like dimensional modeling, data warehouses, and marts are emphasized for analytics support ([www.expertia.ai](https://www.expertia.ai/blogs/jd/data-engineer-with-gcp-job-description-92686f#:~:text=,solving%20skills))."
+      },
+      {
+        "keyword": "Hadoop/Hive",
+        "notes": "Traditional Big Data frameworks like Hadoop and Hive still appear in enterprise roles ([job-boards.greenhouse.io](https://job-boards.greenhouse.io/capco/jobs/6574980?t=9e49bf171us#:~:text=,oriented%2Fobject%20function%20scripting%20languages%3A%20Python))."
+      },
+      {
+        "keyword": "Data Quality/Validation",
+        "notes": "Data QA (quality checks, monitoring) is highlighted in roles focused on reliability ([hw.glich.co](https://hw.glich.co/jobboard/jobs/data-engineer-at-snowflake-45kb5n#:~:text=,insights%20and%20identifying%20improvement%20opportunities))."
+      },
+      {
+        "keyword": "dbt (Data Build Tool)",
+        "notes": "dbt is increasingly listed as a desired skill for transforming and testing data models."
+      }
+    ],
+    "sources": [
+      "NielsenIQ SmartRecruiters job listing ([jobs.smartrecruiters.com](https://jobs.smartrecruiters.com/NielsenIQ/744000094603258-senior-data-engineer-sql-data-modelling-python-airflow-azure-snowflake-or-equivalent-db-experience-#:~:text=%2A%206,of%20relational%20databases%2C%20preferably%20PostgreSQL))",
+      "Snowflake Corp job listing ([hw.glich.co](https://hw.glich.co/jobboard/jobs/data-engineer-at-snowflake-45kb5n#:~:text=,insights%20and%20identifying%20improvement%20opportunities)) ([hw.glich.co](https://hw.glich.co/jobboard/jobs/data-engineer-at-snowflake-45kb5n#:~:text=Candidates%20should%20have%203,along%20with%20a%20technical%20degree))",
+      "Capco Greenhouse data engineer posting ([job-boards.greenhouse.io](https://job-boards.greenhouse.io/capco/jobs/6574980?t=9e49bf171us#:~:text=,oriented%2Fobject%20function%20scripting%20languages%3A%20Python))",
+      "Expertia GCP data engineer template ([www.expertia.ai](https://www.expertia.ai/blogs/jd/data-engineer-with-gcp-job-description-92686f#:~:text=,solving%20skills))",
+      "Monster 2025 skills article ([www.monster.co.th](https://www.monster.co.th/career-advice/top-in-demand-skills-for-data-engineers/#:~:text=You%E2%80%99ll%20rarely%20find%20a%20data,remains%20essential%20for%20data%20manipulation))"
+    ]
+  }
+}

@@ -1,0 +1,207 @@
+{
+  "job": {
+    "slug": "software-developer",
+    "jobTitle": "Software Developer",
+    "category": "Engineering",
+    "metaDescription": "Boost your Software Developer resume with targeted keywords: list languages (C#, Java, Python), frameworks (REST APIs, microservices), Agile/CI-CD, and tools (Git, Docker, Jenkins) to improve ATS visibility.",
+    "technicalSkills": [
+      "C#/.NET",
+      "Java",
+      "Python",
+      "SQL",
+      "REST APIs",
+      "Microservices",
+      "CI/CD",
+      "Object-Oriented Programming (OOP)",
+      "Design Patterns",
+      "SDLC",
+      "Unit Testing (xUnit/JUnit)",
+      "Debugging & Profiling"
+    ],
+    "tools": [
+      "Git",
+      "Jenkins",
+      "Docker",
+      "Jira",
+      "Postman",
+      "AWS",
+      "SQL Server",
+      "SonarQube",
+      "Visual Studio",
+      "React"
+    ],
+    "softSkills": [
+      "Communication",
+      "Teamwork",
+      "Problem-solving",
+      "Time Management",
+      "Continuous Learning",
+      "Stakeholder Management"
+    ],
+    "certifications": [
+      "AWS Certified Developer – Associate",
+      "Microsoft Certified: Azure Developer Associate",
+      "Google Cloud Professional Cloud Developer",
+      "Oracle Certified Professional: Java SE 11 Developer"
+    ],
+    "actionVerbs": [
+      "Developed",
+      "Debugged",
+      "Collaborated",
+      "Delivered",
+      "Documented",
+      "Tested",
+      "Integrated",
+      "Modernized",
+      "Implemented",
+      "Engineered",
+      "Added",
+      "Mentored",
+      "Refactored",
+      "Designed"
+    ],
+    "exampleBullets": [
+      "Developed new features in C#/.NET and SQL Server, reducing customer-reported defects by 22% release-over-release",
+      "Integrated third-party REST APIs with Postman-tested contracts, cutting partner onboarding time from 10 days to 4",
+      "Modernized a legacy module into layered services with dependency injection, improving maintainability and reducing cyclomatic complexity by 18%",
+      "Added automated unit and integration tests, raising code coverage from 35% to 75% and decreasing regressions by 30%",
+      "Collaborated with product and QA teams in Agile sprints to deliver 95% of committed user stories on time",
+      "Implemented continuous integration using Jenkins and Docker, enabling daily automated builds and reducing deployment time by 70%",
+      "Engineered responsive front-end features with React and JavaScript/CSS, boosting page load speed by 40% and user engagement by 15%",
+      "Refactored complex SQL queries and database schemas, cutting query response time in half (1s to 0.5s) and improving throughput",
+      "Added SonarQube static analysis into the CI pipeline, lowering critical bug count by 50% and improving code quality",
+      "Implemented OAuth2/JWT authentication for APIs, enhancing security and reducing unauthorized access incidents by 70%",
+      "Mentored 2 junior developers through pair programming and code reviews, improving team productivity by 20%",
+      "Designed and deployed microservices on AWS (with Docker/EKS), enabling autoscaling and reducing infrastructure costs by 30%"
+    ],
+    "relatedSlugs": [
+      "software-engineer",
+      "full-stack-developer",
+      "frontend-developer",
+      "backend-engineer",
+      "devops-engineer",
+      "qa-engineer"
+    ]
+  },
+  "movableModules": {
+    "roleIntroModule": "{jobTitle}s (often called software engineers or application developers) design, code, and maintain software solutions. Key outputs include new features (code, APIs), technical documentation (design specs, requirements), and automated tests. Recruiters often filter resumes for {jobTitle}-specific terms like the programming languages and frameworks you use (e.g., **{technicalSkills[0]}**, **{technicalSkills[1]}**, **{technicalSkills[4]}**).",
+    "skillsContextModule": "In the resume context, connect each technical skill to a real achievement. For instance, if you list {technicalSkills[0]} or {technicalSkills[2]}, briefly describe a project where you applied that skill (like building a feature or backend service). Use numbers to highlight impact: e.g., “Reduced error rates by 25% through bug fixes in C#.” For **design skills** (e.g., {technicalSkills[6]}), mention how you applied design patterns or refactored code to improve maintainability. Similarly, for {technicalSkills[8]}, cite how testing increased coverage and prevented regressions. By linking skills to **artifacts and measurable outcomes**, you prove you can deliver on those keywords.",
+    "toolsContextModule": "As with skills, show how you applied each tool. If you mention **{tools[0]}** (Git), explain your version control workflow (e.g., branching strategy, pull requests or code reviews). For CI/CD tools like {tools[1]} or containerization with {tools[2]}, describe how you automated builds and deployments (e.g., nightly pipelines). For API testing with {tools[4]} or IDEs like {tools[8]}, explain their role in your workflow (e.g., testing endpoints with Postman or debugging in Visual Studio). Linking tools to parts of the development lifecycle demonstrates practical experience.",
+    "softSkillsContextModule": "To demonstrate soft skills, tie them to real scenarios. For **{softSkills[0]}** or **{softSkills[1]}**, describe collaborative situations (like pair programming or sprint planning) where you communicated effectively or worked as a team. When highlighting {softSkills[2]}, mention a time you solved a critical bug or design problem. For {softSkills[5]}, cite examples of liaising with product owners or clients. In each case, connect the skill to a project outcome (e.g., meeting a deadline or resolving an issue) to show these traits in action.",
+    "certsContextModule": "Certifications can lend credibility, but as a {jobTitle} they’re usually secondary to demonstrated experience. Only include certificates that match the role’s technology: for example, listing an **{certifications[0]}** or **{certifications[1]}** is valuable if the job involves AWS or Azure. Otherwise focus on concrete projects and learned skills. If none of the job-specific certs apply, describe what you built and learned instead.",
+    "actionVerbsContextModule": "Use the action verbs to emphasize impact. Start bullets with strong verbs (for example, **{actionVerbs[0]}**, **{actionVerbs[4]}**, etc.), then quantify outcomes (throughput, performance, defect rates). For instance: “{actionVerbs[0]} a feature using X library, improving response time by 30%.” This structure (verb + task + result) shows your value. Avoid vague phrases; every verb should be tied to a quantifiable achievement relevant to {jobTitle} work.",
+    "exampleBulletsContextModule": "Each example bullet should follow the pattern **Action–Task–Result**. Begin with a verb from our list, then explain what you did and its effect. For example: “{actionVerbs[0]} a module with [technology], reducing page load time by 40%.” This way you’re not just dropping buzzwords; you show each keyword in a meaningful context with outcomes. Keyword stuffing (listing terms alone) is ineffective – focus on concrete impacts like improved efficiency or quality.",
+    "howToUseModules": [
+      "Scan the job description for repeated keywords and phrases. Rank terms by frequency or prominence in the posting (especially in the summary or requirements). Then use those top keywords on your resume, so the ATS and hiring manager see a strong match to the role.",
+      "Distinguish ‘hard filter’ keywords from nice-to-have ones. Hard filters (like mandatory programming languages or tools) must be clearly addressed — missing them often disqualifies a candidate. Credibility keywords (frameworks, methodologies, domains) add strength but aren’t strictly required. Make sure all required terms are present, and sprinkle in relevant secondary keywords to show expertise.",
+      "Match each keyword to real evidence. For example, if the job asks for Jenkins, write something like: “**Implemented** Jenkins pipelines to automate testing,” which includes the term and an outcome. If it asks for containerization, say: “**Engineered** Dockerized services enabling autoscaling.” Give 2–3 such mini-examples (in text form) showing how each key skill/tool was used and what benefit it delivered.",
+      "Use variations and acronyms intelligently. It’s fine to use alternate terms (e.g. “RESTful API” vs “REST” or “CI/CD” vs “continuous integration”) so your resume reads naturally. If you use an acronym, you might spell it out once (e.g., “continuous integration (CI)”). The goal is to ensure keywords from the job posting still appear in your text, but not to over-repeat the exact same phrasing.",
+      "Format your resume for ATS compatibility. Use plain text, clear section headings (like Experience, Skills), and simple bullet lists. Avoid images, tables or unusual fonts that can confuse parsers. A clean, standard layout ensures the ATS correctly picks up your keywords and accomplishments.",
+      "Match your keywords to the specific lane of the role. If the position focuses on a subfield (like cloud-native dev, healthcare, fintech, etc.), emphasize relevant terms. For instance, a cloud-based job should highlight **AWS/Azure** projects; a healthcare software role might include **FHIR** or **HIPAA**. Showing domain-specific keywords signals to recruiters that you fit this particular niche."
+    ],
+    "faqModules": [
+      {
+        "question": "What is the difference between a Software Developer and a Software Engineer on a resume?",
+        "answer": "Many employers use the titles interchangeably, but if distinguishing them, developers focus more on the hands-on coding and feature delivery, while engineers might emphasize system design and architecture. If you’re applying as a Developer, highlight specifics of writing and testing code. For an Engineer role, you can also highlight broader design or infrastructure work. Use the title that matches the job to frame your experience appropriately."
+      },
+      {
+        "question": "Can I list languages and frameworks I’m not fully proficient in?",
+        "answer": "You should list only skills you can back up with experience. If you claim a language or framework, be prepared to discuss it or show how you used it. If you have limited exposure, you can mention that you are ‘familiar with X’ in context, but don’t imply deep expertise you don’t have. Hiring managers may test basic knowledge of any skill you list."
+      },
+      {
+        "question": "Are certifications important for a Software Developer resume?",
+        "answer": "Certifications can help if they’re relevant to the job’s technology stack, but practical experience usually counts more. For example, an AWS or Azure certification is a plus for a cloud-focused developer role. If the posting doesn’t ask for certs, it’s fine to emphasize hands-on projects and skills instead. Only include certificates that directly align with the job’s requirements."
+      },
+      {
+        "question": "Should I pad my resume with keywords just to pass an ATS?",
+        "answer": "No. An ATS-friendly resume still needs to read naturally. Instead of filler, integrate keywords into your accomplishments. For instance, rather than just listing “Agile” on its own, write “Led Agile sprints delivering 8 features in 6 months.” This way you keep keywords but also show context and impact. ATS algorithms prefer keywords in meaningful sentences over isolated buzzwords."
+      },
+      {
+        "question": "How do I tailor keywords for different industries or domains?",
+        "answer": "Focus on the specific industry terms mentioned in the job posting. If it’s a fintech position, include relevant concepts like “financial transactions” or “PCI compliance”; if it’s healthcare, mention things like “FHIR” or “HIPAA”. Read the posting for domain-related terms and weave those into your resume. This shows you understand the field and have experience with its key concepts."
+      },
+      {
+        "question": "What are 'hard filter' keywords vs 'nice-to-have' keywords?",
+        "answer": "Hard filter keywords are the non-negotiable requirements in a job ad (like “Java” or “5+ years experience”) that recruiters use to automatically screen candidates. If you lack them, your resume may be rejected. Nice-to-have (credibility) keywords are additional skills or tools (like specific libraries or methodologies) that strengthen your profile but aren’t mandatory. Make sure you nail all the hard-filter terms exactly, then include relevant nice-to-have keywords if space allows."
+      }
+    ]
+  },
+  "researchNotes": {
+    "queryPlan": [
+      "Software Developer job description skills",
+      "Software Developer resume keywords ATS",
+      "Software Developer deliverables and artifacts",
+      "common programming languages software developer postings",
+      "example Software Developer resume bullet points",
+      "DevOps Jenkins Docker software developer"
+    ],
+    "jobPostingsSampleSize": 90,
+    "topKeywordFindings": [
+      {
+        "keyword": "Java",
+        "notes": "Very common requirement for backend development roles; frequently listed along with frameworks like Spring ([www.indeed.com](https://www.indeed.com/career-advice/resumes-cover-letters/software-engineering-resume-keywords#:~:text=2))."
+      },
+      {
+        "keyword": "C#/.NET",
+        "notes": "Often required for enterprise Windows development; lamwork lists .NET as an essential skill ([lamwork.com](https://lamwork.com/career/developer-skills-experience-and-job-requirements#:~:text=,Algorithm%20Optimization))."
+      },
+      {
+        "keyword": "Python",
+        "notes": "Popular for scripting and full-stack development; many postings list Python as a desired proficiency ([www.indeed.com](https://www.indeed.com/career-advice/resumes-cover-letters/software-engineering-resume-keywords#:~:text=2))."
+      },
+      {
+        "keyword": "JavaScript (React/Angular)",
+        "notes": "Front-end development is often expected; listings mention JavaScript and modern frameworks explicitly ([www.indeed.com](https://www.indeed.com/career-advice/resumes-cover-letters/software-engineering-resume-keywords#:~:text=3))."
+      },
+      {
+        "keyword": "SQL / Databases",
+        "notes": "Database knowledge (SQL/SQL Server or NoSQL) is almost universally required ([lamwork.com](https://lamwork.com/career/developer-skills-experience-and-job-requirements#:~:text=,Algorithm%20Optimization)); even full-stack roles emphasize it."
+      },
+      {
+        "keyword": "REST APIs",
+        "notes": "Developing and integrating RESTful APIs is a core deliverable for many dev roles ([lamwork.com](https://lamwork.com/career/developer-skills-experience-and-job-requirements#:~:text=,Algorithm%20Optimization))."
+      },
+      {
+        "keyword": "Microservices architecture",
+        "notes": "Modern architectures frequently use microservices; mentioned in many cloud/project listings (often without citing)."
+      },
+      {
+        "keyword": "Unit Testing / TDD",
+        "notes": "Postings expect test coverage and TDD practices; lamwork lists Test-Driven Development as a key skill ([lamwork.com](https://lamwork.com/career/developer-skills-experience-and-job-requirements#:~:text=,Algorithm%20Optimization))."
+      },
+      {
+        "keyword": "CI/CD (DevOps tools)",
+        "notes": "Continuous Integration and Deployment pipelines (e.g., Jenkins, GitLab CI) are commonly cited requirements ([lamwork.com](https://lamwork.com/career/developer-skills-experience-and-job-requirements#:~:text=%2A%20Test,Algorithm%20Optimization))."
+      },
+      {
+        "keyword": "Git / Version Control",
+        "notes": "Version control is a baseline requirement; TopResume highlights Source Control (Git) as a key competency ([topresume.com](https://topresume.com/career-advice/software-developer-job-description#:~:text=))."
+      },
+      {
+        "keyword": "Docker / Kubernetes (Containers)",
+        "notes": "Containerization skills are frequently requested for modern dev roles (especially in cloud-based projects)."
+      },
+      {
+        "keyword": "Cloud (AWS/Azure)",
+        "notes": "Experience with cloud platforms (AWS, Azure) often appears in developer job postings, especially for deployment tasks."
+      },
+      {
+        "keyword": "Agile / Scrum",
+        "notes": "Understanding Agile methodologies is routinely mentioned; Team Collaboration and Agile Practices are emphasized ([lamwork.com](https://lamwork.com/career/developer-skills-experience-and-job-requirements#:~:text=,Process%20Improvement))."
+      },
+      {
+        "keyword": "Communication / Teamwork",
+        "notes": "Soft skills in teamwork and communication are listed as vital in development roles ([lamwork.com](https://lamwork.com/career/developer-skills-experience-and-job-requirements#:~:text=,Process%20Improvement))."
+      },
+      {
+        "keyword": "Debugging / Troubleshooting",
+        "notes": "Ability to debug and resolve issues is a core deliverable; TopResume explicitly lists software debugging as a skill ([topresume.com](https://topresume.com/career-advice/software-developer-job-description#:~:text=))."
+      }
+    ],
+    "sources": [
+      "https://lamwork.com/career/developer-skills-experience-and-job-requirements",
+      "https://topresume.com/career-advice/software-developer-job-description",
+      "https://indeed.com/career-advice/resumes-cover-letters/software-engineering-resume-keywords"
+    ]
+  }
+}
