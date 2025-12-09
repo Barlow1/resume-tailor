@@ -16,7 +16,7 @@ export default function Welcome() {
 
         {/* CTA Button */}
         <Link
-          to="/tailor"
+          to="/builder"
           className="inline-block bg-brand-500 text-primary-foreground px-10 py-4 rounded-xl font-semibold text-lg hover:bg-brand-800 transition-colors shadow-lg"
         >
           Create my next tailored resume
