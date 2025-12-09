@@ -41,7 +41,7 @@ export default function Index() {
 						</p>
 						<div className="flex justify-center pt-6">
 							<Link
-								to="/tailor"
+								to="/builder"
 								className="hover:bg-brand-600 inline-block rounded-lg bg-brand-500 px-8 py-4 text-lg font-semibold text-white"
 							>
 								BUILD YOUR RESUME NOW
