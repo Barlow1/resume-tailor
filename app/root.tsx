@@ -316,7 +316,12 @@ function App() {
 	useToast(data.flash?.toast)
 
 	const isBlogRoute = matches.some(m => m.id.startsWith('routes/blog+'))
-	const shouldHideNav = Boolean(matches.find(m => hideNavPages.includes(m.id))) || isBlogRoute
+	const isSeoRoute = matches.some(m =>
+		m.id.startsWith('routes/resume-keywords+') ||
+		m.id.startsWith('routes/resume-skills+') ||
+		m.id.startsWith('routes/resume-summary+')
+	)
+	const shouldHideNav = Boolean(matches.find(m => hideNavPages.includes(m.id))) || isBlogRoute || isSeoRoute
 
 	const location = useLocation()
 	const path = location.pathname
