@@ -39,7 +39,7 @@ export async function extractKeywordsFromJobDescription(
 
 	try {
 		const response = await openai.chat.completions.create({
-			model: 'gpt-4.1',
+			model: 'gpt-5.1',
 			messages: [
 				{
 					role: 'system',
@@ -141,7 +141,7 @@ CRITICAL: Every keyword must appear verbatim in the job description. Do NOT inve
 					content: jobDescription,
 				},
 			],
-			temperature: 0.1,
+			temperature: 0.4,
 			response_format: { type: 'json_object' },
 		})
 

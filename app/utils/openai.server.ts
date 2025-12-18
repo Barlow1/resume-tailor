@@ -208,125 +208,61 @@ export const getEntireTailoredResumeResponse = async ({
 			? [
 					{
 						role: 'system' as const,
-						content: `You are an elite resume writer specializing in ${jobTitle} roles with 20 years of experience getting candidates past ATS systems and impressing hiring managers at top companies.
+						content: `You are a resume editor specializing in keyword optimization and clarity. Your job is to tailor resumes to job descriptions by improving phrasing and incorporating relevant keywords — without changing the substance of what the candidate actually did.
 
-Your expertise: Tailoring complete resumes to job descriptions by rewriting bullet points with quantified achievements, optimizing summaries for ATS, and strategically incorporating keywords.
-
-Job Description Context:
+Job Description:
 ${jobDescription}
 
-${extractedKeywords && extractedKeywords.length > 0 ? `
-CRITICAL KEYWORDS (highest-priority ATS terms):
-${extractedKeywords.join(', ')}
-
-These must be woven throughout the resume naturally - especially in bullet points and summary.` : ''}`,
+${extractedKeywords && extractedKeywords.length > 0 ? `Target Keywords (from JD):
+${extractedKeywords.join(', ')}` : ''}`,
 					},
 					{
 						role: 'user' as const,
-						content: `Here is the current resume in JSON format: ${JSON.stringify(resume)}`,
-						name,
-					},
-					{
-						role: 'user' as const,
-						content: `Tailor this entire resume for the ${jobTitle} role by following these rules:
+						content: `Here is the resume in JSON format:
+${JSON.stringify(resume)}
 
-LENGTH REQUIREMENTS (CRITICAL):
-- Each bullet point (description.content): Maximum 180 characters (about 15-30 words)
-- Summary (about): Maximum 400 characters
-- Count characters before returning - reject any bullet over 200 chars
-- One-two lines per bullet when rendered on a resume
+Tailor this resume for the ${jobTitle} role following these rules:
 
-1. BULLET POINTS (descriptions array):
-   
-   STRUCTURE (CAR/STAR):
-   - Context: What was the situation/scope?
-   - Action: Strong verb (Led, Architected, Optimized, Scaled, Drove, Reduced, Increased)
-   - Result: Quantified outcome (%, $, time saved, users impacted, uptime)
-   
-   ATS OPTIMIZATION:
-   - Naturally incorporate ${extractedKeywords && extractedKeywords.length > 0 ? 'the CRITICAL KEYWORDS listed above' : 'relevant keywords from the job description'}
-   - Front-load important keywords in first 5-7 words
-   - Mirror job description phrasing where authentic
-   - Use exact tool/technology names from JD
-   
-   IMPACT REQUIREMENTS:
-   - 60-70% of bullets MUST include quantified outcomes (numbers, %, $, timelines, scope)
-   - Remaining bullets can focus on technical depth, architecture, or process improvements
-   - Show business value, not just technical work
-   - Include scope indicators (users served, data volume, team size, timeline)
-   
-   AUTHENTICITY:
-   - Keep core truth of each original bullet - don't fabricate different achievements
-   - Expand on implied impact with realistic estimates where appropriate
-   - Stay within plausible bounds for each role and company
-   
-   VARIETY:
-   - Mix sentence structures (not all starting the same way)
-   - Balance technical depth with business impact across bullets
-   - Vary which CRITICAL KEYWORDS appear in which bullets
-   - Keep the same number of bullet points per experience as the original
+AUTHENTICITY (NON-NEGOTIABLE):
+- You may ONLY rephrase, reorder, and incorporate keywords into existing content
+- If the original bullet has no metric, the output has NO metric
+- Do NOT add percentages, dollar amounts, user counts, or timeframes not in the original
+- Do NOT invent achievements, outcomes, scope, or details not explicitly stated
+- Do NOT upgrade vague claims to specific ones (e.g., "improved performance" cannot become "improved performance by 40%")
+- When uncertain, preserve the original wording
 
-2. SUMMARY (about field):
-   
-   LENGTH: Maximum 400 characters - be ruthlessly concise
-   
-   CONTENT:
-   - Lead with job-relevant qualifications that match the JD
-   - ${extractedKeywords && extractedKeywords.length > 0 ? 'Incorporate 3-5 CRITICAL KEYWORDS naturally' : 'Include key skills and technologies from the JD'}
-   - Emphasize quantified achievements or years of experience
-   - Mirror the seniority level and tone of the job description
-   
-   STRUCTURE:
-   - 2-3 punchy sentences maximum
-   - Front-load the most relevant qualification in first sentence
-   - Include 1-2 quantified achievements if possible
-   - End with forward-looking statement aligned to role
-   
-   EXAMPLE (267 chars):
-   "Senior Product Manager with 8+ years driving B2B SaaS growth. Led cross-functional teams to launch products generating $12M ARR. Expert in roadmap prioritization, user research, and data-driven decision making. Passionate about building products that solve real customer problems."
+WHAT YOU CAN DO:
+- Replace weak verbs with stronger ones (helped → led, worked on → developed)
+- Reorder words to front-load keywords
+- Add keywords from the JD where they fit naturally and truthfully
+- Clarify awkward phrasing while preserving meaning
+- Mirror JD terminology (e.g., if JD says "cross-functional," use that phrase if the original implies collaboration)
 
-3. SKILLS (skills array):
-   
-   STRATEGY:
-   ${extractedKeywords && extractedKeywords.length > 0 ? 
-   `- Add CRITICAL KEYWORDS that are technical skills, tools, or platforms to the skills array
-   - Don't add soft skills (leadership, communication) or generic terms to skills array
-   - Those belong in bullet points and summary only` : 
-   `- Only add skills explicitly mentioned in the job description AND relevant to the role
-   - Prioritize hard skills: technologies, tools, frameworks, platforms, methodologies
-   - Avoid generic soft skills - incorporate those in bullets and summary instead`}
-   - Canonicalize skill names (e.g., JS → JavaScript, AWS → Amazon Web Services)
-   - Title Case where appropriate (React, PostgreSQL, TensorFlow)
-   - Deduplicate - don't add skills already present
-   - Keep skills array focused (10-20 items max)
-   
-   WHERE TO PUT WHAT:
-   - Skills array: Technical tools, languages, frameworks, platforms, certifications
-   - Bullets/Summary: Soft skills, methodologies in action, leadership qualities
+BULLET POINTS (descriptions array):
+- Maximum 180 characters per bullet
+- Use strong action verbs: Led, Developed, Implemented, Designed, Managed, Built, Created, Delivered
+- Incorporate target keywords where truthful
+- Preserve the original claim — just make it clearer and more ATS-friendly
 
-4. PRESERVE STRUCTURE:
-   - Do NOT change any IDs (resume.id, experience.id, description.id, skill.id, hobby.id)
-   - Do NOT change roles, company names, dates, or order fields
-   - Do NOT change the number of experiences or their order
-   - Do NOT change the structure of any arrays
-   - ONLY modify: description.content, about, and add/remove from skills/hobbies arrays
+SUMMARY (about field):
+- Maximum 400 characters
+- Lead with the most relevant qualification for this role
+- Incorporate 2-4 target keywords naturally
+- Do NOT add metrics or achievements not present in the resume
 
-5. HOBBIES (hobbies array):
-   - Keep existing hobbies unless completely irrelevant
-   - Only add new hobbies if they're explicitly relevant to the role
-   - Less is more - 3-5 hobbies maximum
+SKILLS (skills array):
+- Add technical skills from the target keywords ONLY IF explicitly mentioned in bullet points or current skills
+- Do NOT add skills the candidate hasn't demonstrated
+- Canonicalize names (JS → JavaScript, AWS → Amazon Web Services)
+- Keep to 10-20 skills maximum
 
-QUALITY CHECKLIST BEFORE RETURNING:
-□ Every bullet point is ≤200 characters
-□ Summary is ≤400 characters
-□ ${extractedKeywords && extractedKeywords.length > 0 ? 'CRITICAL KEYWORDS appear 5-10 times across bullets and summary' : 'Job description keywords are naturally incorporated throughout'}
-□ 60-70% of bullets include quantified outcomes
-□ All IDs, roles, and structure preserved exactly
-□ Skills array contains only hard/technical skills
-□ Bullets use strong action verbs and show impact
-□ Summary front-loads most relevant qualification
+PRESERVE EXACTLY:
+- All IDs (resume.id, experience.id, description.id, skill.id)
+- Company names, job titles, dates
+- Number of experiences and their order
+- Structure of all arrays
 
-Return the complete resume JSON with all fields populated. Verify character counts before returning.`,
+Return the complete resume JSON.`,
 						name,
 					},
 			  ]
@@ -335,7 +271,7 @@ Return the complete resume JSON with all fields populated. Verify character coun
 	invariant(messages, 'Must provide jobTitle and jobDescription')
 
 	const response = await openai.chat.completions.create({
-		model: 'gpt-4.1',
+		model: 'gpt-5.1',
 		messages,
 		temperature: 0.5,
 		max_tokens: 4096,
@@ -369,60 +305,48 @@ export const getBuilderExperienceResponse = async ({
 			? [
 					{
 						role: 'system' as const,
-						content: `You are an elite resume writer specializing in ${jobTitle} roles with 20 years of experience getting candidates past ATS systems and impressing hiring managers at top companies.
+						content: `You are a resume bullet editor. Your job is to improve a single bullet point for ATS optimization — without changing what the candidate actually did.
 
-Your expertise: Writing quantified, achievement-focused bullet points that mirror job description language while showcasing measurable impact.
-
-Job Description Context:
+Job Description:
 ${jobDescription}
 
-${extractedKeywords && extractedKeywords.length > 0 ? `
-CRITICAL KEYWORDS (must incorporate naturally):
-${extractedKeywords.slice(0, 8).join(', ')}
-
-These are the highest-priority terms from the ATS. Use them where relevant.` : ''}`,
+${extractedKeywords && extractedKeywords.length > 0 ? `Target Keywords:
+${extractedKeywords.slice(0, 8).join(', ')}` : ''}`,
 					},
 					{
 						role: 'user' as const,
-						content: `Transform this existing resume bullet point for a ${currentJobTitle} at ${currentJobCompany}:
+						content: `Improve this bullet point from a ${currentJobTitle} at ${currentJobCompany}:
 
 "${experience}"
 
-Generate 10 enhanced versions following these rules:
+Generate 5 variations following these rules:
 
-LENGTH (CRITICAL): 
-- Each bullet point (description.content): Maximum 180 characters (about 15-30 words)
-- Count characters before returning - reject any bullet over 200 chars
-- One-two lines per bullet when rendered on a resume
+AUTHENTICITY (NON-NEGOTIABLE):
+- Every variation must describe the SAME achievement as the original
+- If the original has no metric, your variations have NO metrics
+- Do NOT add percentages, dollar amounts, user counts, or timeframes
+- Do NOT upgrade vague claims to specific ones
+- Do NOT invent scope, scale, or outcomes
 
-STRUCTURE (use CAR/STAR):
-- Context: What was the situation/scope?
-- Action: What did you do? (Use strong verbs: Led, Architected, Optimized, Scaled, Drove, Reduced, Increased)
-- Result: What was the measurable outcome? (%, $, time saved, users impacted, uptime, etc.)
+WHAT YOU CAN DO:
+- Use stronger action verbs
+- Reorder to front-load keywords
+- Incorporate target keywords where they fit truthfully
+- Improve clarity and conciseness
+- Mirror JD phrasing where it matches what they actually did
 
-ATS OPTIMIZATION:
-- Naturally incorporate ${extractedKeywords && extractedKeywords.length > 0 ? 'the CRITICAL KEYWORDS listed above' : 'keywords from the job description (technologies, methodologies, outcomes)'}
-- Mirror job description phrasing where it fits naturally
-- Front-load important keywords in first 5 words when possible
+FORMAT:
+- Maximum 180 characters per bullet
+- Start with strong verb (Led, Developed, Implemented, Designed, Built, Managed)
+- Each variation should emphasize a different aspect or keyword
 
-IMPACT REQUIREMENTS:
-- 6-8 bullets MUST include quantified outcomes (numbers, %, $, timelines, scope)
-- 2-3 bullets can be process/approach-focused without metrics
-- Brevity beats completeness - cut filler words ruthlessly
+EXAMPLE:
+Original: "Helped with the company website redesign project"
+✓ Good: "Contributed to website redesign improving user navigation"
+✓ Good: "Collaborated on website redesign project with cross-functional team"
+✗ Bad: "Led website redesign increasing conversions by 25%" (adds leadership + metric not in original)
 
-AUTHENTICITY:
-- Keep the core truth of the original bullet - don't fabricate different achievements
-- Expand on implied impact (if original says "improved performance", estimate realistic % if the role would have data)
-- Stay within the realm of what a ${currentJobTitle} at ${currentJobCompany} would plausibly achieve
-
-VARIETY:
-- Mix sentence structures (not all starting the same way)
-- Some bullets emphasize technical depth, others business impact
-- Vary which CRITICAL KEYWORDS appear in which bullets
-
-Return ONLY a JSON object: { "experiences": ["bullet 1", "bullet 2", ...] }
-
-No markdown, no explanations, just the JSON.`,
+Return ONLY: { "experiences": ["bullet 1", "bullet 2", "bullet 3", "bullet 4", "bullet 5"] }`,
 						name,
 					},
 			  ]
@@ -431,7 +355,7 @@ No markdown, no explanations, just the JSON.`,
 	invariant(messages, 'Must provide jobTitle and jobDescription')
 
 	const response = await openai.chat.completions.create({
-		model: 'gpt-4.1',
+		model: 'gpt-5.1',
 		messages,
 		temperature: 0.5,
 		max_tokens: 2048,
@@ -556,7 +480,7 @@ No markdown, no extra text, just the JSON.`,
 	invariant(messages, 'Must provide jobTitle and jobDescription')
 
 	const response = await openai.chat.completions.create({
-		model: 'gpt-4.1',
+		model: 'gpt-5.1',
 		messages,
 		temperature: 0.5,
 		max_tokens: 2048,
@@ -588,18 +512,29 @@ export const getExperienceResponse = async ({
 			? [
 					{
 						role: 'system' as const,
-						content: `You are an expert resume writer with 20 years experience landing people ${jobTitle} roles.
- 
-                    Job Description: ${jobDescription}
-                    `,
+						content: `You are a resume editor. Rephrase bullet points to better match a job description — without changing what the candidate did.
+
+Job Description:
+${jobDescription}`,
 					},
 					{
 						role: 'user' as const,
-						content: `Here are the current experiences listed in my resume: ${experience}.
-	
-                    Create a list of resume experience items combined with the experience list I gave you with the with the experience and achievements for this job description would have for a ${currentJobTitle} role at company ${currentJobCompany}
-                    Keep the list limited to 10 items. Only 5 should have outcomes. Only supply the experience items, do not include any other text.
-                    Modified Experience List:`,
+						content: `Here are the candidate's current bullet points for their ${currentJobTitle} role at ${currentJobCompany}:
+
+${experience}
+
+Rewrite each bullet to better align with the ${jobTitle} job description.
+
+RULES:
+- Rephrase and reorder only — do NOT add new claims
+- If a bullet has no metric, your version has NO metric
+- Do NOT add percentages, dollar amounts, user counts, or timeframes not in the original
+- Do NOT invent achievements, outcomes, or scope
+- Incorporate relevant keywords from the JD where truthful
+- Maximum 180 characters per bullet
+- Use strong action verbs
+
+Return only the rewritten bullets, one per line. Same number of bullets as input.`,
 						name,
 					},
 			  ]
@@ -608,7 +543,7 @@ export const getExperienceResponse = async ({
 	invariant(messages, 'Must provide jobTitle and jobDescription')
 
 	const response = await openai.chat.completions.create({
-		model: 'gpt-4.1-mini',
+		model: 'gpt-5.1',
 		messages,
 		temperature: 0.4,
 		max_tokens: 1024,
@@ -656,7 +591,7 @@ export const getGeneratedExperienceResponse = async ({
 	invariant(messages, 'Must provide jobTitle and jobDescription')
 
 	const response = await openai.chat.completions.create({
-		model: 'gpt-4.1-mini',
+		model: 'gpt-5.1',
 		messages,
 		temperature: 0.4,
 		max_tokens: 1024,
