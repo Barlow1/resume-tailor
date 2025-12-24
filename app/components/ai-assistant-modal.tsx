@@ -99,9 +99,14 @@ export function AIAssistantModal({
 		}
 	}, [builderCompletionsFetcher.state, builderCompletionsFetcher.data])
 
-	const parsedOptions = rawContent
-		? (JSON.parse(rawContent) as { experiences: string[] }).experiences
-		: []
+	let parsedOptions: string[] = []
+	try {
+		parsedOptions = rawContent
+			? (JSON.parse(rawContent) as { experiences: string[] }).experiences ?? []
+			: []
+	} catch {
+		// Invalid JSON from API - treat as empty
+	}
 
 	const isLoading = builderCompletionsFetcher.state === 'submitting'
 

@@ -274,7 +274,7 @@ Return the complete resume JSON.`,
 		model: 'gpt-5.1',
 		messages,
 		temperature: 0.5,
-		max_tokens: 4096,
+		max_completion_tokens: 8192,
 		response_format: openaiResumeResponseFormat,
 	})
 
@@ -358,7 +358,7 @@ Return ONLY: { "experiences": ["bullet 1", "bullet 2", "bullet 3", "bullet 4", "
 		model: 'gpt-5.1',
 		messages,
 		temperature: 0.5,
-		max_tokens: 2048,
+		max_completion_tokens: 4096,
 		response_format: openaiExperienceResponseFormat,
 	})
 
@@ -483,7 +483,7 @@ No markdown, no extra text, just the JSON.`,
 		model: 'gpt-5.1',
 		messages,
 		temperature: 0.5,
-		max_tokens: 2048,
+		max_completion_tokens: 4096,
 		response_format: openaiExperienceResponseFormat,
 	})
 
@@ -546,7 +546,7 @@ Return only the rewritten bullets, one per line. Same number of bullets as input
 		model: 'gpt-5.1',
 		messages,
 		temperature: 0.4,
-		max_tokens: 1024,
+		max_completion_tokens: 2048,
 		stream: true,
 	})
 
@@ -594,7 +594,7 @@ export const getGeneratedExperienceResponse = async ({
 		model: 'gpt-5.1',
 		messages,
 		temperature: 0.4,
-		max_tokens: 1024,
+		max_completion_tokens: 2048,
 		stream: true,
 	})
 

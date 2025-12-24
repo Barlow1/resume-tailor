@@ -316,7 +316,7 @@ export default function BlogIndex() {
                       <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                         {post.author ? <span>by {post.author}</span> : null}
                         {post.author && (post.date || mins) ? <span>•</span> : null}
-                        {post.date ? (
+                        {post.date && Number.isFinite(new Date(post.date).getTime()) ? (
                           <time dateTime={post.date}>
                             {fmt.format(new Date(post.date))}
                           </time>
