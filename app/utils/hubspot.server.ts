@@ -11,13 +11,19 @@ export async function createHubspotContact({
 	firstName: string | undefined
 	lastName: string | undefined
 }) {
-	const contact = await hubspotClient.crm.contacts.basicApi.create({
-		properties: {
-			email,
-            firstname: firstName ?? '',
-            lastname: lastName ?? '',
-		},
-		associations: [],
-	})
-	return contact
+	try {
+		const contact = await hubspotClient.crm.contacts.basicApi.create({
+			properties: {
+				email,
+				firstname: firstName ?? '',
+				lastname: lastName ?? '',
+			},
+			associations: [],
+		})
+		return contact
+	} catch (e: any) {
+		// Contact already exists - that's fine, ignore
+		if (e?.code === 409 || e?.body?.category === 'CONFLICT') return null
+		throw e
+	}
 }

@@ -385,30 +385,47 @@ export const oauth = async ({
 		.catch(err => console.error('Failed to connect to db', err))
 	let profile: User | undefined
 
+	const normalizedEmail = values.email.toLowerCase()
+
 	const foundUser = await prisma.user.findUnique({
 		where: {
-			email: values.email,
+			email: normalizedEmail,
 		},
 	})
 
 	if (foundUser) {
 		profile = foundUser
 	} else {
-		const encrypted = await getPasswordHash(values.password)
-		const createdUserResponse = await signup({
-			email: values.email,
-			username: values.username,
-			name: values.name,
-			password: encrypted,
-		})
-		const createdUser = createdUserResponse.user
-		profile = createdUser
+		try {
+			const encrypted = await getPasswordHash(values.password)
+			const createdUserResponse = await signup({
+				email: values.email,
+				username: values.username,
+				name: values.name,
+				password: encrypted,
+			})
+			profile = createdUserResponse.user
+		} catch (e: any) {
+			// Race condition: user was created between check and insert
+			if (e?.code === 'P2002') {
+				const existingUser = await prisma.user.findUnique({
+					where: { email: normalizedEmail },
+				})
+				if (existingUser) {
+					profile = existingUser
+				} else {
+					throw e
+				}
+			} else {
+				throw e
+			}
+		}
 	}
 
 	const session = await prisma.session.create({
 		data: {
 			expirationDate: new Date(Date.now() + SESSION_EXPIRATION_TIME),
-			userId: profile.id,
+			userId: profile!.id,
 		},
 		select: { id: true },
 	})
