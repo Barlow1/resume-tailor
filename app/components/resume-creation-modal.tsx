@@ -12,14 +12,11 @@ import {
 } from '@headlessui/react'
 import { ChevronUpDownIcon, CheckIcon } from '@heroicons/react/24/outline'
 import moment from 'moment'
-import { type Subscription } from '@prisma/client'
-
 interface ResumeCreationModalProps {
 	isOpen: boolean
 	onClose: () => void
 	resumes: ResumeData[] | null
 	userId: string | null
-	subscription: Subscription | null
 	handleUploadResume: () => boolean
 }
 
@@ -28,7 +25,6 @@ export function ResumeCreationModal({
 	onClose,
 	resumes,
 	userId,
-	subscription,
 	handleUploadResume,
 }: ResumeCreationModalProps) {
 	const fetcher = useFetcher()
@@ -127,43 +123,34 @@ export function ResumeCreationModal({
 								</p>
 							</Button>
 
-							<div className={!subscription ? 'animate-rainbow-border' : ''}>
 								<Button
-									onClick={handleClickUpload}
-									variant="outline"
-									className="relative z-[1] m-[2px] flex h-auto w-full flex-col items-start gap-1 rounded-lg bg-background p-4 hover:bg-background/90"
-									disabled={fetcher.state !== 'idle'}
-								>
-									{!subscription ? (
-										<div className="absolute z-10 -right-2 -top-2 rounded-full bg-background ">
-											<span className="animate-rainbow-text rounded-full border border-brand-800/20 bg-background px-2 py-0.5 text-xs font-semibold backdrop-blur-sm">
-												Pro
-											</span>
-										</div>
-									) : null}
-									<div className="flex w-full items-center gap-2">
-										{fetcher.state !== 'idle' ? (
-											<Icon name="update" className="animate-spin" />
-										) : (
-											<Icon name="upload" />
-										)}
-										<span className="flex-1 font-semibold">
-											{fetcher.state !== 'idle' ? 'Uploading...' : 'Upload existing resume'}
-										</span>
-										{fetcher.state === 'idle' && (
-											<Icon
-												name="arrow-right"
-												className="text-muted-foreground"
-											/>
-										)}
-									</div>
-									<p className="text-left text-sm text-muted-foreground">
-										{fetcher.state !== 'idle'
-											? 'Processing your resume, please wait...'
-											: 'Upload your current resume and we\'ll help you improve it'}
-									</p>
-								</Button>
-							</div>
+								onClick={handleClickUpload}
+								variant="outline"
+								className="flex h-auto w-full flex-col items-start gap-1 p-4"
+								disabled={fetcher.state !== 'idle'}
+							>
+								<div className="flex w-full items-center gap-2">
+									{fetcher.state !== 'idle' ? (
+										<Icon name="update" className="animate-spin" />
+									) : (
+										<Icon name="upload" />
+									)}
+									<span className="flex-1 font-semibold">
+										{fetcher.state !== 'idle' ? 'Uploading...' : 'Upload existing resume'}
+									</span>
+									{fetcher.state === 'idle' && (
+										<Icon
+											name="arrow-right"
+											className="text-muted-foreground"
+										/>
+									)}
+								</div>
+								<p className="text-left text-sm text-muted-foreground">
+									{fetcher.state !== 'idle'
+										? 'Processing your resume, please wait...'
+										: 'Upload your current resume and we\'ll help you improve it'}
+								</p>
+							</Button>
 						</>
 					) : null}
 					{resumes && resumes.length > 0 ? (

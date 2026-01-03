@@ -1,4 +1,5 @@
 import pdf from 'pdf-parse-fork'
+import mammoth from 'mammoth'
 import { OpenAI } from 'openai'
 
 const openai = new OpenAI({
@@ -69,17 +70,39 @@ export interface OpenAIResumeData {
 	}>
 }
 
+function getFileExtension(filename: string): string {
+	const ext = filename.toLowerCase().split('.').pop() || ''
+	return ext
+}
+
+async function extractTextFromFile(file: File): Promise<string> {
+	const buffer = Buffer.from(await file.arrayBuffer())
+	const ext = getFileExtension(file.name)
+
+	if (ext === 'pdf') {
+		const pdfData = await pdf(buffer)
+		return pdfData.text
+	}
+
+	if (ext === 'docx' || ext === 'doc') {
+		const result = await mammoth.extractRawText({ buffer })
+		return result.value
+	}
+
+	throw new Error(
+		`Unsupported file type: .${ext}. Please upload a PDF or DOCX file.`,
+	)
+}
+
 export async function parseResumeWithOpenAI(
 	file: File,
 ): Promise<OpenAIResumeData> {
 	try {
-		// Extract text from PDF
-		const buffer = Buffer.from(await file.arrayBuffer())
-		const pdfData = await pdf(buffer)
-		const resumeText = pdfData.text
+		// Extract text from PDF or DOCX
+		const resumeText = await extractTextFromFile(file)
 
 		if (!resumeText || resumeText.trim().length === 0) {
-			throw new Error('No text content found in PDF')
+			throw new Error('No text content found in file')
 		}
 
 		// Call OpenAI API
