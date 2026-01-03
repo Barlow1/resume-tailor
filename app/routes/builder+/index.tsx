@@ -1707,7 +1707,13 @@ export default function ResumeBuilder() {
 										key={key}
 										type="hidden"
 										name={key}
-										value={value as string}
+										value={
+											value === null || value === undefined
+												? ''
+												: typeof value === 'object'
+													? JSON.stringify(value)
+													: String(value)
+										}
 									/>
 								))}
 							<input
