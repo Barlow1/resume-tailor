@@ -1122,10 +1122,6 @@ export default function ResumeBuilder() {
 		if (!userId) {
 			navigate('/login?redirectTo=/builder')
 			return false
-		} else if (!subscription) {
-			setShowCreationModal(false)
-			setShowSubscribeModal(true)
-			return false
 		}
 		return true
 	}
@@ -2754,7 +2750,6 @@ export default function ResumeBuilder() {
 				resumes={resumes}
 				handleUploadResume={handleUploadResume}
 				userId={userId}
-				subscription={subscription}
 			/>
 			{diffSummary && (
 				<TailorDiffModal

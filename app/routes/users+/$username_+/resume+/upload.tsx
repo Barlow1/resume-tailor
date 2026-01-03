@@ -15,24 +15,33 @@ import {
 	useLoaderData,
 	useNavigation,
 } from '@remix-run/react'
-import { useEffect, useReducer, useState } from 'react'
+import { useReducer } from 'react'
 import { z } from 'zod'
 import { ErrorList } from '~/components/forms.tsx'
-import { SubscribeModal } from '~/components/subscribe-modal.tsx'
 import { Button } from '~/components/ui/button.tsx'
 import * as deleteFileRoute from '~/routes/resources+/delete-file.tsx'
-import {
-	authenticator,
-	getStripeSubscription,
-	requireUserId,
-} from '~/utils/auth.server.ts'
+import { authenticator, requireUserId } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
-import { parseResume } from '~/utils/hrflowai.server.ts'
+import { parseResumeWithOpenAI } from '~/utils/openai-resume-parser.server.ts'
 import { bytesToMB, invariant } from '~/utils/misc.ts'
 
 const MAX_SIZE = 1024 * 1024 * 10 // 10MB
 
 const NOT_FOUND = ''
+
+function parseLocation(location: string): {
+	city: string
+	state: string
+	country: string
+} {
+	if (!location) return { city: '', state: '', country: '' }
+	const parts = location.split(',').map(p => p.trim())
+	return {
+		city: parts[0] || '',
+		state: parts[1] || '',
+		country: parts[2] || '',
+	}
+}
 
 /*
 The preprocess call is needed because a current bug in @remix-run/web-fetch
@@ -91,227 +100,168 @@ export async function action({ request }: DataFunctionArgs) {
 			{ status: 400 },
 		)
 	}
-	const subscription = await getStripeSubscription(userId)
+	const { resumeFile, resumeId } = submission.value
 
-	if (!subscription) {
+	if (!(resumeFile instanceof File)) {
 		return json(
 			{
 				status: 'error',
-				type: 'subscription_required',
-				message: 'You need a subscription to upload a resume',
 				submission,
+				error: 'Invalid file upload. Please try again.',
 			} as const,
 			{ status: 400 },
 		)
 	}
-	const { resumeFile, resumeId } = submission.value
 
-	const buffer = Buffer.from(await resumeFile.arrayBuffer())
+	try {
+		const buffer = Buffer.from(await resumeFile.arrayBuffer())
+		const newPrismaResume = { blob: buffer }
 
-	const newPrismaResume = {
-		blob: buffer,
-	}
+		const parsedResume = await parseResumeWithOpenAI(resumeFile)
 
-	invariant(resumeFile instanceof File, 'file not the right type')
-	invariant(typeof resumeId === 'string', 'no resume id found')
-	// Save the uploaded file to disk
+		const location = parseLocation(parsedResume.personal_info.location)
 
-	const parsedResume = await parseResume(resumeFile)
-	console.log(JSON.stringify(parsedResume))
+		// Handle case where user has no existing resume (first-time upload)
+		const existingResumeId = resumeId || undefined
+		const previousUserResume = existingResumeId
+			? await prisma.resume.findUnique({
+					where: { id: existingResumeId },
+					select: { fileId: true },
+				})
+			: null
 
-	const previousUserResume = await prisma.resume.findUnique({
-		where: { id: resumeId },
-		select: { fileId: true },
-	})
-
-	await prisma.resume.upsert({
-		select: { id: true },
-		where: { id: resumeId },
-		update: {
-			title: parsedResume.parsing.experiences[0]?.title ?? NOT_FOUND,
-			summary: parsedResume.parsing.summary ?? NOT_FOUND,
-			phone: parsedResume.parsing.phones[0] ?? NOT_FOUND,
-			email: parsedResume.parsing.emails[0] ?? NOT_FOUND,
-			firstName: parsedResume.profile.info.first_name ?? NOT_FOUND,
-			lastName: parsedResume.profile.info.last_name ?? NOT_FOUND,
-			city: parsedResume.profile.info.location.fields.city ?? NOT_FOUND,
-			state: parsedResume.profile.info.location.fields.state ?? NOT_FOUND,
-			country: parsedResume.profile.info.location.fields.country ?? NOT_FOUND,
-			experience: {
-				upsert: parsedResume.profile.experiences.map(ex => {
-					return {
-						where: {
-							resumeEmployerRoleIdentifier: {
-								resumeId,
-								employer: ex.company,
-								role: ex.title,
-							},
-						},
-						update: {
-							employer: ex.company ?? NOT_FOUND,
-							role: ex.title ?? NOT_FOUND,
-							startDate: ex.date_start,
-							endDate: ex.date_end,
-							city: ex.location.fields.city ?? NOT_FOUND,
-							state: ex.location.fields.state ?? NOT_FOUND,
-							country: ex.location.fields.country ?? NOT_FOUND,
-							responsibilities: ex.tasks.map(t => t.name).join('\n'),
-						},
-						create: {
-							employer: ex.company ?? NOT_FOUND,
-							role: ex.title ?? NOT_FOUND,
-							startDate: ex.date_start,
-							endDate: ex.date_end,
-							city: ex.location.fields.city ?? NOT_FOUND,
-							state: ex.location.fields.state ?? NOT_FOUND,
-							country: ex.location.fields.country ?? NOT_FOUND,
-							responsibilities: ex.tasks.map(t => t.name).join('\n'),
-						},
-					}
-				}),
-				deleteMany: {
-					resumeId: resumeId,
-					NOT: parsedResume.profile.experiences.map(ex => {
-						return {
-							employer: ex.company,
-							role: ex.title,
-						}
-					}),
-				},
-			},
-			education: {
-				upsert: parsedResume.profile.educations.map(ed => {
-					return {
-						where: {
-							resumeSchoolFieldIdentifier: {
-								resumeId,
-								school: ed.school,
-								field: ed.title,
-							},
-						},
-						create: {
-							school: ed.school ?? NOT_FOUND,
-							field: ed.title ?? NOT_FOUND,
-							graduationDate: new Date(ed.date_end),
-							city: ed.location.fields.city ?? NOT_FOUND,
-							state: ed.location.fields.state ?? NOT_FOUND,
-							country: ed.location.fields.country ?? NOT_FOUND,
-							achievements: ed.tasks.map(t => t.name).join('\n'),
-						},
-						update: {
-							school: ed.school ?? NOT_FOUND,
-							field: ed.title ?? NOT_FOUND,
-							graduationDate: new Date(ed.date_end),
-							city: ed.location.fields.city ?? NOT_FOUND,
-							state: ed.location.fields.state ?? NOT_FOUND,
-							country: ed.location.fields.country ?? NOT_FOUND,
-							achievements: ed.tasks.map(t => t.name).join('\n'),
-						},
-					}
-				}),
-				deleteMany: {
-					resumeId: resumeId,
-					NOT: parsedResume.profile.educations.map(ed => {
-						return {
-							school: ed.school,
-							field: ed.title,
-						}
-					}),
-				},
-			},
-			skills: {
-				upsert: parsedResume.profile.skills.map(sk => ({
-					where: {
-						resumeSkillIdentifier: {
-							resumeId,
-							name: sk.name,
+		if (existingResumeId) {
+			// Update existing resume
+			await prisma.resume.update({
+				where: { id: existingResumeId },
+				data: {
+					title: parsedResume.experiences[0]?.title ?? NOT_FOUND,
+					summary: parsedResume.summary ?? NOT_FOUND,
+					phone: parsedResume.personal_info.phone ?? NOT_FOUND,
+					email: parsedResume.personal_info.email ?? NOT_FOUND,
+					firstName: parsedResume.personal_info.first_name ?? NOT_FOUND,
+					lastName: parsedResume.personal_info.last_name ?? NOT_FOUND,
+					city: location.city,
+					state: location.state,
+					country: location.country,
+					experience: {
+						deleteMany: {},
+						create: parsedResume.experiences.map(ex => {
+							const expLocation = parseLocation(ex.location || '')
+							return {
+								employer: ex.company ?? NOT_FOUND,
+								role: ex.title ?? NOT_FOUND,
+								startDate: ex.date_start,
+								endDate: ex.date_end,
+								city: expLocation.city,
+								state: expLocation.state,
+								country: expLocation.country,
+								responsibilities: ex.bullet_points.join('\n'),
+							}
+						}),
+					},
+					education: {
+						deleteMany: {},
+						create: parsedResume.education.map(ed => {
+							const edLocation = parseLocation(ed.location || '')
+							return {
+								school: ed.school ?? NOT_FOUND,
+								field: ed.major
+									? `${ed.degree} in ${ed.major}`
+									: (ed.degree ?? NOT_FOUND),
+								graduationDate: ed.date_end ? new Date(ed.date_end) : new Date(),
+								city: edLocation.city,
+								state: edLocation.state,
+								country: edLocation.country,
+								achievements: ed.honors?.join('\n') ?? '',
+							}
+						}),
+					},
+					skills: {
+						deleteMany: {},
+						create: parsedResume.skills.map(name => ({ name })),
+					},
+					file: {
+						upsert: {
+							update: newPrismaResume,
+							create: newPrismaResume,
 						},
 					},
-					create: {
-						name: sk.name,
-					},
-					update: {
-						name: sk.name,
-					},
-				})),
-				deleteMany: {
-					resumeId: resumeId,
-					NOT: parsedResume.profile.skills.map(sk => {
-						return {
-							name: sk.name,
-						}
-					}),
 				},
-			},
-			file: {
-				upsert: {
-					update: newPrismaResume,
-					create: newPrismaResume,
-				},
-			},
-		},
-		create: {
-			owner: {
-				connect: {
-					id: userId,
-				},
-			},
-			title: parsedResume.parsing.experiences[0]?.title ?? NOT_FOUND,
-			summary: parsedResume.parsing.summary ?? NOT_FOUND,
-			phone: parsedResume.parsing.phones[0] ?? NOT_FOUND,
-			email: parsedResume.parsing.emails[0] ?? NOT_FOUND,
-			firstName: parsedResume.profile.info.first_name ?? NOT_FOUND,
-			lastName: parsedResume.profile.info.last_name ?? NOT_FOUND,
-			city: parsedResume.profile.info.location.fields.city ?? NOT_FOUND,
-			state: parsedResume.profile.info.location.fields.state ?? NOT_FOUND,
-			country: parsedResume.profile.info.location.fields.country ?? NOT_FOUND,
-			experience: {
-				create: parsedResume.profile.experiences.map(ex => {
-					return {
-						employer: ex.company ?? NOT_FOUND,
-						role: ex.title ?? NOT_FOUND,
-						startDate: ex.date_start,
-						endDate: ex.date_end,
-						city: ex.location.fields.city ?? NOT_FOUND,
-						state: ex.location.fields.state ?? NOT_FOUND,
-						country: ex.location.fields.country ?? NOT_FOUND,
-						responsibilities: ex.tasks.map(t => t.name).join('\n'),
-					}
-				}),
-			},
-			education: {
-				create: parsedResume.profile.educations.map(ed => {
-					return {
-						school: ed.school ?? NOT_FOUND,
-						field: ed.title ?? NOT_FOUND,
-						graduationDate: new Date(ed.date_end),
-						city: ed.location.fields.city ?? NOT_FOUND,
-						state: ed.location.fields.state ?? NOT_FOUND,
-						country: ed.location.fields.country ?? NOT_FOUND,
-						achievements: ed.tasks.map(t => t.name).join('\n'),
-					}
-				}),
-			},
-			skills: {
-				create: parsedResume.profile.skills.map(sk => ({
-					name: sk.name,
-				})),
-			},
-			file: {
-				create: newPrismaResume,
-			},
-		},
-	})
-
-	if (previousUserResume?.fileId) {
-		void prisma.file
-			.delete({
-				where: { id: previousUserResume.fileId },
 			})
-			.catch(() => {}) // ignore the error, maybe it never existed?
-	}
+		} else {
+			// Create new resume for first-time users
+			await prisma.resume.create({
+				data: {
+					owner: { connect: { id: userId } },
+					title: parsedResume.experiences[0]?.title ?? NOT_FOUND,
+					summary: parsedResume.summary ?? NOT_FOUND,
+					phone: parsedResume.personal_info.phone ?? NOT_FOUND,
+					email: parsedResume.personal_info.email ?? NOT_FOUND,
+					firstName: parsedResume.personal_info.first_name ?? NOT_FOUND,
+					lastName: parsedResume.personal_info.last_name ?? NOT_FOUND,
+					city: location.city,
+					state: location.state,
+					country: location.country,
+					experience: {
+						create: parsedResume.experiences.map(ex => {
+							const expLocation = parseLocation(ex.location || '')
+							return {
+								employer: ex.company ?? NOT_FOUND,
+								role: ex.title ?? NOT_FOUND,
+								startDate: ex.date_start,
+								endDate: ex.date_end,
+								city: expLocation.city,
+								state: expLocation.state,
+								country: expLocation.country,
+								responsibilities: ex.bullet_points.join('\n'),
+							}
+						}),
+					},
+					education: {
+						create: parsedResume.education.map(ed => {
+							const edLocation = parseLocation(ed.location || '')
+							return {
+								school: ed.school ?? NOT_FOUND,
+								field: ed.major
+									? `${ed.degree} in ${ed.major}`
+									: (ed.degree ?? NOT_FOUND),
+								graduationDate: ed.date_end ? new Date(ed.date_end) : new Date(),
+								city: edLocation.city,
+								state: edLocation.state,
+								country: edLocation.country,
+								achievements: ed.honors?.join('\n') ?? '',
+							}
+						}),
+					},
+					skills: {
+						create: parsedResume.skills.map(name => ({ name })),
+					},
+					file: {
+						create: newPrismaResume,
+					},
+				},
+			})
+		}
 
-	return redirect('../edit')
+		if (previousUserResume?.fileId) {
+			void prisma.file
+				.delete({ where: { id: previousUserResume.fileId } })
+				.catch(() => {})
+		}
+
+		return redirect('../edit')
+	} catch (error: any) {
+		console.error('Resume parsing error:', error)
+		return json(
+			{
+				status: 'error',
+				submission,
+				error: error.message || 'Failed to parse resume. Please try again.',
+			} as const,
+			{ status: 500 },
+		)
+	}
 }
 
 type FileReducerState = {
@@ -365,18 +315,6 @@ export default function FileUploaderModal() {
 	})
 
 	const transition = useNavigation()
-
-	const [showSubscribeModal, setShowSubscribeModal] = useState(false)
-
-	useEffect(() => {
-		if (
-			actionData &&
-			'type' in actionData &&
-			actionData.type === 'subscription_required'
-		) {
-			setShowSubscribeModal(true)
-		}
-	}, [actionData])
 
 	// useEffect(() => {
 	// 	function preventDefault(e: any) {
@@ -456,6 +394,14 @@ export default function FileUploaderModal() {
 				>
 					<ErrorList errors={resumeFile.errors} id={resumeFile.errorId} />
 
+					{actionData && 'error' in actionData && actionData.error ? (
+						<div className="w-full rounded-md bg-red-50 p-4 dark:bg-red-900/20">
+							<p className="text-sm text-red-700 dark:text-red-400">
+								{String(actionData.error)}
+							</p>
+						</div>
+					) : null}
+
 					<div className="flex w-full items-center justify-center">
 						<label
 							htmlFor={resumeFile.id}
@@ -493,7 +439,7 @@ export default function FileUploaderModal() {
 											drag and drop
 										</p>
 										<p className="text-xs text-gray-500 dark:text-gray-400">
-											PDF, DOCX, PNG, or JPEG (MAX. 10MB)
+											PDF or DOCX (MAX. 10MB)
 										</p>
 									</>
 								)}
@@ -501,9 +447,7 @@ export default function FileUploaderModal() {
 							<input
 								{...conform.input(resumeFile, { type: 'file' })}
 								type="file"
-								accept=".doc, .docx, application/msword,
-										 application/vnd.openxmlformats-officedocument.wordprocessingml.document,
-										 application/pdf, application/msword, image/png, image/jpeg"
+								accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 								className="sr-only"
 								tabIndex={newFileSrc ? -1 : 0}
 								onChange={handleOnChange}
@@ -558,13 +502,6 @@ export default function FileUploaderModal() {
 						value={data.resume?.fileId ?? ''}
 					/>
 				</deleteFileFetcher.Form>
-				<SubscribeModal
-					isOpen={showSubscribeModal}
-					onClose={() => setShowSubscribeModal(false)}
-					successUrl={`/users/${data.user?.username}/resume/upload`}
-					redirectTo={`/users/${data.user?.username}/resume/upload`}
-					cancelUrl={`/users/${data.user?.username}/resume/upload`}
-				/>
 			</>
 
 			<Outlet />
