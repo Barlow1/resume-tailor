@@ -24,7 +24,11 @@ export function TailorDiffModal({
 	diffSummary,
 	scoreImprovement,
 }: TailorDiffModalProps) {
-	const hasChanges = diffSummary.totalChanges > 0
+	const hasChanges = diffSummary.totalChanges > 0 ||
+		diffSummary.skillsAdded.length > 0 ||
+		diffSummary.skillsRemoved.length > 0 ||
+		diffSummary.summaryChange !== null ||
+		diffSummary.roleChange !== null
 
 	return (
 		<DialogModal
@@ -69,6 +73,94 @@ export function TailorDiffModal({
 							</div>
 						)}
 					</div>
+
+					{/* Role Change */}
+					{diffSummary.roleChange && (
+						<div>
+							<h3 className="font-semibold text-sm text-gray-700 mb-2 flex items-center gap-2">
+								<ArrowPathIcon className="h-4 w-4 text-blue-600" />
+								Role Title Updated
+							</h3>
+							<div className="border rounded-lg p-3 bg-gray-50 space-y-2">
+								<div className="flex items-start gap-2">
+									<MinusIcon className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+									<div className="text-sm text-gray-700 line-through opacity-75">
+										{diffSummary.roleChange.before || '(empty)'}
+									</div>
+								</div>
+								<div className="flex items-start gap-2">
+									<PlusIcon className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+									<div className="text-sm text-gray-900 font-medium">
+										{diffSummary.roleChange.after}
+									</div>
+								</div>
+							</div>
+						</div>
+					)}
+
+					{/* Summary Change */}
+					{diffSummary.summaryChange && (
+						<div>
+							<h3 className="font-semibold text-sm text-gray-700 mb-2 flex items-center gap-2">
+								<ArrowPathIcon className="h-4 w-4 text-blue-600" />
+								Summary Updated
+							</h3>
+							<div className="border rounded-lg p-3 bg-gray-50 space-y-2">
+								<div className="flex items-start gap-2">
+									<MinusIcon className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+									<div className="text-sm text-gray-700 line-through opacity-75">
+										{diffSummary.summaryChange.before || '(empty)'}
+									</div>
+								</div>
+								<div className="flex items-start gap-2">
+									<PlusIcon className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+									<div className="text-sm text-gray-900 font-medium">
+										{diffSummary.summaryChange.after}
+									</div>
+								</div>
+							</div>
+						</div>
+					)}
+
+					{/* Skills Added */}
+					{diffSummary.skillsAdded.length > 0 && (
+						<div>
+							<h3 className="font-semibold text-sm text-gray-700 mb-2 flex items-center gap-2">
+								<PlusIcon className="h-4 w-4 text-green-600" />
+								Skills Added ({diffSummary.skillsAdded.length})
+							</h3>
+							<div className="flex flex-wrap gap-2">
+								{diffSummary.skillsAdded.map((skill: string, index: number) => (
+									<span
+										key={index}
+										className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium"
+									>
+										+ {skill}
+									</span>
+								))}
+							</div>
+						</div>
+					)}
+
+					{/* Skills Removed */}
+					{diffSummary.skillsRemoved.length > 0 && (
+						<div>
+							<h3 className="font-semibold text-sm text-gray-700 mb-2 flex items-center gap-2">
+								<MinusIcon className="h-4 w-4 text-red-600" />
+								Skills Removed ({diffSummary.skillsRemoved.length})
+							</h3>
+							<div className="flex flex-wrap gap-2">
+								{diffSummary.skillsRemoved.map((skill: string, index: number) => (
+									<span
+										key={index}
+										className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-medium"
+									>
+										- {skill}
+									</span>
+								))}
+							</div>
+						</div>
+					)}
 
 					{/* Added Keywords */}
 					{diffSummary.addedKeywords.length > 0 && (
@@ -177,7 +269,6 @@ export function TailorDiffModal({
 						</div>
 					)}
 				</div>
-
 			</div>
 
 			<div className="flex gap-2 mt-6 pt-4 border-t">
