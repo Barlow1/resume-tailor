@@ -9,7 +9,7 @@ export interface TailorChange {
 	field: string
 	before?: string
 	after?: string
-	location: string // e.g., "Experience: Senior Engineer at Google, Bullet #2"
+	location: string
 }
 
 export interface DiffSummary {
@@ -29,6 +29,10 @@ export interface DiffSummary {
 	}>
 	changedFields: string[]
 	totalChanges: number
+	skillsAdded: string[]
+	skillsRemoved: string[]
+	summaryChange: { before: string; after: string } | null
+	roleChange: { before: string; after: string } | null
 }
 
 /**
@@ -40,7 +44,6 @@ export function detectChanges(
 ): TailorChange[] {
 	const changes: TailorChange[] = []
 
-	// Check basic fields
 	const basicFields: Array<keyof ResumeData> = [
 		'role',
 		'about',
@@ -66,21 +69,36 @@ export function detectChanges(
 		}
 	})
 
-	// Check experiences
 	if (before.experiences && after.experiences) {
-		// Match experiences by role and company
-		before.experiences.forEach((beforeExp: any, index: number) => {
+		before.experiences.forEach((beforeExp: any) => {
+			// Match by ID (AI preserves IDs), fallback to role+company for backwards compat
 			const matchingAfterExp = after.experiences?.find(
-				(exp: any) => exp.role === beforeExp.role && exp.company === beforeExp.company,
+				(exp: any) => {
+					// Prefer ID match (most reliable)
+					if (beforeExp.id && exp.id) {
+						return exp.id === beforeExp.id
+					}
+					// Fallback to role+company match
+					return exp.role === beforeExp.role && exp.company === beforeExp.company
+				},
 			)
 
 			if (!matchingAfterExp) return
 
 			const location = `Experience: ${beforeExp.role || 'Untitled'} at ${beforeExp.company || 'Unknown Company'}`
 
-			// Check each description
+			// Track which after descriptions we've matched
+			const matchedAfterIds = new Set<string>()
+
 			beforeExp.descriptions?.forEach((beforeDesc: any, descIndex: number) => {
-				const afterDesc = matchingAfterExp.descriptions?.[descIndex]
+				// Match by ID (AI preserves IDs), fallback to index
+				let afterDesc = beforeDesc.id
+					? matchingAfterExp.descriptions?.find((d: any) => d.id === beforeDesc.id)
+					: matchingAfterExp.descriptions?.[descIndex]
+
+				if (afterDesc?.id) {
+					matchedAfterIds.add(afterDesc.id)
+				}
 
 				if (!afterDesc) {
 					changes.push({
@@ -100,8 +118,11 @@ export function detectChanges(
 				}
 			})
 
-			// Check for added descriptions
+			// Check for added descriptions (ones in after but not matched)
 			matchingAfterExp.descriptions?.forEach((afterDesc: any, descIndex: number) => {
+				// Skip if we already matched this one by ID
+				if (afterDesc.id && matchedAfterIds.has(afterDesc.id)) return
+
 				const beforeDesc = beforeExp.descriptions?.[descIndex]
 
 				if (!beforeDesc) {
@@ -117,6 +138,27 @@ export function detectChanges(
 	}
 
 	return changes
+}
+
+/**
+ * Detect skill changes between two resume versions
+ */
+function detectSkillChanges(
+	before: ResumeData,
+	after: ResumeData,
+): { added: string[]; removed: string[] } {
+	const beforeSkills = new Set((before.skills || []).map((s: any) => s.name?.toLowerCase()))
+	const afterSkills = new Set((after.skills || []).map((s: any) => s.name?.toLowerCase()))
+
+	const added = (after.skills || [])
+		.filter((s: any) => !beforeSkills.has(s.name?.toLowerCase()))
+		.map((s: any) => s.name)
+
+	const removed = (before.skills || [])
+		.filter((s: any) => !afterSkills.has(s.name?.toLowerCase()))
+		.map((s: any) => s.name)
+
+	return { added, removed }
 }
 
 /**
@@ -188,6 +230,7 @@ export function createDiffSummary(
 	jobKeywords?: string[],
 ): DiffSummary {
 	const changes = detectChanges(before, after)
+	const skillChanges = detectSkillChanges(before, after)
 
 	const modifiedBullets = changes
 		.filter(c => c.type === 'modified' && c.field === 'description')
@@ -213,9 +256,15 @@ export function createDiffSummary(
 
 	const addedKeywords = findNewKeywords(before, after, jobKeywords)
 
-	const changedFields = Array.from(
-		new Set(changes.map(c => c.field)),
-	)
+	const changedFields = Array.from(new Set(changes.map(c => c.field)))
+
+	const summaryChange = before.about !== after.about
+		? { before: before.about || '', after: after.about || '' }
+		: null
+
+	const roleChange = before.role !== after.role
+		? { before: before.role || '', after: after.role || '' }
+		: null
 
 	return {
 		addedKeywords,
@@ -224,6 +273,10 @@ export function createDiffSummary(
 		addedBullets,
 		changedFields,
 		totalChanges: changes.length,
+		skillsAdded: skillChanges.added,
+		skillsRemoved: skillChanges.removed,
+		summaryChange,
+		roleChange,
 	}
 }
 
@@ -231,7 +284,6 @@ export function createDiffSummary(
  * Extract keywords from job description
  */
 export function extractJobKeywords(jobDescription: string): string[] {
-	// Simple keyword extraction - split by common delimiters and filter
 	const commonWords = new Set([
 		'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
 		'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'be',
@@ -246,7 +298,6 @@ export function extractJobKeywords(jobDescription: string): string[] {
 		.split(/\s+/)
 		.filter(word => word.length > 3 && !commonWords.has(word))
 
-	// Return unique words, sorted by frequency
 	const frequency = new Map<string, number>()
 	words.forEach(word => {
 		frequency.set(word, (frequency.get(word) || 0) + 1)
@@ -255,5 +306,5 @@ export function extractJobKeywords(jobDescription: string): string[] {
 	return Array.from(frequency.entries())
 		.sort((a, b) => b[1] - a[1])
 		.map(([word]) => word)
-		.slice(0, 20) // Top 20 keywords
+		.slice(0, 20)
 }
