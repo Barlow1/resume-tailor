@@ -7,6 +7,7 @@ import {
 } from '~/utils/builder-resume.server.ts'
 import { resumeCookie } from '~/utils/resume-cookie.server.ts'
 import { getUserId } from '~/utils/auth.server.ts'
+import { prisma } from '~/utils/db.server.ts'
 
 export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData()
@@ -57,6 +58,21 @@ export async function action({ request }: ActionFunctionArgs) {
 	} else {
 		// No resumeId in cookie, create new resume
 		resume = await createBuilderResume(userId, resumeData)
+	}
+
+	// Track onboarding progress - mark resume as saved
+	if (userId) {
+		await prisma.gettingStartedProgress.upsert({
+			where: { ownerId: userId },
+			update: { hasSavedResume: true },
+			create: {
+				ownerId: userId,
+				hasSavedResume: true,
+				hasSavedJob: false,
+				hasTailoredResume: false,
+				hasGeneratedResume: false,
+			},
+		})
 	}
 
 	// Store minimal data in cookie
