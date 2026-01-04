@@ -1122,10 +1122,6 @@ export default function ResumeBuilder() {
 		if (!userId) {
 			navigate('/login?redirectTo=/builder')
 			return false
-		} else if (!subscription) {
-			setShowCreationModal(false)
-			setShowSubscribeModal(true)
-			return false
 		}
 		return true
 	}
@@ -1711,7 +1707,13 @@ export default function ResumeBuilder() {
 										key={key}
 										type="hidden"
 										name={key}
-										value={value as string}
+										value={
+											value === null || value === undefined
+												? ''
+												: typeof value === 'object'
+													? JSON.stringify(value)
+													: String(value)
+										}
 									/>
 								))}
 							<input
@@ -2754,7 +2756,6 @@ export default function ResumeBuilder() {
 				resumes={resumes}
 				handleUploadResume={handleUploadResume}
 				userId={userId}
-				subscription={subscription}
 			/>
 			{diffSummary && (
 				<TailorDiffModal

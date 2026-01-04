@@ -63,6 +63,7 @@
     "@remix-run/router": "^1.12.0",
     "@remix-run/server-runtime": "^2.3.0",
     "@sentry/remix": "^7.59.2",
+    "@tailwindcss/typography": "^0.5.16",
     "@types/react-color": "^3.0.13",
     "address": "^2.0.1",
     "autoprefixer": "^10.4.14",
@@ -99,6 +100,7 @@
     "litefs-js": "^1.1.2",
     "logrocket": "^8.1.0",
     "lru-cache": "^10.0.0",
+    "mammoth": "^1.11.0",
     "mdx-bundler": "^10.1.1",
     "moment": "^2.30.1",
     "morgan": "^1.10.0",
@@ -131,8 +133,7 @@
     "twitter-api-v2": "^1.17.2",
     "use-debounce": "^10.0.4",
     "zod": "^3.21.4",
-    "zustand": "^4.5.4",
-    "@tailwindcss/typography": "^0.5.16"
+    "zustand": "^4.5.4"
   },
   "devDependencies": {
     "@faker-js/faker": "^8.0.2",
