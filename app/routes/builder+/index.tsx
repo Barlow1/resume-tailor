@@ -96,7 +96,6 @@ import { ResumeScoreCard } from '~/components/resume-score-card.tsx'
 import { ImprovementChecklist } from '~/components/improvement-checklist.tsx'
 import { useResumeScore } from '~/hooks/use-resume-score.ts'
 import { TailorDiffModal } from '~/components/tailor-diff-modal.tsx'
-import { TailorFlowStepper } from '~/components/tailor-flow-stepper.tsx'
 import {
 	createDiffSummary,
 	extractJobKeywords,
@@ -104,6 +103,9 @@ import {
 } from '~/utils/tailor-diff.ts'
 import { trackEvent as trackLegacyEvent } from '~/utils/tracking.client.ts'
 import { trackEvent } from '~/utils/analytics.ts'
+import { useOnboardingFlow } from '~/hooks/use-onboarding-flow.ts'
+import { JobPasteModal } from '~/components/job-paste-modal.tsx'
+import { SpotlightOverlay } from '~/components/spotlight-overlay.tsx'
 const { ChromePicker } = reactColor
 
 function base64ToUint8Array(base64: string): Uint8Array {
@@ -1273,6 +1275,15 @@ export default function ResumeBuilder() {
 	const [preTailoredResume, setPreTailoredResume] =
 		useState<Jsonify<ResumeData> | null>(null)
 
+	// Onboarding flow hook - manages all onboarding state and logic
+	const onboarding = useOnboardingFlow({
+		serverProgress: gettingStartedProgress,
+		hasResume: !!(formData.name || formData.role),
+		selectedJob: selectedJob as Jsonify<Job> | null | undefined,
+		hasTailored: tailorFetcher.state === 'idle' && !!tailorFetcher.data && !!selectedJob,
+		onJobSelect: handleJobChange as (job: Jsonify<Job>) => void,
+	})
+
 	const handleTailorEntireResume = async () => {
 		if (!selectedJob) {
 			return
@@ -1338,7 +1349,14 @@ export default function ResumeBuilder() {
 					jobKeywords,
 				)
 				setDiffSummary(summary)
-				setShowDiffModal(true)
+
+				// During onboarding, skip the diff modal and just show toast
+				if (onboarding.skipDiffModal) {
+					onboarding.handleTailorComplete()
+					setPreTailoredResume(null) // Clear undo state
+				} else {
+					setShowDiffModal(true)
+				}
 			}
 
 			setFormData(prevFormData => {
@@ -1372,6 +1390,13 @@ export default function ResumeBuilder() {
 		preTailoredResume,
 		formData.job,
 	])
+
+	// Track successful downloads for onboarding
+	useEffect(() => {
+		if (pdfFetcher.data && pdfFetcher.state === 'idle' && !onboarding.isComplete) {
+			onboarding.handleDownloadComplete()
+		}
+	}, [pdfFetcher.data, pdfFetcher.state, onboarding.isComplete, onboarding.handleDownloadComplete])
 
 	// Inside ResumeBuilder component, add state for font
 	const [selectedFont, setSelectedFont] = useState(formData.font ?? 'font-sans')
@@ -1465,7 +1490,7 @@ export default function ResumeBuilder() {
 									isActiveStep={(gettingStartedProgress?.downloadCount ?? 0) === 0 && !!(formData.name || formData.role) && !selectedJob}
 								/>
 								{selectedJob ? (
-									<div className={(gettingStartedProgress?.downloadCount ?? 0) === 0 && selectedJob && !preTailoredResume && tailorFetcher.state === 'idle' && !tailorFetcher.data ? 'animate-rainbow-border rounded-lg' : ''}>
+									<div id="tailor-button">
 										<TooltipProvider>
 											<Tooltip>
 												<TooltipTrigger>
@@ -1476,7 +1501,7 @@ export default function ResumeBuilder() {
 																? handleUndoTailor
 																: handleTailorEntireResume
 														}
-														className={`flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-200 ${(gettingStartedProgress?.downloadCount ?? 0) === 0 && selectedJob && !preTailoredResume && tailorFetcher.state === 'idle' && !tailorFetcher.data ? 'relative z-[1] m-[2px]' : ''}`}
+														className="flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-200"
 														status={
 															tailorFetcher.state === 'submitting'
 																? 'pending'
@@ -1615,14 +1640,14 @@ export default function ResumeBuilder() {
 										<TooltipContent>Create a new resume</TooltipContent>
 									</Tooltip>
 								</TooltipProvider>
-								<div className={(gettingStartedProgress?.downloadCount ?? 0) === 0 && tailorFetcher.state === 'idle' && tailorFetcher.data && selectedJob ? 'animate-rainbow-border rounded-lg' : ''}>
+								<div id="download-button">
 									<TooltipProvider>
 										<Tooltip>
 											<TooltipTrigger>
 												<StatusButton
 													type="button"
 													onClick={handleClickDownloadPDF}
-													className={`flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-200 ${(gettingStartedProgress?.downloadCount ?? 0) === 0 && tailorFetcher.state === 'idle' && tailorFetcher.data && selectedJob ? 'relative z-[1] m-[2px]' : ''}`}
+													className="flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-200"
 													status={
 														pdfFetcher.state === 'submitting'
 															? 'pending'
@@ -1685,14 +1710,6 @@ export default function ResumeBuilder() {
 							</div>
 						)}
 
-						{/* Progress Stepper - Show until first download */}
-						{(gettingStartedProgress?.downloadCount ?? 0) === 0 && (
-							<TailorFlowStepper
-								hasResume={!!(formData.name || formData.role)}
-								selectedJob={selectedJob}
-								hasTailored={tailorFetcher.state === 'idle' && !!tailorFetcher.data && !!selectedJob}
-							/>
-						)}
 
 						{/* Main content area with resume editor and gamification sidebar */}
 						<div className="flex gap-6">
@@ -2787,6 +2804,24 @@ export default function ResumeBuilder() {
 					scoreImprovement={previousScore ? scores.overall - previousScore : 0}
 				/>
 			)}
+
+			{/* Onboarding components */}
+			<JobPasteModal
+				isOpen={onboarding.showJobModal}
+				onComplete={onboarding.handleJobCreated}
+				onSkip={onboarding.handleSkipJob}
+			/>
+
+			<SpotlightOverlay
+				targetSelector={onboarding.spotlightTarget}
+				enabled={!!onboarding.spotlightTarget}
+			>
+				{onboarding.spotlightHint && (
+					<div className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-lg">
+						{onboarding.spotlightHint}
+					</div>
+				)}
+			</SpotlightOverlay>
 		</DraggingContext.Provider>
 	)
 }
