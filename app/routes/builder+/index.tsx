@@ -1423,9 +1423,8 @@ export default function ResumeBuilder() {
 				resumeId: formData.id,
 				category: 'Onboarding',
 			})
-			onboarding.handleDownloadComplete()
 		}
-	}, [pdfFetcher.data, pdfFetcher.state, onboarding, userId, formData.id])
+	}, [pdfFetcher.data, pdfFetcher.state, onboarding.isComplete, userId, formData.id])
 
 	// Track when bullet AI spotlight is shown
 	useEffect(() => {
