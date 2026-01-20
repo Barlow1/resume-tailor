@@ -305,46 +305,56 @@ export const getBuilderExperienceResponse = async ({
 			? [
 					{
 						role: 'system' as const,
-						content: `You are a resume bullet editor. Your job is to improve a single bullet point for ATS optimization — without changing what the candidate actually did.
+						content: `You are an ATS optimization expert. Your primary job is to incorporate target keywords into resume bullets so they pass applicant tracking systems.
 
 Job Description:
 ${jobDescription}
 
 ${extractedKeywords && extractedKeywords.length > 0 ? `Target Keywords:
-${extractedKeywords.slice(0, 8).join(', ')}` : ''}`,
+${extractedKeywords.join(', ')}` : ''}
+
+Your goal: Get as many relevant keywords into each bullet as possible while keeping the bullet truthful to what the candidate actually did.`,
 					},
 					{
 						role: 'user' as const,
-						content: `Improve this bullet point from a ${currentJobTitle} at ${currentJobCompany}:
+						content: `Rewrite this bullet point to include keywords from the job description.
 
+Original bullet from ${currentJobTitle} at ${currentJobCompany}:
 "${experience}"
 
-Generate 5 variations following these rules:
+KEYWORD RULES (PRIMARY GOAL):
+- Each variation MUST include 2-4 keywords from the Target Keywords list
+- Use exact phrasing from the job description where possible (ATS systems match exact phrases)
+- Different variations should incorporate DIFFERENT keywords
+- Front-load keywords near the beginning of the bullet when natural
 
-AUTHENTICITY (NON-NEGOTIABLE):
-- Every variation must describe the SAME achievement as the original
-- If the original has no metric, your variations have NO metrics
-- Do NOT add percentages, dollar amounts, user counts, or timeframes
-- Do NOT upgrade vague claims to specific ones
-- Do NOT invent scope, scale, or outcomes
+AUTHENTICITY RULES (CONSTRAINTS):
+- The bullet must still describe the same work/achievement as the original
+- If the original has no metrics, don't add metrics
+- Don't claim skills or scope that aren't implied by the original
+- It's OK to make implicit skills explicit (e.g., if they "led interviews" they did "user research")
 
-WHAT YOU CAN DO:
-- Use stronger action verbs
-- Reorder to front-load keywords
-- Incorporate target keywords where they fit truthfully
-- Improve clarity and conciseness
-- Mirror JD phrasing where it matches what they actually did
+EXAMPLES:
+
+Original: "Helped with product roadmap planning"
+Target keywords: product vision, product roadmap, collaborate with engineers, stakeholders
+
+✓ Good: "Collaborated with engineers and stakeholders to develop product roadmap aligned with product vision" (4 keywords)
+✓ Good: "Contributed to product roadmap planning, translating stakeholder input into product vision" (3 keywords)
+✗ Bad: "Helped with product roadmap planning" (0 keywords - just rephrased)
+✗ Bad: "Led product roadmap increasing revenue 40%" (adds leadership + metric not in original)
+
+Original: "Worked on improving the checkout flow"
+Target keywords: user workflows, A/B testing, conversion optimization, user research
+
+✓ Good: "Optimized checkout user workflows through research and conversion optimization techniques" (3 keywords)
+✓ Good: "Improved checkout flow by analyzing user workflows and identifying conversion optimization opportunities" (2 keywords)
+✗ Bad: "Enhanced the checkout experience for better usability" (0 keywords)
 
 FORMAT:
-- Maximum 180 characters per bullet
-- Start with strong verb (Led, Developed, Implemented, Designed, Built, Managed)
-- Each variation should emphasize a different aspect or keyword
-
-EXAMPLE:
-Original: "Helped with the company website redesign project"
-✓ Good: "Contributed to website redesign improving user navigation"
-✓ Good: "Collaborated on website redesign project with cross-functional team"
-✗ Bad: "Led website redesign increasing conversions by 25%" (adds leadership + metric not in original)
+- Maximum 200 characters per bullet
+- Start with a strong action verb
+- Return exactly 5 variations, each using different keyword combinations
 
 Return ONLY: { "experiences": ["bullet 1", "bullet 2", "bullet 3", "bullet 4", "bullet 5"] }`,
 						name,

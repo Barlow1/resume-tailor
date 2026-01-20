@@ -5,11 +5,10 @@
  * The builder component just needs to:
  * 1. Pass server progress + current state
  * 2. Render JobPasteModal and SpotlightOverlay with props from this hook
- * 3. Connect tailor/download handlers
+ * 3. Connect tailor handlers
  */
 
 import { useState, useCallback, useMemo } from 'react'
-import { useNavigate } from '@remix-run/react'
 import type { GettingStartedProgress, Job } from '@prisma/client'
 import type { Jsonify } from '@remix-run/server-runtime/dist/jsonify.js'
 import { toast } from '~/components/ui/use-toast.ts'
@@ -50,10 +49,12 @@ interface UseOnboardingFlowReturn {
 	spotlightHint: string | null
 	/** Whether to skip the diff modal (during onboarding) */
 	skipDiffModal: boolean
-	/** Handler to call after successful tailor */
+	/** Handler to call when AI modal opens during onboarding */
+	handleAIModalOpen: () => void
+	/** Handler to call when AI modal closes during onboarding */
+	handleAIModalClose: () => void
+	/** Handler to call when user clicks "Tailor Achievement" - completes onboarding */
 	handleTailorComplete: () => void
-	/** Handler to call after successful download */
-	handleDownloadComplete: () => void
 }
 
 export function useOnboardingFlow({
@@ -63,38 +64,37 @@ export function useOnboardingFlow({
 	hasTailored,
 	onJobSelect,
 }: UseOnboardingFlowOptions): UseOnboardingFlowReturn {
-	const navigate = useNavigate()
-
 	// Local state for session-level overrides
 	// These handle the case where server data is stale (action completed but loader hasn't refreshed)
 	const [jobModalDismissed, setJobModalDismissed] = useState(false)
 	const [sessionTailorComplete, setSessionTailorComplete] = useState(false)
-	const [sessionDownloadComplete, setSessionDownloadComplete] = useState(false)
+	const [aiModalOpenDuringOnboarding, setAiModalOpenDuringOnboarding] = useState(false)
 
 	// Compute current stage from all available data
 	const { stage, isComplete } = useMemo(() => {
 		// Session overrides take precedence for recently completed actions
 		const effectiveHasTailored = hasTailored || sessionTailorComplete
-		const effectiveHasDownloaded =
-			sessionDownloadComplete || (serverProgress?.downloadCount ?? 0) > 0
 
-		if (effectiveHasDownloaded) {
-			return { stage: 'complete' as OnboardingStage, isComplete: true }
-		}
-
-		return getOnboardingStage(
+		const baseStage = getOnboardingStage(
 			serverProgress,
 			hasResume,
 			!!selectedJob,
 			effectiveHasTailored,
 		)
+
+		// If we're at the bullet tailor stage and the AI modal is open, show the tailor click stage
+		if (baseStage.stage === 'needs_bullet_tailor' && aiModalOpenDuringOnboarding) {
+			return { stage: 'needs_tailor_click' as OnboardingStage, isComplete: false }
+		}
+
+		return baseStage
 	}, [
 		serverProgress,
 		hasResume,
 		selectedJob,
 		hasTailored,
 		sessionTailorComplete,
-		sessionDownloadComplete,
+		aiModalOpenDuringOnboarding,
 	])
 
 	// Show job modal only when:
@@ -110,7 +110,7 @@ export function useOnboardingFlow({
 
 			toast({
 				title: 'Job added!',
-				description: 'Now tailor your resume to match the job requirements.',
+				description: 'Now improve your achievements with AI to match the job.',
 			})
 		},
 		[onJobSelect],
@@ -121,28 +121,26 @@ export function useOnboardingFlow({
 		setJobModalDismissed(true)
 	}, [])
 
-	// Handle tailor completion
-	const handleTailorComplete = useCallback(() => {
-		setSessionTailorComplete(true)
-
-		toast({
-			title: 'Resume tailored!',
-			description: 'Download your optimized resume now.',
-		})
+	// Handle AI modal open during onboarding (advances to needs_tailor_click stage)
+	const handleAIModalOpen = useCallback(() => {
+		setAiModalOpenDuringOnboarding(true)
 	}, [])
 
-	// Handle download completion
-	const handleDownloadComplete = useCallback(() => {
-		setSessionDownloadComplete(true)
+	// Handle AI modal close during onboarding (reverts to needs_bullet_tailor if not completed)
+	const handleAIModalClose = useCallback(() => {
+		setAiModalOpenDuringOnboarding(false)
+	}, [])
 
-		// Refresh loader data to sync server state
-		navigate('.', { replace: true })
+	// Handle tailor completion (called when user clicks "Tailor Achievement" - completes onboarding)
+	const handleTailorComplete = useCallback(() => {
+		setSessionTailorComplete(true)
+		setAiModalOpenDuringOnboarding(false)
 
 		toast({
-			title: 'Congratulations!',
-			description: "You've completed the resume tailoring process.",
+			title: 'Great start!',
+			description: 'Feel free to explore and tailor more achievements.',
 		})
-	}, [navigate])
+	}, [])
 
 	// Spotlight configuration
 	const spotlightTarget = useMemo(() => getSpotlightTarget(stage), [stage])
@@ -161,7 +159,8 @@ export function useOnboardingFlow({
 		spotlightTarget,
 		spotlightHint,
 		skipDiffModal,
+		handleAIModalOpen,
+		handleAIModalClose,
 		handleTailorComplete,
-		handleDownloadComplete,
 	}
 }

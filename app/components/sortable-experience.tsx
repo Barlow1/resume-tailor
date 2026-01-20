@@ -16,7 +16,7 @@ import { DraggingContext } from '~/routes/builder+/index.tsx'
 import { type BuilderExperience } from '~/utils/builder-resume.server.ts'
 
 interface SortableExperienceProps {
-	experience: BuilderExperience 
+	experience: BuilderExperience
 	onExperienceEdit: (
 		content: string,
 		id: string,
@@ -29,6 +29,8 @@ interface SortableExperienceProps {
 	onRemoveBullet: (id: string, index: number) => void
 	onBulletEdit: (content: string, id: string, index: number) => void
 	rerenderRef: React.MutableRefObject<boolean>
+	/** Index of this experience in the list (0-indexed) */
+	experienceIndex?: number
 }
 
 export function SortableExperience({
@@ -41,6 +43,7 @@ export function SortableExperience({
 	onRemoveBullet,
 	onBulletEdit,
 	rerenderRef,
+	experienceIndex,
 }: SortableExperienceProps) {
 	const { isDraggingAny } = useContext(DraggingContext)
 	const {
@@ -148,6 +151,7 @@ export function SortableExperience({
 							onRemoveClick={() => onRemoveBullet(experience.id!, index)}
 							rerenderRef={rerenderRef}
 							onEnter={() => onAddBullet(experience.id!, index)}
+							isFirstBullet={experienceIndex === 0 && index === 0}
 						/>
 						))}
 					</SortableContext>
