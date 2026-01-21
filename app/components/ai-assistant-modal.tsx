@@ -23,6 +23,8 @@ interface AIAssistantModalProps {
 	subscription: Subscription | null
 	gettingStartedProgress: Jsonify<GettingStartedProgress> | null
 	setShowSubscribeModal: (show: boolean) => void
+	/** Called when user clicks "Tailor Achievement" button (for onboarding) */
+	onTailorClick?: () => void
 }
 
 export function AIAssistantModal({
@@ -36,6 +38,7 @@ export function AIAssistantModal({
 	subscription,
 	gettingStartedProgress,
 	setShowSubscribeModal,
+	onTailorClick,
 }: AIAssistantModalProps) {
 	const [activeTab, setActiveTab] = useState<'tailor' | 'generate'>('tailor')
 	const [selectedItems, setSelectedItems] = useState<number[]>([])
@@ -70,6 +73,11 @@ export function AIAssistantModal({
 			}
 		}
 		setSelectedItems([])
+
+		// Call onTailorClick when user clicks "Tailor Achievement" (for onboarding)
+		if (type === 'tailor' && onTailorClick) {
+			onTailorClick()
+		}
 
 		const endpoint = type === 'tailor' ? 'experience' : 'generated-experience'
 		const formData = new FormData()
@@ -227,6 +235,7 @@ export function AIAssistantModal({
 											'w-full',
 											isLoading && 'animate-rainbow-text font-semibold',
 										)}
+										{...(activeTab === 'tailor' ? { 'data-tailor-achievement-button': true } : {})}
 									>
 										{isLoading
 											? 'Loading...'

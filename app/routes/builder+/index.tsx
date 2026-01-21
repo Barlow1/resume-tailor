@@ -923,6 +923,17 @@ export default function ResumeBuilder() {
 		setSelectedExperience(experience)
 		setSelectedBullet({ content, experienceId, bulletIndex })
 		setShowAIModal(true)
+
+		// Track bullet AI click during onboarding and advance to needs_tailor_click stage
+		if (onboarding.stage === 'needs_bullet_tailor') {
+			trackLegacyEvent('onboarding_bullet_ai_clicked', {
+				userId,
+				resumeId: formData.id,
+				jobId: selectedJob?.id,
+				category: 'Onboarding',
+			})
+			onboarding.handleAIModalOpen()
+		}
 	}
 
 	const rerenderRef = useRef(false)
@@ -934,6 +945,16 @@ export default function ResumeBuilder() {
 				selectedBullet.bulletIndex,
 			)
 			rerenderRef.current = true
+
+			// Track bullet AI selection during onboarding
+			if (onboarding.stage === 'needs_tailor_click') {
+				trackLegacyEvent('onboarding_bullet_ai_selected', {
+					userId,
+					resumeId: formData.id,
+					jobId: selectedJob?.id,
+					category: 'Onboarding',
+				})
+			}
 		}
 	}
 
@@ -1276,11 +1297,12 @@ export default function ResumeBuilder() {
 		useState<Jsonify<ResumeData> | null>(null)
 
 	// Onboarding flow hook - manages all onboarding state and logic
+	// hasTailored is true if user has ever used bullet-level AI tailor (persisted in gettingStartedProgress)
 	const onboarding = useOnboardingFlow({
 		serverProgress: gettingStartedProgress,
 		hasResume: !!(formData.name || formData.role),
 		selectedJob: selectedJob as Jsonify<Job> | null | undefined,
-		hasTailored: tailorFetcher.state === 'idle' && !!tailorFetcher.data && !!selectedJob,
+		hasTailored: (gettingStartedProgress?.tailorCount ?? 0) > 0,
 		onJobSelect: handleJobChange as (job: Jsonify<Job>) => void,
 	})
 
@@ -1389,14 +1411,32 @@ export default function ResumeBuilder() {
 		debouncedSave,
 		preTailoredResume,
 		formData.job,
+		onboarding,
 	])
 
 	// Track successful downloads for onboarding
 	useEffect(() => {
 		if (pdfFetcher.data && pdfFetcher.state === 'idle' && !onboarding.isComplete) {
-			onboarding.handleDownloadComplete()
+			// Track download during onboarding
+			trackLegacyEvent('onboarding_download_clicked', {
+				userId,
+				resumeId: formData.id,
+				category: 'Onboarding',
+			})
 		}
-	}, [pdfFetcher.data, pdfFetcher.state, onboarding.isComplete, onboarding.handleDownloadComplete])
+	}, [pdfFetcher.data, pdfFetcher.state, onboarding.isComplete, userId, formData.id])
+
+	// Track when bullet AI spotlight is shown
+	useEffect(() => {
+		if (onboarding.stage === 'needs_bullet_tailor') {
+			trackLegacyEvent('onboarding_bullet_ai_spotlight_shown', {
+				userId,
+				resumeId: formData.id,
+				hasJob: !!selectedJob,
+				category: 'Onboarding',
+			})
+		}
+	}, [onboarding, userId, formData.id, selectedJob])
 
 	// Inside ResumeBuilder component, add state for font
 	const [selectedFont, setSelectedFont] = useState(formData.font ?? 'font-sans')
@@ -1460,7 +1500,10 @@ export default function ResumeBuilder() {
 
 						<AIAssistantModal
 							isOpen={showAIModal}
-							onClose={() => setShowAIModal(false)}
+							onClose={() => {
+								setShowAIModal(false)
+								onboarding.handleAIModalClose()
+							}}
 							onUpdate={handleBulletUpdate}
 							onMultipleUpdate={handleMultipleBulletUpdate}
 							content={selectedBullet?.content}
@@ -1469,6 +1512,7 @@ export default function ResumeBuilder() {
 							subscription={subscription}
 							gettingStartedProgress={gettingStartedProgress}
 							setShowSubscribeModal={setShowSubscribeModal}
+							onTailorClick={onboarding.handleTailorComplete}
 						/>
 						<CreateJobModal
 							isOpen={showCreateJob}
@@ -1501,7 +1545,7 @@ export default function ResumeBuilder() {
 																? handleUndoTailor
 																: handleTailorEntireResume
 														}
-														className="flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-200"
+														className="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-600 transition hover:bg-gray-200"
 														status={
 															tailorFetcher.state === 'submitting'
 																? 'pending'
@@ -1513,7 +1557,7 @@ export default function ResumeBuilder() {
 														tailorFetcher.data ? (
 															<>
 																<ArrowUturnLeftIcon className="h-5 w-5" />
-																Undo Tailor
+																Undo
 															</>
 														) : (
 															<>
@@ -1527,8 +1571,8 @@ export default function ResumeBuilder() {
 													{preTailoredResume &&
 													tailorFetcher.state === 'idle' &&
 													tailorFetcher.data
-														? 'Undo tailoring and revert to your last saved version'
-														: 'Tailor your entire resume to the selected job description'}
+														? 'Undo tailoring'
+														: 'Tailor entire resume (~1-2 min)'}
 												</TooltipContent>
 											</Tooltip>
 										</TooltipProvider>
@@ -1641,27 +1685,21 @@ export default function ResumeBuilder() {
 									</Tooltip>
 								</TooltipProvider>
 								<div id="download-button">
-									<TooltipProvider>
-										<Tooltip>
-											<TooltipTrigger>
-												<StatusButton
-													type="button"
-													onClick={handleClickDownloadPDF}
-													className="flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-200"
-													status={
-														pdfFetcher.state === 'submitting'
-															? 'pending'
-															: pdfFetcher.state === 'idle' && pdfFetcher.data
-															? 'success'
-															: 'idle'
-													}
-												>
-													<ArrowDownTrayIcon className="h-4 w-4" />
-												</StatusButton>
-											</TooltipTrigger>
-											<TooltipContent>Download PDF</TooltipContent>
-										</Tooltip>
-									</TooltipProvider>
+									<StatusButton
+										type="button"
+										onClick={handleClickDownloadPDF}
+										className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-purple-700"
+										status={
+											pdfFetcher.state === 'submitting'
+												? 'pending'
+												: pdfFetcher.state === 'idle' && pdfFetcher.data
+												? 'success'
+												: 'idle'
+										}
+									>
+										<ArrowDownTrayIcon className="h-4 w-4" />
+										Download Resume
+									</StatusButton>
 								</div>
 							</div>
 						</div>
@@ -1947,7 +1985,7 @@ export default function ResumeBuilder() {
 															items={formData.experiences.map(exp => exp.id!)}
 															strategy={verticalListSortingStrategy}
 														>
-															{formData.experiences?.map(exp => (
+															{formData.experiences?.map((exp, expIndex) => (
 																<SortableExperience
 																	key={exp.id}
 																	experience={exp}
@@ -1959,6 +1997,7 @@ export default function ResumeBuilder() {
 																	onRemoveBullet={removeBulletPoint}
 																	onBulletEdit={handleBulletPointEdit}
 																	rerenderRef={rerenderRef}
+																	experienceIndex={expIndex}
 																/>
 															))}
 														</SortableContext>
@@ -2231,7 +2270,7 @@ export default function ResumeBuilder() {
 																}
 																strategy={verticalListSortingStrategy}
 															>
-																{formData.experiences?.map(exp => (
+																{formData.experiences?.map((exp, expIndex) => (
 																	<SortableExperience
 																		key={exp.id}
 																		experience={exp}
@@ -2243,6 +2282,7 @@ export default function ResumeBuilder() {
 																		onRemoveBullet={removeBulletPoint}
 																		onBulletEdit={handleBulletPointEdit}
 																		rerenderRef={rerenderRef}
+																		experienceIndex={expIndex}
 																	/>
 																))}
 															</SortableContext>
@@ -2564,7 +2604,7 @@ export default function ResumeBuilder() {
 														}
 														strategy={verticalListSortingStrategy}
 													>
-														{formData.experiences?.map(exp => (
+														{formData.experiences?.map((exp, expIndex) => (
 															<SortableExperience
 																key={exp.id}
 																experience={exp}
@@ -2576,6 +2616,7 @@ export default function ResumeBuilder() {
 																onRemoveBullet={removeBulletPoint}
 																onBulletEdit={handleBulletPointEdit}
 																rerenderRef={rerenderRef}
+																experienceIndex={expIndex}
 															/>
 														))}
 													</SortableContext>

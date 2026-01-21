@@ -19,6 +19,8 @@ interface SortableBulletPointProps {
 	onRemoveClick: () => void
 	rerenderRef?: React.MutableRefObject<boolean>
 	onEnter?: () => void
+	/** When true, adds data-first-bullet-ai attribute for onboarding spotlight */
+	isFirstBullet?: boolean
 }
 
 export function SortableBulletPoint({
@@ -30,6 +32,7 @@ export function SortableBulletPoint({
 	onRemoveClick,
 	rerenderRef,
 	onEnter,
+	isFirstBullet,
 }: SortableBulletPointProps) {
 	const { isDraggingAny } = useContext(DraggingContext)
 	const {
@@ -76,26 +79,24 @@ export function SortableBulletPoint({
 				placeholder="Add achievement or responsibility..."
 				id={id}
 			/>
+			{/* AI sparkle button - always visible on the right */}
+			<button
+				type="button"
+				onClick={onAIClick}
+				className="absolute -right-1 top-0 opacity-40 transition-opacity hover:opacity-100"
+				title="AI Assistant"
+				{...(isFirstBullet ? { 'data-first-bullet-ai': true } : {})}
+			>
+				<RainbowSparklesIcon className="h-4 w-4" id={`${id}-hint`} />
+			</button>
+			{/* Hover toolbar - positioned just left of the sparkle button */}
 			<div
-				className={`absolute -right-5 -top-5 gap-2 rounded-3xl bg-white px-2 py-1 shadow-md ${
+				className={`absolute right-6 -top-5 gap-2 rounded-3xl bg-white px-2 py-1 shadow-md ${
 					isDraggingAny && !isDragging
 						? 'hidden'
 						: 'hidden group-focus-within/expItem:flex group-hover/expItem:flex'
 				}`}
 			>
-				<button
-					type="button"
-					onClick={onAIClick}
-					className="hidden group-focus-within/expItem:block group-hover/expItem:block"
-					title="AI Assistant"
-				>
-					<div className="flex items-center gap-1">
-						<span className="animate-rainbow-text text-sm text-gray-600">
-							AI Assistant
-						</span>
-						<RainbowSparklesIcon className="h-5 w-5" id={id} />
-					</div>
-				</button>
 				<button
 					type="button"
 					onClick={onAddClick}
