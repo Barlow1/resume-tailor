@@ -21,6 +21,24 @@ if (!global.crypto) {
 	global.crypto = webcrypto as Crypto
 }
 
+/**
+ * Generates a username from email prefix + random suffix for OAuth signups.
+ * Example: brayasmith_k7m2
+ */
+function generateOAuthUsername(email: string): string {
+	const prefix = email.split('@')[0]
+	// Sanitize: keep only alphanumeric and underscore, lowercase
+	const sanitized = prefix.toLowerCase().replace(/[^a-z0-9_]/g, '')
+	// Generate 4-char random suffix
+	const chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
+	const array = new Uint8Array(4)
+	crypto.getRandomValues(array)
+	const suffix = Array.from(array, byte => chars[byte % chars.length]).join('')
+	// Truncate prefix to leave room for underscore + suffix (5 chars), fallback to 'user' if empty
+	const truncatedPrefix = (sanitized || 'user').substring(0, 15)
+	return `${truncatedPrefix}_${suffix}`
+}
+
 export const authenticator = new Authenticator<string>(sessionStorage, {
 	sessionKey: 'sessionId',
 })
@@ -69,7 +87,7 @@ authenticator.use(
 			const values = {
 				name: profile._json.name,
 				email: profile._json.email,
-				username: profile.displayName,
+				username: generateOAuthUsername(profile._json.email),
 				password: profile._json.email,
 			}
 
@@ -98,7 +116,7 @@ authenticator.use(
 			const values = {
 				name: profile._json.name,
 				email: profile._json.email,
-				username: profile.displayName,
+				username: generateOAuthUsername(profile._json.email),
 				password: profile._json.email,
 			}
 
@@ -129,7 +147,7 @@ authenticator.use(
 			const values = {
 				name: profile._json.name,
 				email: profile._json.email,
-				username: profile.displayName,
+				username: generateOAuthUsername(profile._json.email),
 				password: profile._json.email,
 			}
 
