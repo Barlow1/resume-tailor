@@ -7,7 +7,6 @@ import {
 	ListboxOptions,
 } from '@headlessui/react'
 import { ChevronUpDownIcon, CheckIcon } from '@heroicons/react/24/outline'
-import { type TextSize } from '~/utils/builder-resume.server.ts'
 export type TextSizeOption = {
 	value: string
 	label: string
@@ -23,8 +22,8 @@ export function TextSizeSelector({
 	selectedTextSize,
 	onTextSizeChange,
 }: {
-	selectedTextSize: TextSize
-	onTextSizeChange: (textSize: TextSize) => void
+	selectedTextSize: string
+	onTextSizeChange: (textSize: string) => void
 }) {
 	const selectedOption = TEXT_SIZE_OPTIONS.find(
 		opt => opt.value === selectedTextSize,

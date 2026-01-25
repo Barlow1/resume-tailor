@@ -52,8 +52,6 @@ export type BuilderJob = {
 	extractedKeywords?: string | null
 }
 
-export type TextSize = 'small' | 'medium' | 'large'
-
 export type ResumeData = {
 	id?: string | null
 	name?: string | null
@@ -77,7 +75,7 @@ export type ResumeData = {
 	visibleSections: VisibleSections | null
 	font?: string | null
 	layout?: string | null
-	textSize?: TextSize | null
+	textSize?: string | null
 }
 
 export type VisibleSections = {

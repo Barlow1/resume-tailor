@@ -66,8 +66,7 @@ import {
 	type BuilderSkill,
 	getBuilderResume,
 	type ResumeData,
-	type TextSize,
-} from '~/utils/builder-resume.server.ts'
+		} from '~/utils/builder-resume.server.ts'
 import { ImageCropper } from '~/components/image-cropper.tsx'
 import { CreateJobModal } from '~/components/create-job-modal.tsx'
 import { getUserJobs } from '~/utils/job.server.ts'
@@ -239,7 +238,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 				},
 				font: resume.font || 'font-crimson',
 				layout: resume.layout || 'traditional',
-				textSize: (resume.textSize as TextSize) || 'medium',
+				textSize: resume.textSize || 'medium',
 			}
 		}
 	}
@@ -1541,8 +1540,8 @@ export default function ResumeBuilder() {
 		'--resume-bullet-gap': '2pt',
 	}
 	// Default to medium text with compact spacing for professional single-page look
-	const [textSize, setTextSize] = useState<TextSize>(
-		(savedData.textSize as TextSize) || 'medium',
+	const [textSize, setTextSize] = useState<string>(
+		(savedData.textSize) || 'medium',
 	)
 
 	// State to dismiss warning banner
@@ -1551,7 +1550,7 @@ export default function ResumeBuilder() {
 	// Get CSS variables combining text size with compact spacing
 	const getResumeStyles = () => {
 		return {
-			...TEXT_SIZE_PRESETS[textSize],
+			...TEXT_SIZE_PRESETS[textSize as keyof typeof TEXT_SIZE_PRESETS],
 			...COMPACT_SPACING,
 		} as React.CSSProperties
 	}
@@ -1595,8 +1594,8 @@ export default function ResumeBuilder() {
 		rerenderRef.current = true
 	}
 
-	const handleTextSizeChange = (newTextSize: TextSize) => {
-		setTextSize(newTextSize as TextSize)
+	const handleTextSizeChange = (newTextSize: string) => {
+		setTextSize(newTextSize)
 		const newFormData = {
 			...formData,
 			textSize: newTextSize,
