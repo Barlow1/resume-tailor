@@ -258,6 +258,7 @@ export interface AiModalClosedEvent {
 	modal_type: AiModalType
 	had_result: boolean
 	was_accepted: boolean
+	session_duration_ms: number
 }
 
 export type FeatureName =
