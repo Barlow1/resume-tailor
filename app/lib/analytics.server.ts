@@ -330,26 +330,41 @@ export function trackResumeParsed(
 }
 
 /**
- * Track resume created event
+ * Track resume created event with resume number for multi-resume analysis
+ * @param resumeNumber - The nth resume this user has created (1 = first, 2 = second, etc.)
  */
 export function trackResumeCreated(
 	userId: string,
 	method: 'upload' | 'scratch' | 'clone',
 	resumeId: string,
 	request?: Request,
+	resumeNumber?: number,
 ): void {
 	trackServerEvent(
 		'resume_created',
 		{
 			method,
 			resume_id: resumeId,
+			resume_number: resumeNumber ?? 1,
 		},
 		{ userId, request },
 	)
+
+	// Update user properties for retention analysis
+	const isFirstResume = (resumeNumber ?? 1) === 1
+	const isSecondResume = resumeNumber === 2
+
+	identifyUser(userId, {
+		lifetime_resumes: resumeNumber ?? 1,
+		last_active_at: new Date().toISOString(),
+		...(isFirstResume && { first_resume_at: new Date().toISOString() }),
+		...(isSecondResume && { has_multi_resume: true }),
+	})
 }
 
 /**
- * Track job created event
+ * Track job created event with job number for multi-job analysis
+ * @param jobNumber - The nth job this user has created (1 = first, 2 = second, etc.)
  */
 export function trackJobCreated(
 	userId: string,
@@ -357,6 +372,7 @@ export function trackJobCreated(
 	jobId: string,
 	hasCompany: boolean,
 	request?: Request,
+	jobNumber?: number,
 ): void {
 	trackServerEvent(
 		'job_created',
@@ -364,9 +380,19 @@ export function trackJobCreated(
 			source,
 			job_id: jobId,
 			has_company: hasCompany,
+			job_number: jobNumber ?? 1,
 		},
 		{ userId, request },
 	)
+
+	// Update user properties for retention analysis
+	const isSecondJob = jobNumber === 2
+
+	identifyUser(userId, {
+		lifetime_jobs: jobNumber ?? 1,
+		last_active_at: new Date().toISOString(),
+		...(isSecondJob && { has_multi_job: true }),
+	})
 }
 
 /**
@@ -583,7 +609,7 @@ export function trackSubscriptionCreated(
 }
 
 /**
- * Track subscription canceled event
+ * @deprecated Use trackSubscriptionCanceledWithContext for full churn analysis
  */
 export function trackSubscriptionCanceled(
 	userId: string,
@@ -591,20 +617,17 @@ export function trackSubscriptionCanceled(
 	daysActive: number,
 	reason?: string,
 ): void {
-	trackServerEvent(
-		'subscription_canceled',
-		{
-			plan,
-			days_active: daysActive,
-			reason,
-		},
-		{ userId },
+	// Forward to the new function with default values
+	trackSubscriptionCanceledWithContext(
+		userId,
+		plan,
+		daysActive,
+		0, // lifetimeAiOps - unknown in legacy calls
+		0, // lifetimeDownloads - unknown in legacy calls
+		false, // cancelAtPeriodEnd - unknown in legacy calls
+		reason,
+		undefined, // feedback
 	)
-
-	// Update user properties
-	identifyUser(userId, {
-		subscription_status: 'canceled',
-	})
 }
 
 /**
@@ -688,4 +711,104 @@ export function trackOutreachGenerated(
 		},
 		{ userId, request },
 	)
+}
+
+// ============================================================================
+// RETENTION EVENT HELPERS (PMF-critical)
+// ============================================================================
+
+/**
+ * Track when user edits AI-generated content after accepting it
+ * Quality signal: high edit % = AI didn't help much
+ */
+export function trackAiOutputEdited(
+	userId: string,
+	experienceId: string,
+	editType: 'tailor' | 'generate',
+	timeSinceAcceptMs: number,
+	originalContent: string,
+	editedContent: string,
+	resumeId?: string,
+	request?: Request,
+): void {
+	// Calculate change percentage using simple diff
+	const originalLength = originalContent.length
+	const editedLength = editedContent.length
+	const changedPercentage = calculateChangePercentage(originalContent, editedContent)
+
+	trackServerEvent(
+		'ai_output_edited',
+		{
+			experience_id: experienceId,
+			edit_type: editType,
+			time_since_accept_ms: timeSinceAcceptMs,
+			original_length: originalLength,
+			edited_length: editedLength,
+			changed_percentage: changedPercentage,
+			resume_id: resumeId,
+		},
+		{ userId, request },
+	)
+}
+
+/**
+ * Calculate percentage of content that changed
+ * Uses simple length-based heuristic + character diff
+ */
+function calculateChangePercentage(original: string, edited: string): number {
+	if (original === edited) return 0
+	if (original.length === 0) return 100
+
+	// Simple approach: compare character-by-character matches
+	const maxLen = Math.max(original.length, edited.length)
+	let matches = 0
+
+	const originalLower = original.toLowerCase()
+	const editedLower = edited.toLowerCase()
+
+	// Count matching characters at same positions
+	const minLen = Math.min(original.length, edited.length)
+	for (let i = 0; i < minLen; i++) {
+		if (originalLower[i] === editedLower[i]) {
+			matches++
+		}
+	}
+
+	const similarity = matches / maxLen
+	const changePercentage = Math.round((1 - similarity) * 100)
+
+	return Math.min(100, Math.max(0, changePercentage))
+}
+
+/**
+ * Track subscription canceled with full churn context
+ */
+export function trackSubscriptionCanceledWithContext(
+	userId: string,
+	plan: 'weekly' | 'monthly',
+	daysActive: number,
+	lifetimeAiOps: number,
+	lifetimeDownloads: number,
+	cancelAtPeriodEnd: boolean,
+	reason?: string,
+	feedback?: string,
+): void {
+	trackServerEvent(
+		'subscription_canceled',
+		{
+			plan,
+			days_active: daysActive,
+			lifetime_ai_operations: lifetimeAiOps,
+			lifetime_downloads: lifetimeDownloads,
+			cancel_at_period_end: cancelAtPeriodEnd,
+			reason,
+			feedback,
+		},
+		{ userId },
+	)
+
+	// Update user properties
+	identifyUser(userId, {
+		subscription_status: 'canceled',
+	})
 }

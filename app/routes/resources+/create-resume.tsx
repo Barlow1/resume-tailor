@@ -23,6 +23,7 @@ import {
 	trackResumeCreated,
 } from '~/lib/analytics.server.ts'
 import { tryActivateUser } from '~/lib/activation.server.ts'
+import { trackUserActivity } from '~/lib/retention.server.ts'
 
 const MAX_SIZE = 1024 * 1024 * 10 // 10MB
 
@@ -174,8 +175,14 @@ export async function action({ request }: DataFunctionArgs) {
 					request,
 				)
 
-				// Track resume created
-				trackResumeCreated(userId, 'upload', resume.id, request)
+				// Get resume count for resume_number (includes the one just created)
+				const resumeCount = await prisma.builderResume.count({ where: { userId } })
+
+				// Track resume created with resume_number for multi-resume analysis
+				trackResumeCreated(userId, 'upload', resume.id, request, resumeCount)
+
+				// Track return visit if applicable
+				await trackUserActivity({ userId, trigger: 'resume_upload', request })
 
 				// Check for activation
 				await tryActivateUser(userId, 'resume_created', request)
@@ -315,6 +322,15 @@ export async function action({ request }: DataFunctionArgs) {
 			success: true,
 			userId: userId || undefined,
 		})
+
+		// PostHog: Track resume created with resume_number for multi-resume analysis
+		if (userId) {
+			const resumeCount = await prisma.builderResume.count({ where: { userId } })
+			trackResumeCreated(userId, 'clone', builderResume.id, request, resumeCount)
+
+			// Track return visit if applicable
+			await trackUserActivity({ userId, trigger: 'resume_clone', request })
+		}
 
 		return redirectDocument('/builder', {
 			headers: {

@@ -6,7 +6,7 @@ import {
 	deactivateSubscription,
 } from '~/utils/subscription.server.ts'
 import { PrismaClient } from '@prisma/client'
-import { trackTrialStarted, trackSubscriptionCreated } from '~/lib/analytics.server.ts'
+import { trackTrialStarted, trackSubscriptionCreated, trackSubscriptionCanceledWithContext } from '~/lib/analytics.server.ts'
 
 interface StripeEvent {
 	type: string
@@ -98,6 +98,76 @@ async function handleCanceledSubscription(deletedSubscription: Stripe.Subscripti
 		deletedSubscription.id,
 		'id must be present on the subscription deleted webhook',
 	)
+
+	const prisma = new PrismaClient()
+	try {
+		await prisma.$connect()
+
+		// Find subscription to get user ID and plan details
+		const subscription = await prisma.subscription.findUnique({
+			where: { stripeSubscriptionId: deletedSubscription.id },
+			select: {
+				id: true,
+				ownerId: true,
+				stripePriceId: true,
+			},
+		})
+
+		if (subscription?.ownerId) {
+			// Get user's lifetime activity for churn correlation
+			const progress = await prisma.gettingStartedProgress.findUnique({
+				where: { ownerId: subscription.ownerId },
+				select: {
+					tailorCount: true,
+					generateCount: true,
+					downloadCount: true,
+				},
+			})
+
+			const lifetimeAiOps = (progress?.tailorCount ?? 0) + (progress?.generateCount ?? 0)
+			const lifetimeDownloads = progress?.downloadCount ?? 0
+
+			// Calculate days active from subscription start
+			const subscriptionStart = deletedSubscription.start_date
+				? new Date(deletedSubscription.start_date * 1000)
+				: new Date()
+			const daysActive = Math.floor(
+				(Date.now() - subscriptionStart.getTime()) / (1000 * 60 * 60 * 24)
+			)
+
+			// Determine plan tier
+			const isWeekly = subscription.stripePriceId === process.env.STRIPE_PRICE_ID_WEEKLY
+			const planTier = isWeekly ? 'weekly' : 'monthly'
+
+			// Extract cancellation details from Stripe
+			// Stripe provides cancellation_details with reason and feedback
+			const cancellationDetails = deletedSubscription.cancellation_details
+			const reason = cancellationDetails?.reason ?? undefined
+			const feedback = cancellationDetails?.feedback ?? undefined
+			const cancelAtPeriodEnd = deletedSubscription.cancel_at_period_end ?? false
+
+			// Track with full churn context for PMF analysis
+			trackSubscriptionCanceledWithContext(
+				subscription.ownerId,
+				planTier as 'weekly' | 'monthly',
+				daysActive,
+				lifetimeAiOps,
+				lifetimeDownloads,
+				cancelAtPeriodEnd,
+				reason,
+				feedback,
+			)
+
+			console.log(`Tracked subscription cancellation for user ${subscription.ownerId}: ${reason || 'no reason'}`)
+		}
+	} catch (e) {
+		console.error('Error tracking subscription cancellation', e)
+		// Don't throw - we still want to deactivate the subscription
+	} finally {
+		await prisma.$disconnect()
+	}
+
+	// Always deactivate the subscription
 	await deactivateSubscription(deletedSubscription.id)
 }
 

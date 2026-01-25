@@ -112,12 +112,14 @@ export interface ResumeParsedEvent {
 export interface ResumeCreatedEvent {
 	method: 'upload' | 'scratch' | 'clone'
 	resume_id: string
+	resume_number: number // 1st, 2nd, 3rd resume - identifies power users
 }
 
 export interface JobCreatedEvent {
 	source: 'manual' | 'paste'
 	job_id: string
 	has_company: boolean
+	job_number: number // 1st, 2nd, 3rd job - identifies engaged users
 }
 
 export interface JobSelectedEvent {
@@ -226,8 +228,12 @@ export interface SubscriptionCreatedEvent {
 
 export interface SubscriptionCanceledEvent {
 	plan: 'weekly' | 'monthly'
-	reason?: string
+	reason?: string // from Stripe cancellation_details.reason
+	feedback?: string // from Stripe cancellation_details.feedback
 	days_active: number
+	cancel_at_period_end: boolean // true = will cancel at period end, false = immediate
+	lifetime_ai_operations: number // churn correlation signal
+	lifetime_downloads: number
 }
 
 // ============================================================================
@@ -285,6 +291,48 @@ export interface UserActivatedEvent {
 	activation_path: OnboardingPath | 'unknown'
 	resume_method: 'upload' | 'scratch' | 'clone'
 	first_ai_action: 'tailor' | 'generate'
+}
+
+// ============================================================================
+// RETENTION EVENTS (Server-side) - Critical for PMF measurement
+// ============================================================================
+
+/**
+ * Fired when user returns after 24h+ absence (but < 14 days)
+ * Key retention signal - who comes back?
+ */
+export interface UserReturnedEvent {
+	days_since_last_active: number
+	return_trigger: string // which action brought them back (e.g., 'builder_load', 'job_created')
+	sessions_count: number
+	is_subscribed: boolean
+	lifetime_ai_operations: number
+}
+
+/**
+ * Fired when user returns after 14+ days absence
+ * Resurrection signal - powerful for win-back analysis
+ */
+export interface UserResurrectedEvent {
+	days_since_last_active: number
+	return_trigger: string
+	was_previously_activated: boolean
+	is_subscribed: boolean
+	lifetime_ai_operations: number
+}
+
+/**
+ * Fired when user edits AI-generated content after accepting it
+ * Quality signal - did the AI actually help or did they rewrite it?
+ */
+export interface AiOutputEditedEvent {
+	experience_id: string
+	edit_type: 'tailor' | 'generate'
+	time_since_accept_ms: number
+	original_length: number
+	edited_length: number
+	changed_percentage: number // 0-100, higher = more editing needed
+	resume_id?: string
 }
 
 // ============================================================================
@@ -346,6 +394,11 @@ export interface AnalyticsEventMap {
 
 	// Activation
 	user_activated: UserActivatedEvent
+
+	// Retention (PMF signals)
+	user_returned: UserReturnedEvent
+	user_resurrected: UserResurrectedEvent
+	ai_output_edited: AiOutputEditedEvent
 }
 
 // Type for event names
@@ -359,20 +412,45 @@ export type EventProperties<T extends AnalyticsEventName> = AnalyticsEventMap[T]
 // ============================================================================
 
 export interface UserProperties {
+	// Identity
 	email?: string
 	name?: string
 	username?: string
 	created_at?: string
+
+	// Subscription
 	plan_type?: 'free' | 'trial' | 'paid'
 	subscription_status?: 'active' | 'canceled' | 'expired' | 'none'
+
+	// Activation timestamps
+	activated_at?: string
+	first_resume_at?: string
+	first_ai_action_at?: string
+	first_download_at?: string
+
+	// Lifetime counters (INCREMENT these, don't just set once)
+	lifetime_resumes?: number
+	lifetime_jobs?: number
+	lifetime_ai_operations?: number // tailor + generate combined
+	lifetime_downloads?: number
+	lifetime_analyses?: number
+
+	// Activity tracking (for retention cohorts)
+	last_active_at?: string // UPDATE on every authenticated action
+	days_active?: number // unique calendar days with activity
+	sessions_count?: number // total sessions
+
+	// Engagement depth (for power user identification)
+	has_multi_resume?: boolean // created 2+ resumes
+	has_multi_job?: boolean // created 2+ jobs
+	max_ai_ops_single_resume?: number // most AI operations on one resume
+
+	// Legacy (keep for backwards compatibility)
 	resume_count?: number
 	job_count?: number
 	tailor_count?: number
 	generate_count?: number
 	download_count?: number
-	activated_at?: string
-	first_resume_at?: string
-	first_ai_action_at?: string
 }
 
 // ============================================================================

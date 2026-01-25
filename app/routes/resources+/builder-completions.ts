@@ -18,7 +18,10 @@ import {
 import {
 	trackAiTailorStarted,
 	trackAiTailorCompleted,
+	identifyUser,
 } from '~/lib/analytics.server.ts'
+import { trackUserActivity } from '~/lib/retention.server.ts'
+import { tryActivateUser } from '~/lib/activation.server.ts'
 
 const builderCompletionSchema = z.object({
 	experience: z.string().optional(),
@@ -134,6 +137,23 @@ export async function action({ request }: DataFunctionArgs) {
 				parsedResumeData.id ?? undefined,
 				parsedResumeData.jobId ?? undefined,
 			)
+
+			// Update lifetime_ai_operations user property for retention analysis
+			const progress = await prisma.gettingStartedProgress.findUnique({
+				where: { ownerId: userId },
+				select: { tailorCount: true, generateCount: true },
+			})
+			const totalAiOps = (progress?.tailorCount ?? 0) + (progress?.generateCount ?? 0)
+			identifyUser(userId, {
+				lifetime_ai_operations: totalAiOps,
+				last_active_at: new Date().toISOString(),
+			})
+
+			// Track return visit if applicable
+			await trackUserActivity({ userId, trigger: 'ai_tailor', request })
+
+			// Check for activation
+			await tryActivateUser(userId, 'ai_tailor_completed', request)
 		} catch (error: any) {
 			// Track failure
 			await trackTailorCompleted({
@@ -276,6 +296,23 @@ export async function action({ request }: DataFunctionArgs) {
 				undefined, // tokensUsed
 				request,
 			)
+
+			// Update lifetime_ai_operations user property for retention analysis
+			const progress = await prisma.gettingStartedProgress.findUnique({
+				where: { ownerId: userId },
+				select: { tailorCount: true, generateCount: true },
+			})
+			const totalAiOps = (progress?.tailorCount ?? 0) + (progress?.generateCount ?? 0)
+			identifyUser(userId, {
+				lifetime_ai_operations: totalAiOps,
+				last_active_at: new Date().toISOString(),
+			})
+
+			// Track return visit if applicable
+			await trackUserActivity({ userId, trigger: 'ai_tailor', request })
+
+			// Check for activation
+			await tryActivateUser(userId, 'ai_tailor_completed', request)
 		} catch (error: any) {
 			// Track failure
 			await trackTailorCompleted({
