@@ -260,6 +260,7 @@ model BuilderResume {
   nameColor       String?
   font            String?
   layout          String?
+  textSize        String?
   visibleSections BuilderVisibleSections?
   user            User?                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   job             Job?                    @relation(fields: [jobId], references: [id], onDelete: Cascade)

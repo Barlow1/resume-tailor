@@ -150,7 +150,7 @@ export function ResumeScoreCard({
 					{hasJobDescription && (
 						<div className="mt-4 pt-3 border-t">
 							<Link
-								to="/analyzer"
+								to="/analyze"
 								className="flex items-center gap-1.5 text-xs text-brand-700 hover:text-brand-800 dark:text-brand-400 dark:hover:text-brand-300 transition-colors"
 							>
 								<ArrowTopRightOnSquareIcon className="h-3.5 w-3.5" />

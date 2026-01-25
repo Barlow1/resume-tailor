@@ -66,6 +66,7 @@ import {
 	type BuilderSkill,
 	getBuilderResume,
 	type ResumeData,
+	type TextSize,
 } from '~/utils/builder-resume.server.ts'
 import { ImageCropper } from '~/components/image-cropper.tsx'
 import { CreateJobModal } from '~/components/create-job-modal.tsx'
@@ -93,6 +94,7 @@ import {
 } from '~/components/ui/tooltip.tsx'
 import { FontSelector } from '~/components/font-selector.tsx'
 import { LayoutSelector } from '~/components/layout-selector.tsx'
+import { TextSizeSelector } from '~/components/text-size-selector.tsx'
 import { ResumeScoreCard } from '~/components/resume-score-card.tsx'
 import { ImprovementChecklist } from '~/components/improvement-checklist.tsx'
 import { useResumeScore } from '~/hooks/use-resume-score.ts'
@@ -170,7 +172,7 @@ const getDefaultFormData = (): ResumeData => {
 			skillsHeader: 'Skills',
 			hobbiesHeader: 'Interests & Activities',
 			educationHeader: 'Education',
-			aboutHeader: '',
+			aboutHeader: 'About Me',
 			detailsHeader: 'Personal Details',
 		},
 		visibleSections: {
@@ -184,18 +186,15 @@ const getDefaultFormData = (): ResumeData => {
 		},
 		font: 'font-crimson',
 		layout: 'traditional',
+		textSize: 'medium',
 	}
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
 	const userId = await getUserId(request)
 	const cookieHeader = request.headers.get('Cookie')
-	const {
-		resumeId,
-		subscribe,
-		downloadPDFRequested,
-		resumeUploadedTracking,
-	} = (await resumeCookie.parse(cookieHeader)) || {}
+	const { resumeId, subscribe, downloadPDFRequested, resumeUploadedTracking } =
+		(await resumeCookie.parse(cookieHeader)) || {}
 
 	let savedData = getDefaultFormData()
 
@@ -240,6 +239,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 				},
 				font: resume.font || 'font-crimson',
 				layout: resume.layout || 'traditional',
+				textSize: (resume.textSize as TextSize) || 'medium',
 			}
 		}
 	}
@@ -720,7 +720,9 @@ export default function ResumeBuilder() {
 	const pricingFetcher = useFetcher()
 
 	// Track pdfFetcher.data reference to detect actual new data
-	const lastPdfDataRef = useRef<{ fileData: string; fileType: string } | null>(null)
+	const lastPdfDataRef = useRef<{ fileData: string; fileType: string } | null>(
+		null,
+	)
 
 	useEffect(() => {
 		if (!pdfFetcher.data || pdfFetcher.state !== 'idle') {
@@ -1443,7 +1445,11 @@ export default function ResumeBuilder() {
 
 	// Track successful downloads for onboarding
 	useEffect(() => {
-		if (pdfFetcher.data && pdfFetcher.state === 'idle' && !onboarding.isComplete) {
+		if (
+			pdfFetcher.data &&
+			pdfFetcher.state === 'idle' &&
+			!onboarding.isComplete
+		) {
 			// Track download during onboarding
 			trackLegacyEvent('onboarding_download_clicked', {
 				userId,
@@ -1451,7 +1457,13 @@ export default function ResumeBuilder() {
 				category: 'Onboarding',
 			})
 		}
-	}, [pdfFetcher.data, pdfFetcher.state, onboarding.isComplete, userId, formData.id])
+	}, [
+		pdfFetcher.data,
+		pdfFetcher.state,
+		onboarding.isComplete,
+		userId,
+		formData.id,
+	])
 
 	// Track when bullet AI spotlight is shown
 	useEffect(() => {
@@ -1467,7 +1479,9 @@ export default function ResumeBuilder() {
 
 	// Inside ResumeBuilder component, add state for font
 	// Default to Crimson Pro for professional look
-	const [selectedFont, setSelectedFont] = useState(formData.font ?? 'font-crimson')
+	const [selectedFont, setSelectedFont] = useState(
+		formData.font ?? 'font-crimson',
+	)
 
 	// Text size presets - based on professional resume specifications
 	// Small: exact specs from user (22pt name, 10pt body, 12pt company/degree)
@@ -1526,11 +1540,10 @@ export default function ResumeBuilder() {
 		'--resume-item-gap': '2pt',
 		'--resume-bullet-gap': '2pt',
 	}
-
-	type TextSize = keyof typeof TEXT_SIZE_PRESETS
-
 	// Default to medium text with compact spacing for professional single-page look
-	const [textSize, setTextSize] = useState<TextSize>('medium')
+	const [textSize, setTextSize] = useState<TextSize>(
+		(savedData.textSize as TextSize) || 'medium',
+	)
 
 	// State to dismiss warning banner
 	const [warningDismissed, setWarningDismissed] = useState(false)
@@ -1580,6 +1593,16 @@ export default function ResumeBuilder() {
 		setFormData(newFormData)
 		debouncedSave(newFormData)
 		rerenderRef.current = true
+	}
+
+	const handleTextSizeChange = (newTextSize: TextSize) => {
+		setTextSize(newTextSize as TextSize)
+		const newFormData = {
+			...formData,
+			textSize: newTextSize,
+		}
+		setFormData(newFormData)
+		debouncedSave(newFormData)
 	}
 
 	// ResizeObserver for page frame scaling and overflow detection
@@ -1686,7 +1709,11 @@ export default function ResumeBuilder() {
 									handleAddJob={() => setShowCreateJob(true)}
 									selectedJob={selectedJob}
 									setSelectedJob={handleJobChange}
-									isActiveStep={(gettingStartedProgress?.downloadCount ?? 0) === 0 && !!(formData.name || formData.role) && !selectedJob}
+									isActiveStep={
+										(gettingStartedProgress?.downloadCount ?? 0) === 0 &&
+										!!(formData.name || formData.role) &&
+										!selectedJob
+									}
 								/>
 								{selectedJob ? (
 									<div id="tailor-button">
@@ -1763,17 +1790,10 @@ export default function ResumeBuilder() {
 									selectedFont={selectedFont}
 									onFontChange={handleFontChange}
 								/>
-								{/* Text Size Control */}
-								<select
-									value={textSize}
-									onChange={(e) => setTextSize(e.target.value as TextSize)}
-									className="rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-700 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-									title="Text Size"
-								>
-									<option value="small">Small</option>
-									<option value="medium">Medium</option>
-									<option value="large">Large</option>
-								</select>
+								<TextSizeSelector
+									selectedTextSize={textSize}
+									onTextSizeChange={handleTextSizeChange}
+								/>
 
 								<SectionVisibilityMenu
 									sections={[
@@ -1833,7 +1853,7 @@ export default function ResumeBuilder() {
 									<StatusButton
 										type="button"
 										onClick={handleClickDownloadPDF}
-										className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-purple-700"
+										className="flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-800"
 										status={
 											pdfFetcher.state === 'submitting'
 												? 'pending'
@@ -1893,1109 +1913,1223 @@ export default function ResumeBuilder() {
 							</div>
 						)}
 
-
 						{/* Main content area with resume editor and gamification sidebar */}
 						<div className="flex gap-6">
 							{/* Left: Resume Editor */}
 							<div className="flex-1">
-						<Form key={formData.id} method="post">
-							{/* Hidden inputs to store the actual form data */}
-							{Object.entries(formData)
-								.filter(([key]) => key !== 'experiences')
-								.map(([key, value]) => (
+								<Form key={formData.id} method="post">
+									{/* Hidden inputs to store the actual form data */}
+									{Object.entries(formData)
+										.filter(([key]) => key !== 'experiences')
+										.map(([key, value]) => (
+											<input
+												key={key}
+												type="hidden"
+												name={key}
+												value={
+													value === null || value === undefined
+														? ''
+														: typeof value === 'object'
+														? JSON.stringify(value)
+														: String(value)
+												}
+											/>
+										))}
 									<input
-										key={key}
 										type="hidden"
-										name={key}
-										value={
-											value === null || value === undefined
-												? ''
-												: typeof value === 'object'
-													? JSON.stringify(value)
-													: String(value)
-										}
+										name="experiences"
+										value={JSON.stringify(formData.experiences)}
 									/>
-								))}
-							<input
-								type="hidden"
-								name="experiences"
-								value={JSON.stringify(formData.experiences)}
-							/>
 
-							{/* Page Frame Container - scales to fit viewport */}
-							<div
-								ref={pageFrameContainerRef}
-								className="relative w-full"
-							>
-								{/* Overflow Warning Badge */}
-								{contentOverflows && !warningDismissed && (
-									<div className="absolute -top-2 left-1/2 z-10 -translate-x-1/2 transform">
-										<div className="flex items-center gap-2 rounded-full bg-amber-500 px-4 py-2 text-sm font-medium text-white shadow-lg">
-											<ExclamationTriangleIcon className="h-4 w-4" />
-											<span>Page {pageCount} of {pageCount} - Content exceeds 1 page</span>
-											<button
-												type="button"
-												onClick={() => setWarningDismissed(true)}
-												className="ml-1 rounded-full p-0.5 hover:bg-amber-600"
-												title="Dismiss"
-											>
-												<XMarkIcon className="h-4 w-4" />
-											</button>
-										</div>
-									</div>
-								)}
+									{/* Page Frame Container - scales to fit viewport */}
+									<div ref={pageFrameContainerRef} className="relative w-full">
+										{/* Overflow Warning Badge */}
+										{contentOverflows && !warningDismissed && (
+											<div className="absolute -top-2 left-1/2 z-10 -translate-x-1/2 transform">
+												<div className="flex items-center gap-2 rounded-full bg-amber-500 px-4 py-2 text-sm font-medium text-white shadow-lg">
+													<ExclamationTriangleIcon className="h-4 w-4" />
+													<span>
+														Content exceeds 1 page - {pageCount} pages
+													</span>
+													<button
+														type="button"
+														onClick={() => setWarningDismissed(true)}
+														className="ml-1 rounded-full p-0.5 hover:bg-amber-600"
+														title="Dismiss"
+													>
+														<XMarkIcon className="h-4 w-4" />
+													</button>
+												</div>
+											</div>
+										)}
 
-								{/* Scaled Page Frame - infinite canvas that grows with content */}
-								<div
-									className="mx-auto origin-top"
-									style={{
-										width: PAGE_WIDTH,
-										transform: `scale(${pageScale})`,
-										transformOrigin: 'top center',
-									}}
-								>
-									{/* Resume Paper - grows to fit all content */}
-									<div
-										ref={resumeContentRef}
-										id="resume-content"
-										className={`relative w-full bg-white p-12 shadow-[0_4px_20px_rgba(0,0,0,0.15)] ${
-											isModalDisplaying ? 'scale-90' : ''
-										} ${selectedFont}`}
-										style={{
-											boxShadow: '0 4px 20px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05)',
-											minHeight: CONTENT_HEIGHT + 96, // Minimum 1 page height with padding
-											...getResumeStyles(),
-										}}
-									>
-										{/* Page boundary markers - only show when content exceeds 1 page */}
-										{pageCount > 1 && Array.from({ length: pageCount - 1 }).map((_, i) => (
+										{/* Scaled Page Frame - infinite canvas that grows with content */}
+										<div
+											className="mx-auto origin-top"
+											style={{
+												width: PAGE_WIDTH,
+												transform: `scale(${pageScale})`,
+												transformOrigin: 'top center',
+											}}
+										>
+											{/* Resume Paper - grows to fit all content */}
 											<div
-												key={i}
-												className="preview-only pointer-events-none absolute left-0 right-0 z-20"
+												ref={resumeContentRef}
+												id="resume-content"
+												className={`relative w-full bg-white p-12 shadow-[0_4px_20px_rgba(0,0,0,0.15)] ${
+													isModalDisplaying ? 'scale-90' : ''
+												} ${selectedFont}`}
 												style={{
-													top: `${(i + 1) * CONTENT_HEIGHT + 48}px`, // 48px = p-12 padding
-													marginLeft: '-48px',
-													marginRight: '-48px',
-													width: 'calc(100% + 96px)',
+													boxShadow:
+														'0 4px 20px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05)',
+													minHeight: CONTENT_HEIGHT + 96, // Minimum 1 page height with padding
+													...getResumeStyles(),
 												}}
 											>
-												<div className="relative flex items-center">
-													<div className="flex-1 border-t border-dashed border-gray-300" />
-													<span className="px-3 text-[10px] text-gray-400 bg-white">
-														Page {i + 1} | Page {i + 2}
-													</span>
-													<div className="flex-1 border-t border-dashed border-gray-300" />
-												</div>
-											</div>
-										))}
-								{selectedLayout === 'modern' ? (
-									<div className="grid grid-cols-[250px_1fr] gap-4">
-										{/* Left Pane */}
-										<div className="pr-4" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--resume-section-gap)' }}>
-											{/* Image Upload */}
-											{formData.visibleSections?.photo && (
-												<div>
-													<input
-														type="file"
-														accept="image/*"
-														className="hidden"
-														onChange={handleImageUpload}
-														id="image-upload"
-													/>
-													<label
-														htmlFor="image-upload"
-														className="block cursor-pointer"
-													>
+												{/* Page boundary markers - only show when content exceeds 1 page */}
+												{pageCount > 1 &&
+													Array.from({ length: pageCount - 1 }).map((_, i) => (
 														<div
-															className={`aspect-square w-full overflow-hidden rounded-full ${
-																formData.image
-																	? ''
-																	: 'border-2 border-dashed border-gray-300 bg-gray-50 transition hover:bg-gray-100'
-															}`}
+															key={i}
+															className="preview-only pointer-events-none absolute left-0 right-0 z-20"
+															style={{
+																top: `${(i + 1) * CONTENT_HEIGHT + 48}px`, // 48px = p-12 padding
+																marginLeft: '-48px',
+																marginRight: '-48px',
+																width: 'calc(100% + 96px)',
+															}}
 														>
-															{formData.image ? (
-																<img
-																	src={formData.image}
-																	alt="Profile"
-																	className="h-full w-full object-cover"
-																/>
-															) : (
-																<div className="flex h-full flex-col items-center justify-center gap-2 p-4">
-																	<UserCircleIcon className="h-16 w-16 text-gray-400" />
-																	<span className="text-sm text-gray-500">
-																		Click to upload photo
-																	</span>
-																</div>
-															)}
-														</div>
-													</label>
-												</div>
-											)}
-
-											{/* About Me */}
-											{formData.visibleSections?.about && (
-												<div className="rounded border-dashed border-gray-400 hover:border">
-													<EditableContent
-														content={formData.headers?.aboutHeader}
-														onInput={e =>
-															handleHeaderEdit(
-																e.currentTarget.innerText,
-																'aboutHeader',
-															)
-														}
-														className="resume-section-header text-gray-700"
-														placeholder="About Me"
-														rerenderRef={rerenderRef}
-													/>
-													<EditableContent
-														multiline
-														content={formData.about}
-														onInput={e =>
-															handleAboutEdit(
-																e.currentTarget.innerText,
-																'about',
-															)
-														}
-														className="resume-body min-h-[150px] p-3 text-gray-600"
-														placeholder="Write a brief introduction about yourself..."
-														rerenderRef={rerenderRef}
-													/>
-												</div>
-											)}
-
-											{/* Personal Details */}
-											{formData.visibleSections?.personalDetails && (
-												<div>
-													<EditableContent
-														content={formData.headers?.detailsHeader}
-														onInput={e =>
-															handleHeaderEdit(
-																e.currentTarget.innerText,
-																'detailsHeader',
-															)
-														}
-														className="resume-section-header text-gray-700"
-														placeholder="Personal Details"
-														rerenderRef={rerenderRef}
-													/>
-													<div className="space-y-1">
-														<div className="flex items-center gap-2">
-															<MapPinIcon className="h-4 w-4 text-gray-400" />
-															<EditableContent
-																content={formData.location}
-																onInput={e =>
-																	handleFieldEdit(
-																		e.currentTarget.innerText,
-																		'location',
-																	)
-																}
-																className="flex-1 rounded p-1 resume-body text-gray-600 outline-none transition"
-																placeholder="Location"
-																rerenderRef={rerenderRef}
-															/>
-														</div>
-														<div className="flex items-center gap-2">
-															<EnvelopeIcon className="h-4 w-4 text-gray-400" />
-															<EditableContent
-																content={formData.email}
-																onInput={e =>
-																	handleFieldEdit(
-																		e.currentTarget.innerText,
-																		'email',
-																	)
-																}
-																className="flex-1 rounded p-1 resume-body text-gray-600 outline-none transition"
-																placeholder="Email"
-																rerenderRef={rerenderRef}
-															/>
-														</div>
-														<div className="flex items-center gap-2">
-															<PhoneIcon className="h-4 w-4 text-gray-400" />
-															<EditableContent
-																content={formData.phone}
-																onInput={e =>
-																	handleFieldEdit(
-																		e.currentTarget.innerText,
-																		'phone',
-																	)
-																}
-																className="flex-1 rounded p-1 resume-body text-gray-600 outline-none transition"
-																placeholder="Phone"
-																rerenderRef={rerenderRef}
-															/>
-														</div>
-														<div className="flex items-center gap-2">
-															<LinkIcon className="h-4 w-4 text-gray-400" />
-															<EditableContent
-																content={formData.website}
-																onInput={e =>
-																	handleFieldEdit(
-																		e.currentTarget.innerText,
-																		'website',
-																	)
-																}
-																className="flex-1 rounded p-1 resume-body text-gray-600 outline-none transition"
-																placeholder="Website"
-																rerenderRef={rerenderRef}
-															/>
-														</div>
-													</div>
-												</div>
-											)}
-										</div>
-
-										{/* Right Pane */}
-										<div>
-											<EditableContent
-												content={formData.name}
-												onInput={e =>
-													handleFieldEdit(e.currentTarget.innerText, 'name')
-												}
-												className="resume-name mb-1 rounded p-1 outline-none transition"
-												placeholder="Your Name"
-												rerenderRef={rerenderRef}
-												style={{ color: nameColor }}
-											/>
-
-											<EditableContent
-												content={formData.role}
-												onInput={e =>
-													handleFieldEdit(e.currentTarget.innerText, 'role')
-												}
-												className="resume-role mb-2 rounded p-1 text-gray-600 outline-none transition"
-												placeholder="Your Role (e.g. Frontend Developer)"
-												rerenderRef={rerenderRef}
-											/>
-
-											<div className="resume-section-gap">
-												{formData.visibleSections?.experience && (
-													<EditableContent
-														content={formData.headers?.experienceHeader}
-														onInput={e =>
-															handleHeaderEdit(
-																e.currentTarget.innerText,
-																'experienceHeader',
-															)
-														}
-														className="resume-section-header text-gray-700 outline-none"
-														placeholder="Professional Experience"
-													/>
-												)}
-
-												<div className="space-y-2">
-													{formData.visibleSections?.experience &&
-													formData.experiences ? (
-														<SortableContext
-															items={formData.experiences.map(exp => exp.id!)}
-															strategy={verticalListSortingStrategy}
-														>
-															{formData.experiences?.map((exp, expIndex) => (
-																<SortableExperience
-																	key={exp.id}
-																	experience={exp}
-																	onExperienceEdit={handleExperienceEdit}
-																	onRemoveExperience={removeExperience}
-																	onAddExperience={addExperience}
-																	onAIClick={handleAIClick}
-																	onAddBullet={addBulletPoint}
-																	onRemoveBullet={removeBulletPoint}
-																	onBulletEdit={handleBulletPointEdit}
-																	rerenderRef={rerenderRef}
-																	experienceIndex={expIndex}
-																/>
-															))}
-														</SortableContext>
-													) : null}
-												</div>
-											</div>
-
-											<div className="resume-section-gap">
-												{formData.visibleSections?.education && (
-													<EditableContent
-														content={formData.headers?.educationHeader}
-														onInput={e =>
-															handleHeaderEdit(
-																e.currentTarget.innerText,
-																'educationHeader',
-															)
-														}
-														className="resume-section-header text-gray-700 outline-none"
-														placeholder="Education"
-													/>
-												)}
-												<div className="space-y-2">
-													{formData.visibleSections?.education &&
-													formData.education?.length === 0 ? (
-														<>
-														<div className="rounded border border-dashed border-gray-300 p-4 text-center text-gray-500">
-															Click "Add Education" to add your educational
-															background
-														</div>
-														<Button onClick={() => addEducation()}>Add Education</Button>
-														</>
-													) : formData.visibleSections?.education &&
-													  formData.education ? (
-														<SortableContext
-															items={formData.education.map(edu => edu.id!)!}
-															strategy={verticalListSortingStrategy}
-														>
-															{formData.education?.map(edu => (
-																<SortableEducation
-																	key={edu.id}
-																	education={edu}
-																	onEducationEdit={handleEducationEdit}
-																	onRemoveEducation={removeEducation}
-																	onAddEducation={addEducation}
-																/>
-															))}
-														</SortableContext>
-													) : null}
-												</div>
-											</div>
-
-											<div className="resume-section-gap">
-												{formData.visibleSections?.skills && (
-													<>
-														<EditableContent
-															content={formData.headers?.skillsHeader}
-															onInput={e =>
-																handleHeaderEdit(
-																	e.currentTarget.innerText,
-																	'skillsHeader',
-																)
-															}
-															className="resume-section-header text-gray-700 outline-none"
-															placeholder="Skills & Expertise"
-														/>
-
-														<div>
-															{formData.skills?.map(skill => (
-																<div
-																	key={skill.id}
-																	className="group relative"
-																	style={{ marginTop: 'var(--resume-bullet-gap)' }}
-																>
-																	<EditableContent
-																		content={skill.name}
-																		onInput={e =>
-																			handleSkillEdit(
-																				e.currentTarget.innerText,
-																				skill.id!,
-																				'name',
-																			)
-																		}
-																		onEnter={() => addSkill()}
-																		className="resume-body text-gray-700 outline-none"
-																		placeholder="Category: Skill1, Skill2, Skill3"
-																		id={`skill-${skill.id}`}
-																	/>
-																	<div className="preview-only absolute -right-4 top-0 hidden gap-1 group-hover:flex">
-																		<button
-																			type="button"
-																			onClick={() => removeSkill(skill.id!)}
-																			className="text-gray-400 hover:text-gray-600"
-																		>
-																			<TrashIcon className="h-3 w-3" />
-																		</button>
-																		<button
-																			type="button"
-																			onClick={() => addSkill()}
-																			className="text-gray-400 hover:text-gray-600"
-																		>
-																			<PlusIcon className="h-3 w-3" />
-																		</button>
-																	</div>
-																</div>
-															))}
-														</div>
-													</>
-												)}
-											</div>
-
-											<div className="resume-section-gap">
-												{formData.visibleSections?.hobbies && (
-													<>
-														<EditableContent
-															content={formData.headers?.hobbiesHeader}
-															onInput={e =>
-																handleHeaderEdit(
-																	e.currentTarget.innerText,
-																	'hobbiesHeader',
-																)
-															}
-															className="resume-section-header text-gray-700 outline-none"
-															placeholder="Interests & Activities"
-															rerenderRef={rerenderRef}
-														/>
-														<div>
-															{formData.hobbies?.map((hobby, index) => (
-																<span
-																	key={hobby.id}
-																	className="group relative inline"
-																>
-																	<EditableContent
-																		content={hobby.name}
-																		onInput={e =>
-																			handleHobbyEdit(
-																				e.currentTarget.innerText,
-																				hobby.id!,
-																				'name',
-																			)
-																		}
-																		onEnter={() => addHobby()}
-																		className="resume-body text-gray-700 inline"
-																		placeholder="Interest"
-																		id={`hobby-${hobby.id}`}
-																	/>
-																	{index < (formData.hobbies?.length ?? 0) - 1 && (
-																		<span className="resume-body text-gray-700">, </span>
-																	)}
-																	<span className="preview-only hidden gap-1 group-hover:inline-flex">
-																		<button
-																			type="button"
-																			onClick={() => removeHobby(hobby.id!)}
-																			className="ml-1 text-gray-400 hover:text-gray-600"
-																		>
-																			<TrashIcon className="h-3 w-3" />
-																		</button>
-																		<button
-																			type="button"
-																			onClick={() => addHobby()}
-																			className="text-gray-400 hover:text-gray-600"
-																		>
-																			<PlusIcon className="h-3 w-3" />
-																		</button>
-																	</span>
+															<div className="relative flex items-center">
+																<div className="flex-1 border-t border-dashed border-gray-300" />
+																<span className="bg-white px-3 text-[10px] text-gray-400">
+																	Page {i + 1} | Page {i + 2}
 																</span>
-															))}
-														</div>
-													</>
-												)}
-											</div>
-										</div>
-									</div>
-								) : selectedLayout === 'professional' ? (
-									<div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--resume-section-gap)' }}>
-										{/* Header */}
-										<div className="border-b border-gray-200 pb-1">
-											<div className="text-center">
-												<EditableContent
-													content={formData.name}
-													onInput={e =>
-														handleFieldEdit(e.currentTarget.innerText, 'name')
-													}
-													className="resume-name mb-1"
-													style={{ color: nameColor }}
-													placeholder="Your Name"
-													rerenderRef={rerenderRef}
-												/>
-												<EditableContent
-													content={formData.role}
-													onInput={e =>
-														handleFieldEdit(e.currentTarget.innerText, 'role')
-													}
-													className="resume-role text-gray-600"
-													placeholder="Your Role"
-													rerenderRef={rerenderRef}
-												/>
-											</div>
-											{formData.visibleSections?.personalDetails && (
-												<div className="mt-1 flex justify-center gap-2 resume-dates text-gray-600">
-													{formData.email && (
-														<div className="flex items-center gap-0.5">
-															<EnvelopeIcon className="h-3 w-3" />
-															<EditableContent
-																content={formData.email}
-																onInput={e =>
-																	handleFieldEdit(
-																		e.currentTarget.innerText,
-																		'email',
-																	)
-																}
-																className="outline-none"
-																placeholder="Email"
-																rerenderRef={rerenderRef}
-															/>
-														</div>
-													)}
-													{formData.phone && (
-														<div className="flex items-center gap-0.5">
-															<PhoneIcon className="h-3 w-3" />
-															<EditableContent
-																content={formData.phone}
-																onInput={e =>
-																	handleFieldEdit(
-																		e.currentTarget.innerText,
-																		'phone',
-																	)
-																}
-																className="outline-none"
-																placeholder="Phone"
-																rerenderRef={rerenderRef}
-															/>
-														</div>
-													)}
-													{formData.location && (
-														<div className="flex items-center gap-0.5">
-															<MapPinIcon className="h-3 w-3" />
-															<EditableContent
-																content={formData.location}
-																onInput={e =>
-																	handleFieldEdit(
-																		e.currentTarget.innerText,
-																		'location',
-																	)
-																}
-																className="outline-none"
-																placeholder="Location"
-																rerenderRef={rerenderRef}
-															/>
-														</div>
-													)}
-												</div>
-											)}
-										</div>
-
-										{/* Two-column content */}
-										<div className="grid grid-cols-2 gap-4">
-											{/* Left column */}
-											<div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--resume-section-gap)' }}>
-												{formData.visibleSections?.experience && (
-													<div>
-														<EditableContent
-															content={formData.headers?.experienceHeader}
-															onInput={e =>
-																handleHeaderEdit(
-																	e.currentTarget.innerText,
-																	'experienceHeader',
-																)
-															}
-															className="resume-section-header text-gray-700"
-															placeholder="Professional Experience"
-														/>
-														<div className="space-y-2">
-															<SortableContext
-																items={
-																	formData.experiences?.map(exp => exp.id!) ??
-																	[]
-																}
-																strategy={verticalListSortingStrategy}
-															>
-																{formData.experiences?.map((exp, expIndex) => (
-																	<SortableExperience
-																		key={exp.id}
-																		experience={exp}
-																		onExperienceEdit={handleExperienceEdit}
-																		onRemoveExperience={removeExperience}
-																		onAddExperience={addExperience}
-																		onAIClick={handleAIClick}
-																		onAddBullet={addBulletPoint}
-																		onRemoveBullet={removeBulletPoint}
-																		onBulletEdit={handleBulletPointEdit}
-																		rerenderRef={rerenderRef}
-																		experienceIndex={expIndex}
-																	/>
-																))}
-															</SortableContext>
-														</div>
-													</div>
-												)}
-
-												{formData.visibleSections?.education && (
-													<div>
-														<EditableContent
-															content={formData.headers?.educationHeader}
-															onInput={e =>
-																handleHeaderEdit(
-																	e.currentTarget.innerText,
-																	'educationHeader',
-																)
-															}
-															className="resume-section-header text-gray-700"
-															placeholder="Education"
-														/>
-														<div className="space-y-2">
-															<SortableContext
-																items={
-																	formData.education?.map(edu => edu.id!) ?? []
-																}
-																strategy={verticalListSortingStrategy}
-															>
-																{formData.education?.map(edu => (
-																	<SortableEducation
-																		key={edu.id}
-																		education={edu}
-																		onEducationEdit={handleEducationEdit}
-																		onRemoveEducation={removeEducation}
-																		onAddEducation={addEducation}
-																	/>
-																))}
-															</SortableContext>
-														</div>
-													</div>
-												)}
-											</div>
-
-											{/* Right column */}
-											<div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--resume-section-gap)' }}>
-												{formData.visibleSections?.about && (
-													<div>
-														<EditableContent
-															content={formData.headers?.aboutHeader}
-															onInput={e =>
-																handleHeaderEdit(
-																	e.currentTarget.innerText,
-																	'aboutHeader',
-																)
-															}
-															className="resume-section-header text-gray-700"
-															placeholder="About Me"
-														/>
-														<EditableContent
-															content={formData.about}
-															onInput={e =>
-																handleFieldEdit(
-																	e.currentTarget.innerText,
-																	'about',
-																)
-															}
-															className="resume-body whitespace-pre-wrap text-gray-600"
-															placeholder="Write a brief summary about yourself..."
-															rerenderRef={rerenderRef}
-														/>
-													</div>
-												)}
-
-												{formData.visibleSections?.skills && (
-													<div>
-														<EditableContent
-															content={formData.headers?.skillsHeader}
-															onInput={e =>
-																handleHeaderEdit(
-																	e.currentTarget.innerText,
-																	'skillsHeader',
-																)
-															}
-															className="resume-section-header text-gray-700"
-															placeholder="Skills & Expertise"
-														/>
-														<div>
-															{formData.skills?.map(skill => (
-																<div
-																	key={skill.id}
-																	className="group relative"
-																	style={{ marginTop: 'var(--resume-bullet-gap)' }}
-																>
-																	<EditableContent
-																		content={skill.name}
-																		onInput={e =>
-																			handleSkillEdit(
-																				e.currentTarget.innerText,
-																				skill.id!,
-																				'name',
-																			)
-																		}
-																		className="resume-body text-gray-700"
-																		placeholder="Category: Skill1, Skill2, Skill3"
-																		id={`skill-${skill.id}`}
-																	/>
-																	<div className="preview-only absolute -right-4 top-0 hidden gap-1 group-hover:flex">
-																		<button
-																			type="button"
-																			onClick={() => removeSkill(skill.id!)}
-																			className="text-gray-400 hover:text-gray-600"
-																		>
-																			<TrashIcon className="h-3 w-3" />
-																		</button>
-																		<button
-																			type="button"
-																			onClick={() => addSkill()}
-																			className="text-gray-400 hover:text-gray-600"
-																		>
-																			<PlusIcon className="h-3 w-3" />
-																		</button>
-																	</div>
-																</div>
-															))}
-														</div>
-													</div>
-												)}
-
-												{formData.visibleSections?.hobbies && (
-													<div>
-														<EditableContent
-															content={formData.headers?.hobbiesHeader}
-															onInput={e =>
-																handleHeaderEdit(
-																	e.currentTarget.innerText,
-																	'hobbiesHeader',
-																)
-															}
-															className="resume-section-header text-gray-700"
-															placeholder="Interests & Activities"
-														/>
-														<div>
-															{formData.hobbies?.map((hobby, index) => (
-																<span
-																	key={hobby.id}
-																	className="group relative inline"
-																>
-																	<EditableContent
-																		content={hobby.name}
-																		onInput={e =>
-																			handleHobbyEdit(
-																				e.currentTarget.innerText,
-																				hobby.id!,
-																				'name',
-																			)
-																		}
-																		className="resume-body text-gray-700 inline"
-																		placeholder="Interest"
-																		id={`hobby-${hobby.id}`}
-																	/>
-																	{index < (formData.hobbies?.length ?? 0) - 1 && (
-																		<span className="resume-body text-gray-700">, </span>
-																	)}
-																	<span className="preview-only hidden gap-1 group-hover:inline-flex">
-																		<button
-																			type="button"
-																			onClick={() => removeHobby(hobby.id!)}
-																			className="ml-1 text-gray-400 hover:text-gray-600"
-																		>
-																			<TrashIcon className="h-3 w-3" />
-																		</button>
-																		<button
-																			type="button"
-																			onClick={() => addHobby()}
-																			className="text-gray-400 hover:text-gray-600"
-																		>
-																			<PlusIcon className="h-3 w-3" />
-																		</button>
-																	</span>
-																</span>
-															))}
-														</div>
-													</div>
-												)}
-											</div>
-										</div>
-									</div>
-								) : (
-									// Traditional layout - Classic single-column
-									<div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--resume-section-gap)' }}>
-										{/* Header */}
-										<div className="pb-2">
-											<EditableContent
-												content={formData.name}
-												onInput={e =>
-													handleFieldEdit(e.currentTarget.innerText, 'name')
-												}
-												className="resume-name text-center"
-												style={{ color: nameColor }}
-												placeholder="Your Name"
-												rerenderRef={rerenderRef}
-											/>
-											{formData.visibleSections?.personalDetails && (
-												<div className="mt-1 text-center resume-body text-gray-600 flex flex-row justify-center">
-													{[
-														<EditableContent
-															key="email"
-															content={formData.email}
-															onInput={e =>
-																handleFieldEdit(
-																	e.currentTarget.innerText,
-																	'email',
-																)
-															}
-															className="inline text-gray-600"
-															placeholder="Email"
-															rerenderRef={rerenderRef}
-														/>,
-														<EditableContent
-															key="phone"
-															content={formData.phone}
-															onInput={e =>
-																handleFieldEdit(
-																	e.currentTarget.innerText,
-																	'phone',
-																)
-															}
-															className="inline text-gray-600"
-															placeholder="Phone"
-															rerenderRef={rerenderRef}
-														/>,
-														<EditableContent
-															key="location"
-															content={formData.location}
-															onInput={e =>
-																handleFieldEdit(
-																	e.currentTarget.innerText,
-																	'location',
-																)
-															}
-															className="inline text-gray-600"
-															placeholder="Location"
-															rerenderRef={rerenderRef}
-														/>,
-														<EditableContent
-															key="website"
-															content={formData.website}
-															onInput={e =>
-																handleFieldEdit(
-																	e.currentTarget.innerText,
-																	'website',
-																)
-															}
-															className="inline text-gray-600"
-															placeholder="Website"
-															rerenderRef={rerenderRef}
-														/>,
-													]
-														.filter(Boolean)
-														.reduce((prev, curr, i) => (
-															<>
-																{prev}
-																{i !== 0 && (
-																	<span className="mx-2 text-gray-400">•</span>
-																)}
-																{curr}
-															</>
-														))}
-												</div>
-											)}
-										</div>
-
-										{/* About/Summary - no header, just the summary text */}
-										{formData.visibleSections?.about && (
-											<div>
-												<EditableContent
-													content={formData.about}
-													onInput={e =>
-														handleFieldEdit(e.currentTarget.innerText, 'about')
-													}
-													className="resume-body whitespace-pre-wrap text-gray-600"
-													placeholder="Write a brief summary about yourself..."
-													rerenderRef={rerenderRef}
-												/>
-											</div>
-										)}
-
-										{/* Experience */}
-										{formData.visibleSections?.experience && (
-											<div>
-												<EditableContent
-													content={formData.headers?.experienceHeader}
-													onInput={e =>
-														handleHeaderEdit(
-															e.currentTarget.innerText,
-															'experienceHeader',
-														)
-													}
-													className="resume-section-header uppercase tracking-wider"
-													style={{ color: nameColor }}
-													placeholder="Work Experience"
-													rerenderRef={rerenderRef}
-												/>
-												<div className="space-y-1.5">
-													<SortableContext
-														items={
-															formData.experiences?.map(exp => exp.id!) ?? []
-														}
-														strategy={verticalListSortingStrategy}
-													>
-														{formData.experiences?.map((exp, expIndex) => (
-															<SortableExperience
-																key={exp.id}
-																experience={exp}
-																onExperienceEdit={handleExperienceEdit}
-																onRemoveExperience={removeExperience}
-																onAddExperience={addExperience}
-																onAIClick={handleAIClick}
-																onAddBullet={addBulletPoint}
-																onRemoveBullet={removeBulletPoint}
-																onBulletEdit={handleBulletPointEdit}
-																rerenderRef={rerenderRef}
-																experienceIndex={expIndex}
-															/>
-														))}
-													</SortableContext>
-												</div>
-											</div>
-										)}
-
-										{/* Education */}
-										{formData.visibleSections?.education && (
-											<div>
-												<EditableContent
-													content={formData.headers?.educationHeader}
-													onInput={e =>
-														handleHeaderEdit(
-															e.currentTarget.innerText,
-															'educationHeader',
-														)
-													}
-													className="resume-section-header uppercase tracking-wider"
-													style={{ color: nameColor }}
-													placeholder="Education"
-													rerenderRef={rerenderRef}
-												/>
-												<div className="space-y-1.5">
-													<SortableContext
-														items={
-															formData.education?.map(edu => edu.id!) ?? []
-														}
-														strategy={verticalListSortingStrategy}
-													>
-														{formData.education?.map(edu => (
-															<SortableEducation
-																key={edu.id}
-																education={edu}
-																onEducationEdit={handleEducationEdit}
-																onRemoveEducation={removeEducation}
-																onAddEducation={addEducation}
-															/>
-														))}
-													</SortableContext>
-												</div>
-											</div>
-										)}
-
-										{/* Skills - bullet point format with category labels */}
-										{formData.visibleSections?.skills && (
-											<div>
-												<EditableContent
-													content={formData.headers?.skillsHeader}
-													onInput={e =>
-														handleHeaderEdit(
-															e.currentTarget.innerText,
-															'skillsHeader',
-														)
-													}
-													className="resume-section-header uppercase tracking-wider"
-													style={{ color: nameColor }}
-													placeholder="Skills"
-													rerenderRef={rerenderRef}
-												/>
-												<div>
-													{formData.skills?.map(skill => (
-														<div
-															key={skill.id}
-															className="group relative"
-															style={{ marginTop: 'var(--resume-bullet-gap)' }}
-														>
-															<EditableContent
-																content={skill.name}
-																onInput={e =>
-																	handleSkillEdit(
-																		e.currentTarget.innerText,
-																		skill.id!,
-																		'name',
-																	)
-																}
-																className="resume-body text-gray-700"
-																placeholder="Category: Skill1, Skill2, Skill3"
-																id={`skill-${skill.id}`}
-															/>
-															<div className="preview-only absolute -right-4 top-0 hidden gap-1 group-hover:flex">
-																<button
-																	type="button"
-																	onClick={() => removeSkill(skill.id!)}
-																	className="text-gray-400 hover:text-gray-600"
-																>
-																	<TrashIcon className="h-3 w-3" />
-																</button>
-																<button
-																	type="button"
-																	onClick={() => addSkill()}
-																	className="text-gray-400 hover:text-gray-600"
-																>
-																	<PlusIcon className="h-3 w-3" />
-																</button>
+																<div className="flex-1 border-t border-dashed border-gray-300" />
 															</div>
 														</div>
 													))}
-												</div>
-											</div>
-										)}
-
-										{/* Interests */}
-										{formData.visibleSections?.hobbies && (
-											<div>
-												<EditableContent
-													content={formData.headers?.hobbiesHeader}
-													onInput={e =>
-														handleHeaderEdit(
-															e.currentTarget.innerText,
-															'hobbiesHeader',
-														)
-													}
-													className="resume-section-header uppercase tracking-wider"
-													style={{ color: nameColor }}
-													placeholder="Interests"
-													rerenderRef={rerenderRef}
-												/>
-												<div>
-													{formData.hobbies?.map((hobby, index) => (
-														<span
-															key={hobby.id}
-															className="group relative inline"
+												{selectedLayout === 'modern' ? (
+													<div className="grid grid-cols-[250px_1fr] gap-4">
+														{/* Left Pane */}
+														<div
+															className="pr-4"
+															style={{
+																display: 'flex',
+																flexDirection: 'column',
+																gap: 'var(--resume-section-gap)',
+															}}
 														>
+															{/* Image Upload */}
+															{formData.visibleSections?.photo && (
+																<div>
+																	<input
+																		type="file"
+																		accept="image/*"
+																		className="hidden"
+																		onChange={handleImageUpload}
+																		id="image-upload"
+																	/>
+																	<label
+																		htmlFor="image-upload"
+																		className="block cursor-pointer"
+																	>
+																		<div
+																			className={`aspect-square w-full overflow-hidden rounded-full ${
+																				formData.image
+																					? ''
+																					: 'border-2 border-dashed border-gray-300 bg-gray-50 transition hover:bg-gray-100'
+																			}`}
+																		>
+																			{formData.image ? (
+																				<img
+																					src={formData.image}
+																					alt="Profile"
+																					className="h-full w-full object-cover"
+																				/>
+																			) : (
+																				<div className="flex h-full flex-col items-center justify-center gap-2 p-4">
+																					<UserCircleIcon className="h-16 w-16 text-gray-400" />
+																					<span className="text-sm text-gray-500">
+																						Click to upload photo
+																					</span>
+																				</div>
+																			)}
+																		</div>
+																	</label>
+																</div>
+															)}
+
+															{/* About Me */}
+															{formData.visibleSections?.about && (
+																<div className="rounded border-dashed border-gray-400 hover:border">
+																	<EditableContent
+																		content={formData.headers?.aboutHeader}
+																		onInput={e =>
+																			handleHeaderEdit(
+																				e.currentTarget.innerText,
+																				'aboutHeader',
+																			)
+																		}
+																		className="resume-section-header text-gray-700"
+																		placeholder="About Me"
+																		rerenderRef={rerenderRef}
+																	/>
+																	<EditableContent
+																		multiline
+																		content={formData.about}
+																		onInput={e =>
+																			handleAboutEdit(
+																				e.currentTarget.innerText,
+																				'about',
+																			)
+																		}
+																		className="resume-body min-h-[150px] p-3 text-gray-600"
+																		placeholder="Write a brief introduction about yourself..."
+																		rerenderRef={rerenderRef}
+																	/>
+																</div>
+															)}
+
+															{/* Personal Details */}
+															{formData.visibleSections?.personalDetails && (
+																<div>
+																	<EditableContent
+																		content={formData.headers?.detailsHeader}
+																		onInput={e =>
+																			handleHeaderEdit(
+																				e.currentTarget.innerText,
+																				'detailsHeader',
+																			)
+																		}
+																		className="resume-section-header text-gray-700"
+																		placeholder="Personal Details"
+																		rerenderRef={rerenderRef}
+																	/>
+																	<div className="space-y-1">
+																		<div className="flex items-center gap-2">
+																			<MapPinIcon className="h-4 w-4 text-gray-400" />
+																			<EditableContent
+																				content={formData.location}
+																				onInput={e =>
+																					handleFieldEdit(
+																						e.currentTarget.innerText,
+																						'location',
+																					)
+																				}
+																				className="resume-body flex-1 rounded p-1 text-gray-600 outline-none transition"
+																				placeholder="Location"
+																				rerenderRef={rerenderRef}
+																			/>
+																		</div>
+																		<div className="flex items-center gap-2">
+																			<EnvelopeIcon className="h-4 w-4 text-gray-400" />
+																			<EditableContent
+																				content={formData.email}
+																				onInput={e =>
+																					handleFieldEdit(
+																						e.currentTarget.innerText,
+																						'email',
+																					)
+																				}
+																				className="resume-body flex-1 rounded p-1 text-gray-600 outline-none transition"
+																				placeholder="Email"
+																				rerenderRef={rerenderRef}
+																			/>
+																		</div>
+																		<div className="flex items-center gap-2">
+																			<PhoneIcon className="h-4 w-4 text-gray-400" />
+																			<EditableContent
+																				content={formData.phone}
+																				onInput={e =>
+																					handleFieldEdit(
+																						e.currentTarget.innerText,
+																						'phone',
+																					)
+																				}
+																				className="resume-body flex-1 rounded p-1 text-gray-600 outline-none transition"
+																				placeholder="Phone"
+																				rerenderRef={rerenderRef}
+																			/>
+																		</div>
+																		<div className="flex items-center gap-2">
+																			<LinkIcon className="h-4 w-4 text-gray-400" />
+																			<EditableContent
+																				content={formData.website}
+																				onInput={e =>
+																					handleFieldEdit(
+																						e.currentTarget.innerText,
+																						'website',
+																					)
+																				}
+																				className="resume-body flex-1 rounded p-1 text-gray-600 outline-none transition"
+																				placeholder="Website"
+																				rerenderRef={rerenderRef}
+																			/>
+																		</div>
+																	</div>
+																</div>
+															)}
+														</div>
+
+														{/* Right Pane */}
+														<div>
 															<EditableContent
-																content={hobby.name}
+																content={formData.name}
 																onInput={e =>
-																	handleHobbyEdit(
+																	handleFieldEdit(
 																		e.currentTarget.innerText,
-																		hobby.id!,
 																		'name',
 																	)
 																}
-																className="resume-body text-gray-700 inline"
-																placeholder="Interest"
-																id={`hobby-${hobby.id}`}
+																className="resume-name mb-1 rounded p-1 outline-none transition"
+																placeholder="Your Name"
+																rerenderRef={rerenderRef}
+																style={{ color: nameColor }}
 															/>
-															{index < (formData.hobbies?.length ?? 0) - 1 && (
-																<span className="resume-body text-gray-700">, </span>
-															)}
-															<span className="preview-only hidden gap-1 group-hover:inline-flex">
-																<button
-																	type="button"
-																	onClick={() => removeHobby(hobby.id!)}
-																	className="ml-1 text-gray-400 hover:text-gray-600"
-																>
-																	<TrashIcon className="h-3 w-3" />
-																</button>
-																<button
-																	type="button"
-																	onClick={() => addHobby()}
-																	className="text-gray-400 hover:text-gray-600"
-																>
-																	<PlusIcon className="h-3 w-3" />
-																</button>
-															</span>
-														</span>
-													))}
-												</div>
-											</div>
-										)}
-									</div>
-								)}
-									</div>
-								</div>
 
-								{/* Page Count Indicator */}
-								<div className="mt-4 text-center text-sm text-gray-500">
-									Page {pageCount > 1 ? `1 of ${pageCount}` : '1 of 1'}
-								</div>
-							</div>
-						</Form>
+															<EditableContent
+																content={formData.role}
+																onInput={e =>
+																	handleFieldEdit(
+																		e.currentTarget.innerText,
+																		'role',
+																	)
+																}
+																className="resume-role mb-2 rounded p-1 text-gray-600 outline-none transition"
+																placeholder="Your Role (e.g. Frontend Developer)"
+																rerenderRef={rerenderRef}
+															/>
+
+															<div className="resume-section-gap">
+																{formData.visibleSections?.experience && (
+																	<EditableContent
+																		content={formData.headers?.experienceHeader}
+																		onInput={e =>
+																			handleHeaderEdit(
+																				e.currentTarget.innerText,
+																				'experienceHeader',
+																			)
+																		}
+																		className="resume-section-header text-gray-700 outline-none"
+																		placeholder="Professional Experience"
+																	/>
+																)}
+
+																<div className="space-y-2">
+																	{formData.visibleSections?.experience &&
+																	formData.experiences ? (
+																		<SortableContext
+																			items={formData.experiences.map(
+																				exp => exp.id!,
+																			)}
+																			strategy={verticalListSortingStrategy}
+																		>
+																			{formData.experiences?.map(
+																				(exp, expIndex) => (
+																					<SortableExperience
+																						key={exp.id}
+																						experience={exp}
+																						onExperienceEdit={
+																							handleExperienceEdit
+																						}
+																						onRemoveExperience={
+																							removeExperience
+																						}
+																						onAddExperience={addExperience}
+																						onAIClick={handleAIClick}
+																						onAddBullet={addBulletPoint}
+																						onRemoveBullet={removeBulletPoint}
+																						onBulletEdit={handleBulletPointEdit}
+																						rerenderRef={rerenderRef}
+																						experienceIndex={expIndex}
+																					/>
+																				),
+																			)}
+																		</SortableContext>
+																	) : null}
+																</div>
+															</div>
+
+															<div className="resume-section-gap">
+																{formData.visibleSections?.education && (
+																	<EditableContent
+																		content={formData.headers?.educationHeader}
+																		onInput={e =>
+																			handleHeaderEdit(
+																				e.currentTarget.innerText,
+																				'educationHeader',
+																			)
+																		}
+																		className="resume-section-header text-gray-700 outline-none"
+																		placeholder="Education"
+																	/>
+																)}
+																<div className="space-y-2">
+																	{formData.visibleSections?.education &&
+																	formData.education?.length === 0 ? (
+																		<>
+																			<div className="rounded border border-dashed border-gray-300 p-4 text-center text-gray-500">
+																				Click "Add Education" to add your
+																				educational background
+																			</div>
+																			<Button onClick={() => addEducation()}>
+																				Add Education
+																			</Button>
+																		</>
+																	) : formData.visibleSections?.education &&
+																	  formData.education ? (
+																		<SortableContext
+																			items={
+																				formData.education.map(edu => edu.id!)!
+																			}
+																			strategy={verticalListSortingStrategy}
+																		>
+																			{formData.education?.map(edu => (
+																				<SortableEducation
+																					key={edu.id}
+																					education={edu}
+																					onEducationEdit={handleEducationEdit}
+																					onRemoveEducation={removeEducation}
+																					onAddEducation={addEducation}
+																				/>
+																			))}
+																		</SortableContext>
+																	) : null}
+																</div>
+															</div>
+
+															<div className="resume-section-gap">
+																{formData.visibleSections?.skills && (
+																	<>
+																		<EditableContent
+																			content={formData.headers?.skillsHeader}
+																			onInput={e =>
+																				handleHeaderEdit(
+																					e.currentTarget.innerText,
+																					'skillsHeader',
+																				)
+																			}
+																			className="resume-section-header text-gray-700 outline-none"
+																			placeholder="Skills & Expertise"
+																		/>
+
+																		<div>
+																			{formData.skills?.map(skill => (
+																				<div
+																					key={skill.id}
+																					className="group relative"
+																					style={{
+																						marginTop:
+																							'var(--resume-bullet-gap)',
+																					}}
+																				>
+																					<EditableContent
+																						content={skill.name}
+																						onInput={e =>
+																							handleSkillEdit(
+																								e.currentTarget.innerText,
+																								skill.id!,
+																								'name',
+																							)
+																						}
+																						onEnter={() => addSkill()}
+																						className="resume-body text-gray-700 outline-none"
+																						placeholder="Category: Skill1, Skill2, Skill3"
+																						id={`skill-${skill.id}`}
+																					/>
+																					<div className="preview-only absolute -right-4 top-0 hidden gap-1 group-hover:flex">
+																						<button
+																							type="button"
+																							onClick={() =>
+																								removeSkill(skill.id!)
+																							}
+																							className="text-gray-400 hover:text-gray-600"
+																						>
+																							<TrashIcon className="h-3 w-3" />
+																						</button>
+																						<button
+																							type="button"
+																							onClick={() => addSkill()}
+																							className="text-gray-400 hover:text-gray-600"
+																						>
+																							<PlusIcon className="h-3 w-3" />
+																						</button>
+																					</div>
+																				</div>
+																			))}
+																		</div>
+																	</>
+																)}
+															</div>
+
+															<div className="resume-section-gap">
+																{formData.visibleSections?.hobbies && (
+																	<>
+																		<EditableContent
+																			content={formData.headers?.hobbiesHeader}
+																			onInput={e =>
+																				handleHeaderEdit(
+																					e.currentTarget.innerText,
+																					'hobbiesHeader',
+																				)
+																			}
+																			className="resume-section-header text-gray-700 outline-none"
+																			placeholder="Interests & Activities"
+																			rerenderRef={rerenderRef}
+																		/>
+																		<div>
+																			{formData.hobbies?.map((hobby, index) => (
+																				<span
+																					key={hobby.id}
+																					className="group relative inline"
+																				>
+																					<EditableContent
+																						content={hobby.name}
+																						onInput={e =>
+																							handleHobbyEdit(
+																								e.currentTarget.innerText,
+																								hobby.id!,
+																								'name',
+																							)
+																						}
+																						onEnter={() => addHobby()}
+																						className="resume-body inline text-gray-700"
+																						placeholder="Interest"
+																						id={`hobby-${hobby.id}`}
+																					/>
+																					{index <
+																						(formData.hobbies?.length ?? 0) -
+																							1 && (
+																						<span className="resume-body text-gray-700">
+																							,{' '}
+																						</span>
+																					)}
+																					<span className="preview-only hidden gap-1 group-hover:inline-flex">
+																						<button
+																							type="button"
+																							onClick={() =>
+																								removeHobby(hobby.id!)
+																							}
+																							className="ml-1 text-gray-400 hover:text-gray-600"
+																						>
+																							<TrashIcon className="h-3 w-3" />
+																						</button>
+																						<button
+																							type="button"
+																							onClick={() => addHobby()}
+																							className="text-gray-400 hover:text-gray-600"
+																						>
+																							<PlusIcon className="h-3 w-3" />
+																						</button>
+																					</span>
+																				</span>
+																			))}
+																		</div>
+																	</>
+																)}
+															</div>
+														</div>
+													</div>
+												) : selectedLayout === 'professional' ? (
+													<div
+														style={{
+															display: 'flex',
+															flexDirection: 'column',
+															gap: 'var(--resume-section-gap)',
+														}}
+													>
+														{/* Header */}
+														<div className="border-b border-gray-200 pb-1">
+															<div className="text-center">
+																<EditableContent
+																	content={formData.name}
+																	onInput={e =>
+																		handleFieldEdit(
+																			e.currentTarget.innerText,
+																			'name',
+																		)
+																	}
+																	className="resume-name mb-1"
+																	style={{ color: nameColor }}
+																	placeholder="Your Name"
+																	rerenderRef={rerenderRef}
+																/>
+																<EditableContent
+																	content={formData.role}
+																	onInput={e =>
+																		handleFieldEdit(
+																			e.currentTarget.innerText,
+																			'role',
+																		)
+																	}
+																	className="resume-role text-gray-600"
+																	placeholder="Your Role"
+																	rerenderRef={rerenderRef}
+																/>
+															</div>
+															{formData.visibleSections?.personalDetails && (
+																<div className="resume-dates mt-1 flex justify-center gap-2 text-gray-600">
+																	{formData.email && (
+																		<div className="flex items-center gap-0.5">
+																			<EnvelopeIcon className="h-3 w-3" />
+																			<EditableContent
+																				content={formData.email}
+																				onInput={e =>
+																					handleFieldEdit(
+																						e.currentTarget.innerText,
+																						'email',
+																					)
+																				}
+																				className="outline-none"
+																				placeholder="Email"
+																				rerenderRef={rerenderRef}
+																			/>
+																		</div>
+																	)}
+																	{formData.phone && (
+																		<div className="flex items-center gap-0.5">
+																			<PhoneIcon className="h-3 w-3" />
+																			<EditableContent
+																				content={formData.phone}
+																				onInput={e =>
+																					handleFieldEdit(
+																						e.currentTarget.innerText,
+																						'phone',
+																					)
+																				}
+																				className="outline-none"
+																				placeholder="Phone"
+																				rerenderRef={rerenderRef}
+																			/>
+																		</div>
+																	)}
+																	{formData.location && (
+																		<div className="flex items-center gap-0.5">
+																			<MapPinIcon className="h-3 w-3" />
+																			<EditableContent
+																				content={formData.location}
+																				onInput={e =>
+																					handleFieldEdit(
+																						e.currentTarget.innerText,
+																						'location',
+																					)
+																				}
+																				className="outline-none"
+																				placeholder="Location"
+																				rerenderRef={rerenderRef}
+																			/>
+																		</div>
+																	)}
+																</div>
+															)}
+														</div>
+
+														{/* Two-column content */}
+														<div className="grid grid-cols-2 gap-4">
+															{/* Left column */}
+															<div
+																style={{
+																	display: 'flex',
+																	flexDirection: 'column',
+																	gap: 'var(--resume-section-gap)',
+																}}
+															>
+																{formData.visibleSections?.experience && (
+																	<div>
+																		<EditableContent
+																			content={
+																				formData.headers?.experienceHeader
+																			}
+																			onInput={e =>
+																				handleHeaderEdit(
+																					e.currentTarget.innerText,
+																					'experienceHeader',
+																				)
+																			}
+																			className="resume-section-header text-gray-700"
+																			placeholder="Professional Experience"
+																		/>
+																		<div className="space-y-2">
+																			<SortableContext
+																				items={
+																					formData.experiences?.map(
+																						exp => exp.id!,
+																					) ?? []
+																				}
+																				strategy={verticalListSortingStrategy}
+																			>
+																				{formData.experiences?.map(
+																					(exp, expIndex) => (
+																						<SortableExperience
+																							key={exp.id}
+																							experience={exp}
+																							onExperienceEdit={
+																								handleExperienceEdit
+																							}
+																							onRemoveExperience={
+																								removeExperience
+																							}
+																							onAddExperience={addExperience}
+																							onAIClick={handleAIClick}
+																							onAddBullet={addBulletPoint}
+																							onRemoveBullet={removeBulletPoint}
+																							onBulletEdit={
+																								handleBulletPointEdit
+																							}
+																							rerenderRef={rerenderRef}
+																							experienceIndex={expIndex}
+																						/>
+																					),
+																				)}
+																			</SortableContext>
+																		</div>
+																	</div>
+																)}
+
+																{formData.visibleSections?.education && (
+																	<div>
+																		<EditableContent
+																			content={
+																				formData.headers?.educationHeader
+																			}
+																			onInput={e =>
+																				handleHeaderEdit(
+																					e.currentTarget.innerText,
+																					'educationHeader',
+																				)
+																			}
+																			className="resume-section-header text-gray-700"
+																			placeholder="Education"
+																		/>
+																		<div className="space-y-2">
+																			<SortableContext
+																				items={
+																					formData.education?.map(
+																						edu => edu.id!,
+																					) ?? []
+																				}
+																				strategy={verticalListSortingStrategy}
+																			>
+																				{formData.education?.map(edu => (
+																					<SortableEducation
+																						key={edu.id}
+																						education={edu}
+																						onEducationEdit={
+																							handleEducationEdit
+																						}
+																						onRemoveEducation={removeEducation}
+																						onAddEducation={addEducation}
+																					/>
+																				))}
+																			</SortableContext>
+																		</div>
+																	</div>
+																)}
+															</div>
+
+															{/* Right column */}
+															<div
+																style={{
+																	display: 'flex',
+																	flexDirection: 'column',
+																	gap: 'var(--resume-section-gap)',
+																}}
+															>
+																{formData.visibleSections?.about && (
+																	<div>
+																		<EditableContent
+																			content={formData.headers?.aboutHeader}
+																			onInput={e =>
+																				handleHeaderEdit(
+																					e.currentTarget.innerText,
+																					'aboutHeader',
+																				)
+																			}
+																			className="resume-section-header text-gray-700"
+																			placeholder="About Me"
+																		/>
+																		<EditableContent
+																			content={formData.about}
+																			onInput={e =>
+																				handleFieldEdit(
+																					e.currentTarget.innerText,
+																					'about',
+																				)
+																			}
+																			className="resume-body whitespace-pre-wrap text-gray-600"
+																			placeholder="Write a brief summary about yourself..."
+																			rerenderRef={rerenderRef}
+																		/>
+																	</div>
+																)}
+
+																{formData.visibleSections?.skills && (
+																	<div>
+																		<EditableContent
+																			content={formData.headers?.skillsHeader}
+																			onInput={e =>
+																				handleHeaderEdit(
+																					e.currentTarget.innerText,
+																					'skillsHeader',
+																				)
+																			}
+																			className="resume-section-header text-gray-700"
+																			placeholder="Skills & Expertise"
+																		/>
+																		<div>
+																			{formData.skills?.map(skill => (
+																				<div
+																					key={skill.id}
+																					className="group relative"
+																					style={{
+																						marginTop:
+																							'var(--resume-bullet-gap)',
+																					}}
+																				>
+																					<EditableContent
+																						content={skill.name}
+																						onInput={e =>
+																							handleSkillEdit(
+																								e.currentTarget.innerText,
+																								skill.id!,
+																								'name',
+																							)
+																						}
+																						className="resume-body text-gray-700"
+																						placeholder="Category: Skill1, Skill2, Skill3"
+																						id={`skill-${skill.id}`}
+																					/>
+																					<div className="preview-only absolute -right-4 top-0 hidden gap-1 group-hover:flex">
+																						<button
+																							type="button"
+																							onClick={() =>
+																								removeSkill(skill.id!)
+																							}
+																							className="text-gray-400 hover:text-gray-600"
+																						>
+																							<TrashIcon className="h-3 w-3" />
+																						</button>
+																						<button
+																							type="button"
+																							onClick={() => addSkill()}
+																							className="text-gray-400 hover:text-gray-600"
+																						>
+																							<PlusIcon className="h-3 w-3" />
+																						</button>
+																					</div>
+																				</div>
+																			))}
+																		</div>
+																	</div>
+																)}
+
+																{formData.visibleSections?.hobbies && (
+																	<div>
+																		<EditableContent
+																			content={formData.headers?.hobbiesHeader}
+																			onInput={e =>
+																				handleHeaderEdit(
+																					e.currentTarget.innerText,
+																					'hobbiesHeader',
+																				)
+																			}
+																			className="resume-section-header text-gray-700"
+																			placeholder="Interests & Activities"
+																		/>
+																		<div>
+																			{formData.hobbies?.map((hobby, index) => (
+																				<span
+																					key={hobby.id}
+																					className="group relative inline"
+																				>
+																					<EditableContent
+																						content={hobby.name}
+																						onInput={e =>
+																							handleHobbyEdit(
+																								e.currentTarget.innerText,
+																								hobby.id!,
+																								'name',
+																							)
+																						}
+																						className="resume-body inline text-gray-700"
+																						placeholder="Interest"
+																						id={`hobby-${hobby.id}`}
+																					/>
+																					{index <
+																						(formData.hobbies?.length ?? 0) -
+																							1 && (
+																						<span className="resume-body text-gray-700">
+																							,{' '}
+																						</span>
+																					)}
+																					<span className="preview-only hidden gap-1 group-hover:inline-flex">
+																						<button
+																							type="button"
+																							onClick={() =>
+																								removeHobby(hobby.id!)
+																							}
+																							className="ml-1 text-gray-400 hover:text-gray-600"
+																						>
+																							<TrashIcon className="h-3 w-3" />
+																						</button>
+																						<button
+																							type="button"
+																							onClick={() => addHobby()}
+																							className="text-gray-400 hover:text-gray-600"
+																						>
+																							<PlusIcon className="h-3 w-3" />
+																						</button>
+																					</span>
+																				</span>
+																			))}
+																		</div>
+																	</div>
+																)}
+															</div>
+														</div>
+													</div>
+												) : (
+													// Traditional layout - Classic single-column
+													<div
+														style={{
+															display: 'flex',
+															flexDirection: 'column',
+															gap: 'var(--resume-section-gap)',
+														}}
+													>
+														{/* Header */}
+														<div className="pb-2">
+															<EditableContent
+																content={formData.name}
+																onInput={e =>
+																	handleFieldEdit(
+																		e.currentTarget.innerText,
+																		'name',
+																	)
+																}
+																className="resume-name text-center"
+																style={{ color: nameColor }}
+																placeholder="Your Name"
+																rerenderRef={rerenderRef}
+															/>
+															{formData.visibleSections?.personalDetails && (
+																<div className="resume-body mt-1 flex flex-row justify-center text-center text-gray-600">
+																	{[
+																		<EditableContent
+																			key="email"
+																			content={formData.email}
+																			onInput={e =>
+																				handleFieldEdit(
+																					e.currentTarget.innerText,
+																					'email',
+																				)
+																			}
+																			className="inline text-gray-600"
+																			placeholder="Email"
+																			rerenderRef={rerenderRef}
+																		/>,
+																		<EditableContent
+																			key="phone"
+																			content={formData.phone}
+																			onInput={e =>
+																				handleFieldEdit(
+																					e.currentTarget.innerText,
+																					'phone',
+																				)
+																			}
+																			className="inline text-gray-600"
+																			placeholder="Phone"
+																			rerenderRef={rerenderRef}
+																		/>,
+																		<EditableContent
+																			key="location"
+																			content={formData.location}
+																			onInput={e =>
+																				handleFieldEdit(
+																					e.currentTarget.innerText,
+																					'location',
+																				)
+																			}
+																			className="inline text-gray-600"
+																			placeholder="Location"
+																			rerenderRef={rerenderRef}
+																		/>,
+																		<EditableContent
+																			key="website"
+																			content={formData.website}
+																			onInput={e =>
+																				handleFieldEdit(
+																					e.currentTarget.innerText,
+																					'website',
+																				)
+																			}
+																			className="inline text-gray-600"
+																			placeholder="Website"
+																			rerenderRef={rerenderRef}
+																		/>,
+																	]
+																		.filter(Boolean)
+																		.reduce((prev, curr, i) => (
+																			<>
+																				{prev}
+																				{i !== 0 && (
+																					<span className="mx-2 text-gray-400">
+																						•
+																					</span>
+																				)}
+																				{curr}
+																			</>
+																		))}
+																</div>
+															)}
+														</div>
+
+														{/* About/Summary - no header, just the summary text */}
+														{formData.visibleSections?.about && (
+															<div>
+																<EditableContent
+																	content={formData.about}
+																	onInput={e =>
+																		handleFieldEdit(
+																			e.currentTarget.innerText,
+																			'about',
+																		)
+																	}
+																	className="resume-body whitespace-pre-wrap text-gray-600"
+																	placeholder="Write a brief summary about yourself..."
+																	rerenderRef={rerenderRef}
+																/>
+															</div>
+														)}
+
+														{/* Experience */}
+														{formData.visibleSections?.experience && (
+															<div>
+																<EditableContent
+																	content={formData.headers?.experienceHeader}
+																	onInput={e =>
+																		handleHeaderEdit(
+																			e.currentTarget.innerText,
+																			'experienceHeader',
+																		)
+																	}
+																	className="resume-section-header uppercase tracking-wider"
+																	style={{ color: nameColor }}
+																	placeholder="Work Experience"
+																	rerenderRef={rerenderRef}
+																/>
+																<div className="space-y-1.5">
+																	<SortableContext
+																		items={
+																			formData.experiences?.map(
+																				exp => exp.id!,
+																			) ?? []
+																		}
+																		strategy={verticalListSortingStrategy}
+																	>
+																		{formData.experiences?.map(
+																			(exp, expIndex) => (
+																				<SortableExperience
+																					key={exp.id}
+																					experience={exp}
+																					onExperienceEdit={
+																						handleExperienceEdit
+																					}
+																					onRemoveExperience={removeExperience}
+																					onAddExperience={addExperience}
+																					onAIClick={handleAIClick}
+																					onAddBullet={addBulletPoint}
+																					onRemoveBullet={removeBulletPoint}
+																					onBulletEdit={handleBulletPointEdit}
+																					rerenderRef={rerenderRef}
+																					experienceIndex={expIndex}
+																				/>
+																			),
+																		)}
+																	</SortableContext>
+																</div>
+															</div>
+														)}
+
+														{/* Education */}
+														{formData.visibleSections?.education && (
+															<div>
+																<EditableContent
+																	content={formData.headers?.educationHeader}
+																	onInput={e =>
+																		handleHeaderEdit(
+																			e.currentTarget.innerText,
+																			'educationHeader',
+																		)
+																	}
+																	className="resume-section-header uppercase tracking-wider"
+																	style={{ color: nameColor }}
+																	placeholder="Education"
+																	rerenderRef={rerenderRef}
+																/>
+																<div className="space-y-1.5">
+																	<SortableContext
+																		items={
+																			formData.education?.map(edu => edu.id!) ??
+																			[]
+																		}
+																		strategy={verticalListSortingStrategy}
+																	>
+																		{formData.education?.map(edu => (
+																			<SortableEducation
+																				key={edu.id}
+																				education={edu}
+																				onEducationEdit={handleEducationEdit}
+																				onRemoveEducation={removeEducation}
+																				onAddEducation={addEducation}
+																			/>
+																		))}
+																	</SortableContext>
+																</div>
+															</div>
+														)}
+
+														{/* Skills - bullet point format with category labels */}
+														{formData.visibleSections?.skills && (
+															<div>
+																<EditableContent
+																	content={formData.headers?.skillsHeader}
+																	onInput={e =>
+																		handleHeaderEdit(
+																			e.currentTarget.innerText,
+																			'skillsHeader',
+																		)
+																	}
+																	className="resume-section-header uppercase tracking-wider"
+																	style={{ color: nameColor }}
+																	placeholder="Skills"
+																	rerenderRef={rerenderRef}
+																/>
+																<div>
+																	{formData.skills?.map(skill => (
+																		<div
+																			key={skill.id}
+																			className="group relative"
+																			style={{
+																				marginTop: 'var(--resume-bullet-gap)',
+																			}}
+																		>
+																			<EditableContent
+																				content={skill.name}
+																				onInput={e =>
+																					handleSkillEdit(
+																						e.currentTarget.innerText,
+																						skill.id!,
+																						'name',
+																					)
+																				}
+																				className="resume-body text-gray-700"
+																				placeholder="Category: Skill1, Skill2, Skill3"
+																				id={`skill-${skill.id}`}
+																			/>
+																			<div className="preview-only absolute -right-4 top-0 hidden gap-1 group-hover:flex">
+																				<button
+																					type="button"
+																					onClick={() => removeSkill(skill.id!)}
+																					className="text-gray-400 hover:text-gray-600"
+																				>
+																					<TrashIcon className="h-3 w-3" />
+																				</button>
+																				<button
+																					type="button"
+																					onClick={() => addSkill()}
+																					className="text-gray-400 hover:text-gray-600"
+																				>
+																					<PlusIcon className="h-3 w-3" />
+																				</button>
+																			</div>
+																		</div>
+																	))}
+																</div>
+															</div>
+														)}
+
+														{/* Interests */}
+														{formData.visibleSections?.hobbies && (
+															<div>
+																<EditableContent
+																	content={formData.headers?.hobbiesHeader}
+																	onInput={e =>
+																		handleHeaderEdit(
+																			e.currentTarget.innerText,
+																			'hobbiesHeader',
+																		)
+																	}
+																	className="resume-section-header uppercase tracking-wider"
+																	style={{ color: nameColor }}
+																	placeholder="Interests"
+																	rerenderRef={rerenderRef}
+																/>
+																<div>
+																	{formData.hobbies?.map((hobby, index) => (
+																		<span
+																			key={hobby.id}
+																			className="group relative inline"
+																		>
+																			<EditableContent
+																				content={hobby.name}
+																				onInput={e =>
+																					handleHobbyEdit(
+																						e.currentTarget.innerText,
+																						hobby.id!,
+																						'name',
+																					)
+																				}
+																				className="resume-body inline text-gray-700"
+																				placeholder="Interest"
+																				id={`hobby-${hobby.id}`}
+																			/>
+																			{index <
+																				(formData.hobbies?.length ?? 0) - 1 && (
+																				<span className="resume-body text-gray-700">
+																					,{' '}
+																				</span>
+																			)}
+																			<span className="preview-only hidden gap-1 group-hover:inline-flex">
+																				<button
+																					type="button"
+																					onClick={() => removeHobby(hobby.id!)}
+																					className="ml-1 text-gray-400 hover:text-gray-600"
+																				>
+																					<TrashIcon className="h-3 w-3" />
+																				</button>
+																				<button
+																					type="button"
+																					onClick={() => addHobby()}
+																					className="text-gray-400 hover:text-gray-600"
+																				>
+																					<PlusIcon className="h-3 w-3" />
+																				</button>
+																			</span>
+																		</span>
+																	))}
+																</div>
+															</div>
+														)}
+													</div>
+												)}
+											</div>
+										</div>
+									</div>
+								</Form>
 							</div>
 
 							{/* Right: Gamification Sidebar */}
-							<div className="w-80 flex-shrink-0 space-y-4 sticky top-4 self-start">
+							<div className="sticky top-4 w-80 flex-shrink-0 space-y-4 self-start">
 								<ResumeScoreCard
 									scores={scores}
 									previousScore={previousScore}
-									hasJobDescription={!!(formData.job?.content && formData.job.content.trim().length > 0)}
+									hasJobDescription={
+										!!(
+											formData.job?.content &&
+											formData.job.content.trim().length > 0
+										)
+									}
 								/>
 								<ImprovementChecklist items={checklist} />
 							</div>
@@ -3095,12 +3229,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 function getRenderedStyles() {
 	// Critical font CSS to ensure correct weights are applied in PDF
 	const fontOverrides = `
-		/* Force Crimson Pro font family on resume content */
-		#resume-content,
-		#resume-content * {
-			font-family: 'Crimson Pro', Georgia, serif !important;
-		}
-
 		.font-crimson,
 		.font-crimson * {
 			font-family: 'Crimson Pro', Georgia, serif !important;
@@ -3144,10 +3272,12 @@ function getRenderedStyles() {
 						if (rule instanceof CSSFontFaceRule) {
 							const ruleText = rule.cssText
 							// Keep only if it's for weights 400+ or doesn't specify weight
-							if (ruleText.includes('font-weight: 200') ||
+							if (
+								ruleText.includes('font-weight: 200') ||
 								ruleText.includes('font-weight: 300') ||
 								ruleText.includes('font-weight:200') ||
-								ruleText.includes('font-weight:300')) {
+								ruleText.includes('font-weight:300')
+							) {
 								return false
 							}
 						}
@@ -3168,18 +3298,6 @@ function getRenderedStyles() {
 // Google Fonts for PDF - @font-face without local() forces web fonts over system fonts
 function getGoogleFontsLinks() {
 	return `
-		<style>
-		@font-face {
-			font-family: 'Crimson Pro';
-			font-weight: 500;
-			src: url(https://fonts.gstatic.com/s/crimsonpro/v24/q5uUsoa5M_tv7IihmnkabC5XiXCAlXGks1WZzm1MP5s5dpTVcuE.woff2) format('woff2');
-		}
-		@font-face {
-			font-family: 'Crimson Pro';
-			font-weight: 800;
-			src: url(https://fonts.gstatic.com/s/crimsonpro/v24/q5uUsoa5M_tv7IihmnkabC5XiXCAlXGks1WZkGuMP5s5dpTVcuE.woff2) format('woff2');
-		}
-		</style>
 		<link rel="preconnect" href="https://fonts.googleapis.com">
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 		<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;800&display=swap" rel="stylesheet">
