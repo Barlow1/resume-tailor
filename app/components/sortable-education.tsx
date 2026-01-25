@@ -63,14 +63,14 @@ export function SortableEducation({
 			ref={setNodeRef}
 			style={style}
 			id={`education-${education.id}`}
-			className={`group relative rounded p-4 ${
+			className={`group relative rounded p-1 ${
 				!isDraggingAny &&
 				!isDragging &&
 				'hover:border hover:border-dashed hover:border-gray-400'
 			}`}
 		>
 			<div
-				className={`absolute -right-5 -top-5 gap-2 rounded-3xl bg-white px-2 py-1 shadow-md ${
+				className={`preview-only absolute -right-5 -top-5 gap-2 rounded-3xl bg-white px-2 py-1 shadow-md ${
 					isDraggingAny && !isDragging
 						? 'hidden'
 						: 'hidden group-focus-within:flex group-hover:flex'
@@ -99,26 +99,17 @@ export function SortableEducation({
 				</button>
 			</div>
 
-			<div className="mb-4 grid grid-flow-row grid-cols-12 items-start justify-between">
-				<div className="col-span-8">
-					<EditableContent
-						content={education.school}
-						onInput={e =>
-							onEducationEdit(e.currentTarget.innerText, education.id!, 'school')
-						}
-						className="mb-1 text-lg font-medium text-gray-700 outline-none"
-						placeholder="School Name"
-					/>
-					<EditableContent
-						content={education.degree}
-						onInput={e =>
-							onEducationEdit(e.currentTarget.innerText, education.id!, 'degree')
-						}
-						className="text-gray-600 outline-none"
-						placeholder="Degree / Field of Study"
-					/>
-				</div>
-				<div className="col-span-4 flex justify-end gap-2 text-sm text-gray-500">
+			{/* Degree title and dates on same line */}
+			<div className="flex items-baseline justify-between">
+				<EditableContent
+					content={education.degree}
+					onInput={e =>
+						onEducationEdit(e.currentTarget.innerText, education.id!, 'degree')
+					}
+					className="resume-degree text-gray-700 outline-none"
+					placeholder="Degree / Field of Study"
+				/>
+				<div className="flex gap-1 resume-dates text-gray-700">
 					<EditableContent
 						content={education.startDate}
 						onInput={e =>
@@ -129,9 +120,9 @@ export function SortableEducation({
 							)
 						}
 						className="text-right outline-none"
-						placeholder="Start Date"
+						placeholder="Start"
 					/>
-					<span>-</span>
+					<span>–</span>
 					<EditableContent
 						content={education.endDate}
 						onInput={e =>
@@ -142,24 +133,36 @@ export function SortableEducation({
 							)
 						}
 						className="outline-none"
-						placeholder="End Date"
+						placeholder="End"
 					/>
 				</div>
 			</div>
-
+			{/* School name below degree */}
 			<EditableContent
-				multiline
-				content={education.description}
+				content={education.school}
 				onInput={e =>
-					onEducationEdit(
-						e.currentTarget.innerText,
-						education.id!,
-						'description',
-					)
+					onEducationEdit(e.currentTarget.innerText, education.id!, 'school')
 				}
-				className="whitespace-pre-line text-gray-600 outline-none"
-				placeholder="Additional details (honors, activities, etc.)"
+				className="resume-school text-gray-700 outline-none"
+				placeholder="School Name"
 			/>
+
+			{/* Only show description when it has content - hidden in PDF when empty */}
+			{education.description && education.description.trim() ? (
+				<EditableContent
+					multiline
+					content={education.description}
+					onInput={e =>
+						onEducationEdit(
+							e.currentTarget.innerText,
+							education.id!,
+							'description',
+						)
+					}
+					className="resume-body whitespace-pre-line text-gray-700 outline-none"
+					placeholder="Additional details (honors, activities, etc.)"
+				/>
+			) : null}
 		</div>
 	)
 }

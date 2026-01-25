@@ -2,6 +2,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;800&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -10,6 +11,32 @@
 	:root {
 		--font-sans: Nunito Sans, Nunito Sans Fallback;
 		/* --font-mono: here if you got it... */
+
+		/* Resume typography - controlled via JS for global font size control */
+		/* Default values - will be overridden by JS */
+		--resume-name-size: 22pt;
+		--resume-contact-size: 10pt;
+		--resume-summary-size: 10pt;
+		--resume-section-header-size: 10pt;
+		--resume-company-size: 12pt;
+		--resume-dates-size: 10pt;
+		--resume-job-title-size: 10pt;
+		--resume-body-size: 10pt;
+		--resume-degree-size: 12pt;
+		--resume-school-size: 10pt;
+		--resume-skill-label-size: 10pt;
+		--resume-skill-size: 10pt;
+
+		/* Line heights */
+		--resume-line-height: 1.2;
+		--resume-bullet-line-height: 1.2;
+
+		/* Spacing */
+		--resume-section-gap: 14pt;
+		--resume-company-title-gap: 5pt;
+		--resume-title-bullet-gap: 4pt;
+		--resume-item-gap: 2pt;
+		--resume-bullet-gap: 2pt;
 
 		/* prefixed with foreground because it should look good on the background */
 		--foreground-danger: 345 82.7% 40.8%;
@@ -83,7 +110,7 @@
 
 		input[type=month] {
 			color-scheme: dark;
-		}	
+		}
 		div {
 			color-scheme: dark;
 		}
@@ -160,13 +187,200 @@
 }
 
 @layer utilities {
-  .font-inter {
-    font-family: 'Inter', sans-serif;
+  .font-garamond {
+    font-family: 'Garamond', 'Times New Roman', serif;
   }
-  .font-roboto {
-    font-family: 'Roboto', sans-serif;
+  .font-trebuchet {
+    font-family: 'Trebuchet MS', 'Helvetica Neue', sans-serif;
   }
-  .font-poppins {
-    font-family: 'Poppins', sans-serif;
+  .font-verdana {
+    font-family: 'Verdana', 'Geneva', sans-serif;
   }
+  .font-crimson {
+    font-family: 'Crimson Pro', Georgia, serif;
+  }
+}
+
+/* Resume typography classes - use CSS variables for global control */
+#resume-content {
+  line-height: var(--resume-line-height);
+}
+
+/* Name - Bold, large */
+.resume-name {
+  font-size: var(--resume-name-size);
+  font-weight: 800 !important;
+  line-height: 1.1;
+}
+
+/* Contact line - Regular */
+.resume-contact {
+  font-size: var(--resume-contact-size);
+  font-weight: 500 !important;
+  line-height: var(--resume-line-height);
+}
+
+/* Summary/Role - Regular */
+.resume-role {
+  font-size: var(--resume-summary-size);
+  font-weight: 500 !important;
+  line-height: var(--resume-line-height);
+}
+
+/* Section headers - Regular, ALL CAPS with grey underline */
+/* Note: Section spacing is handled by flex gap on parent container */
+/* Text color is set inline to match name color, underline is grey */
+.resume-section-header {
+  font-size: var(--resume-section-header-size);
+  font-weight: 500 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: var(--resume-line-height);
+  margin-top: 0;
+  margin-bottom: 2px;
+  padding-bottom: 1px;
+  border-bottom-width: 0.8pt;
+  border-bottom-style: solid;
+  border-bottom-color: #d1d5db;
+}
+
+/* Company name - Bold */
+.resume-company {
+  font-size: var(--resume-company-size);
+  font-weight: 800 !important;
+  line-height: var(--resume-line-height);
+}
+
+/* Job title - Bold */
+.resume-job-title {
+  font-size: var(--resume-job-title-size);
+  font-weight: 800 !important;
+  line-height: var(--resume-line-height);
+  margin-top: var(--resume-company-title-gap);
+}
+
+/* Dates - Bold */
+.resume-dates {
+  font-size: var(--resume-dates-size);
+  font-weight: 800 !important;
+  line-height: var(--resume-line-height);
+}
+
+/* Body/bullet text - Regular */
+.resume-body {
+  font-size: var(--resume-body-size);
+  font-weight: 500 !important;
+  line-height: var(--resume-bullet-line-height);
+}
+
+/* Degree title - Bold */
+.resume-degree {
+  font-size: var(--resume-degree-size);
+  font-weight: 800 !important;
+  line-height: var(--resume-line-height);
+}
+
+/* School name - Regular */
+.resume-school {
+  font-size: var(--resume-school-size);
+  font-weight: 500 !important;
+  line-height: var(--resume-line-height);
+}
+
+/* Skill category label - Bold */
+.resume-skill-label {
+  font-size: var(--resume-skill-label-size);
+  font-weight: 800 !important;
+  line-height: var(--resume-line-height);
+}
+
+/* Skill items - Regular */
+.resume-skill {
+  font-size: var(--resume-skill-size);
+  font-weight: 500 !important;
+  line-height: var(--resume-line-height);
+}
+
+/* Section gap utility */
+.resume-section-gap {
+  margin-bottom: var(--resume-section-gap);
+}
+
+/* Item gap utility */
+.resume-item-gap {
+  margin-bottom: var(--resume-item-gap);
+}
+
+/* Bullet point styling */
+.resume-bullet {
+  font-size: 12pt;
+  line-height: 1;
+  margin-right: 4px;
+}
+
+/* Bullet container with proper spacing */
+.resume-bullet-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  margin-top: var(--resume-bullet-gap);
+}
+
+.resume-bullet-item:first-child {
+  margin-top: var(--resume-title-bullet-gap);
+}
+
+/* Hide empty optional content - placeholder visible in editor, hidden in PDF */
+.hide-when-empty:empty {
+  display: none;
+}
+
+/* For contenteditable, also check for empty string */
+[contenteditable].hide-when-empty:empty,
+[contenteditable].hide-when-empty:not(:empty):has(br:only-child) {
+  display: none;
+}
+
+/* Print and PDF-specific styles */
+@media print {
+  /* Hide preview-only elements in print/PDF */
+  .preview-only {
+    display: none !important;
+  }
+
+  /* Hide placeholder text in empty fields */
+  [contenteditable=true]:empty:before {
+    content: none !important;
+  }
+
+  /* Prevent page breaks inside important elements */
+  .print-no-break {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Keep headers with their content */
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  /* Avoid orphan/widow lines */
+  p, li {
+    orphans: 3;
+    widows: 3;
+  }
+
+  /* Experience and education items should not break across pages */
+  [id^="experience-"],
+  [id^="education-"] {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+}
+
+/* Page setup for PDF generation */
+@page {
+  size: letter;
+  margin: 0;
 }

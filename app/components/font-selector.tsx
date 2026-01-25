@@ -14,12 +14,13 @@ export type FontOption = {
 }
 
 const FONT_OPTIONS: FontOption[] = [
-	{ value: 'font-sans', label: 'Default Sans' },
-	{ value: 'font-serif', label: 'Serif' },
-	{ value: 'font-mono', label: 'Monospace' },
-	{ value: 'font-inter', label: 'Inter' },
-	{ value: 'font-roboto', label: 'Roboto' },
-	{ value: 'font-poppins', label: 'Poppins' },
+	{ value: 'font-crimson', label: 'Crimson Pro' },
+	{ value: 'font-sans', label: 'Arial' },
+	{ value: 'font-serif', label: 'Georgia' },
+	{ value: 'font-mono', label: 'Courier' },
+	{ value: 'font-garamond', label: 'Garamond' },
+	{ value: 'font-trebuchet', label: 'Trebuchet' },
+	{ value: 'font-verdana', label: 'Verdana' },
 ]
 
 export function FontSelector({

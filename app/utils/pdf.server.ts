@@ -8,7 +8,8 @@ export async function getPdfFromHtml(html: string): Promise<Uint8Array> {
 			'--no-sandbox',
 			'--disable-setuid-sandbox',
 			'--disable-dev-shm-usage',
-			'--disable-gpu'
+			'--disable-gpu',
+			'--font-render-hinting=none'
 		]
 	})
 
@@ -17,18 +18,27 @@ export async function getPdfFromHtml(html: string): Promise<Uint8Array> {
 		waitUntil: 'networkidle0'
 	})
 
-	// Optional: Set viewport and other settings
-	await page.setViewport({ width: 1425, height: 1900 })
+	// Set viewport to match Letter paper dimensions at 96dpi
+	await page.setViewport({ width: 816, height: 1056 })
+
+	// Load Crimson Pro font weights before generating PDF
+	await page.evaluate(async () => {
+		await Promise.all([
+			document.fonts.load('500 16px "Crimson Pro"'),
+			document.fonts.load('800 16px "Crimson Pro"'),
+		])
+		await document.fonts.ready
+	})
 
 	const pdfBuffer = await page.pdf({
 		printBackground: true,
-		scale: 0.7,
-		format: 'A4',
+		scale: 1.0,
+		format: 'letter',
 		margin: {
-			top: '20px',
-			right: '20px',
-			bottom: '20px',
-			left: '20px'
+			top: '0',
+			right: '0',
+			bottom: '0',
+			left: '0'
 		}
 	})
 
