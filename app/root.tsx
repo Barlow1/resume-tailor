@@ -49,6 +49,8 @@ import { makeTimings, time } from './utils/timing.server.ts'
 import { useToast } from './utils/useToast.tsx'
 import { useOptionalUser, useUser } from './utils/user.ts'
 import { trackEvent } from './utils/analytics.ts'
+import { initAnalytics, identify, getAnonymousId } from './lib/analytics.client.ts'
+import { useAnalytics } from './hooks/useAnalytics.ts'
 import rdtStylesheetUrl from 'remix-development-tools/stylesheet.css'
 import clsx from 'clsx'
 import LogRocket from 'logrocket'
@@ -314,6 +316,31 @@ function App() {
 		matches.find(m => m.id === 'routes/_marketing+/index'),
 	)
 	useToast(data.flash?.toast)
+
+	// Initialize PostHog analytics
+	useEffect(() => {
+		if (typeof window !== 'undefined' && data.ENV.POSTHOG_API_KEY) {
+			initAnalytics({
+				apiKey: data.ENV.POSTHOG_API_KEY,
+				apiHost: data.ENV.POSTHOG_HOST,
+				debug: data.ENV.MODE === 'development',
+			})
+		}
+	}, [data.ENV.POSTHOG_API_KEY, data.ENV.POSTHOG_HOST, data.ENV.MODE])
+
+	// Identify user in PostHog when logged in
+	useEffect(() => {
+		if (user && typeof window !== 'undefined') {
+			identify(user.id, {
+				email: user.email,
+				name: user.name ?? undefined,
+				username: user.username,
+			})
+		}
+	}, [user])
+
+	// Use analytics hook for automatic page view tracking
+	useAnalytics()
 
 	const isBlogRoute = matches.some(m => m.id.startsWith('routes/blog+'))
 	const isSeoRoute = matches.some(m =>

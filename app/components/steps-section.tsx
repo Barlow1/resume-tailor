@@ -3,6 +3,7 @@ import clsx from 'clsx'
 import step1 from '~/routes/_marketing+/logos/step-1.webp'
 import step2 from '~/routes/_marketing+/logos/step-2.webp'
 import step3 from '~/routes/_marketing+/logos/step-3.webp'
+import { trackCtaClick } from '~/lib/analytics.client.ts'
 
 export function StepsSection() {
 	const steps = [
@@ -128,6 +129,7 @@ export function StepsSection() {
 				<Link
 					to="/builder"
 					className="hover:bg-brand-600 inline-block rounded-lg bg-brand-500 px-8 py-4 text-lg font-semibold text-white"
+					onClick={() => trackCtaClick('BUILD YOUR RESUME NOW', 'steps_section', '/builder')}
 				>
 					BUILD YOUR RESUME NOW
 				</Link>

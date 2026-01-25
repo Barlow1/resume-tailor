@@ -1,4 +1,5 @@
 import { Link } from '@remix-run/react'
+import { trackCtaClick } from '~/lib/analytics.client.ts'
 
 export function HeroSection() {
 	return (
@@ -71,6 +72,7 @@ export function HeroSection() {
 				<Link
 					to="/builder"
 					className="hover:bg-brand-600 inline-block rounded-lg bg-brand-500 px-8 py-4 text-lg font-semibold text-white"
+					onClick={() => trackCtaClick('BUILD YOUR RESUME NOW', 'hero_section', '/builder')}
 				>
 					BUILD YOUR RESUME NOW
 				</Link>

@@ -3,9 +3,10 @@ import { eventStream } from 'remix-utils/sse/server'
 import { requireUserId } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
 import { getAiFeedbackStreaming } from '~/lib/careerfit.server.ts'
+import { trackAnalysisStarted, trackAnalysisCompleted } from '~/lib/analytics.server.ts'
 
 export async function loader({ request }: DataFunctionArgs) {
-	await requireUserId(request)
+	const userId = await requireUserId(request)
 
 	const url = new URL(request.url)
 	const analysisId = url.searchParams.get('analysisId') ?? ''
@@ -13,6 +14,8 @@ export async function loader({ request }: DataFunctionArgs) {
 	const resumeTxt = url.searchParams.get('resumeTxt') ?? ''
 	const title = url.searchParams.get('title') ?? ''
 	const company = url.searchParams.get('company') ?? ''
+	const resumeId = url.searchParams.get('resumeId') ?? undefined
+	const jobId = url.searchParams.get('jobId') ?? undefined
 
 	if (!analysisId || !jdText || !resumeTxt) {
 		return new Response('Missing required parameters', { status: 400 })
@@ -28,6 +31,10 @@ export async function loader({ request }: DataFunctionArgs) {
 		return new Response('Analysis not found', { status: 404 })
 	}
 
+	// Track analysis started in PostHog
+	const startTime = Date.now()
+	trackAnalysisStarted(userId, resumeId, jobId, request)
+
 	const controller = new AbortController()
 	request.signal.addEventListener('abort', () => {
 		controller.abort()
@@ -39,6 +46,10 @@ export async function loader({ request }: DataFunctionArgs) {
 			resumeTxt,
 			title,
 			company,
+			userId,
+			resumeId,
+			startTime,
+			request,
 		})
 		return function clear() {}
 	})
@@ -52,6 +63,10 @@ const processAnalysisStream = async (
 		resumeTxt: string
 		title: string
 		company: string
+		userId: string
+		resumeId?: string
+		startTime: number
+		request: Request
 	},
 ) => {
 	try {
@@ -94,6 +109,26 @@ const processAnalysisStream = async (
 				console.log(`📦 Last 200 chars:`, totalContent.substring(totalContent.length - 200))
 
 				if (finishReason === 'stop') {
+					// Try to extract score from content
+					const scoreMatch = totalContent.match(/"score"\s*:\s*(\d+)/i) ||
+						totalContent.match(/score[:\s]+(\d+)/i)
+					const score = scoreMatch ? parseInt(scoreMatch[1], 10) : 0
+
+					// Try to count issues (look for numbered list items or issue mentions)
+					const issuesMatch = totalContent.match(/\d+\.\s+[^\n]+/g) || []
+					const issuesCount = issuesMatch.length
+
+					// Track analysis completed in PostHog
+					const durationMs = Date.now() - params.startTime
+					trackAnalysisCompleted(
+						params.userId,
+						score,
+						issuesCount,
+						durationMs,
+						params.resumeId,
+						params.request,
+					)
+
 					console.log('📤 Sending [DONE] signal')
 					send({ data: '[DONE]' })
 					controller.abort()

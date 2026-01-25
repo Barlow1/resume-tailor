@@ -16,6 +16,7 @@ import { passwordSchema, usernameSchema } from '~/utils/user-validation.ts'
 import { checkboxSchema } from '~/utils/zod-extensions.ts'
 import { type VerificationTypes, Verify } from './verify.tsx'
 import SocialLogin from '~/components/social-login.tsx'
+import { trackLoginCompleted } from '~/lib/analytics.server.ts'
 import { getRecaptchaScore } from '~/utils/recaptcha.server.ts'
 import { useRecaptcha } from '~/components/recaptcha-provider.tsx'
 
@@ -125,6 +126,9 @@ export async function action({ request }: DataFunctionArgs) {
 			responseInit,
 		)
 	} else if (user?.username) {
+		// Track login completed in PostHog
+		trackLoginCompleted(session.userId, 'email', undefined, request)
+
 		if (redirectTo) {
 			throw redirect(safeRedirect(redirectTo), responseInit)
 		} else {

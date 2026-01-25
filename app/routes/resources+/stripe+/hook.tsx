@@ -6,6 +6,7 @@ import {
 	deactivateSubscription,
 } from '~/utils/subscription.server.ts'
 import { PrismaClient } from '@prisma/client'
+import { trackTrialStarted, trackSubscriptionCreated } from '~/lib/analytics.server.ts'
 
 interface StripeEvent {
 	type: string
@@ -81,6 +82,9 @@ async function handleCheckoutSessionCompleted(
 			},
 		})
 
+		// Track trial started in PostHog
+		trackTrialStarted(subscription.ownerId, planTier as 'weekly' | 'monthly')
+
 		console.log(`Created subscription_started conversion event for user ${subscription.ownerId}`)
 	} catch (e) {
 		console.error('Error creating subscription_started conversion event', e)
@@ -147,6 +151,14 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
 				tracked: false,
 			},
 		})
+
+		// Track subscription created in PostHog
+		trackSubscriptionCreated(
+			subscription.ownerId,
+			planTier as 'weekly' | 'monthly',
+			priceUsd,
+			'USD',
+		)
 
 		console.log(`Created conversion event for user ${subscription.ownerId}`)
 	} catch (e) {

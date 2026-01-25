@@ -17,6 +17,12 @@ import {
 	trackResumeParsing,
 	trackError,
 } from '~/utils/tracking.server.ts'
+import {
+	trackResumeUploaded,
+	trackResumeParsed,
+	trackResumeCreated,
+} from '~/lib/analytics.server.ts'
+import { tryActivateUser } from '~/lib/activation.server.ts'
 
 const MAX_SIZE = 1024 * 1024 * 10 // 10MB
 
@@ -140,6 +146,40 @@ export async function action({ request }: DataFunctionArgs) {
 				fileType: resumeFile.type,
 				fileSize: resumeFile.size,
 			})
+
+			// PostHog: Track resume uploaded event
+			const fileExtension = resumeFile.name.split('.').pop()?.toLowerCase() || 'pdf'
+			const fileType = fileExtension === 'docx' || fileExtension === 'doc' ? fileExtension : 'pdf'
+			if (userId) {
+				trackResumeUploaded(
+					userId,
+					fileType as 'pdf' | 'docx' | 'doc',
+					Math.round(resumeFile.size / 1024),
+					request,
+				)
+
+				// Track resume parsed success
+				const sectionsFound = [
+					parsedResume.experiences?.length ? 'experience' : null,
+					parsedResume.education?.length ? 'education' : null,
+					parsedResume.skills?.length ? 'skills' : null,
+					parsedResume.summary ? 'summary' : null,
+				].filter(Boolean) as string[]
+
+				trackResumeParsed(
+					userId,
+					true,
+					sectionsFound,
+					Date.now() - parseStartTime,
+					request,
+				)
+
+				// Track resume created
+				trackResumeCreated(userId, 'upload', resume.id, request)
+
+				// Check for activation
+				await tryActivateUser(userId, 'resume_created', request)
+			}
 
 			// Get subscription status for GA4 tracking
 			const subscription = await prisma.subscription.findFirst({

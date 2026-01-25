@@ -2,6 +2,7 @@ import { json, type ActionFunctionArgs } from '@remix-run/node'
 import { getUserId } from '~/utils/auth.server.ts'
 import { createJob } from '~/utils/job.server.ts'
 import { prisma } from '~/utils/db.server.ts'
+import { trackJobCreated } from '~/lib/analytics.server.ts'
 
 export async function action({ request }: ActionFunctionArgs) {
   const userId = await getUserId(request)
@@ -11,6 +12,12 @@ export async function action({ request }: ActionFunctionArgs) {
   const content = formData.get('content') as string
 
   const job = await createJob({ userId, title, content })
+
+  // Track job created in PostHog
+  if (userId) {
+    const company = content.match(/company[:\s]+([^\n]+)/i)?.[1]?.trim()
+    trackJobCreated(userId, 'manual', job.id, !!company, request)
+  }
 
   // Track onboarding progress - mark job as saved
   if (userId) {

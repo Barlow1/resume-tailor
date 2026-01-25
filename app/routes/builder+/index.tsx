@@ -105,6 +105,7 @@ import {
 } from '~/utils/tailor-diff.ts'
 import { trackEvent as trackLegacyEvent } from '~/utils/tracking.client.ts'
 import { trackEvent } from '~/utils/analytics.ts'
+import { track } from '~/lib/analytics.client.ts'
 import { useOnboardingFlow } from '~/hooks/use-onboarding-flow.ts'
 import { JobPasteModal } from '~/components/job-paste-modal.tsx'
 import { SpotlightOverlay } from '~/components/spotlight-overlay.tsx'
@@ -337,6 +338,16 @@ export default function ResumeBuilder() {
 		extractedKeywords,
 		debounceMs: 500,
 	})
+
+	// Track builder opened on mount
+	useEffect(() => {
+		track('builder_opened', {
+			resume_id: savedData.id || 'new',
+			has_job: !!savedData.jobId,
+			section_count: (savedData.experiences?.length || 0) + (savedData.education?.length || 0),
+		})
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [])
 
 	// Debounced save function - will only fire after 1000ms of no changes
 	const debouncedSave = useDebouncedCallback(async (formData: ResumeData) => {
@@ -662,6 +673,12 @@ export default function ResumeBuilder() {
 			(gettingStartedProgress?.downloadCount ?? 0) >= MAX_FREE_DOWNLOADS
 		) {
 			setShowSubscribeModal(true)
+			// Track paywall shown in PostHog
+			track('paywall_shown', {
+				trigger: 'download_limit',
+				usage_count: gettingStartedProgress?.downloadCount ?? 0,
+				limit: MAX_FREE_DOWNLOADS,
+			})
 			return
 		}
 		handlePDFDownloadRequested({
@@ -3177,6 +3194,11 @@ export default function ResumeBuilder() {
 							userId,
 							category: 'Resume Tailoring',
 						})
+						// Track AI tailor accepted in PostHog
+						track('ai_tailor_accepted', {
+							experience_id: formData.id || 'unknown',
+							changes_made: diffSummary?.totalChanges || 0,
+						})
 					}}
 					onRevert={() => {
 						if (preTailoredResume) {
@@ -3189,6 +3211,10 @@ export default function ResumeBuilder() {
 							action: 'revert',
 							userId,
 							category: 'Resume Tailoring',
+						})
+						// Track AI tailor rejected in PostHog
+						track('ai_tailor_rejected', {
+							experience_id: formData.id || 'unknown',
 						})
 					}}
 					diffSummary={diffSummary}

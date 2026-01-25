@@ -15,6 +15,10 @@ import {
 	trackTailorCompleted,
 	trackError,
 } from '~/utils/tracking.server.ts'
+import {
+	trackAiTailorStarted,
+	trackAiTailorCompleted,
+} from '~/lib/analytics.server.ts'
 
 const builderCompletionSchema = z.object({
 	experience: z.string().optional(),
@@ -70,6 +74,17 @@ export async function action({ request }: DataFunctionArgs) {
 			type: 'entire_resume',
 		})
 
+		// Track AI tailor started in PostHog
+		trackAiTailorStarted(
+			userId,
+			'entire_resume',
+			!!parsedResumeData.jobId,
+			true, // isFreeTier - we don't check subscription here
+			request,
+			parsedResumeData.id ?? undefined,
+			parsedResumeData.jobId ?? undefined,
+		)
+
 		try {
 			const parsedKeywords = extractedKeywords ? (JSON.parse(extractedKeywords) as string[]) : undefined
 			;[{ response }] = await Promise.all([
@@ -107,6 +122,18 @@ export async function action({ request }: DataFunctionArgs) {
 				jobId: parsedResumeData.jobId || 'unknown',
 				type: 'entire_resume',
 			})
+
+			// Track AI tailor completed in PostHog
+			trackAiTailorCompleted(
+				userId,
+				'entire_resume',
+				Date.now() - startTime,
+				true,
+				undefined, // tokensUsed
+				request,
+				parsedResumeData.id ?? undefined,
+				parsedResumeData.jobId ?? undefined,
+			)
 		} catch (error: any) {
 			// Track failure
 			await trackTailorCompleted({
@@ -118,6 +145,18 @@ export async function action({ request }: DataFunctionArgs) {
 				jobId: parsedResumeData.jobId || 'unknown',
 				type: 'entire_resume',
 			})
+
+			// Track AI tailor failed in PostHog
+			trackAiTailorCompleted(
+				userId,
+				'entire_resume',
+				Date.now() - startTime,
+				false,
+				undefined, // tokensUsed
+				request,
+				parsedResumeData.id ?? undefined,
+				parsedResumeData.jobId ?? undefined,
+			)
 
 			await trackError({
 				error: error.message,
@@ -181,6 +220,15 @@ export async function action({ request }: DataFunctionArgs) {
 			type: 'single_bullet',
 		})
 
+		// Track AI tailor started in PostHog
+		trackAiTailorStarted(
+			userId,
+			'single_bullet',
+			!!jobDescription,
+			true, // isFreeTier
+			request,
+		)
+
 		try {
 			const parsedKeywords = extractedKeywords ? (JSON.parse(extractedKeywords) as string[]) : undefined
 			;[{ response }] = await Promise.all([
@@ -218,6 +266,16 @@ export async function action({ request }: DataFunctionArgs) {
 				userId,
 				type: 'single_bullet',
 			})
+
+			// Track AI tailor completed in PostHog
+			trackAiTailorCompleted(
+				userId,
+				'single_bullet',
+				Date.now() - startTime,
+				true,
+				undefined, // tokensUsed
+				request,
+			)
 		} catch (error: any) {
 			// Track failure
 			await trackTailorCompleted({
@@ -227,6 +285,16 @@ export async function action({ request }: DataFunctionArgs) {
 				userId,
 				type: 'single_bullet',
 			})
+
+			// Track AI tailor failed in PostHog
+			trackAiTailorCompleted(
+				userId,
+				'single_bullet',
+				Date.now() - startTime,
+				false,
+				undefined, // tokensUsed
+				request,
+			)
 
 			await trackError({
 				error: error.message,
