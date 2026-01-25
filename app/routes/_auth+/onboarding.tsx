@@ -29,7 +29,7 @@ import {
 import { checkboxSchema } from '~/utils/zod-extensions.ts'
 import { redirectWithConfetti } from '~/utils/flash-session.server.ts'
 import { prisma } from '~/utils/db.server.ts'
-import { trackSignupCompleted, identifyUser } from '~/lib/analytics.server.ts'
+import { trackSignupCompleted } from '~/lib/analytics.server.ts'
 
 export const onboardingEmailSessionKey = 'onboardingEmail'
 

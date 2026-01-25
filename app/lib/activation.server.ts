@@ -55,7 +55,7 @@ export async function checkUserActivation(userId: string): Promise<ActivationChe
 
 	// Check for resume
 	const resume = await prisma.builderResume.findFirst({
-		where: { ownerId: userId },
+		where: { userId },
 		select: { id: true },
 	})
 	const hasResume = !!resume

@@ -9,7 +9,7 @@
  * - Automatic common properties
  */
 
-import posthogLib from 'posthog-js'
+import { posthog, type PostHogInterface } from 'posthog-js'
 import type {
 	AnalyticsEventName,
 	AnalyticsEventMap,
@@ -17,9 +17,6 @@ import type {
 	CommonEventProperties,
 	FeatureName,
 } from './analytics.types.ts'
-
-// Get the PostHog instance
-const posthog = posthogLib
 
 // ============================================================================
 // CONFIGURATION
@@ -124,7 +121,7 @@ export function initAnalytics(options: InitOptions = {}): void {
 			maskTextSelector: '[data-mask]',
 		},
 		// Loaded callback
-		loaded: ph => {
+		loaded: (ph: PostHogInterface) => {
 			// Set anonymous ID
 			const anonymousId = getAnonymousId()
 			ph.register({ anonymous_id: anonymousId })
@@ -366,10 +363,12 @@ export function markAiModalResult(): void {
  */
 export function trackAiModalClosed(wasAccepted: boolean): void {
 	if (aiModalType) {
+		const sessionDuration = aiModalOpenedAt ? Date.now() - aiModalOpenedAt : 0
 		track('ai_modal_closed', {
 			modal_type: aiModalType,
 			had_result: aiModalHadResult,
 			was_accepted: wasAccepted,
+			session_duration_ms: sessionDuration,
 		})
 	}
 	aiModalOpenedAt = null

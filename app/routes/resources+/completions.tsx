@@ -30,7 +30,6 @@ export async function loader({ request }: DataFunctionArgs) {
 
 	const experience = url.searchParams.get('experience') ?? ''
 	const startTime = Date.now()
-	const isGenerate = !experience
 
 	// Track AI generate started in PostHog
 	trackAiGenerateStarted(
