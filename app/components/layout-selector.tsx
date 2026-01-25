@@ -16,9 +16,9 @@ export type LayoutOption = {
 
 export const LAYOUT_OPTIONS: LayoutOption[] = [
 	{
-		value: 'modern',
-		label: 'Modern',
-		description: 'Creative layout with a sidebar',
+		value: 'traditional',
+		label: 'Traditional',
+		description: 'Classic single-column layout',
 	},
 	{
 		value: 'professional',
@@ -26,9 +26,9 @@ export const LAYOUT_OPTIONS: LayoutOption[] = [
 		description: 'Clean and balanced design',
 	},
 	{
-		value: 'traditional',
-		label: 'Traditional',
-		description: 'Classic single-column layout',
+		value: 'modern',
+		label: 'Modern',
+		description: 'Creative layout with a sidebar',
 	},
 ]
 

@@ -14,12 +14,13 @@ export type FontOption = {
 }
 
 const FONT_OPTIONS: FontOption[] = [
-	{ value: 'font-sans', label: 'Default Sans' },
-	{ value: 'font-serif', label: 'Serif' },
-	{ value: 'font-mono', label: 'Monospace' },
-	{ value: 'font-inter', label: 'Inter' },
-	{ value: 'font-roboto', label: 'Roboto' },
-	{ value: 'font-poppins', label: 'Poppins' },
+	{ value: 'font-crimson', label: 'Crimson Pro' },
+	{ value: 'font-sans', label: 'Arial' },
+	{ value: 'font-serif', label: 'Georgia' },
+	{ value: 'font-mono', label: 'Courier' },
+	{ value: 'font-garamond', label: 'Garamond' },
+	{ value: 'font-trebuchet', label: 'Trebuchet' },
+	{ value: 'font-verdana', label: 'Verdana' },
 ]
 
 export function FontSelector({
@@ -46,7 +47,7 @@ export function FontSelector({
 
 				<ListboxOptions
 					transition
-					className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 ![color-scheme:light] focus:outline-none data-[closed]:data-[leave]:opacity-0 data-[leave]:transition data-[leave]:duration-100 data-[leave]:ease-in sm:text-sm"
+					className="absolute z-10 mt-1 min-w-[150px] max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 ![color-scheme:light] focus:outline-none data-[closed]:data-[leave]:opacity-0 data-[leave]:transition data-[leave]:duration-100 data-[leave]:ease-in sm:text-sm"
 				>
 					{FONT_OPTIONS.map(font => (
 						<ListboxOption

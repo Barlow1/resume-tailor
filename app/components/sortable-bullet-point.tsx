@@ -63,15 +63,15 @@ export function SortableBulletPoint({
 		<div
 			ref={setNodeRef}
 			style={style}
-			className={`group/expItem relative flex items-start gap-2`}
+			className={`group/expItem resume-bullet-item relative`}
 		>
-			<span className="text-black">•</span>
+			<span className="resume-bullet text-black">•</span>
 			<EditableContent
 				content={content}
 				onInput={onInput}
 				rerenderRef={rerenderRef}
 				onEnter={onEnter}
-				className={`flex-1 text-gray-600 outline-none ${
+				className={`flex-1 resume-body text-gray-700 outline-none ${
 					!isDraggingAny &&
 					!isDragging &&
 					'group-focus-within/expItem:bg-gray-100 group-hover/expItem:bg-gray-100'
@@ -79,19 +79,19 @@ export function SortableBulletPoint({
 				placeholder="Add achievement or responsibility..."
 				id={id}
 			/>
-			{/* AI sparkle button - always visible on the right */}
+			{/* AI sparkle button - preview only, stripped from PDF */}
 			<button
 				type="button"
 				onClick={onAIClick}
-				className="absolute -right-1 top-0 opacity-40 transition-opacity hover:opacity-100"
+				className="preview-only absolute -right-1 top-0 opacity-40 transition-opacity hover:opacity-100"
 				title="AI Assistant"
 				{...(isFirstBullet ? { 'data-first-bullet-ai': true } : {})}
 			>
 				<RainbowSparklesIcon className="h-4 w-4" id={`${id}-hint`} />
 			</button>
-			{/* Hover toolbar - positioned just left of the sparkle button */}
+			{/* Hover toolbar - preview only, stripped from PDF */}
 			<div
-				className={`absolute right-6 -top-5 gap-2 rounded-3xl bg-white px-2 py-1 shadow-md ${
+				className={`preview-only absolute right-6 -top-5 gap-2 rounded-3xl bg-white px-2 py-1 shadow-md ${
 					isDraggingAny && !isDragging
 						? 'hidden'
 						: 'hidden group-focus-within/expItem:flex group-hover/expItem:flex'

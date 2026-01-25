@@ -137,7 +137,12 @@ Parse the following fields with COMPLETE information:
   * date_start, date_end: ISO format or null
   * date_start_precision, date_end_precision: 'day', 'month', or 'year' to indicate precision
 
-- skills: flat array of technical and professional skills from the dedicated SKILLS section ONLY. Do NOT include skills extracted from job descriptions.
+- skills: Array of skill CATEGORY STRINGS in the format "Category: skill1, skill2, skill3". Group related skills together by category. Examples:
+  * "Product: A/B Testing, Cross-Functional Leadership, Funnel Optimization, PRDs & Specs"
+  * "Tools: Figma, GA4, JIRA, Python, React, TypeScript"
+  * "Languages: JavaScript, Python, SQL"
+  * "Technical: AWS, Docker, Kubernetes, CI/CD"
+  Extract skills from the dedicated SKILLS section ONLY. Do NOT include skills extracted from job descriptions.
 
 - skills_extracted: array of technical skills mentioned in job descriptions that are NOT already listed in the main skills section
 

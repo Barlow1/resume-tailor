@@ -78,30 +78,21 @@ export function SortableExperience({
 
 	const experienceContent = (
 		<div className="w-full">
-			<div className="mb-4 grid grid-flow-row grid-cols-12 items-start gap-x-2">
-				<div className="col-span-8">
-					<EditableContent
-						content={experience.role}
-						onInput={e =>
-							onExperienceEdit(e.currentTarget.innerText, experience.id!, 'role')
-						}
-						className="mb-1 text-lg font-medium text-gray-700 outline-none "
-						placeholder="Role / Title"
-					/>
-					<EditableContent
-						content={experience.company}
-						onInput={e =>
-							onExperienceEdit(
-								e.currentTarget.innerText,
-								experience.id!,
-								'company',
-							)
-						}
-						className="text-gray-600 outline-none"
-						placeholder="Company"
-					/>
-				</div>
-				<div className="col-span-4 flex justify-end gap-2 text-sm text-gray-500">
+			{/* Company name and dates on same line */}
+			<div className="flex items-baseline justify-between">
+				<EditableContent
+					content={experience.company}
+					onInput={e =>
+						onExperienceEdit(
+							e.currentTarget.innerText,
+							experience.id!,
+							'company',
+						)
+					}
+					className="resume-company text-gray-700 outline-none"
+					placeholder="Company"
+				/>
+				<div className="flex gap-1 resume-dates text-gray-700">
 					<EditableContent
 						content={experience.startDate}
 						onInput={e =>
@@ -112,9 +103,9 @@ export function SortableExperience({
 							)
 						}
 						className="text-right outline-none"
-						placeholder="Start Date"
+						placeholder="Start"
 					/>
-					<span>-</span>
+					<span>–</span>
 					<EditableContent
 						content={experience.endDate}
 						onInput={e =>
@@ -125,12 +116,22 @@ export function SortableExperience({
 							)
 						}
 						className="outline-none"
-						placeholder="End Date"
+						placeholder="End"
 					/>
 				</div>
 			</div>
+			{/* Job title below company */}
+			<EditableContent
+				content={experience.role}
+				onInput={e =>
+					onExperienceEdit(e.currentTarget.innerText, experience.id!, 'role')
+				}
+				className="resume-job-title text-gray-700 outline-none"
+				placeholder="Role / Title"
+			/>
 
-			<div className="space-y-1">
+			{/* Bullet points */}
+			<div>
 				{experience.descriptions?.length ? (
 					<SortableContext
 					items={experience.descriptions?.map(
@@ -165,7 +166,7 @@ export function SortableExperience({
 			ref={setNodeRef}
 			style={style}
 			id={`experience-${experience.id}`}
-			className={`group relative rounded p-4 ${
+			className={`group relative rounded p-1 ${
 				!isDraggingAny &&
 				!isDragging &&
 				'hover:border hover:border-dashed hover:border-gray-400'
@@ -173,7 +174,7 @@ export function SortableExperience({
 			key={`experience-${experience.id}_${rerenderRef.current}`}
 		>
 			<div
-				className={`absolute -right-5 -top-5 gap-2 rounded-3xl bg-white px-2 py-1 shadow-md ${
+				className={`preview-only absolute -right-5 -top-5 gap-2 rounded-3xl bg-white px-2 py-1 shadow-md ${
 					isDraggingAny && !isDragging
 						? 'hidden'
 						: 'hidden group-focus-within:flex group-hover:flex'

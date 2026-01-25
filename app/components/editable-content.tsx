@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 
 interface EditableContentProps {
 	content: string | null | undefined
@@ -25,16 +25,36 @@ export function EditableContent({
 	style,
 }: EditableContentProps) {
 	const [initialValue, setInitialValue] = useState(content ?? '')
+	const divRef = useRef<HTMLDivElement>(null)
+	const previousContentRef = useRef<string>(content ?? '')
 
 	useEffect(() => {
+		const newValue = content ?? ''
+		const isFocused = document.activeElement === divRef.current
+		const contentChanged = newValue !== previousContentRef.current
+		
+		// Only update initialValue (which triggers dangerouslySetInnerHTML update) when:
+		// 1. rerenderRef is true (forced rerender from layout change), OR
+		// 2. Content changed externally and element is not focused (not user typing)
+		// This prevents cursor jumping during normal typing
 		if (rerenderRef?.current) {
-			setInitialValue(content ?? '')
+			setInitialValue(newValue)
+			previousContentRef.current = newValue
 			rerenderRef.current = false
+		} else if (contentChanged && !isFocused) {
+			// External change (not from user typing) - update state
+			setInitialValue(newValue)
+			previousContentRef.current = newValue
+		} else if (contentChanged) {
+			// Content changed but element is focused - just update the ref, don't update state
+			// This prevents cursor jumping while user is typing
+			previousContentRef.current = newValue
 		}
-	}, [rerenderRef, content])
+	}, [content, rerenderRef])
 
 	return (
 		<div
+			ref={divRef}
 			style={style}
 			contentEditable
 			onKeyDown={e => {

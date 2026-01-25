@@ -75,6 +75,7 @@ export type ResumeData = {
 	visibleSections: VisibleSections | null
 	font?: string | null
 	layout?: string | null
+	textSize?: string | null
 }
 
 export type VisibleSections = {
