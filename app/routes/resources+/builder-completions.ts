@@ -279,6 +279,25 @@ export async function action({ request }: DataFunctionArgs) {
 				}),
 			])
 
+			// Log for QA review
+			const aiOutput = response.choices[0]?.message?.content ?? '{}'
+			const tailorLog = await prisma.bulletTailorLog.create({
+				data: {
+					userId,
+					originalBullet: experience,
+					jobTitle,
+					jobDescription,
+					currentJobTitle: currentJobTitle ?? null,
+					currentJobCompany: currentJobCompany ?? null,
+					extractedKeywords: extractedKeywords ?? null,
+					aiOutput,
+					promptVersion: 'v1',
+				},
+			})
+
+			// Attach logId to response for frontend action tracking
+			;(response as any).tailorLogId = tailorLog.id
+
 			// Track successful bullet tailor
 			await trackTailorCompleted({
 				success: true,
