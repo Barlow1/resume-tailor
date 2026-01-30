@@ -1,5 +1,5 @@
 import { json, type DataFunctionArgs } from '@remix-run/node'
-import { useLoaderData, useSearchParams, Form } from '@remix-run/react'
+import { useLoaderData, Form } from '@remix-run/react'
 import { useState } from 'react'
 import { prisma } from '~/utils/db.server.ts'
 import { requireAdmin } from '~/utils/permissions.server.ts'
@@ -51,8 +51,6 @@ function parseAiOutput(raw: string): string[] {
 export default function BulletQAPage() {
 	const { logs, actionFilter } = useLoaderData<typeof loader>()
 	const [expandedId, setExpandedId] = useState<string | null>(null)
-	const [, setSearchParams] = useSearchParams()
-
 	return (
 		<div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
 			<h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '16px' }}>
