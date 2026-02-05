@@ -9,6 +9,7 @@ import { sessionStorage } from './session.server.ts'
 import StripeHelper from './stripe.server.ts'
 import { createSubscription } from './subscription.server.ts'
 import { createHubspotContact } from './hubspot.server.ts'
+import { trackSignupCompleted } from '~/lib/analytics.server.ts'
 import { GoogleStrategy } from 'remix-auth-google'
 import { LinkedinStrategy } from 'remix-auth-linkedin'
 import { GitHubStrategy } from 'remix-auth-github'
@@ -80,6 +81,7 @@ authenticator.use(
 						'X-Forwarded-Host': baseUrl,
 					}),
 				} as Request,
+				provider: 'google',
 			})
 		},
 	),
@@ -109,6 +111,7 @@ authenticator.use(
 						'X-Forwarded-Host': baseUrl,
 					}),
 				} as Request,
+				provider: 'github',
 			})
 		},
 	),
@@ -140,6 +143,7 @@ authenticator.use(
 						'X-Forwarded-Host': baseUrl,
 					}),
 				} as Request,
+				provider: 'linkedin',
 			})
 		},
 	),
@@ -370,6 +374,7 @@ export async function verifyUserPassword(
 export const oauth = async ({
 	values,
 	request,
+	provider,
 }: {
 	values: {
 		email: string
@@ -378,6 +383,7 @@ export const oauth = async ({
 		name: string
 	}
 	request: Request
+	provider: 'google' | 'github' | 'linkedin'
 }) => {
 	const prisma = new PrismaClient()
 	await prisma
@@ -405,6 +411,9 @@ export const oauth = async ({
 				password: encrypted,
 			})
 			profile = createdUserResponse.user
+
+			// Track signup completed for OAuth signups
+			trackSignupCompleted(profile.id, 'oauth', provider, request)
 		} catch (e: any) {
 			// Race condition: user was created between check and insert
 			if (e?.code === 'P2002') {
