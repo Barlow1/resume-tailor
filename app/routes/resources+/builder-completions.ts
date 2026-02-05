@@ -11,14 +11,12 @@ import { z } from 'zod';
 import { parse } from '@conform-to/zod'
 import { type ResumeData } from '~/utils/builder-resume.server.ts'
 import {
-	trackTailorClicked,
-	trackTailorCompleted,
-	trackError,
-} from '~/utils/tracking.server.ts'
-import {
 	trackAiTailorStarted,
 	trackAiTailorCompleted,
+	trackAiGenerateStarted,
+	trackAiGenerateCompleted,
 	identifyUser,
+	trackError,
 } from '~/lib/analytics.server.ts'
 import { trackUserActivity } from '~/lib/retention.server.ts'
 import { tryActivateUser } from '~/lib/activation.server.ts'
@@ -68,16 +66,7 @@ export async function action({ request }: DataFunctionArgs) {
 	if (entireResume === 'true' && resumeData) {
 		const parsedResumeData = JSON.parse(resumeData) as ResumeData
 
-		// Track tailor click
-		await trackTailorClicked({
-			jobId: parsedResumeData.jobId || 'unknown',
-			resumeId: parsedResumeData.id || 'unknown',
-			experienceCount: parsedResumeData.experiences?.length || 0,
-			userId,
-			type: 'entire_resume',
-		})
-
-		// Track AI tailor started in PostHog
+		// Track AI tailor started
 		trackAiTailorStarted(
 			userId,
 			'entire_resume',
@@ -116,17 +105,7 @@ export async function action({ request }: DataFunctionArgs) {
 				}),
 			])
 
-			// Track successful completion
-			await trackTailorCompleted({
-				success: true,
-				duration: Date.now() - startTime,
-				userId,
-				resumeId: parsedResumeData.id || 'unknown',
-				jobId: parsedResumeData.jobId || 'unknown',
-				type: 'entire_resume',
-			})
-
-			// Track AI tailor completed in PostHog
+			// Track AI tailor completed
 			trackAiTailorCompleted(
 				userId,
 				'entire_resume',
@@ -155,18 +134,7 @@ export async function action({ request }: DataFunctionArgs) {
 			// Check for activation
 			await tryActivateUser(userId, 'ai_tailor_completed', request)
 		} catch (error: any) {
-			// Track failure
-			await trackTailorCompleted({
-				success: false,
-				error: error.message,
-				duration: Date.now() - startTime,
-				userId,
-				resumeId: parsedResumeData.id || 'unknown',
-				jobId: parsedResumeData.jobId || 'unknown',
-				type: 'entire_resume',
-			})
-
-			// Track AI tailor failed in PostHog
+			// Track AI tailor failed
 			trackAiTailorCompleted(
 				userId,
 				'entire_resume',
@@ -178,12 +146,13 @@ export async function action({ request }: DataFunctionArgs) {
 				parsedResumeData.jobId ?? undefined,
 			)
 
-			await trackError({
-				error: error.message,
-				context: 'entire_resume_tailor',
+			trackError(
+				error.message,
+				'entire_resume_tailor',
 				userId,
-				stack: error.stack,
-			})
+				error.stack,
+				request,
+			)
 
 			// Return user-friendly error with recovery options
 			if (error.message?.includes('rate_limit') || error.code === 'rate_limit_exceeded') {
@@ -231,16 +200,7 @@ export async function action({ request }: DataFunctionArgs) {
 			)
 		}
 	} else if (experience) {
-		// Track bullet tailor click
-		await trackTailorClicked({
-			jobId: 'unknown',
-			resumeId: 'unknown',
-			experienceCount: 1,
-			userId,
-			type: 'single_bullet',
-		})
-
-		// Track AI tailor started in PostHog
+		// Track AI tailor started
 		trackAiTailorStarted(
 			userId,
 			'single_bullet',
@@ -279,15 +239,7 @@ export async function action({ request }: DataFunctionArgs) {
 				}),
 			])
 
-			// Track successful bullet tailor
-			await trackTailorCompleted({
-				success: true,
-				duration: Date.now() - startTime,
-				userId,
-				type: 'single_bullet',
-			})
-
-			// Track AI tailor completed in PostHog
+			// Track AI tailor completed
 			trackAiTailorCompleted(
 				userId,
 				'single_bullet',
@@ -314,16 +266,7 @@ export async function action({ request }: DataFunctionArgs) {
 			// Check for activation
 			await tryActivateUser(userId, 'ai_tailor_completed', request)
 		} catch (error: any) {
-			// Track failure
-			await trackTailorCompleted({
-				success: false,
-				error: error.message,
-				duration: Date.now() - startTime,
-				userId,
-				type: 'single_bullet',
-			})
-
-			// Track AI tailor failed in PostHog
+			// Track AI tailor failed
 			trackAiTailorCompleted(
 				userId,
 				'single_bullet',
@@ -333,12 +276,13 @@ export async function action({ request }: DataFunctionArgs) {
 				request,
 			)
 
-			await trackError({
-				error: error.message,
-				context: 'bullet_tailor',
+			trackError(
+				error.message,
+				'bullet_tailor',
 				userId,
-				stack: error.stack,
-			})
+				error.stack,
+				request,
+			)
 
 			// Return user-friendly error
 			if (error.message?.includes('rate_limit') || error.code === 'rate_limit_exceeded') {
@@ -362,6 +306,14 @@ export async function action({ request }: DataFunctionArgs) {
 			)
 		}
 	} else {
+		// Track AI generate started
+		trackAiGenerateStarted(
+			userId,
+			'generation',
+			'bullet',
+			request,
+		)
+
 		try {
 			const parsedKeywords = extractedKeywords ? (JSON.parse(extractedKeywords) as string[]) : undefined
 			;[{ response }] = await Promise.all([
@@ -392,28 +344,32 @@ export async function action({ request }: DataFunctionArgs) {
 			])
 
 			// Track successful generation
-			await trackTailorCompleted({
-				success: true,
-				duration: Date.now() - startTime,
+			trackAiGenerateCompleted(
 				userId,
-				type: 'single_bullet',
-			})
+				'generation',
+				1, // bulletsGenerated
+				Date.now() - startTime,
+				true,
+				request,
+			)
 		} catch (error: any) {
-			// Track failure
-			await trackTailorCompleted({
-				success: false,
-				error: error.message,
-				duration: Date.now() - startTime,
+			// Track generation failed
+			trackAiGenerateCompleted(
 				userId,
-				type: 'single_bullet',
-			})
+				'generation',
+				0,
+				Date.now() - startTime,
+				false,
+				request,
+			)
 
-			await trackError({
-				error: error.message,
-				context: 'bullet_generation',
+			trackError(
+				error.message,
+				'bullet_generation',
 				userId,
-				stack: error.stack,
-			})
+				error.stack,
+				request,
+			)
 
 			// Return user-friendly error
 			if (error.message?.includes('rate_limit') || error.code === 'rate_limit_exceeded') {

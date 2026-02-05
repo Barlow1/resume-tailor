@@ -812,3 +812,24 @@ export function trackSubscriptionCanceledWithContext(
 		subscription_status: 'canceled',
 	})
 }
+
+/**
+ * Track error events for debugging and monitoring
+ */
+export function trackError(
+	errorMessage: string,
+	errorContext: string,
+	userId?: string,
+	errorStack?: string,
+	request?: Request,
+): void {
+	trackServerEvent(
+		'error_occurred',
+		{
+			error_message: errorMessage,
+			error_context: errorContext,
+			error_stack: errorStack,
+		},
+		{ userId, request },
+	)
+}

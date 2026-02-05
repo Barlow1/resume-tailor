@@ -336,6 +336,16 @@ export interface AiOutputEditedEvent {
 }
 
 // ============================================================================
+// ERROR TRACKING
+// ============================================================================
+
+export interface ErrorOccurredEvent {
+	error_message: string
+	error_context: string
+	error_stack?: string
+}
+
+// ============================================================================
 // EVENT MAP - Maps event names to their property types
 // ============================================================================
 
@@ -399,6 +409,9 @@ export interface AnalyticsEventMap {
 	user_returned: UserReturnedEvent
 	user_resurrected: UserResurrectedEvent
 	ai_output_edited: AiOutputEditedEvent
+
+	// Error tracking
+	error_occurred: ErrorOccurredEvent
 }
 
 // Type for event names
