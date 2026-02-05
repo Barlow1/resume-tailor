@@ -203,6 +203,12 @@ export function Pricing({
 													plan_tier: frequency.value,
 												})
 											}
+											// Track checkout_started event
+											trackEvent('checkout_started', {
+												plan: frequency.value,
+												is_trial: true,
+												trigger: 'pricing_page',
+											})
 										}}
 										className={cn(
 											tier.mostPopular

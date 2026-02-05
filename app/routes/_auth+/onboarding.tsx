@@ -29,6 +29,7 @@ import {
 import { checkboxSchema } from '~/utils/zod-extensions.ts'
 import { redirectWithConfetti } from '~/utils/flash-session.server.ts'
 import { prisma } from '~/utils/db.server.ts'
+import { trackSignupCompleted } from '~/lib/analytics.server.ts'
 
 export const onboardingEmailSessionKey = 'onboardingEmail'
 
@@ -125,6 +126,11 @@ export async function action({ request }: DataFunctionArgs) {
 		select: { userId: true },
 	})
 	const userId = newSession?.userId
+
+	// Track signup completed in PostHog
+	if (userId) {
+		trackSignupCompleted(userId, 'email', undefined, request)
+	}
 	let user
 	if (userId) {
 		user = await prisma.user.findUnique({

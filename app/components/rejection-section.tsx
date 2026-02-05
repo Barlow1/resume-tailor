@@ -2,6 +2,7 @@ import resumeBadGood from '~/routes/_marketing+/logos/resume-bad-good.webp'
 import colorBlur from '~/routes/_marketing+/logos/color-blur.webp'
 import { Link } from '@remix-run/react'
 import { OptimizedImage } from './ui/optimized-image.tsx'
+import { trackCtaClick } from '~/lib/analytics.client.ts'
 
 export function RejectionSection() {
 	return (
@@ -72,6 +73,7 @@ export function RejectionSection() {
 					<Link
 						to="/builder"
 						className="hover:bg-brand-600 inline-block rounded-lg bg-brand-500 px-8 py-4 text-lg font-semibold text-white"
+						onClick={() => trackCtaClick('BUILD YOUR RESUME NOW', 'rejection_section', '/builder')}
 					>
 						BUILD YOUR RESUME NOW
 					</Link>

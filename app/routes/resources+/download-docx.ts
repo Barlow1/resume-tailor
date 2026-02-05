@@ -4,6 +4,7 @@ import { Document, Packer, Paragraph, TextRun, AlignmentType, BorderStyle, conve
 import type { OpenAIResumeData } from '~/utils/openai-resume-parser.server.ts';
 import type { TailoredResume } from '~/utils/resume-tailor.server.ts';
 import { getUserId, getStripeSubscription } from '~/utils/auth.server.ts';
+import { trackResumeDownloaded } from '~/lib/analytics.server.ts';
 
 // Helper function to format dates for resume display
 function formatResumeDate(isoDate: string | null, precision?: 'day' | 'month' | 'year'): string {
@@ -358,14 +359,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 	// Check user subscription and download limit
 	const userId = await getUserId(request);
+	let subscription: Awaited<ReturnType<typeof getStripeSubscription>> = null;
 
 	if (userId) {
-		const [subscription, gettingStartedProgress] = await Promise.all([
+		const [sub, gettingStartedProgress] = await Promise.all([
 			getStripeSubscription(userId),
 			db.gettingStartedProgress.findUnique({
 				where: { ownerId: userId },
 			}),
 		]);
+		subscription = sub;
 
 		// If no subscription, check download limit (2 free downloads)
 		if (!subscription) {
@@ -397,7 +400,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 		// Increment quickTailorDownloadCount after successful generation
 		if (userId) {
-			await db.gettingStartedProgress.upsert({
+			const progress = await db.gettingStartedProgress.upsert({
 				where: { ownerId: userId },
 				update: { quickTailorDownloadCount: { increment: 1 } },
 				create: {
@@ -414,6 +417,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
 					outreachCount: 0,
 				},
 			});
+
+			// Track DOCX download in PostHog
+			trackResumeDownloaded(
+				userId,
+				'docx',
+				id,
+				!!subscription,
+				progress.quickTailorDownloadCount,
+				request,
+			);
 		}
 
 		const filename = `${originalResume.personal_info.full_name.replace(/\s+/g, '_')}_Resume.docx`;

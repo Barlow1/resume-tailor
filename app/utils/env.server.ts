@@ -50,6 +50,8 @@ export function getEnv() {
 		SENTRY_DSN: process.env.SENTRY_DSN,
 		CI: process.env.CI,
 		RECAPTCHA_SITE_KEY: process.env.RECAPTCHA_SITE_KEY,
+		POSTHOG_API_KEY: process.env.POSTHOG_API_KEY,
+		POSTHOG_HOST: process.env.POSTHOG_HOST || 'https://us.i.posthog.com',
 	}
 }
 

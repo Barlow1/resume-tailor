@@ -4,6 +4,8 @@ import htmlPdf from 'html-pdf-node';
 import type { OpenAIResumeData } from '~/utils/openai-resume-parser.server.ts';
 import type { TailoredResume } from '~/utils/resume-tailor.server.ts';
 import { getUserId, getStripeSubscription } from '~/utils/auth.server.ts';
+import { trackResumeDownloaded, identifyUser } from '~/lib/analytics.server.ts';
+import { trackUserActivity } from '~/lib/retention.server.ts';
 
 // Helper function to format dates for resume display
 function formatResumeDate(isoDate: string | null, precision?: 'day' | 'month' | 'year'): string {
@@ -206,14 +208,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 	// Check user subscription and download limit
 	const userId = await getUserId(request);
+	let subscription: Awaited<ReturnType<typeof getStripeSubscription>> = null;
 
 	if (userId) {
-		const [subscription, gettingStartedProgress] = await Promise.all([
+		const [sub, gettingStartedProgress] = await Promise.all([
 			getStripeSubscription(userId),
 			db.gettingStartedProgress.findUnique({
 				where: { ownerId: userId },
 			}),
 		]);
+		subscription = sub;
 
 		// If no subscription, check download limit (2 free downloads)
 		if (!subscription) {
@@ -251,7 +255,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 		// Increment quickTailorDownloadCount after successful generation
 		if (userId) {
-			await db.gettingStartedProgress.upsert({
+			const progress = await db.gettingStartedProgress.upsert({
 				where: { ownerId: userId },
 				update: { quickTailorDownloadCount: { increment: 1 } },
 				create: {
@@ -268,6 +272,26 @@ export async function loader({ request }: LoaderFunctionArgs) {
 					outreachCount: 0,
 				},
 			});
+
+			// Track PDF download in PostHog
+			trackResumeDownloaded(
+				userId,
+				'pdf',
+				id,
+				!!subscription,
+				progress.quickTailorDownloadCount,
+				request,
+			);
+
+			// Update lifetime_downloads user property for retention analysis
+			identifyUser(userId, {
+				lifetime_downloads: progress.quickTailorDownloadCount,
+				last_active_at: new Date().toISOString(),
+				...(progress.quickTailorDownloadCount === 1 && { first_download_at: new Date().toISOString() }),
+			});
+
+			// Track return visit if applicable
+			await trackUserActivity({ userId, trigger: 'resume_download', request });
 		}
 
 		const filename = `${originalResume.personal_info.full_name.replace(/\s+/g, '_')}_Resume.pdf`;

@@ -11,10 +11,15 @@ import { z } from 'zod';
 import { parse } from '@conform-to/zod'
 import { type ResumeData } from '~/utils/builder-resume.server.ts'
 import {
-	trackTailorClicked,
-	trackTailorCompleted,
+	trackAiTailorStarted,
+	trackAiTailorCompleted,
+	trackAiGenerateStarted,
+	trackAiGenerateCompleted,
+	identifyUser,
 	trackError,
-} from '~/utils/tracking.server.ts'
+} from '~/lib/analytics.server.ts'
+import { trackUserActivity } from '~/lib/retention.server.ts'
+import { tryActivateUser } from '~/lib/activation.server.ts'
 
 const builderCompletionSchema = z.object({
 	experience: z.string().optional(),
@@ -61,14 +66,16 @@ export async function action({ request }: DataFunctionArgs) {
 	if (entireResume === 'true' && resumeData) {
 		const parsedResumeData = JSON.parse(resumeData) as ResumeData
 
-		// Track tailor click
-		await trackTailorClicked({
-			jobId: parsedResumeData.jobId || 'unknown',
-			resumeId: parsedResumeData.id || 'unknown',
-			experienceCount: parsedResumeData.experiences?.length || 0,
+		// Track AI tailor started
+		trackAiTailorStarted(
 			userId,
-			type: 'entire_resume',
-		})
+			'entire_resume',
+			!!parsedResumeData.jobId,
+			true, // isFreeTier - we don't check subscription here
+			request,
+			parsedResumeData.id ?? undefined,
+			parsedResumeData.jobId ?? undefined,
+		)
 
 		try {
 			const parsedKeywords = extractedKeywords ? (JSON.parse(extractedKeywords) as string[]) : undefined
@@ -98,33 +105,54 @@ export async function action({ request }: DataFunctionArgs) {
 				}),
 			])
 
-			// Track successful completion
-			await trackTailorCompleted({
-				success: true,
-				duration: Date.now() - startTime,
+			// Track AI tailor completed
+			trackAiTailorCompleted(
 				userId,
-				resumeId: parsedResumeData.id || 'unknown',
-				jobId: parsedResumeData.jobId || 'unknown',
-				type: 'entire_resume',
+				'entire_resume',
+				Date.now() - startTime,
+				true,
+				undefined, // tokensUsed
+				request,
+				parsedResumeData.id ?? undefined,
+				parsedResumeData.jobId ?? undefined,
+			)
+
+			// Update lifetime_ai_operations user property for retention analysis
+			const progress = await prisma.gettingStartedProgress.findUnique({
+				where: { ownerId: userId },
+				select: { tailorCount: true, generateCount: true },
 			})
-		} catch (error: any) {
-			// Track failure
-			await trackTailorCompleted({
-				success: false,
-				error: error.message,
-				duration: Date.now() - startTime,
-				userId,
-				resumeId: parsedResumeData.id || 'unknown',
-				jobId: parsedResumeData.jobId || 'unknown',
-				type: 'entire_resume',
+			const totalAiOps = (progress?.tailorCount ?? 0) + (progress?.generateCount ?? 0)
+			identifyUser(userId, {
+				lifetime_ai_operations: totalAiOps,
+				last_active_at: new Date().toISOString(),
 			})
 
-			await trackError({
-				error: error.message,
-				context: 'entire_resume_tailor',
+			// Track return visit if applicable
+			await trackUserActivity({ userId, trigger: 'ai_tailor', request })
+
+			// Check for activation
+			await tryActivateUser(userId, 'ai_tailor_completed', request)
+		} catch (error: any) {
+			// Track AI tailor failed
+			trackAiTailorCompleted(
 				userId,
-				stack: error.stack,
-			})
+				'entire_resume',
+				Date.now() - startTime,
+				false,
+				undefined, // tokensUsed
+				request,
+				parsedResumeData.id ?? undefined,
+				parsedResumeData.jobId ?? undefined,
+			)
+
+			trackError(
+				error.message,
+				'entire_resume_tailor',
+				userId,
+				error.stack,
+				request,
+			)
 
 			// Return user-friendly error with recovery options
 			if (error.message?.includes('rate_limit') || error.code === 'rate_limit_exceeded') {
@@ -172,14 +200,14 @@ export async function action({ request }: DataFunctionArgs) {
 			)
 		}
 	} else if (experience) {
-		// Track bullet tailor click
-		await trackTailorClicked({
-			jobId: 'unknown',
-			resumeId: 'unknown',
-			experienceCount: 1,
+		// Track AI tailor started
+		trackAiTailorStarted(
 			userId,
-			type: 'single_bullet',
-		})
+			'single_bullet',
+			!!jobDescription,
+			true, // isFreeTier
+			request,
+		)
 
 		try {
 			const parsedKeywords = extractedKeywords ? (JSON.parse(extractedKeywords) as string[]) : undefined
@@ -211,29 +239,70 @@ export async function action({ request }: DataFunctionArgs) {
 				}),
 			])
 
-			// Track successful bullet tailor
-			await trackTailorCompleted({
-				success: true,
-				duration: Date.now() - startTime,
-				userId,
-				type: 'single_bullet',
-			})
-		} catch (error: any) {
-			// Track failure
-			await trackTailorCompleted({
-				success: false,
-				error: error.message,
-				duration: Date.now() - startTime,
-				userId,
-				type: 'single_bullet',
+			// Track AI tailor completed
+			// Log for QA review
+			const aiOutput = response.choices[0]?.message?.content ?? '{}'
+			const tailorLog = await prisma.bulletTailorLog.create({
+				data: {
+					userId,
+					originalBullet: experience,
+					jobTitle,
+					jobDescription,
+					currentJobTitle: currentJobTitle ?? null,
+					currentJobCompany: currentJobCompany ?? null,
+					extractedKeywords: extractedKeywords ?? null,
+					aiOutput,
+					promptVersion: 'v1',
+				},
 			})
 
-			await trackError({
-				error: error.message,
-				context: 'bullet_tailor',
+			// Attach logId to response for frontend action tracking
+			;(response as any).tailorLogId = tailorLog.id
+
+			// Track AI tailor completed in PostHog
+			trackAiTailorCompleted(
 				userId,
-				stack: error.stack,
+				'single_bullet',
+				Date.now() - startTime,
+				true,
+				undefined, // tokensUsed
+				request,
+			)
+
+			// Update lifetime_ai_operations user property for retention analysis
+			const progress = await prisma.gettingStartedProgress.findUnique({
+				where: { ownerId: userId },
+				select: { tailorCount: true, generateCount: true },
 			})
+			const totalAiOps = (progress?.tailorCount ?? 0) + (progress?.generateCount ?? 0)
+			identifyUser(userId, {
+				lifetime_ai_operations: totalAiOps,
+				last_active_at: new Date().toISOString(),
+			})
+
+			// Track return visit if applicable
+			await trackUserActivity({ userId, trigger: 'ai_tailor', request })
+
+			// Check for activation
+			await tryActivateUser(userId, 'ai_tailor_completed', request)
+		} catch (error: any) {
+			// Track AI tailor failed
+			trackAiTailorCompleted(
+				userId,
+				'single_bullet',
+				Date.now() - startTime,
+				false,
+				undefined, // tokensUsed
+				request,
+			)
+
+			trackError(
+				error.message,
+				'bullet_tailor',
+				userId,
+				error.stack,
+				request,
+			)
 
 			// Return user-friendly error
 			if (error.message?.includes('rate_limit') || error.code === 'rate_limit_exceeded') {
@@ -257,6 +326,14 @@ export async function action({ request }: DataFunctionArgs) {
 			)
 		}
 	} else {
+		// Track AI generate started
+		trackAiGenerateStarted(
+			userId,
+			'generation',
+			'bullet',
+			request,
+		)
+
 		try {
 			const parsedKeywords = extractedKeywords ? (JSON.parse(extractedKeywords) as string[]) : undefined
 			;[{ response }] = await Promise.all([
@@ -287,28 +364,32 @@ export async function action({ request }: DataFunctionArgs) {
 			])
 
 			// Track successful generation
-			await trackTailorCompleted({
-				success: true,
-				duration: Date.now() - startTime,
+			trackAiGenerateCompleted(
 				userId,
-				type: 'single_bullet',
-			})
+				'generation',
+				1, // bulletsGenerated
+				Date.now() - startTime,
+				true,
+				request,
+			)
 		} catch (error: any) {
-			// Track failure
-			await trackTailorCompleted({
-				success: false,
-				error: error.message,
-				duration: Date.now() - startTime,
+			// Track generation failed
+			trackAiGenerateCompleted(
 				userId,
-				type: 'single_bullet',
-			})
+				'generation',
+				0,
+				Date.now() - startTime,
+				false,
+				request,
+			)
 
-			await trackError({
-				error: error.message,
-				context: 'bullet_generation',
+			trackError(
+				error.message,
+				'bullet_generation',
 				userId,
-				stack: error.stack,
-			})
+				error.stack,
+				request,
+			)
 
 			// Return user-friendly error
 			if (error.message?.includes('rate_limit') || error.code === 'rate_limit_exceeded') {

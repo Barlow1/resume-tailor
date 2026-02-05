@@ -43,6 +43,8 @@ export function AIAssistantModal({
 	const [activeTab, setActiveTab] = useState<'tailor' | 'generate'>('tailor')
 	const [selectedItems, setSelectedItems] = useState<number[]>([])
 	const [rawContent, setRawContent] = useState<string>('')
+	const [tailorLogId, setTailorLogId] = useState<string | null>(null)
+	const logActionFetcher = useFetcher()
 
 	useEffect(() => {
 		if (!isOpen) {
@@ -53,6 +55,7 @@ export function AIAssistantModal({
 	const resetState = () => {
 		setSelectedItems([])
 		setRawContent('')
+		setTailorLogId(null)
 	}
 
 	const builderCompletionsFetcher = useFetcher<
@@ -104,6 +107,10 @@ export function AIAssistantModal({
 			setRawContent(
 				builderCompletionsFetcher.data?.choices[0].message.content ?? '{}',
 			)
+			const logId = (builderCompletionsFetcher.data as any)?.tailorLogId
+			if (logId) {
+				setTailorLogId(logId)
+			}
 		}
 	}, [builderCompletionsFetcher.state, builderCompletionsFetcher.data])
 
@@ -135,6 +142,18 @@ export function AIAssistantModal({
 
 		if (activeTab === 'tailor') {
 			onUpdate(selectedContent[0])
+
+			// Log accepted action for QA
+			if (tailorLogId) {
+				const formData = new FormData()
+				formData.append('logId', tailorLogId)
+				formData.append('action', 'accepted')
+				formData.append('selectedOption', String(selectedItems[0]))
+				logActionFetcher.submit(formData, {
+					method: 'POST',
+					action: '/resources/tailor-log-action',
+				})
+			}
 		} else {
 			onMultipleUpdate(selectedContent)
 		}
@@ -144,6 +163,16 @@ export function AIAssistantModal({
 	}
 
 	const handleClose = () => {
+		// Log abandoned action for QA (only if AI returned results)
+		if (tailorLogId && parsedOptions.length > 0) {
+			const formData = new FormData()
+			formData.append('logId', tailorLogId)
+			formData.append('action', 'abandoned')
+			logActionFetcher.submit(formData, {
+				method: 'POST',
+				action: '/resources/tailor-log-action',
+			})
+		}
 		resetState()
 		onClose()
 	}

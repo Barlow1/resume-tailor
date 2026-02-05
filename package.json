@@ -106,6 +106,8 @@
     "morgan": "^1.10.0",
     "openai": "^4.80.0",
     "pdf-parse-fork": "^1.2.0",
+    "posthog-js": "^1.335.2",
+    "posthog-node": "^4.18.0",
     "prisma": "^5.1.1",
     "puppeteer": "^24.0.0",
     "qrcode": "^1.5.3",
@@ -132,6 +134,7 @@
     "tsx": "^3.12.7",
     "twitter-api-v2": "^1.17.2",
     "use-debounce": "^10.0.4",
+    "xlsx": "^0.18.5",
     "zod": "^3.21.4",
     "zustand": "^4.5.4"
   },
