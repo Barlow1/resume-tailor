@@ -1,32 +1,60 @@
 import { json, type DataFunctionArgs } from '@remix-run/node'
-import { useLoaderData, Form } from '@remix-run/react'
+import { useLoaderData, Form, Link } from '@remix-run/react'
 import { useState } from 'react'
+import { ArrowDownTrayIcon } from '@heroicons/react/24/outline'
 import { prisma } from '~/utils/db.server.ts'
 import { requireAdmin } from '~/utils/permissions.server.ts'
+
+const PAGE_SIZE = 50
 
 export async function loader({ request }: DataFunctionArgs) {
 	await requireAdmin(request)
 
 	const url = new URL(request.url)
 	const actionFilter = url.searchParams.get('action') ?? 'all'
+	const startDate = url.searchParams.get('startDate')
+	const endDate = url.searchParams.get('endDate')
+	const page = Math.max(1, parseInt(url.searchParams.get('page') ?? '1', 10))
 
-	const where =
-		actionFilter === 'all'
-			? {}
-			: actionFilter === 'pending'
-				? { userAction: null }
-				: { userAction: actionFilter }
+	const where: Record<string, unknown> = {}
 
-	const logs = await prisma.bulletTailorLog.findMany({
-		where,
-		orderBy: { createdAt: 'desc' },
-		take: 50,
-		include: {
-			user: { select: { email: true, username: true } },
-		},
-	})
+	// Action filter
+	if (actionFilter === 'pending') {
+		where.userAction = null
+	} else if (actionFilter !== 'all') {
+		where.userAction = actionFilter
+	}
 
-	return json({ logs, actionFilter })
+	// Date range filter
+	if (startDate || endDate) {
+		where.createdAt = {}
+		if (startDate) {
+			;(where.createdAt as Record<string, Date>).gte = new Date(startDate)
+		}
+		if (endDate) {
+			// Add 1 day to include the end date fully
+			const end = new Date(endDate)
+			end.setDate(end.getDate() + 1)
+			;(where.createdAt as Record<string, Date>).lt = end
+		}
+	}
+
+	const [logs, totalCount] = await Promise.all([
+		prisma.bulletTailorLog.findMany({
+			where,
+			orderBy: { createdAt: 'desc' },
+			take: PAGE_SIZE,
+			skip: (page - 1) * PAGE_SIZE,
+			include: {
+				user: { select: { email: true, username: true } },
+			},
+		}),
+		prisma.bulletTailorLog.count({ where }),
+	])
+
+	const totalPages = Math.ceil(totalCount / PAGE_SIZE)
+
+	return json({ logs, actionFilter, startDate, endDate, page, totalPages, totalCount })
 }
 
 function formatDate(dateStr: string) {
@@ -49,37 +77,136 @@ function parseAiOutput(raw: string): string[] {
 }
 
 export default function BulletQAPage() {
-	const { logs, actionFilter } = useLoaderData<typeof loader>()
+	const { logs, actionFilter, startDate, endDate, page, totalPages, totalCount } = useLoaderData<typeof loader>()
 	const [expandedId, setExpandedId] = useState<string | null>(null)
+
+	// Build export URL with current filters
+	const exportParams = new URLSearchParams()
+	if (actionFilter && actionFilter !== 'all') exportParams.set('action', actionFilter)
+	if (startDate) exportParams.set('startDate', startDate)
+	if (endDate) exportParams.set('endDate', endDate)
+	const exportUrl = `/admin/bullet-qa-export?${exportParams.toString()}`
+
+	// Build pagination URL helper
+	const buildPageUrl = (pageNum: number) => {
+		const params = new URLSearchParams()
+		params.set('page', String(pageNum))
+		if (actionFilter && actionFilter !== 'all') params.set('action', actionFilter)
+		if (startDate) params.set('startDate', startDate)
+		if (endDate) params.set('endDate', endDate)
+		return `/admin/bullet-qa?${params.toString()}`
+	}
+
 	return (
 		<div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
-			<h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '16px' }}>
-				Bullet Tailor QA
-			</h1>
+			<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+				<h1 style={{ fontSize: '24px', fontWeight: 'bold' }}>
+					Bullet Tailor QA
+				</h1>
+				<a
+					href={exportUrl}
+					style={{
+						padding: '8px 16px',
+						background: '#16a34a',
+						color: '#fff',
+						borderRadius: '4px',
+						textDecoration: 'none',
+						fontWeight: 500,
+						display: 'flex',
+						alignItems: 'center',
+						gap: '6px',
+					}}
+				>
+					<ArrowDownTrayIcon style={{ width: '18px', height: '18px' }} />
+					Export to Excel
+				</a>
+			</div>
 
-			<Form method="get" style={{ marginBottom: '16px', display: 'flex', gap: '8px' }}>
-				{['all', 'accepted', 'abandoned', 'pending'].map(action => (
+			<Form method="get" style={{ marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+				{/* Date Range */}
+				<div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+					<label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+						From:
+						<input
+							type="date"
+							name="startDate"
+							defaultValue={startDate ?? ''}
+							style={{
+								padding: '6px 10px',
+								border: '1px solid #ccc',
+								borderRadius: '4px',
+							}}
+						/>
+					</label>
+					<label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+						To:
+						<input
+							type="date"
+							name="endDate"
+							defaultValue={endDate ?? ''}
+							style={{
+								padding: '6px 10px',
+								border: '1px solid #ccc',
+								borderRadius: '4px',
+							}}
+						/>
+					</label>
 					<button
-						key={action}
 						type="submit"
-						name="action"
-						value={action}
 						style={{
 							padding: '6px 12px',
-							border: '1px solid #ccc',
+							background: '#333',
+							color: '#fff',
+							border: 'none',
 							borderRadius: '4px',
-							background: actionFilter === action ? '#333' : '#fff',
-							color: actionFilter === action ? '#fff' : '#333',
 							cursor: 'pointer',
 						}}
 					>
-						{action}
+						Apply
 					</button>
-				))}
+					{(startDate || endDate) && (
+						<Link
+							to={`/admin/bullet-qa?action=${actionFilter}`}
+							style={{ color: '#666', fontSize: '14px' }}
+						>
+							Clear dates
+						</Link>
+					)}
+				</div>
+
+				{/* Action Filter */}
+				<div style={{ display: 'flex', gap: '8px' }}>
+					{/* Preserve date params when changing action filter */}
+					{startDate && <input type="hidden" name="startDate" value={startDate} />}
+					{endDate && <input type="hidden" name="endDate" value={endDate} />}
+					{['all', 'accepted', 'abandoned', 'pending'].map(action => (
+						<button
+							key={action}
+							type="submit"
+							name="action"
+							value={action}
+							style={{
+								padding: '6px 12px',
+								border: '1px solid #ccc',
+								borderRadius: '4px',
+								background: actionFilter === action ? '#333' : '#fff',
+								color: actionFilter === action ? '#fff' : '#333',
+								cursor: 'pointer',
+							}}
+						>
+							{action}
+						</button>
+					))}
+				</div>
 			</Form>
 
 			<p style={{ marginBottom: '12px', color: '#666' }}>
-				Showing {logs.length} records
+				Showing {logs.length} of {totalCount} records (page {page} of {totalPages})
+				{(startDate || endDate) && (
+					<span>
+						{' '}from {startDate || 'beginning'} to {endDate || 'now'}
+					</span>
+				)}
 			</p>
 
 			<table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -191,6 +318,67 @@ export default function BulletQAPage() {
 					})}
 				</tbody>
 			</table>
+
+			{/* Pagination */}
+			{totalPages > 1 && (
+				<div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '24px' }}>
+					{page > 1 && (
+						<Link
+							to={buildPageUrl(page - 1)}
+							style={{
+								padding: '8px 12px',
+								border: '1px solid #ccc',
+								borderRadius: '4px',
+								textDecoration: 'none',
+								color: '#333',
+							}}
+						>
+							← Previous
+						</Link>
+					)}
+
+					{/* Page numbers */}
+					{Array.from({ length: totalPages }, (_, i) => i + 1)
+						.filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 2)
+						.map((p, idx, arr) => {
+							// Add ellipsis if there's a gap
+							const showEllipsisBefore = idx > 0 && p - arr[idx - 1] > 1
+							return (
+								<span key={p} style={{ display: 'flex', gap: '8px' }}>
+									{showEllipsisBefore && <span style={{ padding: '8px 4px' }}>...</span>}
+									<Link
+										to={buildPageUrl(p)}
+										style={{
+											padding: '8px 12px',
+											border: '1px solid #ccc',
+											borderRadius: '4px',
+											textDecoration: 'none',
+											background: p === page ? '#333' : '#fff',
+											color: p === page ? '#fff' : '#333',
+										}}
+									>
+										{p}
+									</Link>
+								</span>
+							)
+						})}
+
+					{page < totalPages && (
+						<Link
+							to={buildPageUrl(page + 1)}
+							style={{
+								padding: '8px 12px',
+								border: '1px solid #ccc',
+								borderRadius: '4px',
+								textDecoration: 'none',
+								color: '#333',
+							}}
+						>
+							Next →
+						</Link>
+					)}
+				</div>
+			)}
 		</div>
 	)
 }
