@@ -723,7 +723,7 @@ export default function ResumeBuilder() {
 			</html>`
 
 		pdfFetcher.submit(
-			{ html: html },
+			{ html: html, resumeId: formData.id ?? '' },
 			{ method: 'post', action: '/resources/generate-pdf' },
 		)
 	}, [
@@ -731,6 +731,7 @@ export default function ResumeBuilder() {
 		gettingStartedProgress?.downloadCount,
 		handlePDFDownloadRequested,
 		pdfFetcher,
+		formData.id,
 	])
 
 	const pricingFetcher = useFetcher()
