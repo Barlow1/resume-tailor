@@ -39,7 +39,7 @@ export async function extractKeywordsFromJobDescription(
 
 	try {
 		const response = await openai.chat.completions.create({
-			model: 'gpt-5.1',
+			model: 'gpt-5.3',
 			messages: [
 				{
 					role: 'system',
