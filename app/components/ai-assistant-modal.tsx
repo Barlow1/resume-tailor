@@ -66,7 +66,7 @@ export function AIAssistantModal({
 
 	const handleCompletion = async (type: 'tailor' | 'generate') => {
 		if (!subscription) {
-			const MAX_AI_TRIAL_COUNT = 4
+			const MAX_AI_TRIAL_COUNT = 6
 			const currentCount =
 				(gettingStartedProgress?.generateCount ?? 0) +
 				(gettingStartedProgress?.tailorCount ?? 0)
