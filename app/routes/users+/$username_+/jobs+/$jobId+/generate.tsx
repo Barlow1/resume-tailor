@@ -34,7 +34,7 @@ export async function loader({ params, request }: DataFunctionArgs) {
 	)
 
 	// Check if user has hit paywall
-	if (gettingStartedProgress && gettingStartedProgress?.generateCount > 1) {
+	if (gettingStartedProgress && gettingStartedProgress?.generateCount > 3) {
 		// Check if user has active subscription
 		const subscription = await prisma.subscription.findFirst({
 			where: { ownerId: userId, active: true },
@@ -54,7 +54,7 @@ export async function loader({ params, request }: DataFunctionArgs) {
 				trackingData: {
 					user_id: userId,
 					plan_type: 'free',
-					actions_remaining: Math.max(0, 2 - totalActions),
+					actions_remaining: Math.max(0, 4 - totalActions),
 					blocked_feature: 'resume_generation',
 				},
 				successUrl: request.url,
