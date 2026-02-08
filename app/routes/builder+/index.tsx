@@ -1704,6 +1704,7 @@ export default function ResumeBuilder() {
 							content={selectedBullet?.content}
 							experience={selectedExperience}
 							job={selectedJob}
+							resumeData={formData}
 							subscription={subscription}
 							gettingStartedProgress={gettingStartedProgress}
 							setShowSubscribeModal={setShowSubscribeModal}

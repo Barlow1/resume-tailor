@@ -116,13 +116,35 @@ export const recruiterOutreachSchema = z.object({
 	followUp: z.object({ body: z.string() })
 })
 
+// v1 schema — kept for getBuilderGeneratedExperienceResponse (generation prompt)
 export const experienceSchema = z.object({
 	experiences: z.array(z.string()),
 })
-const openaiExperienceResponseFormat = zodResponseFormat(
+const openaiGenerateResponseFormat = zodResponseFormat(
 	experienceSchema,
 	'experience',
 )
+
+// v2 schema — holistic single-bullet tailor
+const tailorOptionSchema = z.object({
+	angle: z.enum(['Impact', 'Alignment', 'Transferable']),
+	bullet: z.string(),
+})
+
+export const bulletTailorSchema = z.object({
+	options: z.array(tailorOptionSchema).length(3),
+	keyword_coverage_note: z.string(),
+	weak_bullet_flag: z.string().nullable(),
+	coverage_gap_flag: z.string().nullable(),
+})
+
+const openaiBulletTailorResponseFormat = zodResponseFormat(
+	bulletTailorSchema,
+	'bullet_tailor',
+)
+
+// Alias so the generate prompt still works without changes
+const openaiExperienceResponseFormat = openaiGenerateResponseFormat
 const openaiResumeResponseFormat = zodResponseFormat(resumeSchema, 'resume')
 
 const openaiJDResponseFormat = zodResponseFormat(
@@ -287,6 +309,7 @@ export const getBuilderExperienceResponse = async ({
 	jobDescription,
 	currentJobTitle,
 	currentJobCompany,
+	resumeData,
 	user,
 	extractedKeywords,
 }: {
@@ -295,68 +318,105 @@ export const getBuilderExperienceResponse = async ({
 	jobDescription: string
 	currentJobTitle: string
 	currentJobCompany: string
+	resumeData?: ResumeData
 	user: Partial<User>
 	extractedKeywords?: string[]
 }) => {
 	const name = user.name ? user.name.replace(/ /g, '_') : user.username
+
+	// Build a plain-text snapshot of the full resume for context
+	const resumeContext = resumeData
+		? buildResumeContext(resumeData)
+		: `Current role: ${currentJobTitle} at ${currentJobCompany}\nBullet to tailor: "${experience}"`
 
 	const messages =
 		jobTitle && jobDescription
 			? [
 					{
 						role: 'system' as const,
-						content: `You are an ATS optimization expert. Your primary job is to incorporate target keywords into resume bullets so they pass applicant tracking systems.
+						content: `You are a resume tailoring expert. Your job is to reframe a specific bullet from the user's resume to highlight relevance to a target role — without inventing anything they didn't do.
 
-Job Description:
-${jobDescription}
-
-${extractedKeywords && extractedKeywords.length > 0 ? `Target Keywords:
-${extractedKeywords.join(', ')}` : ''}
-
-Your goal: Get as many relevant keywords into each bullet as possible while keeping the bullet truthful to what the candidate actually did.`,
+You will receive:
+- The user's FULL RESUME (all sections: experience, skills, education, etc.)
+- The SPECIFIC BULLET to rewrite (identified by role + bullet text)
+- The TARGET JOB TITLE and JOB DESCRIPTION
+${extractedKeywords && extractedKeywords.length > 0 ? `\nExtracted JD Keywords:\n${extractedKeywords.join(', ')}` : ''}`,
 					},
 					{
 						role: 'user' as const,
-						content: `Rewrite this bullet point to include keywords from the job description.
+						content: `FULL RESUME:
+${resumeContext}
 
-Original bullet from ${currentJobTitle} at ${currentJobCompany}:
+SPECIFIC BULLET TO REWRITE:
+From role "${currentJobTitle}" at "${currentJobCompany}":
 "${experience}"
 
-KEYWORD RULES (PRIMARY GOAL):
-- Each variation MUST include 2-4 keywords from the Target Keywords list
-- Use exact phrasing from the job description where possible (ATS systems match exact phrases)
-- Different variations should incorporate DIFFERENT keywords
-- Front-load keywords near the beginning of the bullet when natural
+TARGET JOB: ${jobTitle}
 
-AUTHENTICITY RULES (CONSTRAINTS):
-- The bullet must still describe the same work/achievement as the original
-- If the original has no metrics, don't add metrics
-- Don't claim skills or scope that aren't implied by the original
-- It's OK to make implicit skills explicit (e.g., if they "led interviews" they did "user research")
+JOB DESCRIPTION:
+${jobDescription}
 
-EXAMPLES:
+---
 
-Original: "Helped with product roadmap planning"
-Target keywords: product vision, product roadmap, collaborate with engineers, stakeholders
+STEP 1 — BUILD A SKILL INVENTORY (do this silently, do not output)
+Before rewriting anything, scan the user's full resume and catalog:
+- Every skill, tool, technology, and methodology they've claimed anywhere
+- Their seniority level and career trajectory
+- Whether the current resume and target role are in the same field or a pivot
 
-✓ Good: "Collaborated with engineers and stakeholders to develop product roadmap aligned with product vision" (4 keywords)
-✓ Good: "Contributed to product roadmap planning, translating stakeholder input into product vision" (3 keywords)
-✗ Bad: "Helped with product roadmap planning" (0 keywords - just rephrased)
-✗ Bad: "Led product roadmap increasing revenue 40%" (adds leadership + metric not in original)
+This inventory defines the boundary of what you can reference. If a skill appears ANYWHERE on their resume, it's fair to reference in the rewrite. If it appears NOWHERE on their resume, you cannot add it.
 
-Original: "Worked on improving the checkout flow"
-Target keywords: user workflows, A/B testing, conversion optimization, user research
+STEP 2 — SCAN THE FULL RESUME FOR KEYWORD COVERAGE (do this silently)
+Check which JD keywords are already covered by OTHER bullets on the resume.
+- Keywords already well-represented elsewhere: do NOT force them into this bullet.
+- Keywords not yet covered anywhere: this bullet is a candidate IF the keyword truthfully applies to what the user did in this role.
+- Goal: each bullet carries the keywords that naturally fit IT, and collectively the resume covers the JD well. No single bullet should be a keyword dumping ground.
 
-✓ Good: "Optimized checkout user workflows through research and conversion optimization techniques" (3 keywords)
-✓ Good: "Improved checkout flow by analyzing user workflows and identifying conversion optimization opportunities" (2 keywords)
-✗ Bad: "Enhanced the checkout experience for better usability" (0 keywords)
+STEP 3 — REWRITE THE BULLET
+Apply these rules in priority order:
 
-FORMAT:
-- Maximum 200 characters per bullet
-- Start with a strong action verb
-- Return exactly 5 variations, each using different keyword combinations
+RULE 1 — TRUTH IS THE HARD CONSTRAINT
+- The rewritten bullet must describe what the user actually did in THIS specific role. Do not attribute work from other roles to this one.
+- You may use terminology from the JD or from other parts of the resume to DESCRIBE this role's work more precisely — but you cannot INVENT new work.
+- If the original bullet has no metric, the output has NO metric. Do not invent numbers, percentages, or scale.
+- When uncertain, preserve the original wording.
 
-Return ONLY: { "experiences": ["bullet 1", "bullet 2", "bullet 3", "bullet 4", "bullet 5"] }`,
+What's allowed vs not:
+  ALLOWED: User's bullet says "built web apps." Their skills section lists React. JD asks for React. → "Built web applications using React" is fair — you're adding specificity the user has claimed elsewhere.
+  NOT ALLOWED: User's bullet says "built web apps." React appears nowhere on their resume. JD asks for React. → You cannot add React.
+  NOT ALLOWED: User's bullet says "managed daily operations." JD says "P&L ownership." → You cannot rewrite as "managed P&L" unless the resume explicitly mentions P&L somewhere.
+
+RULE 2 — THREE DISTINCT ANGLES
+Return exactly 3 options, each with a different strategic purpose:
+
+Option 1 — IMPACT: Lead with the result, outcome, or scale. Best when the bullet has metrics or clear business value.
+Option 2 — ALIGNMENT: Use JD-relevant language to describe the same work. Place keywords that aren't yet covered elsewhere on the resume. Best when the experience maps well to the target role.
+Option 3 — TRANSFERABLE: Abstract to the underlying capability. Best for career pivots or when the specific work doesn't map directly but the skill does.
+
+Each option must be noticeably different — not a word rearrangement.
+Maximum 200 characters per bullet. Start with a strong action verb.
+
+RULE 3 — CAREER PIVOT HANDLING
+If the resume's overall profile and the target role are in different fields:
+- Do NOT paste JD jargon onto unrelated experience.
+- Focus on transferable skills: compliance, coordination, stakeholder management, documentation, high-pressure decision-making, process adherence, etc.
+- Option 3 becomes your strongest output — invest the most effort there.
+- Honesty matters more than keyword density. A credible bullet that a hiring manager believes is worth more than a keyword-stuffed one they don't.
+
+RULE 4 — WEAK BULLET FLAG
+If the original bullet lacks quantifiable outcomes AND describes routine duties without clear impact, set weak_bullet_flag to a suggestion like:
+"This bullet would be stronger with a measurable result. What was the volume, frequency, improvement, or outcome? e.g., 'supporting X accounts' or 'reducing Y by Z%.'"
+Otherwise set weak_bullet_flag to null.
+
+RULE 5 — COVERAGE GAP FLAG
+If the JD contains a critical requirement (top 3 responsibilities or listed under "required qualifications") that appears NOWHERE on the full resume, set coverage_gap_flag to flag ONE gap max, like:
+"The JD emphasizes [skill/requirement] but your resume doesn't mention it yet. If you have this experience, consider adding it to your skills or to a relevant bullet."
+Otherwise set coverage_gap_flag to null. Only flag genuine critical gaps, not nice-to-haves.
+
+KEYWORD COVERAGE NOTE:
+In keyword_coverage_note, briefly state which keywords this bullet now covers, which are already covered elsewhere on the resume, and any critical JD keywords not covered anywhere.
+
+Return ONLY valid JSON matching the required schema.`,
 						name,
 					},
 			  ]
@@ -369,10 +429,57 @@ Return ONLY: { "experiences": ["bullet 1", "bullet 2", "bullet 3", "bullet 4", "
 		messages,
 		temperature: 0.5,
 		max_completion_tokens: 4096,
-		response_format: openaiExperienceResponseFormat,
+		response_format: openaiBulletTailorResponseFormat,
 	})
 
 	return { response }
+}
+
+/**
+ * Converts full ResumeData into a plain-text context string for the LLM.
+ * Keeps it compact but includes all sections the model needs for skill inventory.
+ */
+function buildResumeContext(resume: ResumeData): string {
+	const sections: string[] = []
+
+	if (resume.name || resume.role) {
+		sections.push(`Name: ${resume.name ?? 'N/A'}\nTarget Role: ${resume.role ?? 'N/A'}`)
+	}
+
+	if (resume.about) {
+		sections.push(`Summary:\n${resume.about}`)
+	}
+
+	if (resume.experiences && resume.experiences.length > 0) {
+		const expLines = resume.experiences.map(exp => {
+			const header = `${exp.role ?? 'Role'} at ${exp.company ?? 'Company'}${exp.startDate ? ` (${exp.startDate}–${exp.endDate ?? 'Present'})` : ''}`
+			const bullets = (exp.descriptions ?? [])
+				.filter(d => d.content)
+				.map(d => `  • ${d.content}`)
+				.join('\n')
+			return `${header}\n${bullets}`
+		}).join('\n\n')
+		sections.push(`Experience:\n${expLines}`)
+	}
+
+	if (resume.education && resume.education.length > 0) {
+		const eduLines = resume.education.map(ed =>
+			`${ed.degree ?? ''} — ${ed.school ?? ''}${ed.startDate ? ` (${ed.startDate}–${ed.endDate ?? ''})` : ''}`
+		).join('\n')
+		sections.push(`Education:\n${eduLines}`)
+	}
+
+	if (resume.skills && resume.skills.length > 0) {
+		const skillNames = resume.skills.map(s => s.name).filter(Boolean).join(', ')
+		sections.push(`Skills: ${skillNames}`)
+	}
+
+	if (resume.hobbies && resume.hobbies.length > 0) {
+		const hobbyNames = resume.hobbies.map(h => h.name).filter(Boolean).join(', ')
+		sections.push(`Interests: ${hobbyNames}`)
+	}
+
+	return sections.join('\n\n')
 }
 
 export const getBuilderGeneratedExperienceResponse = async ({

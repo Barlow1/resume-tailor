@@ -211,6 +211,7 @@ export async function action({ request }: DataFunctionArgs) {
 
 		try {
 			const parsedKeywords = extractedKeywords ? (JSON.parse(extractedKeywords) as string[]) : undefined
+			const parsedResumeForBullet = resumeData ? (JSON.parse(resumeData) as ResumeData) : undefined
 			;[{ response }] = await Promise.all([
 				await getBuilderExperienceResponse({
 					experience,
@@ -218,6 +219,7 @@ export async function action({ request }: DataFunctionArgs) {
 					jobTitle,
 					currentJobTitle: currentJobTitle ?? '',
 					currentJobCompany: currentJobCompany ?? '',
+					resumeData: parsedResumeForBullet,
 					user,
 					extractedKeywords: parsedKeywords,
 				}),
@@ -252,7 +254,7 @@ export async function action({ request }: DataFunctionArgs) {
 					currentJobCompany: currentJobCompany ?? null,
 					extractedKeywords: extractedKeywords ?? null,
 					aiOutput,
-					promptVersion: 'v1',
+					promptVersion: 'v2',
 				},
 			})
 

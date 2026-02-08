@@ -7,10 +7,30 @@ import { SlideoutModal } from '~/components/ui/slideout-modal.tsx'
 import {
 	type BuilderExperience,
 	type BuilderJob,
+	type ResumeData,
 } from '~/utils/builder-resume.server.ts'
 import { type Jsonify } from '@remix-run/server-runtime/dist/jsonify.js'
 import { useFetcher } from '@remix-run/react'
 import type OpenAI from 'openai'
+
+// v2: Type for the new structured tailor response
+interface TailorOption {
+	angle: 'Impact' | 'Alignment' | 'Transferable'
+	bullet: string
+}
+
+interface TailorResponse {
+	options: TailorOption[]
+	keyword_coverage_note: string
+	weak_bullet_flag: string | null
+	coverage_gap_flag: string | null
+}
+
+const ANGLE_DESCRIPTIONS: Record<TailorOption['angle'], string> = {
+	Impact: 'Leads with results & outcomes',
+	Alignment: 'Matches JD language & keywords',
+	Transferable: 'Highlights underlying skills',
+}
 
 interface AIAssistantModalProps {
 	isOpen: boolean
@@ -20,10 +40,10 @@ interface AIAssistantModalProps {
 	content?: string
 	experience?: BuilderExperience
 	job?: BuilderJob | null | undefined
+	resumeData?: ResumeData | null
 	subscription: Subscription | null
 	gettingStartedProgress: Jsonify<GettingStartedProgress> | null
 	setShowSubscribeModal: (show: boolean) => void
-	/** Called when user clicks "Tailor Achievement" button (for onboarding) */
 	onTailorClick?: () => void
 }
 
@@ -35,6 +55,7 @@ export function AIAssistantModal({
 	content,
 	experience,
 	job,
+	resumeData,
 	subscription,
 	gettingStartedProgress,
 	setShowSubscribeModal,
@@ -77,7 +98,6 @@ export function AIAssistantModal({
 		}
 		setSelectedItems([])
 
-		// Call onTailorClick when user clicks "Tailor Achievement" (for onboarding)
 		if (type === 'tailor' && onTailorClick) {
 			onTailorClick()
 		}
@@ -91,9 +111,13 @@ export function AIAssistantModal({
 		formData.append('experience', content ?? '')
 		formData.append('type', endpoint)
 
-		// Pass extracted keywords for better ATS optimization
 		if (job?.extractedKeywords) {
 			formData.append('extractedKeywords', job.extractedKeywords)
+		}
+
+		// v2: Pass full resume data for holistic tailoring
+		if (type === 'tailor' && resumeData) {
+			formData.append('resumeData', JSON.stringify(resumeData))
 		}
 
 		builderCompletionsFetcher.submit(formData, {
@@ -114,14 +138,45 @@ export function AIAssistantModal({
 		}
 	}, [builderCompletionsFetcher.state, builderCompletionsFetcher.data])
 
-	let parsedOptions: string[] = []
+	// v2: Parse response based on active tab
+	let parsedTailorResponse: TailorResponse | null = null
+	let parsedGenerateOptions: string[] = []
+
 	try {
-		parsedOptions = rawContent
-			? (JSON.parse(rawContent) as { experiences: string[] }).experiences ?? []
-			: []
+		if (rawContent) {
+			if (activeTab === 'tailor') {
+				const parsed = JSON.parse(rawContent) as Record<string, unknown>
+				// Handle both v2 format (options array) and legacy v1 format (experiences array)
+				if (parsed.options && Array.isArray(parsed.options)) {
+					parsedTailorResponse = parsed as unknown as TailorResponse
+				} else if (parsed.experiences) {
+					// Fallback: convert v1 format to v2 display
+					parsedTailorResponse = {
+						options: (parsed.experiences as string[]).slice(0, 3).map(
+							(bullet: string, i: number) => ({
+								angle: (['Impact', 'Alignment', 'Transferable'] as const)[i],
+								bullet,
+							})
+						),
+						keyword_coverage_note: '',
+						weak_bullet_flag: null,
+						coverage_gap_flag: null,
+					}
+				}
+			} else {
+				parsedGenerateOptions =
+					(JSON.parse(rawContent) as { experiences: string[] }).experiences ?? []
+			}
+		}
 	} catch {
-		// Invalid JSON from API - treat as empty
+		// Invalid JSON from API — treat as empty
 	}
+
+	// Unified list for selection logic
+	const displayOptions: string[] =
+		activeTab === 'tailor'
+			? (parsedTailorResponse?.options ?? []).map(o => o.bullet)
+			: parsedGenerateOptions
 
 	const isLoading = builderCompletionsFetcher.state === 'submitting'
 
@@ -138,12 +193,11 @@ export function AIAssistantModal({
 	const handleSave = () => {
 		const selectedContent = selectedItems
 			.sort((a, b) => a - b)
-			.map(index => parsedOptions[index])
+			.map(index => displayOptions[index])
 
 		if (activeTab === 'tailor') {
 			onUpdate(selectedContent[0])
 
-			// Log accepted action for QA
 			if (tailorLogId) {
 				const formData = new FormData()
 				formData.append('logId', tailorLogId)
@@ -163,8 +217,7 @@ export function AIAssistantModal({
 	}
 
 	const handleClose = () => {
-		// Log abandoned action for QA (only if AI returned results)
-		if (tailorLogId && parsedOptions.length > 0) {
+		if (tailorLogId && displayOptions.length > 0) {
 			const formData = new FormData()
 			formData.append('logId', tailorLogId)
 			formData.append('action', 'abandoned')
@@ -274,9 +327,77 @@ export function AIAssistantModal({
 									</Button>
 								</div>
 								<div className="space-y-2">
-									{parsedOptions.length > 0 ? (
+									{/* v2: Tailor tab — structured options with angle labels */}
+									{activeTab === 'tailor' && parsedTailorResponse ? (
+										<>
+											<div className="space-y-2">
+												{parsedTailorResponse.options.map((option, index) => (
+													<div
+														key={index}
+														onClick={() => handleItemSelect(index)}
+														className={`group relative cursor-pointer rounded-lg border p-4 transition-all hover:border-primary ${
+															selectedItems.includes(index)
+																? 'border-primary bg-accent'
+																: 'border-border'
+														}`}
+													>
+														<div className="mb-2 flex items-center gap-2">
+															<span
+																className={cn(
+																	'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
+																	option.angle === 'Impact' && 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400',
+																	option.angle === 'Alignment' && 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+																	option.angle === 'Transferable' && 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
+																)}
+															>
+																{option.angle}
+															</span>
+															<span className="text-xs text-muted-foreground">
+																{ANGLE_DESCRIPTIONS[option.angle]}
+															</span>
+														</div>
+														<p className="pr-8 text-muted-foreground">{option.bullet}</p>
+														{selectedItems.includes(index) && (
+															<CheckIcon className="absolute right-2 top-2 h-5 w-5 text-primary" />
+														)}
+													</div>
+												))}
+											</div>
+
+											{/* Flags — rendered as callout cards below options */}
+											{parsedTailorResponse.weak_bullet_flag && (
+												<div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-900/20">
+													<p className="text-sm text-amber-800 dark:text-amber-300">
+														<span className="font-medium">Suggestion: </span>
+														{parsedTailorResponse.weak_bullet_flag}
+													</p>
+												</div>
+											)}
+
+											{parsedTailorResponse.coverage_gap_flag && (
+												<div className="rounded-lg border border-rose-200 bg-rose-50 p-3 dark:border-rose-800 dark:bg-rose-900/20">
+													<p className="text-sm text-rose-800 dark:text-rose-300">
+														<span className="font-medium">Gap: </span>
+														{parsedTailorResponse.coverage_gap_flag}
+													</p>
+												</div>
+											)}
+
+											{/* Keyword coverage — collapsed by default */}
+											{parsedTailorResponse.keyword_coverage_note && (
+												<details className="rounded-lg border border-border p-3">
+													<summary className="cursor-pointer text-sm font-medium text-muted-foreground">
+														Keyword coverage
+													</summary>
+													<p className="mt-2 text-sm text-muted-foreground">
+														{parsedTailorResponse.keyword_coverage_note}
+													</p>
+												</details>
+											)}
+										</>
+									) : activeTab === 'generate' && parsedGenerateOptions.length > 0 ? (
 										<div className="space-y-2">
-											{parsedOptions.map((option: string, index: number) => (
+											{parsedGenerateOptions.map((option: string, index: number) => (
 												<div
 													key={index}
 													onClick={() => handleItemSelect(index)}

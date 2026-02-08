@@ -67,13 +67,40 @@ function formatDate(dateStr: string) {
 	})
 }
 
-function parseAiOutput(raw: string): string[] {
+interface ParsedAiOutput {
+	options: Array<{ angle?: string; bullet: string }>
+	keyword_coverage_note: string
+	weak_bullet_flag: string | null
+	coverage_gap_flag: string | null
+}
+
+function parseAiOutput(raw: string): ParsedAiOutput {
 	try {
-		const parsed = JSON.parse(raw) as { experiences?: string[] }
-		return parsed.experiences ?? []
+		const parsed = JSON.parse(raw) as Record<string, unknown>
+		if (parsed.options && Array.isArray(parsed.options)) {
+			// v2 format
+			return {
+				options: (parsed.options as Array<{ angle?: string; bullet?: string }>).map(o => ({
+					angle: o.angle,
+					bullet: o.bullet ?? '',
+				})),
+				keyword_coverage_note: (parsed.keyword_coverage_note as string) ?? '',
+				weak_bullet_flag: (parsed.weak_bullet_flag as string) ?? null,
+				coverage_gap_flag: (parsed.coverage_gap_flag as string) ?? null,
+			}
+		} else if (parsed.experiences && Array.isArray(parsed.experiences)) {
+			// v1 format
+			return {
+				options: (parsed.experiences as string[]).map(bullet => ({ bullet })),
+				keyword_coverage_note: '',
+				weak_bullet_flag: null,
+				coverage_gap_flag: null,
+			}
+		}
 	} catch {
-		return []
+		// ignore
 	}
+	return { options: [], keyword_coverage_note: '', weak_bullet_flag: null, coverage_gap_flag: null }
 }
 
 export default function BulletQAPage() {
@@ -223,7 +250,7 @@ export default function BulletQAPage() {
 				<tbody>
 					{logs.map(log => {
 						const isExpanded = expandedId === log.id
-						const options = parseAiOutput(log.aiOutput)
+						const aiOutput = parseAiOutput(log.aiOutput)
 
 						return (
 							<>
@@ -308,7 +335,7 @@ export default function BulletQAPage() {
 										>
 											<ExpandedRow
 												log={log}
-												options={options}
+												aiOutput={aiOutput}
 											/>
 										</td>
 									</tr>
@@ -383,9 +410,15 @@ export default function BulletQAPage() {
 	)
 }
 
+const ANGLE_COLORS: Record<string, { bg: string; text: string }> = {
+	Impact: { bg: '#d1fae5', text: '#065f46' },
+	Alignment: { bg: '#dbeafe', text: '#1e40af' },
+	Transferable: { bg: '#ede9fe', text: '#5b21b6' },
+}
+
 function ExpandedRow({
 	log,
-	options,
+	aiOutput,
 }: {
 	log: {
 		originalBullet: string
@@ -397,7 +430,7 @@ function ExpandedRow({
 		selectedOption: number | null
 		promptVersion: string | null
 	}
-	options: string[]
+	aiOutput: ParsedAiOutput
 }) {
 	const [showJD, setShowJD] = useState(false)
 
@@ -501,7 +534,7 @@ function ExpandedRow({
 			{/* AI Options */}
 			<div>
 				<h4 style={{ fontWeight: 600, marginBottom: '4px' }}>
-					AI Output ({options.length} options)
+					AI Output ({aiOutput.options.length} options)
 					{log.promptVersion && (
 						<span
 							style={{ fontWeight: 400, color: '#666', fontSize: '12px' }}
@@ -518,41 +551,101 @@ function ExpandedRow({
 						gap: '4px',
 					}}
 				>
-					{options.map((option, i) => (
-						<div
-							key={i}
-							style={{
-								padding: '8px',
-								background:
-									log.selectedOption === i ? '#dcfce7' : '#fff',
-								border:
-									log.selectedOption === i
-										? '2px solid #16a34a'
-										: '1px solid #ddd',
-								borderRadius: '4px',
-								display: 'flex',
-								gap: '8px',
-							}}
-						>
-							<span
+					{aiOutput.options.map((option, i) => {
+						const angleColors = option.angle ? ANGLE_COLORS[option.angle] : null
+						return (
+							<div
+								key={i}
 								style={{
-									fontWeight: 600,
-									color: '#999',
-									minWidth: '20px',
+									padding: '8px',
+									background:
+										log.selectedOption === i ? '#dcfce7' : '#fff',
+									border:
+										log.selectedOption === i
+											? '2px solid #16a34a'
+											: '1px solid #ddd',
+									borderRadius: '4px',
+									display: 'flex',
+									gap: '8px',
+									alignItems: 'flex-start',
 								}}
 							>
-								{i + 1}.
-							</span>
-							<span>{option}</span>
-							{log.selectedOption === i && (
-								<span style={{ marginLeft: 'auto', color: '#16a34a' }}>
-									selected
+								<span
+									style={{
+										fontWeight: 600,
+										color: '#999',
+										minWidth: '20px',
+									}}
+								>
+									{i + 1}.
 								</span>
-							)}
-						</div>
-					))}
+								{option.angle && angleColors && (
+									<span
+										style={{
+											padding: '2px 8px',
+											borderRadius: '12px',
+											fontSize: '11px',
+											fontWeight: 600,
+											background: angleColors.bg,
+											color: angleColors.text,
+											whiteSpace: 'nowrap',
+										}}
+									>
+										{option.angle}
+									</span>
+								)}
+								<span style={{ flex: 1 }}>{option.bullet}</span>
+								{log.selectedOption === i && (
+									<span style={{ marginLeft: 'auto', color: '#16a34a', whiteSpace: 'nowrap' }}>
+										selected
+									</span>
+								)}
+							</div>
+						)
+					})}
 				</div>
 			</div>
+
+			{/* v2 flags */}
+			{aiOutput.weak_bullet_flag && (
+				<div
+					style={{
+						padding: '8px 12px',
+						background: '#fffbeb',
+						border: '1px solid #fde68a',
+						borderRadius: '4px',
+						fontSize: '13px',
+					}}
+				>
+					<strong>Suggestion:</strong> {aiOutput.weak_bullet_flag}
+				</div>
+			)}
+			{aiOutput.coverage_gap_flag && (
+				<div
+					style={{
+						padding: '8px 12px',
+						background: '#fff1f2',
+						border: '1px solid #fecdd3',
+						borderRadius: '4px',
+						fontSize: '13px',
+					}}
+				>
+					<strong>Gap:</strong> {aiOutput.coverage_gap_flag}
+				</div>
+			)}
+			{aiOutput.keyword_coverage_note && (
+				<div
+					style={{
+						padding: '8px 12px',
+						background: '#f0f9ff',
+						border: '1px solid #bae6fd',
+						borderRadius: '4px',
+						fontSize: '13px',
+					}}
+				>
+					<strong>Keyword coverage:</strong> {aiOutput.keyword_coverage_note}
+				</div>
+			)}
 		</div>
 	)
 }
