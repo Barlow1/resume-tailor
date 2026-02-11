@@ -17,7 +17,6 @@ export async function action({ request }: DataFunctionArgs) {
 	// Verify the log belongs to this user
 	const log = await prisma.bulletTailorLog.findFirst({
 		where: { id: logId, userId },
-		select: { id: true },
 	})
 
 	if (!log) {
@@ -35,6 +34,25 @@ export async function action({ request }: DataFunctionArgs) {
 			actionAt: new Date(),
 		},
 	})
+
+	// Fire webhook to n8n for real-time AI quality analysis
+	const webhookUrl = process.env.N8N_WEBHOOK_URL
+	if (webhookUrl) {
+		fetch(webhookUrl, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				originalBullet: log.originalBullet,
+				aiOutput: log.aiOutput,
+				jobTitle: log.jobTitle,
+				jobDescription: log.jobDescription,
+				userAction: action,
+				selectedOption: selectedOption ?? null,
+				userId,
+				timestamp: new Date().toISOString(),
+			}),
+		}).catch(() => {}) // fire-and-forget, don't block the user
+	}
 
 	return json({ success: true })
 }
