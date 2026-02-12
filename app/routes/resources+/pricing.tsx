@@ -28,7 +28,8 @@ const tiers = [
 		description:
 			"Build your first resume and tailor it to any job you're applying to and export it to an ATS optimized PDF",
 		features: [
-			'6 tailored/generated experiences',
+			'6 tailored experiences',
+			'6 generated experiences',
 			'48-hour support response time',
 			'Export to an ATS optimized PDF',
 		],

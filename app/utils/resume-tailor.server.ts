@@ -85,7 +85,7 @@ export async function tailorResume({
 			JSON.stringify(
 				{
 					timestamp: new Date().toISOString(),
-					model: 'gpt-5.1',
+					model: 'gpt-5.2',
 					promptVersion: version,
 					jobDescriptionLength: jobDescription.length,
 					resumeExperiences: resume.experiences?.length || 0,
@@ -101,7 +101,7 @@ export async function tailorResume({
 
 	try {
 		const response = await openai.chat.completions.create({
-			model: 'gpt-5.1',
+			model: 'gpt-5.2',
 			temperature: 0.4,
 			response_format: { type: 'json_object' },
 			messages: [
@@ -140,7 +140,7 @@ export async function tailorResume({
 				JSON.stringify(
 					{
 						timestamp: new Date().toISOString(),
-						model: 'gpt-5.1',
+						model: 'gpt-5.2',
 						promptVersion: version,
 						latency: elapsed,
 						usage: response.usage,

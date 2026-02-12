@@ -44,9 +44,24 @@ export async function loader({ request }: DataFunctionArgs) {
 	// Transform data for Excel
 	const data = logs.map(log => {
 		let aiOptions: string[] = []
+		let angles: string[] = []
+		let keywordCoverage = ''
+		let weakBulletFlag = ''
+		let coverageGapFlag = ''
 		try {
-			const parsed = JSON.parse(log.aiOutput) as { experiences?: string[] }
-			aiOptions = parsed.experiences ?? []
+			const parsed = JSON.parse(log.aiOutput) as Record<string, unknown>
+			if (parsed.options && Array.isArray(parsed.options)) {
+				// v2 format: { options: [{ angle, bullet }], keyword_coverage_note, ... }
+				const options = parsed.options as Array<{ angle?: string; bullet?: string }>
+				aiOptions = options.map(o => o.bullet ?? '')
+				angles = options.map(o => o.angle ?? '')
+				keywordCoverage = (parsed.keyword_coverage_note as string) ?? ''
+				weakBulletFlag = (parsed.weak_bullet_flag as string) ?? ''
+				coverageGapFlag = (parsed.coverage_gap_flag as string) ?? ''
+			} else if (parsed.experiences && Array.isArray(parsed.experiences)) {
+				// v1 format: { experiences: string[] }
+				aiOptions = parsed.experiences as string[]
+			}
 		} catch {
 			// ignore
 		}
@@ -60,8 +75,14 @@ export async function loader({ request }: DataFunctionArgs) {
 			'Current Company': log.currentJobCompany ?? '',
 			'Original Bullet': log.originalBullet,
 			'AI Option 1': aiOptions[0] ?? '',
+			'Angle 1': angles[0] ?? '',
 			'AI Option 2': aiOptions[1] ?? '',
+			'Angle 2': angles[1] ?? '',
 			'AI Option 3': aiOptions[2] ?? '',
+			'Angle 3': angles[2] ?? '',
+			'Weak Bullet Flag': weakBulletFlag,
+			'Coverage Gap Flag': coverageGapFlag,
+			'Keyword Coverage': keywordCoverage,
 			'Selected Option': log.selectedOption != null ? log.selectedOption + 1 : '',
 			'User Action': log.userAction ?? 'pending',
 			'Prompt Version': log.promptVersion ?? '',
@@ -84,8 +105,14 @@ export async function loader({ request }: DataFunctionArgs) {
 		{ wch: 20 }, // Current Company
 		{ wch: 60 }, // Original Bullet
 		{ wch: 60 }, // AI Option 1
+		{ wch: 14 }, // Angle 1
 		{ wch: 60 }, // AI Option 2
+		{ wch: 14 }, // Angle 2
 		{ wch: 60 }, // AI Option 3
+		{ wch: 14 }, // Angle 3
+		{ wch: 50 }, // Weak Bullet Flag
+		{ wch: 50 }, // Coverage Gap Flag
+		{ wch: 60 }, // Keyword Coverage
 		{ wch: 12 }, // Selected Option
 		{ wch: 12 }, // User Action
 		{ wch: 12 }, // Prompt Version
