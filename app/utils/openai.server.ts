@@ -293,7 +293,7 @@ Return the complete resume JSON.`,
 	invariant(messages, 'Must provide jobTitle and jobDescription')
 
 	const response = await openai.chat.completions.create({
-		model: 'gpt-5.3',
+		model: 'gpt-5.2',
 		messages,
 		temperature: 0.5,
 		max_completion_tokens: 8192,
@@ -425,7 +425,7 @@ Return ONLY valid JSON matching the required schema.`,
 	invariant(messages, 'Must provide jobTitle and jobDescription')
 
 	const response = await openai.chat.completions.create({
-		model: 'gpt-5.3',
+		model: 'gpt-5.2',
 		messages,
 		temperature: 0.5,
 		max_completion_tokens: 4096,
@@ -597,7 +597,7 @@ No markdown, no extra text, just the JSON.`,
 	invariant(messages, 'Must provide jobTitle and jobDescription')
 
 	const response = await openai.chat.completions.create({
-		model: 'gpt-5.3',
+		model: 'gpt-5.2',
 		messages,
 		temperature: 0.5,
 		max_completion_tokens: 4096,
@@ -660,7 +660,7 @@ Return only the rewritten bullets, one per line. Same number of bullets as input
 	invariant(messages, 'Must provide jobTitle and jobDescription')
 
 	const response = await openai.chat.completions.create({
-		model: 'gpt-5.3',
+		model: 'gpt-5.2',
 		messages,
 		temperature: 0.4,
 		max_completion_tokens: 2048,
@@ -708,7 +708,7 @@ export const getGeneratedExperienceResponse = async ({
 	invariant(messages, 'Must provide jobTitle and jobDescription')
 
 	const response = await openai.chat.completions.create({
-		model: 'gpt-5.3',
+		model: 'gpt-5.2',
 		messages,
 		temperature: 0.4,
 		max_completion_tokens: 2048,

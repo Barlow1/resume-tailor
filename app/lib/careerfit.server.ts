@@ -314,7 +314,7 @@ export async function getAiFeedbackStreaming(
   // Note: streaming doesn't work well with response_format: { type: 'json_object' }
   // So we rely on strong prompting to ensure JSON output
   const stream = await openai.chat.completions.create({
-    model: process.env.OPENAI_MODEL || 'gpt-5.3',
+    model: process.env.OPENAI_MODEL || 'gpt-5.2',
     temperature: 0.7,
     messages: [
       {
