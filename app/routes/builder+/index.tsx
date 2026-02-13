@@ -106,6 +106,7 @@ import {
 import { trackEvent as trackLegacyEvent } from '~/utils/tracking.client.ts'
 import { trackEvent } from '~/utils/analytics.ts'
 import { track } from '~/lib/analytics.client.ts'
+import { toast } from '~/components/ui/use-toast.ts'
 import { useOnboardingFlow } from '~/hooks/use-onboarding-flow.ts'
 import { JobPasteModal } from '~/components/job-paste-modal.tsx'
 import { SpotlightOverlay } from '~/components/spotlight-overlay.tsx'
@@ -322,7 +323,7 @@ export default function ResumeBuilder() {
 		errorType: string
 	} | null>(null)
 
-	const fetcher = useFetcher<{ formData: Jsonify<ResumeData> }>()
+	const fetcher = useFetcher<{ success: boolean; error?: string }>()
 	const pdfFetcher = useFetcher<{ fileData: string; fileType: string }>()
 
 	const navigate = useNavigate()
@@ -361,6 +362,41 @@ export default function ResumeBuilder() {
 			action: '/resources/save-resume',
 		})
 	}, 1000)
+
+	// Save status: 'idle' | 'saving' | 'saved' | 'error'
+	const [saveStatus, setSaveStatus] = useState<
+		'idle' | 'saving' | 'saved' | 'error'
+	>('idle')
+	const saveStatusTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
+
+	// Monitor save fetcher for errors and status changes
+	useEffect(() => {
+		if (fetcher.state === 'submitting') {
+			setSaveStatus('saving')
+			return
+		}
+
+		if (fetcher.state === 'idle' && fetcher.data) {
+			if (fetcher.data.success === false) {
+				setSaveStatus('error')
+				toast({
+					variant: 'destructive',
+					title: 'Failed to save',
+					description:
+						fetcher.data.error ||
+						'Your changes could not be saved. Please try again.',
+				})
+			} else {
+				setSaveStatus('saved')
+			}
+			// Reset to idle after 3 seconds
+			clearTimeout(saveStatusTimeoutRef.current)
+			saveStatusTimeoutRef.current = setTimeout(
+				() => setSaveStatus('idle'),
+				3000,
+			)
+		}
+	}, [fetcher.state, fetcher.data])
 
 	const resetSave = () => {
 		fetcher.submit(
@@ -1867,6 +1903,64 @@ export default function ResumeBuilder() {
 										<TooltipContent>Create a new resume</TooltipContent>
 									</Tooltip>
 								</TooltipProvider>
+								{saveStatus !== 'idle' && (
+									<span
+										className={`flex items-center gap-1.5 text-xs transition-opacity ${
+											saveStatus === 'saving'
+												? 'text-gray-400'
+												: saveStatus === 'saved'
+												? 'text-green-600'
+												: 'text-red-600'
+										}`}
+									>
+										{saveStatus === 'saving' && (
+											<>
+												<svg
+													className="h-3 w-3 animate-spin"
+													viewBox="0 0 24 24"
+													fill="none"
+												>
+													<circle
+														className="opacity-25"
+														cx="12"
+														cy="12"
+														r="10"
+														stroke="currentColor"
+														strokeWidth="4"
+													/>
+													<path
+														className="opacity-75"
+														fill="currentColor"
+														d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+													/>
+												</svg>
+												Saving…
+											</>
+										)}
+										{saveStatus === 'saved' && (
+											<>
+												<svg
+													className="h-3 w-3"
+													viewBox="0 0 20 20"
+													fill="currentColor"
+												>
+													<path
+														fillRule="evenodd"
+														d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+														clipRule="evenodd"
+													/>
+												</svg>
+												Saved
+											</>
+										)}
+										{saveStatus === 'error' && (
+											<>
+												<ExclamationTriangleIcon className="h-3 w-3" />
+												Save failed
+											</>
+										)}
+									</span>
+								)}
 								<div id="download-button">
 									<StatusButton
 										type="button"
