@@ -511,12 +511,12 @@ function App() {
 												</TransitionChild>
 												{/* Sidebar component, swap this element with another sidebar if you like */}
 
-												<div className="flex grow flex-col gap-y-5 overflow-y-auto bg-[#6B45FF] px-6 pb-4">
-													<div className="flex h-16 shrink-0 items-center">
+												<div className="flex grow flex-col gap-y-6 overflow-y-auto bg-[#6B45FF] px-7 pb-5">
+													<div className="flex h-[72px] shrink-0 items-center">
 														<Link to="/">
 															<div
 																className={clsx(
-																	'md:text-md text-center text-sm font-extrabold text-white lg:text-xl',
+																	'md:text-xl text-center text-lg font-extrabold text-white lg:text-3xl',
 																	{ hidden: isCollapsed },
 																)}
 															>
@@ -537,7 +537,7 @@ function App() {
 																					item.current
 																						? 'bg-brand-800 text-white'
 																						: 'text-purple-200 hover:bg-brand-800/50 hover:text-white',
-																					'group relative flex items-center gap-x-3 rounded-md p-2 text-sm font-semibold leading-6',
+																					'group relative flex items-center gap-x-3.5 rounded-md p-3 text-[17px] font-semibold leading-7',
 																				)}
 																				onClick={() => setSidebarOpen(false)}
 																			>
@@ -546,7 +546,7 @@ function App() {
 																						item.current
 																							? 'text-white'
 																							: 'text-purple-200 group-hover:text-white',
-																						'h-6 w-6 shrink-0',
+																						'h-8 w-8 shrink-0',
 																					)}
 																				/>
 																				{!isCollapsed && (
@@ -586,16 +586,16 @@ function App() {
 									<div
 										className={clsx(
 											'hidden transition-all duration-300 lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:flex-col',
-											isCollapsed ? 'lg:w-20' : 'lg:w-72',
+											isCollapsed ? 'lg:w-[100px]' : 'lg:w-[350px]',
 										)}
 									>
 										{/* Sidebar component, swap this element with another sidebar if you like */}
-										<div className="flex grow flex-col gap-y-5 overflow-y-auto bg-[#6B45FF] px-6 pb-4">
-											<div className="flex h-16 shrink-0 items-center">
+										<div className="flex grow flex-col gap-y-6 overflow-y-auto bg-[#6B45FF] px-7 pb-5">
+											<div className="flex h-[72px] shrink-0 items-center">
 												<Link to="/">
 													<div
 														className={clsx(
-															'md:text-md text-center text-sm font-extrabold text-white lg:text-xl',
+															'md:text-xl text-center text-lg font-extrabold text-white lg:text-3xl',
 														)}
 													>
 														{!isCollapsed ? 'RESUME TAILOR' : 'RT'}
@@ -606,12 +606,12 @@ function App() {
 											{/* Collapse toggle button */}
 											<button
 												onClick={toggleCollapse}
-												className="absolute right-0 top-[50vh] -mr-3 flex h-6 w-6 items-center justify-center rounded-full bg-brand-500 text-white shadow-md hover:bg-brand-800"
+												className="absolute right-0 top-[50vh] -mr-3.5 flex h-7 w-7 items-center justify-center rounded-full bg-brand-500 text-white shadow-md hover:bg-brand-800"
 											>
 												{isCollapsed ? (
-													<ChevronRightIcon className="h-4 w-4" />
+													<ChevronRightIcon className="h-5 w-5" />
 												) : (
-													<ChevronLeftIcon className="h-4 w-4" />
+													<ChevronLeftIcon className="h-5 w-5" />
 												)}
 											</button>
 
@@ -633,7 +633,7 @@ function App() {
 																						item.current
 																							? 'bg-brand-800 text-white'
 																							: 'text-purple-200 hover:bg-brand-800/50 hover:text-white',
-																						'group relative flex items-center gap-x-3 rounded-md p-2 text-sm font-semibold leading-6',
+																						'group relative flex items-center gap-x-3.5 rounded-md p-3 text-[17px] font-semibold leading-7',
 																					)}
 																					title={item.name}
 																				>
@@ -642,7 +642,7 @@ function App() {
 																							item.current
 																								? 'text-white'
 																								: 'text-purple-200 group-hover:text-white',
-																							'h-6 w-6 shrink-0',
+																							'h-8 w-8 shrink-0',
 																						)}
 																					/>
 																					{!isCollapsed && (
@@ -702,7 +702,7 @@ function App() {
 
 							<div
 								className={`${
-									shouldHideNav ? '' : isCollapsed ? 'lg:pl-20' : 'lg:pl-72'
+									shouldHideNav ? '' : isCollapsed ? 'lg:pl-[100px]' : 'lg:pl-[350px]'
 								}`}
 							>
 								{isBuilderRoute ? (

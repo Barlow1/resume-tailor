@@ -292,7 +292,7 @@ function moveArray<T>(arr: T[], from: number, to: number): T[] {
 }
 
 /* ═══ SCORE ARC ═══ */
-function ScoreArc({ score, size = 128, onClick, c }: { score: number; size?: number; onClick?: () => void; c: Theme }) {
+function ScoreArc({ score, size = 148, onClick, c }: { score: number; size?: number; onClick?: () => void; c: Theme }) {
 	const [a, setA] = useState(0)
 	const t = getTier(score)
 	useEffect(() => {
@@ -308,10 +308,10 @@ function ScoreArc({ score, size = 128, onClick, c }: { score: number; size?: num
 			<svg width={size} height={size * .78} viewBox="0 0 128 100">
 				<path d={arc(sA, eA)} fill="none" stroke={c.border} strokeWidth={sw} strokeLinecap="round" />
 				<path d={arc(sA, fA)} fill="none" stroke={t.color} strokeWidth={sw} strokeLinecap="round" style={{ filter: `drop-shadow(0 0 6px ${t.color}44)` }} />
-				<text x={cx} y={cy - 2} textAnchor="middle" fill={c.text} fontSize="28" fontWeight="600" fontFamily="Nunito Sans,system-ui">{Math.round(a)}</text>
-				<text x={cx} y={cy + 16} textAnchor="middle" fill={c.muted} fontSize="11" fontFamily="Nunito Sans,system-ui">/ 100</text>
+				<text x={cx} y={cy - 2} textAnchor="middle" fill={c.text} fontSize="34" fontWeight="600" fontFamily="Nunito Sans,system-ui">{Math.round(a)}</text>
+				<text x={cx} y={cy + 16} textAnchor="middle" fill={c.muted} fontSize="14" fontFamily="Nunito Sans,system-ui">/ 100</text>
 			</svg>
-			<span style={{ fontSize: 13, fontWeight: 600, color: t.color, marginTop: -4 }}>{t.label}</span>
+			<span style={{ fontSize: 16, fontWeight: 600, color: t.color, marginTop: -4 }}>{t.label}</span>
 		</div>
 	)
 }
@@ -357,20 +357,20 @@ function JobDropdown({ jobs, current, onSelect, c }: {
 	const j = jobs.find(jb => jb.id === current)
 	return (
 		<div style={{ position: 'relative' }}>
-			<div onClick={() => setOpen(!open)} style={{ padding: '8px 10px', borderRadius: 6, border: `1px solid ${c.border}`, background: c.bgSurf, display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+			<div onClick={() => setOpen(!open)} style={{ padding: '10px 13px', borderRadius: 7, border: `1px solid ${c.border}`, background: c.bgSurf, display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
 				<div>
-					<div style={{ fontSize: 13, color: c.text, fontWeight: 500 }}>{j?.title || 'Choose a job...'}</div>
+					<div style={{ fontSize: 16, color: c.text, fontWeight: 500 }}>{j?.title || 'Choose a job...'}</div>
 				</div>
-				<ChevronDown size={14} color={c.dim} style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 150ms' }} />
+				<ChevronDown size={17} color={c.dim} style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 150ms' }} />
 			</div>
 			{open && (
 				<div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4, background: c.bgEl, border: `1px solid ${c.border}`, borderRadius: 8, boxShadow: '0 8px 24px rgba(0,0,0,0.3)', zIndex: 50, overflow: 'hidden' }}>
 					{jobs.map(jb => (
 						<div key={jb.id} onClick={() => { onSelect(jb); setOpen(false) }}
-							style={{ padding: '10px 12px', cursor: 'pointer', background: current === jb.id ? `${BRAND}08` : 'transparent', borderLeft: current === jb.id ? `2px solid ${BRAND}` : '2px solid transparent' }}
+							style={{ padding: '13px 16px', cursor: 'pointer', background: current === jb.id ? `${BRAND}08` : 'transparent', borderLeft: current === jb.id ? `2px solid ${BRAND}` : '2px solid transparent' }}
 							onMouseEnter={e => { if (current !== jb.id) (e.currentTarget as HTMLElement).style.background = c.bgSurf }}
 							onMouseLeave={e => { if (current !== jb.id) (e.currentTarget as HTMLElement).style.background = 'transparent' }}>
-							<div style={{ fontSize: 13, color: c.text, fontWeight: 500 }}>{jb.title}</div>
+							<div style={{ fontSize: 16, color: c.text, fontWeight: 500 }}>{jb.title}</div>
 						</div>
 					))}
 				</div>
@@ -466,7 +466,7 @@ export default function ResumeBuilder() {
 	const scrollHighlightTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
 
 	const c = isDark ? darkTheme : lightTheme
-	const sW = sidebar ? 240 : 52
+	const sW = sidebar ? 304 : 64
 	const resumeFontObj = FONT_OPTIONS.find(f => f.value === formData.font) || FONT_OPTIONS[0]
 	const resumeFont = resumeFontObj.family
 	const accentColor = formData.nameColor || '#111'
@@ -967,29 +967,29 @@ export default function ResumeBuilder() {
 			<div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
 				{/* SIDEBAR */}
 				<div style={{ width: sW, borderRight: `1px solid ${c.border}`, background: c.bgEl, display: 'flex', flexDirection: 'column', flexShrink: 0, transition: 'width 200ms cubic-bezier(0.25,0.1,0.25,1)', overflow: 'hidden' }}>
-					<div style={{ padding: sidebar ? '12px 12px 8px' : '12px 8px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-						{sidebar && <span style={{ fontSize: 11, fontWeight: 600, color: c.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Resumes</span>}
-						<button onClick={() => setSidebar(!sidebar)} style={{ width: 28, height: 28, borderRadius: 5, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: sidebar ? 0 : '0 auto' }}>
-							<PanelLeftClose size={15} color={c.dim} strokeWidth={1.75} />
+					<div style={{ padding: sidebar ? '16px 16px 12px' : '16px 12px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+						{sidebar && <span style={{ fontSize: 14, fontWeight: 600, color: c.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Resumes</span>}
+						<button onClick={() => setSidebar(!sidebar)} style={{ width: 34, height: 34, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: sidebar ? 0 : '0 auto' }}>
+							<PanelLeftClose size={18} color={c.dim} strokeWidth={1.75} />
 						</button>
 					</div>
 					{sidebar ? (
-						<div style={{ flex: 1, overflow: 'auto', padding: '0 8px' }}>
+						<div style={{ flex: 1, overflow: 'auto', padding: '0 9px' }}>
 							{/* Resume list */}
 							{resumes.map(r => (
 								<div key={r.id} onClick={() => handleResumeSwitch(r.id!)}
-									style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 6, cursor: 'pointer', background: formData.id === r.id ? c.bgSurf : 'transparent', borderLeft: formData.id === r.id ? `2px solid ${BRAND}` : '2px solid transparent', transition: 'all 150ms' }}
+									style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', borderRadius: 7, cursor: 'pointer', background: formData.id === r.id ? c.bgSurf : 'transparent', borderLeft: formData.id === r.id ? `2px solid ${BRAND}` : '2px solid transparent', transition: 'all 150ms' }}
 									onMouseEnter={e => { if (formData.id !== r.id) (e.currentTarget as HTMLElement).style.background = c.bgSurf }}
 									onMouseLeave={e => { if (formData.id !== r.id) (e.currentTarget as HTMLElement).style.background = 'transparent' }}>
-									<div style={{ width: 30, height: 38, borderRadius: 3, background: '#FAFAFA', border: formData.id === r.id ? `1.5px solid ${BRAND}50` : `1px solid ${c.border}`, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-										<div style={{ width: 14, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+									<div style={{ width: 37, height: 46, borderRadius: 3, background: '#FAFAFA', border: formData.id === r.id ? `1.5px solid ${BRAND}50` : `1px solid ${c.border}`, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+										<div style={{ width: 17, display: 'flex', flexDirection: 'column', gap: 2 }}>
 											{[2, 1.5, 1.5, 1.5].map((h, i) => <div key={i} style={{ height: h, background: i === 0 ? '#333' : '#bbb', borderRadius: 1, width: i === 2 ? '80%' : '100%' }} />)}
 										</div>
 									</div>
 									<div style={{ overflow: 'hidden', flex: 1 }}>
 										{editingResumeId === r.id ? (
 											<input autoFocus defaultValue={r.name || r.job?.title || 'Untitled'}
-												style={{ fontSize: 13, color: c.text, fontWeight: 500, background: c.bgSurf, border: `1px solid ${BRAND}`, borderRadius: 3, padding: '1px 4px', width: '100%', outline: 'none', fontFamily: 'inherit' }}
+												style={{ fontSize: 16, color: c.text, fontWeight: 500, background: c.bgSurf, border: `1px solid ${BRAND}`, borderRadius: 3, padding: '2px 5px', width: '100%', outline: 'none', fontFamily: 'inherit' }}
 												onClick={e => e.stopPropagation()}
 												onBlur={e => {
 													const val = e.currentTarget.value.trim()
@@ -1006,50 +1006,50 @@ export default function ResumeBuilder() {
 												}} />
 										) : (
 											<div onDoubleClick={e => { e.stopPropagation(); setEditingResumeId(r.id!) }}
-												style={{ fontSize: 13, color: formData.id === r.id ? c.text : c.muted, fontWeight: formData.id === r.id ? 500 : 400, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{r.name || r.job?.title || 'Untitled'}</div>
+												style={{ fontSize: 16, color: formData.id === r.id ? c.text : c.muted, fontWeight: formData.id === r.id ? 500 : 400, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{r.name || r.job?.title || 'Untitled'}</div>
 										)}
 									</div>
 								</div>
 							))}
-							<div onClick={() => setShowCreationModal(true)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 6, cursor: 'pointer', marginTop: 4, color: c.dim }}
+							<div onClick={() => setShowCreationModal(true)} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '10px 16px', borderRadius: 7, cursor: 'pointer', marginTop: 5, color: c.dim }}
 								onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = BRAND }}
 								onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = c.dim }}>
-								<Plus size={14} strokeWidth={2} /><span style={{ fontSize: 13, fontWeight: 500 }}>New Resume</span>
+								<Plus size={17} strokeWidth={2} /><span style={{ fontSize: 16, fontWeight: 500 }}>New Resume</span>
 							</div>
 
 							{/* Job selector */}
-							<div style={{ marginTop: 16, padding: '0 4px' }}>
-								<span style={{ fontSize: 11, fontWeight: 600, color: c.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Target Job</span>
-								<div style={{ marginTop: 8 }}>
+							<div style={{ marginTop: 21, padding: '0 5px' }}>
+								<span style={{ fontSize: 14, fontWeight: 600, color: c.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Target Job</span>
+								<div style={{ marginTop: 9 }}>
 									<JobDropdown jobs={jobs} current={formData.jobId ?? null} onSelect={handleJobChange} c={c} />
 								</div>
-								<div onClick={() => setShowCreateJob(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, cursor: 'pointer', color: c.dim }}
+								<div onClick={() => setShowCreateJob(true)} style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 9, cursor: 'pointer', color: c.dim }}
 									onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = BRAND }}
 									onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = c.dim }}>
-									<Plus size={14} strokeWidth={2} /><span style={{ fontSize: 13, fontWeight: 500 }}>Add Job</span>
+									<Plus size={17} strokeWidth={2} /><span style={{ fontSize: 16, fontWeight: 500 }}>Add Job</span>
 								</div>
 							</div>
 
 							{/* Section nav */}
-							<div style={{ marginTop: 16, padding: '0 4px' }}>
-								<span style={{ fontSize: 11, fontWeight: 600, color: c.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Sections</span>
-								<div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 2 }}>
+							<div style={{ marginTop: 21, padding: '0 5px' }}>
+								<span style={{ fontSize: 14, fontWeight: 600, color: c.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Sections</span>
+								<div style={{ marginTop: 9, display: 'flex', flexDirection: 'column', gap: 2 }}>
 									{sections.map(s => {
 										const isVisible = formData.visibleSections?.[s.visKey] ?? true
 										return (
 											<div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
 												<div onClick={() => { if (isVisible) scrollToSection(s.id) }}
-													style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10, padding: '7px 12px', borderRadius: 6, cursor: isVisible ? 'pointer' : 'default', background: activeSection === s.id && isVisible ? `${BRAND}12` : 'transparent', borderLeft: activeSection === s.id && isVisible ? `2px solid ${BRAND}` : '2px solid transparent', transition: 'all 150ms', opacity: isVisible ? 1 : 0.4 }}
+													style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 12, padding: '9px 16px', borderRadius: 7, cursor: isVisible ? 'pointer' : 'default', background: activeSection === s.id && isVisible ? `${BRAND}12` : 'transparent', borderLeft: activeSection === s.id && isVisible ? `2px solid ${BRAND}` : '2px solid transparent', transition: 'all 150ms', opacity: isVisible ? 1 : 0.4 }}
 													onMouseEnter={e => { if (isVisible && activeSection !== s.id) (e.currentTarget as HTMLElement).style.background = c.bgSurf }}
 													onMouseLeave={e => { if (isVisible && activeSection !== s.id) (e.currentTarget as HTMLElement).style.background = activeSection === s.id ? `${BRAND}12` : 'transparent' }}>
-													<s.icon size={16} color={activeSection === s.id && isVisible ? BRAND : c.dim} strokeWidth={1.75} />
-													<span style={{ fontSize: 13, color: activeSection === s.id && isVisible ? c.text : c.muted, fontWeight: activeSection === s.id && isVisible ? 500 : 400 }}>{s.l}</span>
+													<s.icon size={20} color={activeSection === s.id && isVisible ? BRAND : c.dim} strokeWidth={1.75} />
+													<span style={{ fontSize: 16, color: activeSection === s.id && isVisible ? c.text : c.muted, fontWeight: activeSection === s.id && isVisible ? 500 : 400 }}>{s.l}</span>
 												</div>
 												<button onClick={() => toggleSectionVisibility(s.visKey)}
-													style={{ width: 24, height: 24, borderRadius: 4, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.5, flexShrink: 0 }}
+													style={{ width: 30, height: 30, borderRadius: 5, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.5, flexShrink: 0 }}
 													onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
 													onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '0.5' }}>
-													{isVisible ? <Eye size={12} color={c.dim} strokeWidth={1.75} /> : <EyeOff size={12} color={c.dim} strokeWidth={1.75} />}
+													{isVisible ? <Eye size={15} color={c.dim} strokeWidth={1.75} /> : <EyeOff size={15} color={c.dim} strokeWidth={1.75} />}
 												</button>
 											</div>
 										)
@@ -1058,12 +1058,12 @@ export default function ResumeBuilder() {
 							</div>
 						</div>
 					) : (
-						<div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, paddingTop: 8 }}>
-							<div onClick={() => setShowCreationModal(true)} style={{ width: 32, height: 32, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><Plus size={16} color={c.dim} strokeWidth={2} /></div>
-							<div style={{ width: 28, height: 1, background: c.borderSub, margin: '4px 0' }} />
+						<div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, paddingTop: 9 }}>
+							<div onClick={() => setShowCreationModal(true)} style={{ width: 39, height: 39, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><Plus size={20} color={c.dim} strokeWidth={2} /></div>
+							<div style={{ width: 34, height: 1, background: c.borderSub, margin: '5px 0' }} />
 							{sections.map(s => (
-								<div key={s.id} onClick={() => scrollToSection(s.id)} style={{ width: 32, height: 32, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: activeSection === s.id ? `${BRAND}12` : 'transparent', borderLeft: activeSection === s.id ? `2px solid ${BRAND}` : '2px solid transparent' }}>
-									<s.icon size={16} color={activeSection === s.id ? BRAND : c.dim} strokeWidth={1.75} />
+								<div key={s.id} onClick={() => scrollToSection(s.id)} style={{ width: 39, height: 39, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: activeSection === s.id ? `${BRAND}12` : 'transparent', borderLeft: activeSection === s.id ? `2px solid ${BRAND}` : '2px solid transparent' }}>
+									<s.icon size={20} color={activeSection === s.id ? BRAND : c.dim} strokeWidth={1.75} />
 								</div>
 							))}
 						</div>
@@ -1239,53 +1239,53 @@ export default function ResumeBuilder() {
 
 				{/* SCORE PANEL */}
 				{scorePanel && (
-					<div style={{ width: 310, borderLeft: `1px solid ${c.border}`, background: c.bgEl, display: 'flex', flexDirection: 'column', flexShrink: 0, overflow: 'auto' }}>
-						<div style={{ padding: '12px 16px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-							<span style={{ fontSize: 13, fontWeight: 600, color: c.text }}>Fit Score</span>
-							<button onClick={() => setScorePanel(false)} style={{ width: 28, height: 28, borderRadius: 5, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-								<PanelRightClose size={15} color={c.dim} strokeWidth={1.75} />
+					<div style={{ width: 390, borderLeft: `1px solid ${c.border}`, background: c.bgEl, display: 'flex', flexDirection: 'column', flexShrink: 0, overflow: 'auto' }}>
+						<div style={{ padding: '16px 21px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+							<span style={{ fontSize: 16, fontWeight: 600, color: c.text }}>Fit Score</span>
+							<button onClick={() => setScorePanel(false)} style={{ width: 34, height: 34, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+								<PanelRightClose size={18} color={c.dim} strokeWidth={1.75} />
 							</button>
 						</div>
 						<ScoreArc score={scores.overall} onClick={() => setShowScoreDetail(true)} c={c} />
-						<div style={{ padding: '0 16px 4px', textAlign: 'center' }}>
-							<span onClick={() => setShowScoreDetail(true)} style={{ fontSize: 11, color: BRAND, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center' }}>
-								View full analysis <ArrowRight size={11} />
+						<div style={{ padding: '0 21px 5px', textAlign: 'center' }}>
+							<span onClick={() => setShowScoreDetail(true)} style={{ fontSize: 14, color: BRAND, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'center' }}>
+								View full analysis <ArrowRight size={14} />
 							</span>
 						</div>
-						<div style={{ padding: '8px 16px 12px' }}>
-							<div style={{ padding: '10px 12px', borderRadius: 6, background: `${getTier(scores.overall).color}08`, border: `1px solid ${getTier(scores.overall).color}20`, fontSize: 13, color: getTier(scores.overall).color, lineHeight: 1.4 }}>
+						<div style={{ padding: '9px 21px 14px' }}>
+							<div style={{ padding: '12px 14px', borderRadius: 7, background: `${getTier(scores.overall).color}08`, border: `1px solid ${getTier(scores.overall).color}20`, fontSize: 16, color: getTier(scores.overall).color, lineHeight: 1.4 }}>
 								{scoreMsg(scores.overall)}
 							</div>
 						</div>
 
 						{/* Section scores */}
-						<div style={{ padding: '0 16px 16px' }}>
-							<span style={{ fontSize: 11, fontWeight: 600, color: c.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Section Scores</span>
-							<div style={{ marginTop: 8 }}>
+						<div style={{ padding: '0 21px 18px' }}>
+							<span style={{ fontSize: 14, fontWeight: 600, color: c.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Section Scores</span>
+							<div style={{ marginTop: 9 }}>
 								{([['Keyword Match', scores.keyword, Target], ['Metrics', scores.metrics, TrendingUp], ['Action Verbs', scores.actionVerbs, Zap], ['Length', scores.length, AlignLeft]] as [string, number, any][]).map(([l, s, I]) => (
-									<div key={l} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0' }}>
-										<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><I size={14} color={c.dim} strokeWidth={1.75} /><span style={{ fontSize: 13, color: c.muted }}>{l}</span></div>
-										<div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-											<div style={{ width: 48, height: 4, borderRadius: 2, background: c.border, overflow: 'hidden' }}><div style={{ width: `${s}%`, height: '100%', borderRadius: 2, background: getTier(s).color, transition: 'width 0.8s' }} /></div>
-											<span style={{ fontSize: 12, color: getTier(s).color, fontWeight: 500, width: 24, textAlign: 'right' }}>{s}</span>
+									<div key={l} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0' }}>
+										<div style={{ display: 'flex', alignItems: 'center', gap: 9 }}><I size={17} color={c.dim} strokeWidth={1.75} /><span style={{ fontSize: 16, color: c.muted }}>{l}</span></div>
+										<div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+											<div style={{ width: 60, height: 6, borderRadius: 3, background: c.border, overflow: 'hidden' }}><div style={{ width: `${s}%`, height: '100%', borderRadius: 3, background: getTier(s).color, transition: 'width 0.8s' }} /></div>
+											<span style={{ fontSize: 15, color: getTier(s).color, fontWeight: 500, width: 28, textAlign: 'right' }}>{s}</span>
 										</div>
 									</div>
 								))}
 							</div>
 						</div>
-						<div style={{ height: 1, background: c.border, margin: '0 16px' }} />
+						<div style={{ height: 1, background: c.border, margin: '0 21px' }} />
 
 						{/* Opportunities */}
-						<div style={{ padding: '16px 16px 8px' }}>
-							<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-								<span style={{ fontSize: 11, fontWeight: 600, color: c.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Opportunities</span>
-								<span style={{ fontSize: 11, color: c.dim }}>{checklist.filter(ch => !ch.completed).length} remaining</span>
+						<div style={{ padding: '18px 21px 9px' }}>
+							<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+								<span style={{ fontSize: 14, fontWeight: 600, color: c.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Opportunities</span>
+								<span style={{ fontSize: 14, color: c.dim }}>{checklist.filter(ch => !ch.completed).length} remaining</span>
 							</div>
 							{checklist.map((ch, i) => (
-								<div key={ch.id || i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 0', borderBottom: `1px solid ${c.borderSub}`, opacity: ch.completed ? 0.5 : 1, cursor: ch.completed ? 'default' : 'pointer' }}>
-									{ch.completed ? <CheckCircle2 size={16} color={SUCCESS} strokeWidth={1.75} style={{ marginTop: 1, flexShrink: 0 }} /> : <Circle size={16} color={c.dim} strokeWidth={1.75} style={{ marginTop: 1, flexShrink: 0 }} />}
-									<span style={{ flex: 1, fontSize: 13, color: ch.completed ? c.dim : c.text, lineHeight: 1.4, textDecoration: ch.completed ? 'line-through' : 'none' }}>{ch.text}</span>
-									{!ch.completed && <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: ch.priority === 'high' ? `${WARN}18` : `${BRAND}18`, color: ch.priority === 'high' ? WARN : BRAND, textTransform: 'uppercase', letterSpacing: '0.04em', flexShrink: 0, marginTop: 1 }}>{ch.priority}</span>}
+								<div key={ch.id || i} style={{ display: 'flex', alignItems: 'flex-start', gap: 9, padding: '10px 0', borderBottom: `1px solid ${c.borderSub}`, opacity: ch.completed ? 0.5 : 1, cursor: ch.completed ? 'default' : 'pointer' }}>
+									{ch.completed ? <CheckCircle2 size={20} color={SUCCESS} strokeWidth={1.75} style={{ marginTop: 1, flexShrink: 0 }} /> : <Circle size={20} color={c.dim} strokeWidth={1.75} style={{ marginTop: 1, flexShrink: 0 }} />}
+									<span style={{ flex: 1, fontSize: 16, color: ch.completed ? c.dim : c.text, lineHeight: 1.4, textDecoration: ch.completed ? 'line-through' : 'none' }}>{ch.text}</span>
+									{!ch.completed && <span style={{ fontSize: 13, fontWeight: 600, padding: '2px 7px', borderRadius: 5, background: ch.priority === 'high' ? `${WARN}18` : `${BRAND}18`, color: ch.priority === 'high' ? WARN : BRAND, textTransform: 'uppercase', letterSpacing: '0.04em', flexShrink: 0, marginTop: 1 }}>{ch.priority}</span>}
 								</div>
 							))}
 						</div>
@@ -1293,16 +1293,16 @@ export default function ResumeBuilder() {
 						{/* Keywords */}
 						{extractedKeywords && extractedKeywords.length > 0 && (
 							<>
-								<div style={{ height: 1, background: c.border, margin: '0 16px' }} />
-								<div style={{ padding: 16 }}>
-									<span style={{ fontSize: 11, fontWeight: 600, color: c.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Keyword Match</span>
-									<div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 10 }}>
+								<div style={{ height: 1, background: c.border, margin: '0 21px' }} />
+								<div style={{ padding: 21 }}>
+									<span style={{ fontSize: 14, fontWeight: 600, color: c.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Keyword Match</span>
+									<div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
 										{extractedKeywords.map(w => {
 											const allText = [formData.about, ...(formData.experiences?.flatMap(e => e.descriptions?.map(d => d.content) || []) || []), ...(formData.skills?.map(s => s.name) || [])].join(' ').toLowerCase()
 											const found = allText.includes(w.toLowerCase())
 											return (
-												<span key={w} style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, padding: '3px 8px', borderRadius: 4, fontWeight: 500, background: found ? `${SUCCESS}15` : `${ERROR}12`, color: found ? SUCCESS : ERROR, border: `1px solid ${found ? SUCCESS : ERROR}30` }}>
-													{found ? <Check size={10} strokeWidth={2.5} /> : <X size={10} strokeWidth={2.5} />}{w}
+												<span key={w} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 14, padding: '5px 10px', borderRadius: 5, fontWeight: 500, background: found ? `${SUCCESS}15` : `${ERROR}12`, color: found ? SUCCESS : ERROR, border: `1px solid ${found ? SUCCESS : ERROR}30` }}>
+													{found ? <Check size={13} strokeWidth={2.5} /> : <X size={13} strokeWidth={2.5} />}{w}
 												</span>
 											)
 										})}
@@ -1425,7 +1425,7 @@ export default function ResumeBuilder() {
 
 			{/* ═══ SCORE DETAIL SLIDE-OVER ═══ */}
 			<SlideOver open={showScoreDetail} onClose={() => setShowScoreDetail(false)} title="Score Analysis" c={c}>
-				<ScoreArc score={scores.overall} size={160} c={c} />
+				<ScoreArc score={scores.overall} size={184} c={c} />
 				<div style={{ padding: '8px 0 16px', textAlign: 'center' }}>
 					<div style={{ padding: '10px 12px', borderRadius: 6, background: `${getTier(scores.overall).color}08`, border: `1px solid ${getTier(scores.overall).color}20`, fontSize: 13, color: getTier(scores.overall).color, lineHeight: 1.4 }}>
 						{scoreMsg(scores.overall)}
