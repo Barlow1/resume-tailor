@@ -467,6 +467,9 @@ export default function ResumeBuilder() {
 	const sW = sidebar ? 240 : 52
 	const resumeFontObj = FONT_OPTIONS.find(f => f.value === formData.font) || FONT_OPTIONS[0]
 	const resumeFont = resumeFontObj.family
+	const accentColor = formData.nameColor || '#111'
+	const textScale = formData.textSize === 'small' ? 0.833 : formData.textSize === 'large' ? 1.167 : 1
+	const ts = (base: number) => Math.round(base * textScale * 10) / 10
 
 	/* ═══ DND SENSORS ═══ */
 	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
@@ -985,9 +988,9 @@ export default function ResumeBuilder() {
 							{/* Name & Contact */}
 							<div style={{ marginBottom: 24 }}>
 								<EditableText value={formData.name || ''} onChange={v => updateField('name', v)}
-									style={{ fontSize: 24, fontWeight: 700, color: '#111', letterSpacing: '-0.01em', fontFamily: resumeFont }} c={c} />
+									style={{ fontSize: ts(24), fontWeight: 700, color: accentColor, letterSpacing: '-0.01em', fontFamily: resumeFont }} c={c} />
 								{formData.role && <EditableText value={formData.role} onChange={v => updateField('role', v)}
-									style={{ fontSize: 14, color: '#444', marginTop: 4, fontFamily: resumeFont }} c={c} />}
+									style={{ fontSize: ts(14), color: '#444', marginTop: 4, fontFamily: resumeFont }} c={c} />}
 								<EditableText
 									value={[formData.location, formData.email, formData.phone, formData.website].filter(Boolean).join(' · ')}
 									onChange={v => {
@@ -997,7 +1000,7 @@ export default function ResumeBuilder() {
 										updateField('phone', parts[2] || '')
 										updateField('website', parts[3] || '')
 									}}
-									style={{ fontSize: 11.5, color: '#555', marginTop: 6, fontFamily: resumeFont }} c={c} />
+									style={{ fontSize: ts(11.5), color: '#555', marginTop: 6, fontFamily: resumeFont }} c={c} />
 							</div>
 
 							{/* DnD Section Reordering */}
@@ -1007,39 +1010,39 @@ export default function ResumeBuilder() {
 										if (secId === 'summary') return (
 											<SortableSection key="summary" id="summary">
 												<div style={{ marginBottom: 20 }}>
-													<div ref={secRefs.summary} style={{ fontSize: 12, fontWeight: 700, color: '#111', textTransform: 'uppercase', letterSpacing: '0.08em', borderBottom: '2px solid #111', paddingBottom: 4, marginBottom: 10, fontFamily: resumeFont, transition: 'all 300ms', boxShadow: highlight === 'summary' ? `inset 4px 0 0 ${BRAND}, 0 0 12px ${BRAND}20` : 'none', paddingLeft: highlight === 'summary' ? 8 : 0 }}>
+													<div ref={secRefs.summary} style={{ fontSize: ts(12), fontWeight: 700, color: accentColor, textTransform: 'uppercase', letterSpacing: '0.08em', borderBottom: `2px solid ${accentColor}`, paddingBottom: 4, marginBottom: 10, fontFamily: resumeFont, transition: 'all 300ms', boxShadow: highlight === 'summary' ? `inset 4px 0 0 ${BRAND}, 0 0 12px ${BRAND}20` : 'none', paddingLeft: highlight === 'summary' ? 8 : 0 }}>
 														{formData.headers?.aboutHeader || 'Summary'}
 													</div>
 													<EditableText value={formData.about || ''} onChange={v => updateField('about', v)} multiline
 														placeholder="In 2-3 sentences, tell employers why you're the one"
-														style={{ fontSize: 12.5, lineHeight: 1.6, color: '#333', fontFamily: resumeFont }} c={c} />
+														style={{ fontSize: ts(12.5), lineHeight: 1.6, color: '#333', fontFamily: resumeFont }} c={c} />
 												</div>
 											</SortableSection>
 										)
 										if (secId === 'experience') return (
 											<SortableSection key="experience" id="experience">
 												<div style={{ marginBottom: 20 }}>
-													<div ref={secRefs.experience} style={{ fontSize: 12, fontWeight: 700, color: '#111', textTransform: 'uppercase', letterSpacing: '0.08em', borderBottom: '2px solid #111', paddingBottom: 4, marginBottom: 10, fontFamily: resumeFont, transition: 'all 300ms', boxShadow: highlight === 'experience' ? `inset 4px 0 0 ${BRAND}, 0 0 12px ${BRAND}20` : 'none', paddingLeft: highlight === 'experience' ? 8 : 0 }}>
+													<div ref={secRefs.experience} style={{ fontSize: ts(12), fontWeight: 700, color: accentColor, textTransform: 'uppercase', letterSpacing: '0.08em', borderBottom: `2px solid ${accentColor}`, paddingBottom: 4, marginBottom: 10, fontFamily: resumeFont, transition: 'all 300ms', boxShadow: highlight === 'experience' ? `inset 4px 0 0 ${BRAND}, 0 0 12px ${BRAND}20` : 'none', paddingLeft: highlight === 'experience' ? 8 : 0 }}>
 														{formData.headers?.experienceHeader || 'Experience'}
 													</div>
 													{formData.experiences?.map((exp, ei) => (
 														<div key={exp.id || ei} style={{ marginBottom: 14 }}>
 															<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
 																<div style={{ display: 'flex', gap: 4, alignItems: 'baseline' }}>
-																	<EditableText value={exp.role || ''} onChange={v => updateExpField(exp.id!, 'role', v)} style={{ fontSize: 13, fontWeight: 700, color: '#111', fontFamily: resumeFont }} c={c} />
-																	<span style={{ fontSize: 12.5, color: '#444', fontFamily: resumeFont }}> · </span>
-																	<EditableText value={exp.company || ''} onChange={v => updateExpField(exp.id!, 'company', v)} style={{ fontSize: 12.5, color: '#444', fontFamily: resumeFont }} c={c} />
+																	<EditableText value={exp.role || ''} onChange={v => updateExpField(exp.id!, 'role', v)} style={{ fontSize: ts(13), fontWeight: 700, color: '#111', fontFamily: resumeFont }} c={c} />
+																	<span style={{ fontSize: ts(12.5), color: '#444', fontFamily: resumeFont }}> · </span>
+																	<EditableText value={exp.company || ''} onChange={v => updateExpField(exp.id!, 'company', v)} style={{ fontSize: ts(12.5), color: '#444', fontFamily: resumeFont }} c={c} />
 																</div>
-																<span style={{ fontSize: 11, color: '#666', fontFamily: resumeFont, flexShrink: 0 }}>
+																<span style={{ fontSize: ts(11), color: '#666', fontFamily: resumeFont, flexShrink: 0 }}>
 																	{[exp.startDate, exp.endDate].filter(Boolean).join(' – ')}
 																</span>
 															</div>
 															<ul style={{ margin: 0, paddingLeft: 16, marginTop: 4 }}>
 																{exp.descriptions?.map((b, bi) => (
-																	<li key={b.id || bi} style={{ fontSize: 12, lineHeight: 1.55, color: '#333', marginBottom: 3, fontFamily: resumeFont, listStyleType: 'disc', position: 'relative' }}>
+																	<li key={b.id || bi} style={{ fontSize: ts(12), lineHeight: 1.55, color: '#333', marginBottom: 3, fontFamily: resumeFont, listStyleType: 'disc', position: 'relative' }}>
 																		<span style={{ display: 'inline' }}>
 																			<EditableText value={b.content || ''} onChange={v => updateBullet(exp.id!, bi, v)}
-																				style={{ fontSize: 12, lineHeight: 1.55, color: '#333', fontFamily: resumeFont, display: 'inline' }}
+																				style={{ fontSize: ts(12), lineHeight: 1.55, color: '#333', fontFamily: resumeFont, display: 'inline' }}
 																				placeholder="Start with your proudest achievement" c={c} />
 																		</span>
 																		<span onClick={() => handleAIClick(exp.id!, bi, b.content || '')}
@@ -1070,16 +1073,16 @@ export default function ResumeBuilder() {
 										if (secId === 'education') return (
 											<SortableSection key="education" id="education">
 												<div style={{ marginBottom: 20 }}>
-													<div ref={secRefs.education} style={{ fontSize: 12, fontWeight: 700, color: '#111', textTransform: 'uppercase', letterSpacing: '0.08em', borderBottom: '2px solid #111', paddingBottom: 4, marginBottom: 10, fontFamily: resumeFont, transition: 'all 300ms', boxShadow: highlight === 'education' ? `inset 4px 0 0 ${BRAND}, 0 0 12px ${BRAND}20` : 'none', paddingLeft: highlight === 'education' ? 8 : 0 }}>
+													<div ref={secRefs.education} style={{ fontSize: ts(12), fontWeight: 700, color: accentColor, textTransform: 'uppercase', letterSpacing: '0.08em', borderBottom: `2px solid ${accentColor}`, paddingBottom: 4, marginBottom: 10, fontFamily: resumeFont, transition: 'all 300ms', boxShadow: highlight === 'education' ? `inset 4px 0 0 ${BRAND}, 0 0 12px ${BRAND}20` : 'none', paddingLeft: highlight === 'education' ? 8 : 0 }}>
 														{formData.headers?.educationHeader || 'Education'}
 													</div>
 													{formData.education?.map((edu, ei) => (
 														<div key={edu.id || ei} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
 															<div>
-																<EditableText value={edu.school || ''} onChange={v => updateEduField(edu.id!, 'school', v)} style={{ fontSize: 13, fontWeight: 700, color: '#111', fontFamily: resumeFont }} c={c} />
-																<EditableText value={edu.degree || ''} onChange={v => updateEduField(edu.id!, 'degree', v)} style={{ fontSize: 12, color: '#444', fontFamily: resumeFont }} c={c} />
+																<EditableText value={edu.school || ''} onChange={v => updateEduField(edu.id!, 'school', v)} style={{ fontSize: ts(13), fontWeight: 700, color: '#111', fontFamily: resumeFont }} c={c} />
+																<EditableText value={edu.degree || ''} onChange={v => updateEduField(edu.id!, 'degree', v)} style={{ fontSize: ts(12), color: '#444', fontFamily: resumeFont }} c={c} />
 															</div>
-															<span style={{ fontSize: 11, color: '#666', fontFamily: resumeFont }}>
+															<span style={{ fontSize: ts(11), color: '#666', fontFamily: resumeFont }}>
 																{[edu.startDate, edu.endDate].filter(Boolean).join(' – ')}
 															</span>
 														</div>
@@ -1095,12 +1098,12 @@ export default function ResumeBuilder() {
 										if (secId === 'skills') return (
 											<SortableSection key="skills" id="skills">
 												<div style={{ marginBottom: 20 }}>
-													<div ref={secRefs.skills} style={{ fontSize: 12, fontWeight: 700, color: '#111', textTransform: 'uppercase', letterSpacing: '0.08em', borderBottom: '2px solid #111', paddingBottom: 4, marginBottom: 10, fontFamily: resumeFont, transition: 'all 300ms', boxShadow: highlight === 'skills' ? `inset 4px 0 0 ${BRAND}, 0 0 12px ${BRAND}20` : 'none', paddingLeft: highlight === 'skills' ? 8 : 0 }}>
+													<div ref={secRefs.skills} style={{ fontSize: ts(12), fontWeight: 700, color: accentColor, textTransform: 'uppercase', letterSpacing: '0.08em', borderBottom: `2px solid ${accentColor}`, paddingBottom: 4, marginBottom: 10, fontFamily: resumeFont, transition: 'all 300ms', boxShadow: highlight === 'skills' ? `inset 4px 0 0 ${BRAND}, 0 0 12px ${BRAND}20` : 'none', paddingLeft: highlight === 'skills' ? 8 : 0 }}>
 														{formData.headers?.skillsHeader || 'Skills'}
 													</div>
 													{formData.skills?.map((skill, si) => (
 														<EditableText key={skill.id || si} value={skill.name || ''} onChange={v => updateSkill(skill.id!, v)}
-															style={{ fontSize: 12, color: '#333', lineHeight: 1.6, fontFamily: resumeFont }} placeholder="Add a skill" c={c} />
+															style={{ fontSize: ts(12), color: '#333', lineHeight: 1.6, fontFamily: resumeFont }} placeholder="Add a skill" c={c} />
 													))}
 													<div onClick={addSkill} className="preview-only" style={{ fontSize: 11, color: BRAND, cursor: 'pointer', marginTop: 4, opacity: 0.7, display: 'flex', alignItems: 'center', gap: 4 }}
 														onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
@@ -1275,6 +1278,29 @@ export default function ResumeBuilder() {
 								onMouseLeave={e => { if (formData.font !== f.value) (e.currentTarget as HTMLElement).style.background = 'transparent' }}>
 								<span style={{ fontSize: 13, color: formData.font === f.value ? BRAND : c.text, fontFamily: f.family }}>{f.label}</span>
 								{formData.font === f.value && <Check size={14} color={BRAND} strokeWidth={2} />}
+							</div>
+						))}
+					</div>
+				</div>
+
+				{/* Text Size */}
+				<div style={{ marginTop: 20 }}>
+					<span style={{ fontSize: 11, fontWeight: 600, color: c.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Text Size</span>
+					<div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+						{(['small', 'medium', 'large'] as const).map(size => (
+							<div key={size} onClick={() => {
+								setFormData(prev => {
+									const next = { ...prev, textSize: size }
+									debouncedSave(next)
+									return next
+								})
+							}}
+								style={{ flex: 1, padding: '8px 12px', borderRadius: 6, cursor: 'pointer', textAlign: 'center',
+									background: formData.textSize === size ? `${BRAND}12` : 'transparent',
+									border: `1px solid ${formData.textSize === size ? BRAND + '40' : c.border}`,
+									fontSize: 12, color: formData.textSize === size ? BRAND : c.text, fontWeight: 500, textTransform: 'capitalize' as const
+								}}>
+								{size}
 							</div>
 						))}
 					</div>
