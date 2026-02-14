@@ -626,16 +626,25 @@ export function generateChecklist(
 		}
 
 		// Keyword spread: suggest distributing partial-match keywords
+		// Only suggest for broad/transferable keywords (found in Skills or Summary)
+		// that would make sense woven into experience bullets — skip niche terms
+		// that are only in a single experience section.
 		if (partial.length > 0) {
-			// Show up to 3 partial-match coaching items
-			const topPartials = partial.slice(0, 3)
+			const experiencesWithContent = resumeData.experiences?.filter(
+				(exp: any) => (exp.role || exp.company) && exp.descriptions?.some((d: any) => d.content?.trim())
+			) || []
+
+			const spreadCandidates = partial.filter(pm => {
+				// Only suggest spreading keywords currently in Skills or Summary —
+				// those are broad terms that belong across sections. If a keyword
+				// only appears in one experience entry, it's probably role-specific.
+				return pm.sections.some(s => s === 'Skills' || s === 'Summary')
+			})
+
+			const topPartials = spreadCandidates.slice(0, 3)
 			for (const pm of topPartials) {
 				const sectionName = pm.sections[0] || 'Skills'
-				// Find an experience the keyword is NOT in, to suggest adding it there
-				const experiences = resumeData.experiences?.filter(
-					(exp: any) => (exp.role || exp.company) && exp.descriptions?.some((d: any) => d.content?.trim())
-				) || []
-				const targetExp = experiences.find(
+				const targetExp = experiencesWithContent.find(
 					(exp: any) => !pm.sections.includes(exp.company || exp.role || '')
 				)
 				const targetName = targetExp?.company || targetExp?.role || 'an experience entry'
@@ -650,26 +659,46 @@ export function generateChecklist(
 			}
 		}
 
-		// Role-level skill detection: flag experiences with 0 keyword matches
+		// Role-level skill detection: only check the most recent experience.
+		// That's the role recruiters focus on — older roles don't need every JD keyword.
 		const experiencesWithContent = resumeData.experiences?.filter(
 			(exp: any) => (exp.role || exp.company) && exp.descriptions?.some((d: any) => d.content?.trim())
 		) || []
 
-		// Only check the top 3 most recent experiences
-		const topExperiences = experiencesWithContent.slice(0, 3)
-		for (const exp of topExperiences) {
-			const expLabel = exp.company || exp.role || 'Experience'
+		if (experiencesWithContent.length > 0) {
+			const mostRecent = experiencesWithContent[0]
+			const expLabel = mostRecent.company || mostRecent.role || 'Experience'
 			const hasKeywordHit = keywordMatches.some(m =>
 				m.sections.includes(expLabel)
 			)
 			if (!hasKeywordHit) {
-				checklist.push({
-					id: `role-skills-${exp.id}`,
-					text: `Add relevant skills to your ${expLabel} role — ATS tools score keywords under specific roles higher than a single skills section.`,
-					completed: false,
-					explanation: `Your ${expLabel} experience has no matching keywords from the job description. Weave target keywords into your bullet points or add a skills line for this role.`,
-					priority: 'medium',
+				// Find 2-3 specific missing keywords to suggest, preferring technical/tool terms
+				const missingFromRole = keywordMatches
+					.filter(m => m.status === 'missing' || !m.sections.includes(expLabel))
+					.map(m => m.keyword)
+
+				// Prefer technical/tool keywords — they're easiest to add naturally
+				const techFirst = missingFromRole.sort((a, b) => {
+					const isTechA = /^[A-Z]{2,}$/.test(a) || /API|SDK|CLI|UI|UX/i.test(a) ||
+						/docker|kubernetes|jira|salesforce|aws|azure|gcp|python|sql/i.test(a)
+					const isTechB = /^[A-Z]{2,}$/.test(b) || /API|SDK|CLI|UI|UX/i.test(b) ||
+						/docker|kubernetes|jira|salesforce|aws|azure|gcp|python|sql/i.test(b)
+					if (isTechA && !isTechB) return -1
+					if (!isTechA && isTechB) return 1
+					return 0
 				})
+
+				const suggestedKws = techFirst.slice(0, 3)
+				if (suggestedKws.length > 0) {
+					const kwList = suggestedKws.join(', ')
+					checklist.push({
+						id: `role-skills-${mostRecent.id}`,
+						text: `Your ${expLabel} role is missing key terms from this JD — try adding ${kwList} to your bullets or a skills line under this role.`,
+						completed: false,
+						explanation: `Your most recent experience at ${expLabel} doesn't mention these target keywords. Adding them to bullet points or a role-specific skills line helps ATS tools score your resume higher.`,
+						priority: 'medium',
+					})
+				}
 			}
 		}
 
