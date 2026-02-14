@@ -728,6 +728,30 @@ export default function ResumeBuilder() {
 		setShowAIModal(true)
 	}
 
+	const handleKeywordAddToSkills = () => {
+		const keyword = keywordPopover?.keyword
+		setKeywordPopover(null)
+		if (!keyword || !formData.skills) return
+		const capitalized = keyword.charAt(0).toUpperCase() + keyword.slice(1)
+		const alreadyExists = formData.skills.some(s => (s.name || '').toLowerCase().includes(keyword.toLowerCase()))
+		if (alreadyExists) return
+		// Append to the last skill entry with a comma
+		const lastIdx = formData.skills.length - 1
+		if (lastIdx >= 0 && formData.skills[lastIdx].name?.trim()) {
+			const updatedSkills = formData.skills.map((s, i) =>
+				i === lastIdx ? { ...s, name: `${s.name}, ${capitalized}` } : s
+			)
+			const newFormData = { ...formData, skills: updatedSkills }
+			setFormData(newFormData)
+			debouncedSave(newFormData)
+		} else {
+			// No existing skills with content — create a new entry
+			const newFormData = { ...formData, skills: [...formData.skills, { id: crypto.randomUUID(), name: capitalized }] }
+			setFormData(newFormData)
+			debouncedSave(newFormData)
+		}
+	}
+
 	const handleChecklistFix = (item: ChecklistItem) => {
 		if (!item.flaggedBullets || item.flaggedBullets.length === 0) return
 
@@ -969,12 +993,25 @@ export default function ResumeBuilder() {
 						overflow: 'hidden',
 					}}>
 						<div style={{ padding: '10px 14px', borderBottom: `1px solid ${c.border}`, display: 'flex', alignItems: 'center', gap: 8 }}>
-							<Sparkles size={14} color={BRAND} strokeWidth={2} />
+							<Plus size={14} color={BRAND} strokeWidth={2.5} />
 							<span style={{ fontSize: 13, fontWeight: 600, color: c.text }}>
-								Add "<span style={{ color: BRAND }}>{keywordPopover.keyword}</span>" to a role
+								Add "<span style={{ color: BRAND }}>{keywordPopover.keyword}</span>"
 							</span>
 						</div>
-						<div style={{ maxHeight: 200, overflow: 'auto' }}>
+						<div style={{ maxHeight: 240, overflow: 'auto' }}>
+							{/* Add to Skills — instant, no AI */}
+							<div onClick={handleKeywordAddToSkills}
+								style={{ padding: '10px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, transition: 'background 100ms', borderBottom: `1px solid ${c.border}` }}
+								onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `${BRAND}10` }}
+								onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}>
+								<Code2 size={14} color={BRAND} strokeWidth={1.75} />
+								<div style={{ flex: 1, minWidth: 0 }}>
+									<div style={{ fontSize: 13, fontWeight: 500, color: c.text }}>Add to Skills</div>
+									<div style={{ fontSize: 11, color: c.dim }}>Instant — no AI needed</div>
+								</div>
+								<Plus size={13} color={c.dim} strokeWidth={1.75} />
+							</div>
+							{/* Generate bullet for a role — AI */}
 							{(formData.experiences ?? []).filter(exp => exp.id).map(exp => (
 								<div key={exp.id} onClick={() => handleKeywordRolePick(exp)}
 									style={{ padding: '10px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, transition: 'background 100ms' }}
@@ -987,14 +1024,9 @@ export default function ResumeBuilder() {
 										</div>
 										{exp.company && <div style={{ fontSize: 11, color: c.dim, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{exp.company}</div>}
 									</div>
-									<ArrowRight size={13} color={c.dim} strokeWidth={1.75} />
+									<Sparkles size={13} color={c.dim} strokeWidth={1.75} />
 								</div>
 							))}
-							{(!formData.experiences || formData.experiences.length === 0) && (
-								<div style={{ padding: '16px 14px', fontSize: 13, color: c.dim, textAlign: 'center' }}>
-									Add an experience first
-								</div>
-							)}
 						</div>
 					</div>
 				</>
@@ -1445,7 +1477,7 @@ export default function ResumeBuilder() {
 										{m.keyword}
 										{m.status === 'partial' && <span style={{ fontSize: 11, opacity: 0.8 }}>({m.sections[0]})</span>}
 										{m.status === 'full' && <span style={{ fontSize: 11, opacity: 0.8 }}>({m.sectionCount})</span>}
-										{isClickable && <Sparkles size={11} strokeWidth={2} style={{ marginLeft: 2, opacity: 0.8 }} />}
+										{isClickable && <Plus size={11} strokeWidth={2.5} style={{ marginLeft: 2, opacity: 0.7 }} />}
 									</span>
 								)
 							}

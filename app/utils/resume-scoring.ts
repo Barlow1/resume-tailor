@@ -754,9 +754,10 @@ export function generateChecklist(
 			) || []
 
 			const spreadCandidates = partial.filter(pm => {
-				// Only suggest spreading keywords currently in Skills or Summary —
-				// those are broad terms that belong across sections. If a keyword
-				// only appears in one experience entry, it's probably role-specific.
+				// Only suggest spreading primary keywords currently in Skills or Summary.
+				// Secondary keywords in Skills are fine — no need to nag users who just
+				// added a keyword via the "Add to Skills" action.
+				if (pm.tier !== 'primary') return false
 				return pm.sections.some(s => s === 'Skills' || s === 'Summary')
 			})
 
