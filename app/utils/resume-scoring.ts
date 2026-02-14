@@ -93,9 +93,10 @@ const STOP_WORDS = new Set([
 
 export interface KeywordMatch {
 	keyword: string
+	tier: 'primary' | 'secondary'
 	sections: string[]
 	sectionCount: number
-	score: number        // 0 | 0.6 | 1.0
+	score: number
 	status: 'missing' | 'partial' | 'full'
 }
 
@@ -126,55 +127,85 @@ export interface ChecklistItem {
 }
 
 /**
- * Extract keywords from text (handles multi-word phrases)
+ * Extract tokens from resume text for keyword matching.
+ * Produces a set of lowercase tokens preserving &, /, -, #, +.
+ * For tokens containing "/", also adds the split parts (e.g. "ci/cd" → "ci", "cd").
  */
 function extractKeywords(text: string): Set<string> {
 	if (!text) return new Set()
 
 	const normalized = text.toLowerCase()
 
-	// First, extract multi-word technical phrases (before tokenizing)
-	const multiWordPatterns = [
-		/\d+\+?\s*years?\s+(?:of\s+)?experience/g, // "5+ years experience"
-		/[a-z]+\s+[a-z]+\s+(?:engineer|developer|manager|analyst|designer|architect|scientist|lead)/g, // "Senior Software Engineer"
-		/(?:machine|deep|natural language|computer|data|artificial)\s+(?:learning|processing|science|intelligence|vision)/g, // "machine learning"
-		/\b[a-z]+\s+(?:API|SDK|CLI|UI|UX)\b/gi, // "REST API", "AWS SDK"
-		/[a-z]+'s\s+degree/g, // "bachelor's degree"
-		/full\s+stack|front\s+end|back\s+end/g, // "full stack"
-		/product\s+management|project\s+management|program\s+management/g, // PM terms
-		/customer\s+success|customer\s+service|sales\s+development/g, // CS/Sales terms
-		/\b(?:saas|b2b|b2c|fintech|insurtech|healthtech|edtech)\b/gi, // Industry terms
-	]
+	const words = normalized
+		.replace(/[^a-z0-9+#.\-\/&\s]/g, ' ')
+		.split(/\s+/)
+		.filter(word => word.length > 1 && !STOP_WORDS.has(word))
 
-	const multiWordMatches = new Set<string>()
-	multiWordPatterns.forEach(pattern => {
-		const matches = normalized.match(pattern)
-		if (matches) {
-			matches.forEach(m => multiWordMatches.add(m.trim()))
+	const tokens = new Set(words)
+
+	// For tokens with "/", also add split parts (e.g. "ci/cd" → "ci", "cd")
+	for (const word of words) {
+		if (word.includes('/')) {
+			for (const part of word.split('/')) {
+				if (part.length > 1) tokens.add(part)
+			}
 		}
-	})
+	}
 
-	// Then tokenize remaining text
-	const tokens = new Set(
-		normalized
-			.replace(/[^a-z0-9+#.\-\s]/g, ' ')
-			.split(/\s+/)
-			.filter(word => word.length > 2 && !STOP_WORDS.has(word)),
-	)
+	return tokens
+}
 
-	// Combine both sets
-	return new Set([...multiWordMatches, ...tokens])
+/**
+ * Escape special regex characters in a string.
+ */
+function escapeRegex(s: string): string {
+	return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
 /**
  * Check if a keyword exists in a text block using hybrid matching.
- * Multi-word keywords: substring match. Single-word: token set match.
+ *
+ * Generates hyphen variants so "cross-functional" matches "cross functional"
+ * and vice versa. Then checks each variant through 4 matching paths:
+ *   1. Multi-word (has space) → substring .includes()
+ *   2. Special chars (& or /) → regex word-boundary match
+ *   3. Short (≤2 chars) → regex word-boundary match
+ *   4. Normal single-word → token set lookup
  */
 function keywordExistsInText(kwLower: string, textLower: string, tokens: Set<string>): boolean {
-	if (kwLower.includes(' ')) {
-		return textLower.includes(kwLower)
+	// Build variant list: original + hyphen↔space alternate
+	const variants = [kwLower]
+	if (kwLower.includes('-')) {
+		variants.push(kwLower.replace(/-/g, ' '))
 	}
-	return tokens.has(kwLower)
+	if (/[a-z] [a-z]/.test(kwLower)) {
+		variants.push(kwLower.replace(/ /g, '-'))
+	}
+
+	for (const variant of variants) {
+		// Path 1: Multi-word → substring match
+		if (variant.includes(' ')) {
+			if (textLower.includes(variant)) return true
+			continue
+		}
+
+		// Path 2: Special chars (& or /) → regex word-boundary match
+		if (/[&\/]/.test(variant)) {
+			if (new RegExp(`\\b${escapeRegex(variant)}\\b`, 'i').test(textLower)) return true
+			continue
+		}
+
+		// Path 3: Short keywords (≤2 chars) → regex word-boundary match
+		if (variant.length <= 2) {
+			if (new RegExp(`\\b${escapeRegex(variant)}\\b`, 'i').test(textLower)) return true
+			continue
+		}
+
+		// Path 4: Normal single-word → token set lookup
+		if (tokens.has(variant)) return true
+	}
+
+	return false
 }
 
 /**
@@ -223,13 +254,22 @@ function buildSectionMap(resumeData: ResumeData): Map<string, { text: string, to
 
 /**
  * Match each keyword against individual resume sections.
- * Returns per-keyword match data with section names and frequency score.
+ * Returns per-keyword match data with section names, tier, and frequency score.
+ *
+ * When primaryKeywords is provided, uses tiered scoring:
+ * - Primary: 0 sections = 0, 1 section = 0.5, 2 sections = 0.9, 3+ sections = 1.5
+ * - Secondary: 0 sections = 0, 1 section = 0.6, 2+ sections = 1.0
+ *
+ * When primaryKeywords is absent (legacy), uses flat scoring for all keywords.
  */
 function matchKeywordsToSections(
 	resumeData: ResumeData,
 	extractedKeywords: string[],
+	primaryKeywords?: string[] | null,
 ): KeywordMatch[] {
 	const sections = buildSectionMap(resumeData)
+	const primarySet = new Set((primaryKeywords || []).map(k => k.toLowerCase()))
+	const hasTiers = primarySet.size > 0
 
 	return extractedKeywords.map(keyword => {
 		const kwLower = keyword.toLowerCase()
@@ -242,21 +282,42 @@ function matchKeywordsToSections(
 		}
 
 		const sectionCount = matchedSections.length
+		const isPrimary = hasTiers && primarySet.has(kwLower)
+		const tier: KeywordMatch['tier'] = isPrimary ? 'primary' : 'secondary'
+
 		let score: number
 		let status: KeywordMatch['status']
 
-		if (sectionCount === 0) {
-			score = 0
-			status = 'missing'
-		} else if (sectionCount === 1) {
-			score = 0.6
-			status = 'partial'
+		if (hasTiers && isPrimary) {
+			// Primary tiered scoring: rewards appearing in multiple sections
+			if (sectionCount === 0) {
+				score = 0
+				status = 'missing'
+			} else if (sectionCount === 1) {
+				score = 0.5
+				status = 'partial'
+			} else if (sectionCount === 2) {
+				score = 0.9
+				status = 'full'
+			} else {
+				score = 1.5
+				status = 'full'
+			}
 		} else {
-			score = 1.0
-			status = 'full'
+			// Secondary / legacy flat scoring
+			if (sectionCount === 0) {
+				score = 0
+				status = 'missing'
+			} else if (sectionCount === 1) {
+				score = 0.6
+				status = 'partial'
+			} else {
+				score = 1.0
+				status = 'full'
+			}
 		}
 
-		return { keyword, sections: matchedSections, sectionCount, score, status }
+		return { keyword, tier, sections: matchedSections, sectionCount, score, status }
 	})
 }
 
@@ -264,21 +325,28 @@ function matchKeywordsToSections(
  * Calculate keyword match score (0-100)
  * Frequency-aware: rewards keywords appearing across multiple sections.
  * Includes spread bonus for keyword distribution.
+ * When primaryKeywords provided, uses tiered max possible scoring.
  */
 function calculateKeywordScore(
 	resumeData: ResumeData,
 	jobDescription: string,
 	extractedKeywords?: string[] | null,
+	primaryKeywords?: string[] | null,
 ): { score: number; matches: KeywordMatch[] } {
 	if (!jobDescription || !extractedKeywords || extractedKeywords.length === 0) {
 		return { score: 50, matches: [] }
 	}
 
-	const matches = matchKeywordsToSections(resumeData, extractedKeywords)
+	const matches = matchKeywordsToSections(resumeData, extractedKeywords, primaryKeywords)
 
-	// Frequency-aware scoring
+	// Frequency-aware scoring with tiered max possible
 	const totalScore = matches.reduce((sum, m) => sum + m.score, 0)
-	const maxPossible = extractedKeywords.length * 1.0
+	const hasTiers = primaryKeywords && primaryKeywords.length > 0
+	const primaryCount = hasTiers ? primaryKeywords.length : 0
+	const secondaryCount = extractedKeywords.length - primaryCount
+	const maxPossible = hasTiers
+		? primaryCount * 1.5 + secondaryCount * 1.0
+		: extractedKeywords.length * 1.0
 	const matchRatio = totalScore / maxPossible
 
 	// Scoring curve (same thresholds as before)
@@ -485,10 +553,11 @@ function findBulletsWithoutActionVerbs(resumeData: ResumeData): FlaggedBullet[] 
 export function calculateResumeScore(
 	resumeData: ResumeData,
 	jobDescription?: string,
-	extractedKeywords?: string[] | null
+	extractedKeywords?: string[] | null,
+	primaryKeywords?: string[] | null,
 ): ScoreBreakdown {
 	const { score: keyword, matches: keywordMatches } = calculateKeywordScore(
-		resumeData, jobDescription || '', extractedKeywords,
+		resumeData, jobDescription || '', extractedKeywords, primaryKeywords,
 	)
 	const metrics = calculateMetricsScore(resumeData)
 	const actionVerbs = calculateActionVerbsScore(resumeData)
@@ -517,7 +586,8 @@ export function generateChecklist(
 	resumeData: ResumeData,
 	scores: ScoreBreakdown,
 	jobDescription?: string,
-	extractedKeywords?: string[] | null
+	extractedKeywords?: string[] | null,
+	primaryKeywords?: string[] | null,
 ): ChecklistItem[] {
 	const checklist: ChecklistItem[] = []
 
@@ -569,50 +639,99 @@ export function generateChecklist(
 			}
 		})
 
+		const hasTiers = primaryKeywords && primaryKeywords.length > 0
+		const missingPrimary = missing.filter(m => m.tier === 'primary')
+		const missingSecondary = missing.filter(m => m.tier === 'secondary')
 		const totalMissing = missing.length
 		const allMissingKeywords = missing.map(m => m.keyword)
 
-		if (scores.keyword < 90 && totalMissing > 0) {
+		// Missing primary keywords → always high priority
+		if (hasTiers && missingPrimary.length > 0) {
+			const missingPrimaryKws = missingPrimary.map(m => m.keyword)
+			checklist.push({
+				id: 'keywords-missing-primary',
+				text: `Must-have keywords missing: ${missingPrimaryKws.join(', ')}`,
+				completed: false,
+				explanation: `These are the non-negotiable requirements from this job description. A recruiter would likely reject a resume that doesn't mention: ${missingPrimaryKws.join(', ')}. Add them to your experience bullets and skills section.`,
+				priority: 'high',
+				missingKeywords: missingPrimaryKws,
+			})
+		}
+
+		// Missing secondary keywords or all missing in legacy mode
+		if (scores.keyword < 90 && (hasTiers ? missingSecondary.length > 0 : totalMissing > 0)) {
+			const missingForChecklist = hasTiers ? missingSecondary : missing
 			let explanation =
 				'Add these keywords from the job description to improve your ATS match:\n\n'
 
-			if (missingByCategory.technical.length > 0) {
-				explanation +=
-					'**Technical Skills:**\n' +
-					missingByCategory.technical.map(k => `  • ${k}`).join('\n') +
-					'\n\n'
-			}
-			if (missingByCategory.tools.length > 0) {
-				explanation +=
-					'**Tools & Platforms:**\n' +
-					missingByCategory.tools.map(k => `  • ${k}`).join('\n') +
-					'\n\n'
-			}
-			if (missingByCategory.experience.length > 0) {
-				explanation +=
-					'**Experience Level:**\n' +
-					missingByCategory.experience.map(k => `  • ${k}`).join('\n') +
-					'\n\n'
-			}
-			if (missingByCategory.domain.length > 0) {
-				explanation +=
-					'**Domain Knowledge:**\n' +
-					missingByCategory.domain.map(k => `  • ${k}`).join('\n') +
-					'\n\n'
-			}
-			if (missingByCategory.soft.length > 0) {
-				explanation +=
-					'**Soft Skills:**\n' +
-					missingByCategory.soft.map(k => `  • ${k}`).join('\n')
+			// Categorize the relevant missing keywords
+			const categorized = {
+				technical: [] as string[],
+				experience: [] as string[],
+				tools: [] as string[],
+				domain: [] as string[],
+				soft: [] as string[],
 			}
 
+			missingForChecklist.forEach(({ keyword }) => {
+				if (/\d+\+?\s*years?/i.test(keyword)) {
+					categorized.experience.push(keyword)
+				} else if (
+					/^[A-Z]{2,}$/.test(keyword) ||
+					/API|SDK|CLI|UI|UX/i.test(keyword)
+				) {
+					categorized.technical.push(keyword)
+				} else if (
+					/docker|kubernetes|jira|hubspot|salesforce|aws|azure|gcp/i.test(keyword)
+				) {
+					categorized.tools.push(keyword)
+				} else if (
+					/leadership|communication|agile|remote|team|collaboration/i.test(keyword)
+				) {
+					categorized.soft.push(keyword)
+				} else {
+					categorized.domain.push(keyword)
+				}
+			})
+
+			if (categorized.technical.length > 0) {
+				explanation +=
+					'**Technical Skills:**\n' +
+					categorized.technical.map(k => `  • ${k}`).join('\n') +
+					'\n\n'
+			}
+			if (categorized.tools.length > 0) {
+				explanation +=
+					'**Tools & Platforms:**\n' +
+					categorized.tools.map(k => `  • ${k}`).join('\n') +
+					'\n\n'
+			}
+			if (categorized.experience.length > 0) {
+				explanation +=
+					'**Experience Level:**\n' +
+					categorized.experience.map(k => `  • ${k}`).join('\n') +
+					'\n\n'
+			}
+			if (categorized.domain.length > 0) {
+				explanation +=
+					'**Domain Knowledge:**\n' +
+					categorized.domain.map(k => `  • ${k}`).join('\n') +
+					'\n\n'
+			}
+			if (categorized.soft.length > 0) {
+				explanation +=
+					'**Soft Skills:**\n' +
+					categorized.soft.map(k => `  • ${k}`).join('\n')
+			}
+
+			const missingKws = missingForChecklist.map(m => m.keyword)
 			checklist.push({
 				id: 'keywords-missing',
-				text: `Add ${totalMissing} more relevant skill${totalMissing !== 1 ? 's' : ''} to catch ATS keywords that don't appear in your bullets`,
+				text: `Add ${missingKws.length} more supporting skill${missingKws.length !== 1 ? 's' : ''} to catch ATS keywords that don't appear in your bullets`,
 				completed: false,
 				explanation: explanation.trim(),
-				priority: scores.keyword < 70 ? 'high' : 'medium',
-				missingKeywords: allMissingKeywords,
+				priority: hasTiers ? 'medium' : (scores.keyword < 70 ? 'high' : 'medium'),
+				missingKeywords: hasTiers ? missingKws : allMissingKeywords,
 			})
 		} else if (scores.keyword >= 90) {
 			checklist.push({
@@ -648,13 +767,14 @@ export function generateChecklist(
 					(exp: any) => !pm.sections.includes(exp.company || exp.role || '')
 				)
 				const targetName = targetExp?.company || targetExp?.role || 'an experience entry'
+				const isPrimarySpread = pm.tier === 'primary'
 
 				checklist.push({
 					id: `keyword-spread-${pm.keyword}`,
 					text: `You mention "${pm.keyword}" only in ${sectionName} — add it to a bullet under ${targetName} too. ATS tools score keywords higher when they appear across multiple sections.`,
 					completed: false,
-					explanation: `"${pm.keyword}" was found in ${sectionName} but not elsewhere. Keywords that appear in multiple sections (Skills + Experience bullets) score higher in ATS screening.`,
-					priority: 'medium',
+					explanation: `"${pm.keyword}" was found in ${sectionName} but not elsewhere.${isPrimarySpread ? ' This is a must-have keyword — spreading it across sections significantly boosts your ATS score.' : ' Keywords that appear in multiple sections (Skills + Experience bullets) score higher in ATS screening.'}`,
+					priority: isPrimarySpread ? 'high' : 'medium',
 				})
 			}
 		}
