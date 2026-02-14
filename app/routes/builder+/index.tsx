@@ -14,6 +14,7 @@ import {
 	type ActionFunctionArgs,
 } from '@remix-run/node'
 import { useLoaderData, useFetcher, useNavigate } from '@remix-run/react'
+import { useTheme } from '~/routes/resources+/theme/index.tsx'
 import {
 	FileText, ChevronDown, Search, Sun, Moon, Sparkles,
 	Download, LayoutTemplate, Check, X, Plus, Briefcase, GraduationCap,
@@ -429,7 +430,8 @@ export default function ResumeBuilder() {
 
 	const navigate = useNavigate()
 	const [formData, setFormData] = useState(savedData)
-	const [isDark, setIsDark] = useState(false)
+	const appTheme = useTheme()
+	const isDark = appTheme === 'dark'
 	const [sidebar, setSidebar] = useState(true)
 	const [scorePanel, setScorePanel] = useState(true)
 	const [activeSection, setActiveSection] = useState('experience')
@@ -477,18 +479,10 @@ export default function ResumeBuilder() {
 		}
 	}
 
-	/* ═══ DARK MODE PERSISTENCE ═══ */
+	/* ═══ DARK MODE (synced with app theme) ═══ */
 	const themeFetcher = useFetcher()
-	useEffect(() => {
-		try {
-			const match = document.cookie.match(/(?:^|;\s*)theme=([^;]*)/)
-			if (match?.[1] === 'dark') setIsDark(true)
-		} catch {}
-	}, [])
 	const toggleDarkMode = useCallback(() => {
-		const newDark = !isDark
-		setIsDark(newDark)
-		themeFetcher.submit({ theme: newDark ? 'dark' : 'light' }, { method: 'POST', action: '/resources/theme' })
+		themeFetcher.submit({ theme: isDark ? 'light' : 'dark' }, { method: 'POST', action: '/resources/theme' })
 	}, [isDark, themeFetcher])
 
 	/* ═══ COMMAND PALETTE (⌘K) ═══ */
