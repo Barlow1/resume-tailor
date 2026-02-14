@@ -350,6 +350,7 @@ function App() {
 		m.id.startsWith('routes/resume-summary+')
 	)
 	const shouldHideNav = Boolean(matches.find(m => hideNavPages.includes(m.id))) || isBlogRoute || isSeoRoute
+	const isBuilderRoute = Boolean(matches.find(m => m.id === 'routes/builder+/index'))
 
 	const location = useLocation()
 	const path = location.pathname
@@ -704,109 +705,116 @@ function App() {
 									shouldHideNav ? '' : isCollapsed ? 'lg:pl-20' : 'lg:pl-72'
 								}`}
 							>
-								<div
-									className={`${
-										shouldHideNav ? '' : 'sticky bg-background'
-									} top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 px-4 shadow-sm dark:shadow-gray-500/50 sm:gap-x-6 sm:px-6 lg:px-8`}
-								>
-									<button
-										type="button"
-										className={`-m-2.5 p-2.5 text-primary lg:hidden ${
-											shouldHideNav ? 'hidden' : ''
-										}`}
-										onClick={() => setSidebarOpen(true)}
-									>
-										<span className="sr-only">Open sidebar</span>
-										<Bars3Icon className="h-6 w-6" aria-hidden="true" />
-									</button>
+								{isBuilderRoute ? (
+									/* Builder route: full-screen, no header or wrapper padding */
+									<Outlet />
+								) : (
+									<>
+										<div
+											className={`${
+												shouldHideNav ? '' : 'sticky bg-background'
+											} top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 px-4 shadow-sm dark:shadow-gray-500/50 sm:gap-x-6 sm:px-6 lg:px-8`}
+										>
+											<button
+												type="button"
+												className={`-m-2.5 p-2.5 text-primary lg:hidden ${
+													shouldHideNav ? 'hidden' : ''
+												}`}
+												onClick={() => setSidebarOpen(true)}
+											>
+												<span className="sr-only">Open sidebar</span>
+												<Bars3Icon className="h-6 w-6" aria-hidden="true" />
+											</button>
 
-									{/* Separator */}
-									<div
-										className={`h-6 w-px bg-gray-900/10 dark:bg-gray-500/50 lg:hidden ${
-											shouldHideNav ? 'hidden' : ''
-										}`}
-										aria-hidden="true"
-									/>
+											{/* Separator */}
+											<div
+												className={`h-6 w-px bg-gray-900/10 dark:bg-gray-500/50 lg:hidden ${
+													shouldHideNav ? 'hidden' : ''
+												}`}
+												aria-hidden="true"
+											/>
 
-									<div className="flex flex-1 justify-between">
-										{shouldHideNav ? (
-											<div className="flex items-center gap-x-4 lg:gap-x-6">
-												<Link to="/">
-													<div
-														className={clsx(
-															'text-center text-xl font-extrabold text-primary md:text-3xl lg:text-4xl',
-														)}
-													>
-														RESUME TAILOR
+											<div className="flex flex-1 justify-between">
+												{shouldHideNav ? (
+													<div className="flex items-center gap-x-4 lg:gap-x-6">
+														<Link to="/">
+															<div
+																className={clsx(
+																	'text-center text-xl font-extrabold text-primary md:text-3xl lg:text-4xl',
+																)}
+															>
+																RESUME TAILOR
+															</div>
+														</Link>
+														<div className="flex flex-1 items-center justify-end gap-x-4 self-stretch text-xl lg:gap-x-6">
+															<Link
+																to="/pricing"
+																className="text-primary hover:underline"
+															>
+																Pricing
+															</Link>
+														</div>
+														<div className="flex flex-1 items-center justify-end gap-x-4 self-stretch text-xl lg:gap-x-6">
+															<Link
+																to="/ai-resume-builder"
+																className="whitespace-nowrap  text-primary hover:underline"
+															>
+																Resume Builder
+															</Link>
+														</div>
+														<div className="flex flex-1 items-center justify-end gap-x-4 self-stretch text-xl lg:gap-x-6">
+															<Link
+																to="/blog"
+																className="whitespace-nowrap  text-primary hover:underline"
+															>
+																Blog
+															</Link>
+														</div>
 													</div>
-												</Link>
-												<div className="flex flex-1 items-center justify-end gap-x-4 self-stretch text-xl lg:gap-x-6">
-													<Link
-														to="/pricing"
-														className="text-primary hover:underline"
-													>
-														Pricing
-													</Link>
-												</div>
-												<div className="flex flex-1 items-center justify-end gap-x-4 self-stretch text-xl lg:gap-x-6">
-													<Link
-														to="/ai-resume-builder"
-														className="whitespace-nowrap  text-primary hover:underline"
-													>
-														Resume Builder
-													</Link>
-												</div>
-												<div className="flex flex-1 items-center justify-end gap-x-4 self-stretch text-xl lg:gap-x-6">
-													<Link
-														to="/blog"
-														className="whitespace-nowrap  text-primary hover:underline"
-													>
-														Blog 
-													</Link>
-												</div>
-											</div>
-										) : null}
+												) : null}
 
-										<div className="flex flex-1 justify-end gap-x-4 self-stretch lg:gap-x-6">
-											<div className="flex items-center gap-x-4 lg:gap-x-6">
-												<button
-													type="button"
-													className="-m-2.5 p-2.5 text-primary hover:text-primary/50"
-												>
-													<span className="sr-only">Toggle Theme</span>
-													<ThemeSwitch
-														userPreference={data.requestInfo.userPrefs.theme}
-													/>
-												</button>
+												<div className="flex flex-1 justify-end gap-x-4 self-stretch lg:gap-x-6">
+													<div className="flex items-center gap-x-4 lg:gap-x-6">
+														<button
+															type="button"
+															className="-m-2.5 p-2.5 text-primary hover:text-primary/50"
+														>
+															<span className="sr-only">Toggle Theme</span>
+															<ThemeSwitch
+																userPreference={data.requestInfo.userPrefs.theme}
+															/>
+														</button>
 
-												{/* Separator */}
-												<div
-													className="hidden dark:bg-gray-500/50 lg:block lg:h-6 lg:w-px lg:bg-gray-900/10"
-													aria-hidden="true"
-												/>
-
-												{/* Profile dropdown */}
-												<div className="relative">
-													{user ? (
-														<UserDropdown
-															isOnLandingPage={isOnLandingPage ?? false}
+														{/* Separator */}
+														<div
+															className="hidden dark:bg-gray-500/50 lg:block lg:h-6 lg:w-px lg:bg-gray-900/10"
+															aria-hidden="true"
 														/>
-													) : (
-														<Button asChild variant={'primary'} size="sm">
-															<Link to="/login">Log In</Link>
-														</Button>
-													)}
+
+														{/* Profile dropdown */}
+														<div className="relative">
+															{user ? (
+																<UserDropdown
+																	isOnLandingPage={isOnLandingPage ?? false}
+																/>
+															) : (
+																<Button asChild variant={'primary'} size="sm">
+																	<Link to="/login">Log In</Link>
+																</Button>
+															)}
+														</div>
+													</div>
 												</div>
 											</div>
 										</div>
-									</div>
-								</div>
 
-								<div className="mx-auto py-10">
-									<div className="mx-au">
-										<Outlet />
-									</div>
-								</div>
+										<div className="mx-auto py-10">
+											<div className="mx-au">
+												<Outlet />
+											</div>
+										</div>
+									</>
+								)}
 							</div>
 						</div>
 					</>
