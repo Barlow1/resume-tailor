@@ -952,6 +952,50 @@ export default function ResumeBuilder() {
 				resumes={resumes} userId={userId} handleUploadResume={handleUploadResume} theme={c} />
 			{onboarding.showJobModal && <JobPasteModal isOpen={onboarding.showJobModal} onSkip={() => onboarding.handleSkipJob()} onComplete={handleJobChange} theme={c} />}
 
+			{/* KEYWORD ROLE-PICKER POPOVER */}
+			{keywordPopover && (
+				<>
+					<div onClick={() => setKeywordPopover(null)} style={{ position: 'fixed', inset: 0, zIndex: 90 }} />
+					<div style={{
+						position: 'fixed', zIndex: 91, width: 280,
+						top: keywordPopover.anchorRect.bottom + 6,
+						left: Math.min(keywordPopover.anchorRect.left, window.innerWidth - 296),
+						background: c.bgEl, borderRadius: 10,
+						border: `1px solid ${c.border}`, boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+						overflow: 'hidden',
+					}}>
+						<div style={{ padding: '10px 14px', borderBottom: `1px solid ${c.border}`, display: 'flex', alignItems: 'center', gap: 8 }}>
+							<Sparkles size={14} color={BRAND} strokeWidth={2} />
+							<span style={{ fontSize: 13, fontWeight: 600, color: c.text }}>
+								Add "<span style={{ color: BRAND }}>{keywordPopover.keyword}</span>" to a role
+							</span>
+						</div>
+						<div style={{ maxHeight: 200, overflow: 'auto' }}>
+							{(formData.experiences ?? []).filter(exp => exp.id).map(exp => (
+								<div key={exp.id} onClick={() => handleKeywordRolePick(exp)}
+									style={{ padding: '10px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, transition: 'background 100ms' }}
+									onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `${BRAND}10` }}
+									onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}>
+									<Briefcase size={14} color={c.dim} strokeWidth={1.75} />
+									<div style={{ flex: 1, minWidth: 0 }}>
+										<div style={{ fontSize: 13, fontWeight: 500, color: c.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+											{exp.role || 'Untitled Role'}
+										</div>
+										{exp.company && <div style={{ fontSize: 11, color: c.dim, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{exp.company}</div>}
+									</div>
+									<ArrowRight size={13} color={c.dim} strokeWidth={1.75} />
+								</div>
+							))}
+							{(!formData.experiences || formData.experiences.length === 0) && (
+								<div style={{ padding: '16px 14px', fontSize: 13, color: c.dim, textAlign: 'center' }}>
+									Add an experience first
+								</div>
+							)}
+						</div>
+					</div>
+				</>
+			)}
+
 			{/* TOP BAR */}
 			<div style={{ height: 48, borderBottom: `1px solid ${c.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', flexShrink: 0, background: c.bgEl }}>
 				<div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
@@ -1373,7 +1417,7 @@ export default function ResumeBuilder() {
 						{scores.keywordMatches.length > 0 && (
 							<>
 								<div style={{ height: 1, background: c.border, margin: '0 21px' }} />
-								<div style={{ padding: 21, position: 'relative' }}>
+								<div style={{ padding: 21 }}>
 									<span style={{ fontSize: 14, fontWeight: 600, color: c.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Keyword Match</span>
 									<div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
 										{scores.keywordMatches.slice(0, 12).map((m: KeywordMatch) => {
@@ -1403,48 +1447,6 @@ export default function ResumeBuilder() {
 											)
 										})}
 									</div>
-
-									{/* Keyword role-picker popover */}
-									{keywordPopover && (
-										<>
-											<div onClick={() => setKeywordPopover(null)} style={{ position: 'fixed', inset: 0, zIndex: 50 }} />
-											<div style={{
-												position: 'absolute', left: 16, right: 16, zIndex: 51,
-												marginTop: 8, background: c.bgEl, borderRadius: 10,
-												border: `1px solid ${c.border}`, boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
-												overflow: 'hidden',
-											}}>
-												<div style={{ padding: '10px 14px', borderBottom: `1px solid ${c.border}`, display: 'flex', alignItems: 'center', gap: 8 }}>
-													<Sparkles size={14} color={BRAND} strokeWidth={2} />
-													<span style={{ fontSize: 13, fontWeight: 600, color: c.text }}>
-														Add "<span style={{ color: BRAND }}>{keywordPopover.keyword}</span>" to a role
-													</span>
-												</div>
-												<div style={{ maxHeight: 200, overflow: 'auto' }}>
-													{(formData.experiences ?? []).filter(exp => exp.id).map(exp => (
-														<div key={exp.id} onClick={() => handleKeywordRolePick(exp)}
-															style={{ padding: '10px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, transition: 'background 100ms' }}
-															onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `${BRAND}10` }}
-															onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}>
-															<Briefcase size={14} color={c.dim} strokeWidth={1.75} />
-															<div style={{ flex: 1, minWidth: 0 }}>
-																<div style={{ fontSize: 13, fontWeight: 500, color: c.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-																	{exp.role || 'Untitled Role'}
-																</div>
-																{exp.company && <div style={{ fontSize: 11, color: c.dim, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{exp.company}</div>}
-															</div>
-															<ArrowRight size={13} color={c.dim} strokeWidth={1.75} />
-														</div>
-													))}
-													{(!formData.experiences || formData.experiences.length === 0) && (
-														<div style={{ padding: '16px 14px', fontSize: 13, color: c.dim, textAlign: 'center' }}>
-															Add an experience first
-														</div>
-													)}
-												</div>
-											</div>
-										</>
-									)}
 								</div>
 							</>
 						)}
