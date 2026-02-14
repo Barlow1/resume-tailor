@@ -668,18 +668,6 @@ export function generateChecklist(
 	}
 
 
-	// Skills section
-	const skillCount = resumeData.skills?.filter((s: any) => s.name && s.name.trim().length > 0).length || 0
-	if (skillCount < 8) {
-		checklist.push({
-			id: 'skills',
-			text: `Add ${8 - skillCount} more relevant skills`,
-			completed: false,
-			explanation: 'Include 8-15 skills to improve keyword matching and show breadth of expertise.',
-			priority: 'medium',
-		})
-	}
-
 	// Sort by priority (high -> medium -> low), then by completion
 	return checklist.sort((a, b) => {
 		const priorityOrder = { high: 0, medium: 1, low: 2 }

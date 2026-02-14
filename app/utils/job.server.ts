@@ -4,10 +4,11 @@ import { extractKeywordsFromJobDescription } from './keyword-extraction.server.t
 interface CreateJobParams {
   userId: string | null
   title: string
+  company?: string | null
   content: string
 }
 
-export async function createJob({ userId, title, content }: CreateJobParams) {
+export async function createJob({ userId, title, company, content }: CreateJobParams) {
   // Extract keywords from job description using OpenAI
   console.log(`[Job Creation] Creating job: "${title}"`)
   const keywords = await extractKeywordsFromJobDescription(content)
@@ -18,6 +19,7 @@ export async function createJob({ userId, title, content }: CreateJobParams) {
   return prisma.job.create({
     data: {
       title,
+      company: company || null,
       content,
       extractedKeywords,
       ...(userId ? { owner: { connect: { id: userId } } } : {}),

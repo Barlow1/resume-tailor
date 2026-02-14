@@ -358,10 +358,11 @@ function JobDropdown({ jobs, current, onSelect, c }: {
 	return (
 		<div style={{ position: 'relative' }}>
 			<div onClick={() => setOpen(!open)} style={{ padding: '10px 13px', borderRadius: 7, border: `1px solid ${c.border}`, background: c.bgSurf, display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
-				<div>
-					<div style={{ fontSize: 16, color: c.text, fontWeight: 500 }}>{j?.title || 'Choose a job...'}</div>
+				<div style={{ minWidth: 0 }}>
+					<div style={{ fontSize: 16, color: c.text, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{j?.title || 'Choose a job...'}</div>
+					{j?.company && <div style={{ fontSize: 12, color: c.dim, marginTop: 1 }}>{j.company}</div>}
 				</div>
-				<ChevronDown size={17} color={c.dim} style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 150ms' }} />
+				<ChevronDown size={17} color={c.dim} style={{ flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 150ms' }} />
 			</div>
 			{open && (
 				<div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4, background: c.bgEl, border: `1px solid ${c.border}`, borderRadius: 8, boxShadow: '0 8px 24px rgba(0,0,0,0.3)', zIndex: 50, overflow: 'hidden' }}>
@@ -371,6 +372,7 @@ function JobDropdown({ jobs, current, onSelect, c }: {
 							onMouseEnter={e => { if (current !== jb.id) (e.currentTarget as HTMLElement).style.background = c.bgSurf }}
 							onMouseLeave={e => { if (current !== jb.id) (e.currentTarget as HTMLElement).style.background = 'transparent' }}>
 							<div style={{ fontSize: 16, color: c.text, fontWeight: 500 }}>{jb.title}</div>
+							{jb.company && <div style={{ fontSize: 12, color: c.dim, marginTop: 1 }}>{jb.company}</div>}
 						</div>
 					))}
 				</div>
@@ -904,10 +906,10 @@ export default function ResumeBuilder() {
 				resumeData={formData} subscription={subscription} gettingStartedProgress={gettingStartedProgress}
 				setShowSubscribeModal={setShowSubscribeModal} onTailorClick={onboarding.handleTailorComplete}
 				theme={c} diagnosticContext={diagnosticContext} />
-			<CreateJobModal isOpen={showCreateJob} onClose={() => setShowCreateJob(false)} onCreate={handleJobChange} />
+			<CreateJobModal isOpen={showCreateJob} onClose={() => setShowCreateJob(false)} onCreate={handleJobChange} theme={c} />
 			<ResumeCreationModal isOpen={showCreationModal} onClose={() => setShowCreationModal(false)}
-				resumes={resumes} userId={userId} handleUploadResume={handleUploadResume} />
-			{onboarding.showJobModal && <JobPasteModal isOpen={onboarding.showJobModal} onSkip={() => onboarding.handleSkipJob()} onComplete={handleJobChange} />}
+				resumes={resumes} userId={userId} handleUploadResume={handleUploadResume} theme={c} />
+			{onboarding.showJobModal && <JobPasteModal isOpen={onboarding.showJobModal} onSkip={() => onboarding.handleSkipJob()} onComplete={handleJobChange} theme={c} />}
 
 			{/* TOP BAR */}
 			<div style={{ height: 48, borderBottom: `1px solid ${c.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', flexShrink: 0, background: c.bgEl }}>
