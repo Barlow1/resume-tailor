@@ -146,6 +146,7 @@ interface AIAssistantModalProps {
 	onTailorClick?: () => void
 	theme: ThemeColors
 	diagnosticContext?: DiagnosticContext | null
+	initialTab?: 'tailor' | 'generate'
 }
 
 export function AIAssistantModal({
@@ -163,8 +164,9 @@ export function AIAssistantModal({
 	onTailorClick,
 	theme: c,
 	diagnosticContext,
+	initialTab,
 }: AIAssistantModalProps) {
-	const [activeTab, setActiveTab] = useState<'tailor' | 'generate'>('tailor')
+	const [activeTab, setActiveTab] = useState<'tailor' | 'generate'>(initialTab ?? 'tailor')
 	const [selectedItems, setSelectedItems] = useState<number[]>([])
 	const [rawContent, setRawContent] = useState<string>('')
 	const [tailorLogId, setTailorLogId] = useState<string | null>(null)
@@ -177,7 +179,9 @@ export function AIAssistantModal({
 	const logActionFetcher = useFetcher()
 
 	useEffect(() => {
-		if (!isOpen) {
+		if (isOpen) {
+			setActiveTab(initialTab ?? 'tailor')
+		} else {
 			setSelectedItems([])
 			setExpandedOption(null)
 			setShowDiff({})
@@ -185,7 +189,7 @@ export function AIAssistantModal({
 			setEditingOption(null)
 			setEditValues({})
 		}
-	}, [isOpen])
+	}, [isOpen, initialTab])
 
 	const resetState = () => {
 		setSelectedItems([])

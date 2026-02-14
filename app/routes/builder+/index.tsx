@@ -437,10 +437,12 @@ export default function ResumeBuilder() {
 	const [showCreateJob, setShowCreateJob] = useState(false)
 	const [showCreationModal, setShowCreationModal] = useState(!formData.id)
 	const [showAIModal, setShowAIModal] = useState(false)
+	const [aiModalInitialTab, setAiModalInitialTab] = useState<'tailor' | 'generate' | undefined>(undefined)
 	const [selectedBullet, setSelectedBullet] = useState<{ experienceId: string; bulletIndex: number; content: string } | null>(null)
 	const [selectedExperience, setSelectedExperience] = useState<BuilderExperience | undefined>(undefined)
 	const [diagnosticContext, setDiagnosticContext] = useState<DiagnosticContext | null>(null)
 	const [highlightedBullets, setHighlightedBullets] = useState<Set<string>>(new Set())
+	const [keywordPopover, setKeywordPopover] = useState<{ keyword: string; status: 'missing' | 'partial'; anchorRect: DOMRect } | null>(null)
 	const [selectedJob, setSelectedJob] = useState<BuilderJob | null | undefined>(formData.job)
 	const [downloadClicked, setDownloadClicked] = useState(false)
 	const [sectionOrder, setSectionOrder] = useState(DEFAULT_SECTION_ORDER)
@@ -709,6 +711,18 @@ export default function ResumeBuilder() {
 		setSelectedExperience(experience)
 		setSelectedBullet({ content, experienceId, bulletIndex })
 		setDiagnosticContext(diagnostic ?? null)
+		setAiModalInitialTab(undefined)
+		setShowAIModal(true)
+	}
+
+	const handleKeywordRolePick = (experience: BuilderExperience) => {
+		const keyword = keywordPopover?.keyword
+		setKeywordPopover(null)
+		if (!keyword || !experience.id) return
+		setSelectedExperience(experience)
+		setSelectedBullet({ content: '', experienceId: experience.id, bulletIndex: -1 })
+		setDiagnosticContext({ issueType: 'missing-keywords', reason: `Generate a new bullet point that naturally incorporates the keyword "${keyword}"`, missingKeywords: [keyword] })
+		setAiModalInitialTab('generate')
 		setShowAIModal(true)
 	}
 
@@ -734,24 +748,51 @@ export default function ResumeBuilder() {
 	}
 
 	const handleBulletUpdate = (newContent: string) => {
-		if (selectedBullet) {
+		if (!selectedBullet) return
+		if (selectedBullet.bulletIndex === -1) {
+			// Append new bullet to the experience
+			const newFormData = {
+				...formData,
+				experiences: (formData.experiences ?? []).map(exp =>
+					exp.id === selectedBullet.experienceId
+						? { ...exp, descriptions: [...(exp.descriptions ?? []), { id: crypto.randomUUID(), content: newContent }] }
+						: exp
+				),
+			}
+			setFormData(newFormData)
+			debouncedSave(newFormData)
+		} else {
 			updateBullet(selectedBullet.experienceId, selectedBullet.bulletIndex, newContent)
 		}
 	}
 
 	const handleMultipleBulletUpdate = (newContents: string[]) => {
 		if (!formData.experiences || !selectedBullet || newContents.length === 0) return
-		const [firstBullet, ...rest] = newContents
-		const newFormData = {
-			...formData,
-			experiences: formData.experiences.map(exp =>
-				exp.id === selectedBullet.experienceId
-					? { ...exp, descriptions: [...(exp.descriptions ?? []).slice(0, selectedBullet.bulletIndex), { content: firstBullet }, ...rest.map(b => ({ id: crypto.randomUUID(), content: b })), ...(exp.descriptions ?? []).slice(selectedBullet.bulletIndex + 1)] }
-					: exp
-			),
+		if (selectedBullet.bulletIndex === -1) {
+			// Append all new bullets to the experience
+			const newFormData = {
+				...formData,
+				experiences: formData.experiences.map(exp =>
+					exp.id === selectedBullet.experienceId
+						? { ...exp, descriptions: [...(exp.descriptions ?? []), ...newContents.map(b => ({ id: crypto.randomUUID(), content: b }))] }
+						: exp
+				),
+			}
+			setFormData(newFormData)
+			debouncedSave(newFormData)
+		} else {
+			const [firstBullet, ...rest] = newContents
+			const newFormData = {
+				...formData,
+				experiences: formData.experiences.map(exp =>
+					exp.id === selectedBullet.experienceId
+						? { ...exp, descriptions: [...(exp.descriptions ?? []).slice(0, selectedBullet.bulletIndex), { content: firstBullet }, ...rest.map(b => ({ id: crypto.randomUUID(), content: b })), ...(exp.descriptions ?? []).slice(selectedBullet.bulletIndex + 1)] }
+						: exp
+				),
+			}
+			setFormData(newFormData)
+			debouncedSave(newFormData)
 		}
-		setFormData(newFormData)
-		debouncedSave(newFormData)
 	}
 
 	/* ═══ ONBOARDING ═══ */
@@ -900,12 +941,12 @@ export default function ResumeBuilder() {
 
 			{/* MODALS */}
 			<SubscribeModal isOpen={showSubscribeModal} onClose={() => setShowSubscribeModal(false)} successUrl="/builder" redirectTo="/builder" cancelUrl="/builder" />
-			<AIAssistantModal isOpen={showAIModal} onClose={() => { setShowAIModal(false); setDiagnosticContext(null); setHighlightedBullets(new Set()); onboarding.handleAIModalClose() }}
+			<AIAssistantModal isOpen={showAIModal} onClose={() => { setShowAIModal(false); setDiagnosticContext(null); setHighlightedBullets(new Set()); setAiModalInitialTab(undefined); onboarding.handleAIModalClose() }}
 				onUpdate={handleBulletUpdate} onMultipleUpdate={handleMultipleBulletUpdate}
 				content={selectedBullet?.content} experience={selectedExperience} job={selectedJob}
 				resumeData={formData} subscription={subscription} gettingStartedProgress={gettingStartedProgress}
 				setShowSubscribeModal={setShowSubscribeModal} onTailorClick={onboarding.handleTailorComplete}
-				theme={c} diagnosticContext={diagnosticContext} />
+				theme={c} diagnosticContext={diagnosticContext} initialTab={aiModalInitialTab} />
 			<CreateJobModal isOpen={showCreateJob} onClose={() => setShowCreateJob(false)} onCreate={handleJobChange} theme={c} />
 			<ResumeCreationModal isOpen={showCreationModal} onClose={() => setShowCreationModal(false)}
 				resumes={resumes} userId={userId} handleUploadResume={handleUploadResume} theme={c} />
@@ -1332,27 +1373,78 @@ export default function ResumeBuilder() {
 						{scores.keywordMatches.length > 0 && (
 							<>
 								<div style={{ height: 1, background: c.border, margin: '0 21px' }} />
-								<div style={{ padding: 21 }}>
+								<div style={{ padding: 21, position: 'relative' }}>
 									<span style={{ fontSize: 14, fontWeight: 600, color: c.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Keyword Match</span>
 									<div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
 										{scores.keywordMatches.slice(0, 12).map((m: KeywordMatch) => {
 											const chipColor = m.status === 'full' ? SUCCESS : m.status === 'partial' ? WARN : ERROR
 											const chipBg = m.status === 'full' ? `${SUCCESS}15` : m.status === 'partial' ? `${WARN}12` : `${ERROR}12`
+											const isClickable = m.status !== 'full'
 											const tooltip = m.status === 'full'
 												? `Found in ${m.sections.join(', ')}`
 												: m.status === 'partial'
-													? `${m.sections[0]} only`
-													: 'Missing'
+													? `In ${m.sections[0]} only — click to add to another role`
+													: 'Missing — click to generate a bullet'
 											return (
-												<span key={m.keyword} title={tooltip} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 14, padding: '5px 10px', borderRadius: 5, fontWeight: 500, background: chipBg, color: chipColor, border: `1px solid ${chipColor}30` }}>
+												<span key={m.keyword} title={tooltip}
+													onClick={isClickable ? (e) => {
+														const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+														setKeywordPopover({ keyword: m.keyword, status: m.status as 'missing' | 'partial', anchorRect: rect })
+													} : undefined}
+													style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 14, padding: '5px 10px', borderRadius: 5, fontWeight: 500, background: chipBg, color: chipColor, border: `1px solid ${chipColor}30`, cursor: isClickable ? 'pointer' : 'default', transition: 'filter 150ms' }}
+													onMouseEnter={isClickable ? e => { (e.currentTarget as HTMLElement).style.filter = 'brightness(1.15)' } : undefined}
+													onMouseLeave={isClickable ? e => { (e.currentTarget as HTMLElement).style.filter = 'none' } : undefined}>
 													{m.status === 'full' ? <Check size={13} strokeWidth={2.5} /> : m.status === 'partial' ? <Minus size={13} strokeWidth={2.5} /> : <X size={13} strokeWidth={2.5} />}
 													{m.keyword}
 													{m.status === 'partial' && <span style={{ fontSize: 11, opacity: 0.8 }}>({m.sections[0]})</span>}
 													{m.status === 'full' && <span style={{ fontSize: 11, opacity: 0.8 }}>({m.sectionCount})</span>}
+													{isClickable && <Sparkles size={11} strokeWidth={2} style={{ marginLeft: 2, opacity: 0.8 }} />}
 												</span>
 											)
 										})}
 									</div>
+
+									{/* Keyword role-picker popover */}
+									{keywordPopover && (
+										<>
+											<div onClick={() => setKeywordPopover(null)} style={{ position: 'fixed', inset: 0, zIndex: 50 }} />
+											<div style={{
+												position: 'absolute', left: 16, right: 16, zIndex: 51,
+												marginTop: 8, background: c.bgEl, borderRadius: 10,
+												border: `1px solid ${c.border}`, boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+												overflow: 'hidden',
+											}}>
+												<div style={{ padding: '10px 14px', borderBottom: `1px solid ${c.border}`, display: 'flex', alignItems: 'center', gap: 8 }}>
+													<Sparkles size={14} color={BRAND} strokeWidth={2} />
+													<span style={{ fontSize: 13, fontWeight: 600, color: c.text }}>
+														Add "<span style={{ color: BRAND }}>{keywordPopover.keyword}</span>" to a role
+													</span>
+												</div>
+												<div style={{ maxHeight: 200, overflow: 'auto' }}>
+													{(formData.experiences ?? []).filter(exp => exp.id).map(exp => (
+														<div key={exp.id} onClick={() => handleKeywordRolePick(exp)}
+															style={{ padding: '10px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, transition: 'background 100ms' }}
+															onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `${BRAND}10` }}
+															onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}>
+															<Briefcase size={14} color={c.dim} strokeWidth={1.75} />
+															<div style={{ flex: 1, minWidth: 0 }}>
+																<div style={{ fontSize: 13, fontWeight: 500, color: c.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+																	{exp.role || 'Untitled Role'}
+																</div>
+																{exp.company && <div style={{ fontSize: 11, color: c.dim, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{exp.company}</div>}
+															</div>
+															<ArrowRight size={13} color={c.dim} strokeWidth={1.75} />
+														</div>
+													))}
+													{(!formData.experiences || formData.experiences.length === 0) && (
+														<div style={{ padding: '16px 14px', fontSize: 13, color: c.dim, textAlign: 'center' }}>
+															Add an experience first
+														</div>
+													)}
+												</div>
+											</div>
+										</>
+									)}
 								</div>
 							</>
 						)}
