@@ -347,8 +347,8 @@ const Backdrop = ({ children, onClick }: { children: React.ReactNode; onClick: (
 )
 
 /* ═══ JOB DROPDOWN ═══ */
-function JobDropdown({ jobs, current, onSelect, onAddJob, c }: {
-	jobs: Jsonify<Job>[]; current: string | null; onSelect: (j: Jsonify<Job>) => void; onAddJob: () => void; c: Theme
+function JobDropdown({ jobs, current, onSelect, c }: {
+	jobs: Jsonify<Job>[]; current: string | null; onSelect: (j: Jsonify<Job>) => void; c: Theme
 }) {
 	const [open, setOpen] = useState(false)
 	const j = jobs.find(jb => jb.id === current)
@@ -368,16 +368,8 @@ function JobDropdown({ jobs, current, onSelect, onAddJob, c }: {
 							onMouseEnter={e => { if (current !== jb.id) (e.currentTarget as HTMLElement).style.background = c.bgSurf }}
 							onMouseLeave={e => { if (current !== jb.id) (e.currentTarget as HTMLElement).style.background = 'transparent' }}>
 							<div style={{ fontSize: 13, color: c.text, fontWeight: 500 }}>{jb.title}</div>
-							<div style={{ fontSize: 11, color: c.dim }}>{jb.content?.slice(0, 50) || ''}</div>
 						</div>
 					))}
-					<div onClick={() => { onAddJob(); setOpen(false) }}
-						style={{ padding: '10px 12px', cursor: 'pointer', borderTop: `1px solid ${c.border}`, display: 'flex', alignItems: 'center', gap: 6 }}
-						onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = c.bgSurf }}
-						onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}>
-						<Plus size={14} color={BRAND} strokeWidth={2} />
-						<span style={{ fontSize: 13, color: BRAND, fontWeight: 500 }}>Add a new job</span>
-					</div>
 				</div>
 			)}
 		</div>
@@ -969,7 +961,12 @@ export default function ResumeBuilder() {
 							<div style={{ marginTop: 16, padding: '0 4px' }}>
 								<span style={{ fontSize: 11, fontWeight: 600, color: c.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Target Job</span>
 								<div style={{ marginTop: 8 }}>
-									<JobDropdown jobs={jobs} current={formData.jobId ?? null} onSelect={handleJobChange} onAddJob={() => setShowCreateJob(true)} c={c} />
+									<JobDropdown jobs={jobs} current={formData.jobId ?? null} onSelect={handleJobChange} c={c} />
+								</div>
+								<div onClick={() => setShowCreateJob(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, cursor: 'pointer', color: c.dim }}
+									onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = BRAND }}
+									onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = c.dim }}>
+									<Plus size={14} strokeWidth={2} /><span style={{ fontSize: 13, fontWeight: 500 }}>Add Job</span>
 								</div>
 							</div>
 
