@@ -125,6 +125,12 @@ function wordDiff(
 	return result
 }
 
+export interface DiagnosticContext {
+	issueType: 'no-metrics' | 'weak-verb' | 'missing-keywords'
+	reason: string
+	missingKeywords?: string[]
+}
+
 interface AIAssistantModalProps {
 	isOpen: boolean
 	onClose: () => void
@@ -139,6 +145,7 @@ interface AIAssistantModalProps {
 	setShowSubscribeModal: (show: boolean) => void
 	onTailorClick?: () => void
 	theme: ThemeColors
+	diagnosticContext?: DiagnosticContext | null
 }
 
 export function AIAssistantModal({
@@ -155,6 +162,7 @@ export function AIAssistantModal({
 	setShowSubscribeModal,
 	onTailorClick,
 	theme: c,
+	diagnosticContext,
 }: AIAssistantModalProps) {
 	const [activeTab, setActiveTab] = useState<'tailor' | 'generate'>('tailor')
 	const [selectedItems, setSelectedItems] = useState<number[]>([])
@@ -233,6 +241,10 @@ export function AIAssistantModal({
 
 		if (type === 'tailor' && resumeData) {
 			formData.append('resumeData', JSON.stringify(resumeData))
+		}
+
+		if (type === 'tailor' && diagnosticContext) {
+			formData.append('diagnosticContext', JSON.stringify(diagnosticContext))
 		}
 
 		builderCompletionsFetcher.submit(formData, {
@@ -451,6 +463,23 @@ export function AIAssistantModal({
 						</p>
 					</div>
 				</div>
+
+				{/* Diagnostic context banner */}
+				{diagnosticContext && (
+					<div style={{ padding: '0 16px 8px', flexShrink: 0 }}>
+						<div style={{
+							padding: '8px 12px', borderRadius: 6,
+							background: diagnosticContext.issueType === 'no-metrics' ? `${WARN}12` : diagnosticContext.issueType === 'weak-verb' ? `${BRAND}12` : `${ERROR}12`,
+							border: `1px solid ${diagnosticContext.issueType === 'no-metrics' ? `${WARN}30` : diagnosticContext.issueType === 'weak-verb' ? `${BRAND}30` : `${ERROR}30`}`,
+							display: 'flex', alignItems: 'flex-start', gap: 8,
+						}}>
+							<Target size={14} color={diagnosticContext.issueType === 'no-metrics' ? WARN : diagnosticContext.issueType === 'weak-verb' ? BRAND : ERROR} strokeWidth={1.75} style={{ marginTop: 1, flexShrink: 0 }} />
+							<span style={{ fontSize: 12, lineHeight: 1.4, color: c.text }}>
+								{diagnosticContext.reason}
+							</span>
+						</div>
+					</div>
+				)}
 
 				{/* Main results area */}
 				<div style={{ padding: '8px 16px 16px', flex: 1 }}>

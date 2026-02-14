@@ -28,7 +28,7 @@ import { SubscribeModal } from '~/components/subscribe-modal.tsx'
 import { getStripeSubscription, getUserId } from '~/utils/auth.server.ts'
 import { useDebouncedCallback } from 'use-debounce'
 import { resumeCookie } from '~/utils/resume-cookie.server.ts'
-import { AIAssistantModal } from '~/components/ai-assistant-modal.tsx'
+import { AIAssistantModal, type DiagnosticContext } from '~/components/ai-assistant-modal.tsx'
 import {
 	type BuilderEducation,
 	type BuilderExperience,
@@ -50,7 +50,7 @@ import type { SubmitTarget } from 'react-router-dom/dist/dom.d.ts'
 import { type Job } from '@prisma/client'
 import type OpenAI from 'openai'
 import { useResumeScore } from '~/hooks/use-resume-score.ts'
-import { type ChecklistItem } from '~/utils/resume-scoring.ts'
+import { type ChecklistItem, type FlaggedBullet } from '~/utils/resume-scoring.ts'
 import { trackEvent } from '~/utils/analytics.ts'
 import { trackEvent as trackLegacyEvent } from '~/utils/tracking.client.ts'
 import { track } from '~/lib/analytics.client.ts'
@@ -437,6 +437,8 @@ export default function ResumeBuilder() {
 	const [showAIModal, setShowAIModal] = useState(false)
 	const [selectedBullet, setSelectedBullet] = useState<{ experienceId: string; bulletIndex: number; content: string } | null>(null)
 	const [selectedExperience, setSelectedExperience] = useState<BuilderExperience | undefined>(undefined)
+	const [diagnosticContext, setDiagnosticContext] = useState<DiagnosticContext | null>(null)
+	const [highlightedBullets, setHighlightedBullets] = useState<Set<string>>(new Set())
 	const [selectedJob, setSelectedJob] = useState<BuilderJob | null | undefined>(formData.job)
 	const [downloadClicked, setDownloadClicked] = useState(false)
 	const [sectionOrder, setSectionOrder] = useState(DEFAULT_SECTION_ORDER)
@@ -700,11 +702,33 @@ export default function ResumeBuilder() {
 	}, [formData, debouncedSave, userId])
 
 	/* ═══ AI ═══ */
-	const handleAIClick = (experienceId: string, bulletIndex: number, content: string) => {
+	const handleAIClick = (experienceId: string, bulletIndex: number, content: string, diagnostic?: DiagnosticContext | null) => {
 		const experience = formData.experiences?.find(exp => exp.id === experienceId)
 		setSelectedExperience(experience)
 		setSelectedBullet({ content, experienceId, bulletIndex })
+		setDiagnosticContext(diagnostic ?? null)
 		setShowAIModal(true)
+	}
+
+	const handleChecklistFix = (item: ChecklistItem) => {
+		if (!item.flaggedBullets || item.flaggedBullets.length === 0) return
+
+		// Highlight all flagged bullets
+		const bulletKeys = new Set(item.flaggedBullets.map(b => `${b.experienceId}_${b.bulletIndex}`))
+		setHighlightedBullets(bulletKeys)
+
+		// Open AI modal on the first flagged bullet
+		const first = item.flaggedBullets[0]
+		const issueType: DiagnosticContext['issueType'] =
+			item.id === 'metrics' || item.id === 'metrics-good' ? 'no-metrics'
+			: item.id === 'action-verbs' || item.id === 'action-verbs-good' ? 'weak-verb'
+			: 'missing-keywords'
+
+		handleAIClick(first.experienceId, first.bulletIndex, first.content, {
+			issueType,
+			reason: first.reason,
+			missingKeywords: item.missingKeywords,
+		})
 	}
 
 	const handleBulletUpdate = (newContent: string) => {
@@ -874,12 +898,12 @@ export default function ResumeBuilder() {
 
 			{/* MODALS */}
 			<SubscribeModal isOpen={showSubscribeModal} onClose={() => setShowSubscribeModal(false)} successUrl="/builder" redirectTo="/builder" cancelUrl="/builder" />
-			<AIAssistantModal isOpen={showAIModal} onClose={() => { setShowAIModal(false); onboarding.handleAIModalClose() }}
+			<AIAssistantModal isOpen={showAIModal} onClose={() => { setShowAIModal(false); setDiagnosticContext(null); setHighlightedBullets(new Set()); onboarding.handleAIModalClose() }}
 				onUpdate={handleBulletUpdate} onMultipleUpdate={handleMultipleBulletUpdate}
 				content={selectedBullet?.content} experience={selectedExperience} job={selectedJob}
 				resumeData={formData} subscription={subscription} gettingStartedProgress={gettingStartedProgress}
 				setShowSubscribeModal={setShowSubscribeModal} onTailorClick={onboarding.handleTailorComplete}
-				theme={c} />
+				theme={c} diagnosticContext={diagnosticContext} />
 			<CreateJobModal isOpen={showCreateJob} onClose={() => setShowCreateJob(false)} onCreate={handleJobChange} />
 			<ResumeCreationModal isOpen={showCreationModal} onClose={() => setShowCreationModal(false)}
 				resumes={resumes} userId={userId} handleUploadResume={handleUploadResume} />
@@ -1133,22 +1157,25 @@ export default function ResumeBuilder() {
 																</span>
 															</div>
 															<ul style={{ margin: 0, paddingLeft: 16, marginTop: 4 }}>
-																{exp.descriptions?.map((b, bi) => (
-																	<li key={b.id || bi} style={{ fontSize: ts(12), lineHeight: 1.55, color: '#333', marginBottom: 3, fontFamily: resumeFont, listStyleType: 'disc', position: 'relative' }}>
+																{exp.descriptions?.map((b, bi) => {
+																	const bulletKey = `${exp.id}_${bi}`
+																	const isHighlighted = highlightedBullets.has(bulletKey)
+																	return (
+																	<li key={b.id || bi} style={{ fontSize: ts(12), lineHeight: 1.55, color: '#333', marginBottom: 3, fontFamily: resumeFont, listStyleType: 'disc', position: 'relative', ...(isHighlighted ? { background: `${WARN}15`, borderRadius: 3, marginLeft: -4, paddingLeft: 4, marginRight: -4, paddingRight: 4, transition: 'background 300ms' } : {}) }}>
 																		<span style={{ display: 'inline' }}>
 																			<EditableText value={b.content || ''} onChange={v => updateBullet(exp.id!, bi, v)}
 																				style={{ fontSize: ts(12), lineHeight: 1.55, color: '#333', fontFamily: resumeFont, display: 'inline' }}
 																				placeholder="Start with your proudest achievement" c={c} />
 																		</span>
 																		<span onClick={() => handleAIClick(exp.id!, bi, b.content || '')}
-																			style={{ display: 'inline-flex', marginLeft: 6, verticalAlign: 'middle', cursor: 'pointer', opacity: 0.5, transition: 'opacity 150ms' }}
+																			style={{ display: 'inline-flex', marginLeft: 6, verticalAlign: 'middle', cursor: 'pointer', opacity: isHighlighted ? 1 : 0.5, transition: 'opacity 150ms' }}
 																			onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
-																			onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '0.5' }}
+																			onMouseLeave={e => { if (!isHighlighted) (e.currentTarget as HTMLElement).style.opacity = '0.5' }}
 																			title="Strengthen This Bullet">
 																			<Sparkles size={12} color={BRAND} strokeWidth={2} />
 																		</span>
 																	</li>
-																))}
+																)})}
 															</ul>
 															<div onClick={() => addBulletPoint(exp.id!)} className="preview-only" style={{ fontSize: 11, color: BRAND, cursor: 'pointer', marginTop: 4, marginLeft: 16, opacity: 0.7, display: 'flex', alignItems: 'center', gap: 4, height: 0, overflow: 'visible' }}
 																onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
@@ -1284,7 +1311,16 @@ export default function ResumeBuilder() {
 							{checklist.map((ch, i) => (
 								<div key={ch.id || i} style={{ display: 'flex', alignItems: 'flex-start', gap: 9, padding: '10px 0', borderBottom: `1px solid ${c.borderSub}`, opacity: ch.completed ? 0.5 : 1, cursor: ch.completed ? 'default' : 'pointer' }}>
 									{ch.completed ? <CheckCircle2 size={20} color={SUCCESS} strokeWidth={1.75} style={{ marginTop: 1, flexShrink: 0 }} /> : <Circle size={20} color={c.dim} strokeWidth={1.75} style={{ marginTop: 1, flexShrink: 0 }} />}
-									<span style={{ flex: 1, fontSize: 16, color: ch.completed ? c.dim : c.text, lineHeight: 1.4, textDecoration: ch.completed ? 'line-through' : 'none' }}>{ch.text}</span>
+									<div style={{ flex: 1 }}>
+										<span style={{ fontSize: 16, color: ch.completed ? c.dim : c.text, lineHeight: 1.4, textDecoration: ch.completed ? 'line-through' : 'none', display: 'block' }}>{ch.text}</span>
+										{!ch.completed && ch.flaggedBullets && ch.flaggedBullets.length > 0 && (
+											<div onClick={() => handleChecklistFix(ch)}
+												style={{ fontSize: 12, color: BRAND, cursor: 'pointer', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4, fontWeight: 500 }}>
+												<Sparkles size={11} color={BRAND} strokeWidth={2} />
+												Fix with AI ({ch.flaggedBullets.length} bullet{ch.flaggedBullets.length !== 1 ? 's' : ''})
+											</div>
+										)}
+									</div>
 									{!ch.completed && <span style={{ fontSize: 13, fontWeight: 600, padding: '2px 7px', borderRadius: 5, background: ch.priority === 'high' ? `${WARN}18` : `${BRAND}18`, color: ch.priority === 'high' ? WARN : BRAND, textTransform: 'uppercase', letterSpacing: '0.04em', flexShrink: 0, marginTop: 1 }}>{ch.priority}</span>}
 								</div>
 							))}
@@ -1479,6 +1515,7 @@ export default function ResumeBuilder() {
 						<span style={{ fontSize: 11, fontWeight: 600, color: WARN, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Opportunities</span>
 						<div style={{ marginTop: 8 }}>
 							{checklist.filter(ch => !ch.completed).map((ch, i) => {
+								const hasFlaggedBullets = ch.flaggedBullets && ch.flaggedBullets.length > 0
 								const targetSec = ch.text.toLowerCase().includes('experience') || ch.text.toLowerCase().includes('bullet') || ch.text.toLowerCase().includes('achievement') ? 'experience'
 									: ch.text.toLowerCase().includes('skill') || ch.text.toLowerCase().includes('keyword') ? 'skills'
 									: ch.text.toLowerCase().includes('summary') || ch.text.toLowerCase().includes('about') ? 'summary'
@@ -1488,10 +1525,18 @@ export default function ResumeBuilder() {
 										<Circle size={14} color={c.dim} strokeWidth={1.75} style={{ marginTop: 2, flexShrink: 0 }} />
 										<div style={{ flex: 1 }}>
 											<span style={{ fontSize: 13, color: c.text, lineHeight: 1.4 }}>{ch.text}</span>
-											<div onClick={() => { setShowScoreDetail(false); scrollToSection(targetSec) }}
-												style={{ fontSize: 11, color: BRAND, cursor: 'pointer', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-												Fix this <ArrowRight size={10} />
-											</div>
+											{hasFlaggedBullets ? (
+												<div onClick={() => { setShowScoreDetail(false); handleChecklistFix(ch) }}
+													style={{ fontSize: 11, color: BRAND, cursor: 'pointer', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4, fontWeight: 500 }}>
+													<Sparkles size={10} color={BRAND} strokeWidth={2} />
+													Fix with AI ({ch.flaggedBullets!.length} bullet{ch.flaggedBullets!.length !== 1 ? 's' : ''})
+												</div>
+											) : (
+												<div onClick={() => { setShowScoreDetail(false); scrollToSection(targetSec) }}
+													style={{ fontSize: 11, color: BRAND, cursor: 'pointer', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+													Fix this <ArrowRight size={10} />
+												</div>
+											)}
 										</div>
 										<span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: ch.priority === 'high' ? `${WARN}18` : `${BRAND}18`, color: ch.priority === 'high' ? WARN : BRAND, textTransform: 'uppercase', flexShrink: 0 }}>{ch.priority}</span>
 									</div>

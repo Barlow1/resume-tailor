@@ -42,12 +42,21 @@ export interface ScoreBreakdown {
 	length: number
 }
 
+export interface FlaggedBullet {
+	experienceId: string
+	bulletIndex: number
+	content: string
+	reason: string
+}
+
 export interface ChecklistItem {
 	id: string
 	text: string
 	completed: boolean
 	explanation: string
 	priority: 'high' | 'medium' | 'low'
+	flaggedBullets?: FlaggedBullet[]
+	missingKeywords?: string[]
 }
 
 /**
@@ -278,6 +287,56 @@ function calculateLengthScore(resumeData: ResumeData): number {
 
 
 /**
+ * Identify bullets that lack quantified metrics
+ */
+function findBulletsWithoutMetrics(resumeData: ResumeData): FlaggedBullet[] {
+	const numberPattern = /\d+[%$]?|\d+[kKmMbB]\+?/
+	const flagged: FlaggedBullet[] = []
+
+	resumeData.experiences?.forEach((exp: any) => {
+		exp.descriptions?.forEach((d: any, bi: number) => {
+			const content = d.content || ''
+			if (content.trim().length > 0 && !numberPattern.test(content)) {
+				flagged.push({
+					experienceId: exp.id,
+					bulletIndex: bi,
+					content,
+					reason: 'No quantified metrics — add numbers, percentages, or dollar amounts to show impact',
+				})
+			}
+		})
+	})
+
+	return flagged
+}
+
+/**
+ * Identify bullets that don't start with a strong action verb
+ */
+function findBulletsWithoutActionVerbs(resumeData: ResumeData): FlaggedBullet[] {
+	const flagged: FlaggedBullet[] = []
+
+	resumeData.experiences?.forEach((exp: any) => {
+		exp.descriptions?.forEach((d: any, bi: number) => {
+			const content = d.content || ''
+			if (content.trim().length > 0) {
+				const firstWord = content.trim().toLowerCase().split(/\s+/)[0]
+				if (!ACTION_VERBS.has(firstWord)) {
+					flagged.push({
+						experienceId: exp.id,
+						bulletIndex: bi,
+						content,
+						reason: `Starts with "${firstWord}" — use a strong action verb like Led, Built, Increased, or Delivered`,
+					})
+				}
+			}
+		})
+	})
+
+	return flagged
+}
+
+/**
  * Calculate overall resume score with weighted average
  */
 export function calculateResumeScore(
@@ -398,6 +457,8 @@ export function generateChecklist(
 
 		const totalMissing = Object.values(missingByCategory).flat().length
 
+		const allMissingKeywords = Object.values(missingByCategory).flat()
+
 		if (scores.keyword < 90 && totalMissing > 0) {
 			let explanation =
 				'Add these keywords from the job description to improve your ATS match:\n\n'
@@ -438,6 +499,7 @@ export function generateChecklist(
 				completed: false,
 				explanation: explanation.trim(),
 				priority: scores.keyword < 70 ? 'high' : 'medium',
+				missingKeywords: allMissingKeywords,
 			})
 		} else if (scores.keyword >= 90) {
 			checklist.push({
@@ -453,6 +515,7 @@ export function generateChecklist(
 
 	// Quantifiable metrics (based on percentage, not absolute count)
 	const bulletCount = resumeData.experiences?.flatMap((exp: any) => exp.descriptions || []).length || 0
+	const bulletsWithoutMetrics = findBulletsWithoutMetrics(resumeData)
 
 	if (bulletCount === 0) {
 		// No bullets yet
@@ -481,6 +544,7 @@ export function generateChecklist(
 				completed: true,
 				explanation: `Good! You have quantifiable achievements in your resume.${improvementText}`,
 				priority: 'high',
+				flaggedBullets: bulletsWithoutMetrics,
 			})
 		} else {
 			// Need more metrics to show basic competency
@@ -495,6 +559,7 @@ export function generateChecklist(
 					completed: true,
 					explanation: `Good! Adding metrics to ${metricsNeededForPerfect} more bullets will boost your score from ${scores.metrics} to 100.`,
 					priority: 'high',
+					flaggedBullets: bulletsWithoutMetrics,
 				})
 			} else {
 				checklist.push({
@@ -503,12 +568,15 @@ export function generateChecklist(
 					completed: false,
 					explanation: 'Quantified achievements are 40% more likely to get interviews. Add numbers, percentages, or dollar amounts to show impact (e.g., "increased revenue by 25%" or "managed team of 10").',
 					priority: 'high',
+					flaggedBullets: bulletsWithoutMetrics,
 				})
 			}
 		}
 	}
 
 	// Action verbs (based on percentage)
+	const bulletsWithoutActionVerbs = bulletCount > 0 ? findBulletsWithoutActionVerbs(resumeData) : []
+
 	if (bulletCount === 0) {
 		// No bullets yet - already covered in metrics section
 	} else {
@@ -529,6 +597,7 @@ export function generateChecklist(
 				completed: true,
 				explanation: `Good! Most of your bullets start with strong action verbs.${improvementText}`,
 				priority: 'medium',
+				flaggedBullets: bulletsWithoutActionVerbs,
 			})
 		} else {
 			const targetBasic = Math.ceil(bulletCount * 0.50)
@@ -542,6 +611,7 @@ export function generateChecklist(
 					completed: true,
 					explanation: `Good! Starting ${actionVerbsNeededForPerfect} more bullets with action verbs will boost your score from ${scores.actionVerbs} to 100.`,
 					priority: 'medium',
+					flaggedBullets: bulletsWithoutActionVerbs,
 				})
 			} else {
 				checklist.push({
@@ -550,6 +620,7 @@ export function generateChecklist(
 					completed: false,
 					explanation: 'Action verbs (like "built", "led", "increased") make accomplishments more impactful. Avoid weak starts like "responsible for" or "helped with".',
 					priority: 'medium',
+					flaggedBullets: bulletsWithoutActionVerbs,
 				})
 			}
 		}
