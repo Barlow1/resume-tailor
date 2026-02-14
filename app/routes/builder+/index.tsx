@@ -731,6 +731,8 @@ export default function ResumeBuilder() {
 		resumeElement.style.boxShadow = 'none'
 		resumeElement.style.overflow = 'visible'
 		resumeElement.style.height = 'auto'
+		resumeElement.style.padding = '0'
+		resumeElement.style.width = '100%'
 		resumeElement.classList.remove('overflow-hidden')
 		if (pdfFetcher.state !== 'idle') return
 		const styles = getRenderedStyles()
@@ -963,7 +965,7 @@ export default function ResumeBuilder() {
 				{/* CENTER CANVAS */}
 				<div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: c.bg }}>
 					<div style={{ flex: 1, overflow: 'auto', display: 'flex', justifyContent: 'center', padding: '32px 24px', background: c.canvas }}>
-						<div id="resume-content" style={{ width: 680, minHeight: 880, background: '#FFFFFF', borderRadius: 2, boxShadow: '0 4px 24px rgba(0,0,0,0.4), 0 1px 4px rgba(0,0,0,0.3)', padding: '48px 52px', color: '#1a1a1a', flexShrink: 0, fontFamily: resumeFont }}>
+						<div id="resume-content" style={{ width: 680, minHeight: 880, background: '#FFFFFF', borderRadius: 2, boxShadow: '0 4px 24px rgba(0,0,0,0.4), 0 1px 4px rgba(0,0,0,0.3)', padding: '40px 40px', color: '#1a1a1a', flexShrink: 0, fontFamily: resumeFont, position: 'relative' }}>
 							{/* Name & Contact */}
 							<div style={{ marginBottom: 24 }}>
 								<EditableText value={formData.name || ''} onChange={v => updateField('name', v)}
