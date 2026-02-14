@@ -21,6 +21,7 @@ interface UseResumeScoreOptions {
 	resumeData: ResumeData
 	jobDescription?: string
 	extractedKeywords?: string[] | null
+	primaryKeywords?: string[] | null
 	debounceMs?: number
 }
 
@@ -28,16 +29,17 @@ export function useResumeScore({
 	resumeData,
 	jobDescription,
 	extractedKeywords,
+	primaryKeywords,
 	debounceMs = 500,
 }: UseResumeScoreOptions) {
 	const [scores, setScores] = useState<ScoreBreakdown>(() =>
-		calculateResumeScore(resumeData, jobDescription, extractedKeywords)
+		calculateResumeScore(resumeData, jobDescription, extractedKeywords, primaryKeywords)
 	)
 	const [previousScore, setPreviousScore] = useState<number | undefined>(undefined)
 
 	// Debounced score calculation
 	const debouncedCalculateScore = useDebouncedCallback(() => {
-		const newScores = calculateResumeScore(resumeData, jobDescription, extractedKeywords)
+		const newScores = calculateResumeScore(resumeData, jobDescription, extractedKeywords, primaryKeywords)
 
 		// Track improvement
 		if (scores.overall !== newScores.overall) {
@@ -50,12 +52,12 @@ export function useResumeScore({
 	// Recalculate when resume data or job changes
 	useEffect(() => {
 		debouncedCalculateScore()
-	}, [resumeData, jobDescription, extractedKeywords, debouncedCalculateScore])
+	}, [resumeData, jobDescription, extractedKeywords, primaryKeywords, debouncedCalculateScore])
 
 	// Generate checklist (memoized)
 	const checklist = useMemo<ChecklistItem[]>(
-		() => generateChecklist(resumeData, scores, jobDescription, extractedKeywords),
-		[resumeData, scores, jobDescription, extractedKeywords]
+		() => generateChecklist(resumeData, scores, jobDescription, extractedKeywords, primaryKeywords),
+		[resumeData, scores, jobDescription, extractedKeywords, primaryKeywords]
 	)
 
 	return {

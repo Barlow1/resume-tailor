@@ -10,6 +10,7 @@ import {
 import { z } from 'zod';
 import { parse } from '@conform-to/zod'
 import { type ResumeData } from '~/utils/builder-resume.server.ts'
+import { parseKeywordsFlat } from '~/utils/keyword-utils.ts'
 import {
 	trackAiTailorStarted,
 	trackAiTailorCompleted,
@@ -80,7 +81,7 @@ export async function action({ request }: DataFunctionArgs) {
 		)
 
 		try {
-			const parsedKeywords = extractedKeywords ? (JSON.parse(extractedKeywords) as string[]) : undefined
+			const parsedKeywords = extractedKeywords ? (parseKeywordsFlat(extractedKeywords) ?? undefined) : undefined
 			;[{ response }] = await Promise.all([
 				await getEntireTailoredResumeResponse({
 					resume: parsedResumeData,
@@ -212,7 +213,7 @@ export async function action({ request }: DataFunctionArgs) {
 		)
 
 		try {
-			const parsedKeywords = extractedKeywords ? (JSON.parse(extractedKeywords) as string[]) : undefined
+			const parsedKeywords = extractedKeywords ? (parseKeywordsFlat(extractedKeywords) ?? undefined) : undefined
 			const parsedResumeForBullet = resumeData ? (JSON.parse(resumeData) as ResumeData) : undefined
 			;[{ response }] = await Promise.all([
 				await getBuilderExperienceResponse({
@@ -339,7 +340,7 @@ export async function action({ request }: DataFunctionArgs) {
 		)
 
 		try {
-			const parsedKeywords = extractedKeywords ? (JSON.parse(extractedKeywords) as string[]) : undefined
+			const parsedKeywords = extractedKeywords ? (parseKeywordsFlat(extractedKeywords) ?? undefined) : undefined
 			const targetKeyword = parsedDiagnostic?.missingKeywords?.[0]
 			const parsedResumeForGenerate = resumeData ? (JSON.parse(resumeData) as ResumeData) : undefined
 			;[{ response }] = await Promise.all([

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { ArrowDownTrayIcon } from '@heroicons/react/24/outline'
 import { prisma } from '~/utils/db.server.ts'
 import { requireAdmin } from '~/utils/permissions.server.ts'
+import { parseKeywordsFlat } from '~/utils/keyword-utils.ts'
 
 const PAGE_SIZE = 50
 
@@ -434,14 +435,7 @@ function ExpandedRow({
 }) {
 	const [showJD, setShowJD] = useState(false)
 
-	let keywords: string[] = []
-	try {
-		if (log.extractedKeywords) {
-			keywords = JSON.parse(log.extractedKeywords) as string[]
-		}
-	} catch {
-		// ignore
-	}
+	const keywords: string[] = parseKeywordsFlat(log.extractedKeywords) ?? []
 
 	return (
 		<div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
