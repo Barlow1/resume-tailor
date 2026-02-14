@@ -279,7 +279,7 @@ const TEMPLATES = [
 	{ id: 'tech', name: 'Tech', layout: 'modern', font: 'font-mono', accent: '#059669' },
 	{ id: 'elegant', name: 'Elegant', layout: 'traditional', font: 'font-serif', accent: '#7C3AED' },
 ]
-const DEFAULT_SECTION_ORDER = ['summary', 'experience', 'education', 'skills']
+const DEFAULT_SECTION_ORDER = ['summary', 'experience', 'education', 'skills', 'hobbies']
 
 function moveArray<T>(arr: T[], from: number, to: number): T[] {
 	const result = [...arr]
@@ -455,11 +455,12 @@ export default function ResumeBuilder() {
 	const [contentOverflows, setContentOverflows] = useState(false)
 	const canvasRef = useRef<HTMLDivElement>(null)
 
-	const secRefs = {
+	const secRefs: Record<string, React.RefObject<HTMLDivElement>> = {
 		summary: useRef<HTMLDivElement>(null),
 		experience: useRef<HTMLDivElement>(null),
 		education: useRef<HTMLDivElement>(null),
 		skills: useRef<HTMLDivElement>(null),
+		hobbies: useRef<HTMLDivElement>(null),
 	}
 	const scrollHighlightTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
 
@@ -674,6 +675,20 @@ export default function ResumeBuilder() {
 		debouncedSave(newFormData)
 	}
 
+	const updateHobby = (hobbyId: string, val: string) => {
+		if (!formData.hobbies) return
+		const newFormData = { ...formData, hobbies: formData.hobbies.map(h => h.id === hobbyId ? { ...h, name: val } : h) }
+		setFormData(newFormData)
+		debouncedSave(newFormData)
+	}
+
+	const addHobby = () => {
+		if (!formData.hobbies) return
+		const newFormData = { ...formData, hobbies: [...formData.hobbies, { id: crypto.randomUUID(), name: '' }] }
+		setFormData(newFormData)
+		debouncedSave(newFormData)
+	}
+
 	/* ═══ JOB SELECTION ═══ */
 	const handleJobChange = useCallback((job: any) => {
 		setSelectedJob(job)
@@ -844,11 +859,26 @@ export default function ResumeBuilder() {
 	}
 
 	const sections = [
-		{ id: 'summary', l: 'Summary', icon: AlignLeft },
-		{ id: 'experience', l: 'Experience', icon: Briefcase },
-		{ id: 'education', l: 'Education', icon: GraduationCap },
-		{ id: 'skills', l: 'Skills', icon: Code2 },
+		{ id: 'summary', l: formData.headers?.aboutHeader || 'Summary', icon: AlignLeft, visKey: 'about' as const },
+		{ id: 'experience', l: formData.headers?.experienceHeader || 'Experience', icon: Briefcase, visKey: 'experience' as const },
+		{ id: 'education', l: formData.headers?.educationHeader || 'Education', icon: GraduationCap, visKey: 'education' as const },
+		{ id: 'skills', l: formData.headers?.skillsHeader || 'Skills', icon: Code2, visKey: 'skills' as const },
+		{ id: 'hobbies', l: formData.headers?.hobbiesHeader || 'Interests', icon: AlignLeft, visKey: 'hobbies' as const },
 	]
+
+	const updateHeader = (headerKey: string, val: string) => {
+		const newFormData = { ...formData, headers: { ...formData.headers, [headerKey]: val } as typeof formData.headers }
+		setFormData(newFormData)
+		debouncedSave(newFormData)
+	}
+
+	const toggleSectionVisibility = (visKey: string) => {
+		const current = formData.visibleSections?.[visKey as keyof typeof formData.visibleSections] ?? true
+		const vs = formData.visibleSections ?? { about: true, experience: true, education: true, skills: true, hobbies: true, personalDetails: true, photo: true }
+		const newFormData = { ...formData, visibleSections: { ...vs, [visKey]: !current } }
+		setFormData(newFormData)
+		debouncedSave(newFormData)
+	}
 
 	/* ═══ RENDER ═══ */
 	return (
@@ -947,15 +977,26 @@ export default function ResumeBuilder() {
 							<div style={{ marginTop: 16, padding: '0 4px' }}>
 								<span style={{ fontSize: 11, fontWeight: 600, color: c.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Sections</span>
 								<div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 2 }}>
-									{sections.map(s => (
-										<div key={s.id} onClick={() => scrollToSection(s.id)}
-											style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 12px', borderRadius: 6, cursor: 'pointer', background: activeSection === s.id ? `${BRAND}12` : 'transparent', borderLeft: activeSection === s.id ? `2px solid ${BRAND}` : '2px solid transparent', transition: 'all 150ms' }}
-											onMouseEnter={e => { if (activeSection !== s.id) (e.currentTarget as HTMLElement).style.background = c.bgSurf }}
-											onMouseLeave={e => { if (activeSection !== s.id) (e.currentTarget as HTMLElement).style.background = activeSection === s.id ? `${BRAND}12` : 'transparent' }}>
-											<s.icon size={16} color={activeSection === s.id ? BRAND : c.dim} strokeWidth={1.75} />
-											<span style={{ fontSize: 13, color: activeSection === s.id ? c.text : c.muted, fontWeight: activeSection === s.id ? 500 : 400 }}>{s.l}</span>
-										</div>
-									))}
+									{sections.map(s => {
+										const isVisible = formData.visibleSections?.[s.visKey] ?? true
+										return (
+											<div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+												<div onClick={() => { if (isVisible) scrollToSection(s.id) }}
+													style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10, padding: '7px 12px', borderRadius: 6, cursor: isVisible ? 'pointer' : 'default', background: activeSection === s.id && isVisible ? `${BRAND}12` : 'transparent', borderLeft: activeSection === s.id && isVisible ? `2px solid ${BRAND}` : '2px solid transparent', transition: 'all 150ms', opacity: isVisible ? 1 : 0.4 }}
+													onMouseEnter={e => { if (isVisible && activeSection !== s.id) (e.currentTarget as HTMLElement).style.background = c.bgSurf }}
+													onMouseLeave={e => { if (isVisible && activeSection !== s.id) (e.currentTarget as HTMLElement).style.background = activeSection === s.id ? `${BRAND}12` : 'transparent' }}>
+													<s.icon size={16} color={activeSection === s.id && isVisible ? BRAND : c.dim} strokeWidth={1.75} />
+													<span style={{ fontSize: 13, color: activeSection === s.id && isVisible ? c.text : c.muted, fontWeight: activeSection === s.id && isVisible ? 500 : 400 }}>{s.l}</span>
+												</div>
+												<button onClick={() => toggleSectionVisibility(s.visKey)}
+													style={{ width: 24, height: 24, borderRadius: 4, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.5, flexShrink: 0 }}
+													onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
+													onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '0.5' }}>
+													{isVisible ? <Eye size={12} color={c.dim} strokeWidth={1.75} /> : <EyeOff size={12} color={c.dim} strokeWidth={1.75} />}
+												</button>
+											</div>
+										)
+									})}
 								</div>
 							</div>
 						</div>
@@ -1007,11 +1048,12 @@ export default function ResumeBuilder() {
 							<DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
 								<SortableContext items={sectionOrder} strategy={verticalListSortingStrategy}>
 									{sectionOrder.map(secId => {
-										if (secId === 'summary') return (
+										if (secId === 'summary' && formData.visibleSections?.about !== false) return (
 											<SortableSection key="summary" id="summary">
 												<div style={{ marginBottom: 20 }}>
 													<div ref={secRefs.summary} style={{ fontSize: ts(12), fontWeight: 700, color: accentColor, textTransform: 'uppercase', letterSpacing: '0.08em', borderBottom: `2px solid ${accentColor}`, paddingBottom: 4, marginBottom: 10, fontFamily: resumeFont, transition: 'all 300ms', boxShadow: highlight === 'summary' ? `inset 4px 0 0 ${BRAND}, 0 0 12px ${BRAND}20` : 'none', paddingLeft: highlight === 'summary' ? 8 : 0 }}>
-														{formData.headers?.aboutHeader || 'Summary'}
+														<EditableText value={formData.headers?.aboutHeader || 'Summary'} onChange={v => updateHeader('aboutHeader', v)}
+														style={{ fontSize: ts(12), fontWeight: 700, color: accentColor, textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: resumeFont }} c={c} />
 													</div>
 													<EditableText value={formData.about || ''} onChange={v => updateField('about', v)} multiline
 														placeholder="In 2-3 sentences, tell employers why you're the one"
@@ -1019,11 +1061,12 @@ export default function ResumeBuilder() {
 												</div>
 											</SortableSection>
 										)
-										if (secId === 'experience') return (
+										if (secId === 'experience' && formData.visibleSections?.experience !== false) return (
 											<SortableSection key="experience" id="experience">
 												<div style={{ marginBottom: 20 }}>
 													<div ref={secRefs.experience} style={{ fontSize: ts(12), fontWeight: 700, color: accentColor, textTransform: 'uppercase', letterSpacing: '0.08em', borderBottom: `2px solid ${accentColor}`, paddingBottom: 4, marginBottom: 10, fontFamily: resumeFont, transition: 'all 300ms', boxShadow: highlight === 'experience' ? `inset 4px 0 0 ${BRAND}, 0 0 12px ${BRAND}20` : 'none', paddingLeft: highlight === 'experience' ? 8 : 0 }}>
-														{formData.headers?.experienceHeader || 'Experience'}
+														<EditableText value={formData.headers?.experienceHeader || 'Experience'} onChange={v => updateHeader('experienceHeader', v)}
+														style={{ fontSize: ts(12), fontWeight: 700, color: accentColor, textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: resumeFont }} c={c} />
 													</div>
 													{formData.experiences?.map((exp, ei) => (
 														<div key={exp.id || ei} style={{ marginBottom: 14 }}>
@@ -1070,11 +1113,12 @@ export default function ResumeBuilder() {
 												</div>
 											</SortableSection>
 										)
-										if (secId === 'education') return (
+										if (secId === 'education' && formData.visibleSections?.education !== false) return (
 											<SortableSection key="education" id="education">
 												<div style={{ marginBottom: 20 }}>
 													<div ref={secRefs.education} style={{ fontSize: ts(12), fontWeight: 700, color: accentColor, textTransform: 'uppercase', letterSpacing: '0.08em', borderBottom: `2px solid ${accentColor}`, paddingBottom: 4, marginBottom: 10, fontFamily: resumeFont, transition: 'all 300ms', boxShadow: highlight === 'education' ? `inset 4px 0 0 ${BRAND}, 0 0 12px ${BRAND}20` : 'none', paddingLeft: highlight === 'education' ? 8 : 0 }}>
-														{formData.headers?.educationHeader || 'Education'}
+														<EditableText value={formData.headers?.educationHeader || 'Education'} onChange={v => updateHeader('educationHeader', v)}
+														style={{ fontSize: ts(12), fontWeight: 700, color: accentColor, textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: resumeFont }} c={c} />
 													</div>
 													{formData.education?.map((edu, ei) => (
 														<div key={edu.id || ei} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
@@ -1095,11 +1139,12 @@ export default function ResumeBuilder() {
 												</div>
 											</SortableSection>
 										)
-										if (secId === 'skills') return (
+										if (secId === 'skills' && formData.visibleSections?.skills !== false) return (
 											<SortableSection key="skills" id="skills">
 												<div style={{ marginBottom: 20 }}>
 													<div ref={secRefs.skills} style={{ fontSize: ts(12), fontWeight: 700, color: accentColor, textTransform: 'uppercase', letterSpacing: '0.08em', borderBottom: `2px solid ${accentColor}`, paddingBottom: 4, marginBottom: 10, fontFamily: resumeFont, transition: 'all 300ms', boxShadow: highlight === 'skills' ? `inset 4px 0 0 ${BRAND}, 0 0 12px ${BRAND}20` : 'none', paddingLeft: highlight === 'skills' ? 8 : 0 }}>
-														{formData.headers?.skillsHeader || 'Skills'}
+														<EditableText value={formData.headers?.skillsHeader || 'Skills'} onChange={v => updateHeader('skillsHeader', v)}
+														style={{ fontSize: ts(12), fontWeight: 700, color: accentColor, textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: resumeFont }} c={c} />
 													</div>
 													{formData.skills?.map((skill, si) => (
 														<EditableText key={skill.id || si} value={skill.name || ''} onChange={v => updateSkill(skill.id!, v)}
@@ -1109,6 +1154,25 @@ export default function ResumeBuilder() {
 														onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
 														onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '0.7' }}>
 														<Plus size={12} strokeWidth={2} />Add skill
+													</div>
+												</div>
+											</SortableSection>
+										)
+										if (secId === 'hobbies' && formData.visibleSections?.hobbies !== false) return (
+											<SortableSection key="hobbies" id="hobbies">
+												<div style={{ marginBottom: 20 }}>
+													<div ref={secRefs.hobbies} style={{ fontSize: ts(12), fontWeight: 700, color: accentColor, textTransform: 'uppercase', letterSpacing: '0.08em', borderBottom: `2px solid ${accentColor}`, paddingBottom: 4, marginBottom: 10, fontFamily: resumeFont, transition: 'all 300ms', boxShadow: highlight === 'hobbies' ? `inset 4px 0 0 ${BRAND}, 0 0 12px ${BRAND}20` : 'none', paddingLeft: highlight === 'hobbies' ? 8 : 0 }}>
+														<EditableText value={formData.headers?.hobbiesHeader || 'Interests & Activities'} onChange={v => updateHeader('hobbiesHeader', v)}
+															style={{ fontSize: ts(12), fontWeight: 700, color: accentColor, textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: resumeFont }} c={c} />
+													</div>
+													{formData.hobbies?.map((hobby, hi) => (
+														<EditableText key={hobby.id || hi} value={hobby.name || ''} onChange={v => updateHobby(hobby.id!, v)}
+															style={{ fontSize: ts(12), color: '#333', lineHeight: 1.6, fontFamily: resumeFont }} placeholder="Add an interest or activity" c={c} />
+													))}
+													<div onClick={addHobby} className="preview-only" style={{ fontSize: 11, color: BRAND, cursor: 'pointer', marginTop: 4, opacity: 0.7, display: 'flex', alignItems: 'center', gap: 4 }}
+														onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
+														onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '0.7' }}>
+														<Plus size={12} strokeWidth={2} />Add interest
 													</div>
 												</div>
 											</SortableSection>
