@@ -445,6 +445,7 @@ export default function ResumeBuilder() {
 	const [onboardingDismissed, setOnboardingDismissed] = useState(false)
 	const [onboardingCollapsed, setOnboardingCollapsed] = useState(false)
 	const [contentOverflows, setContentOverflows] = useState(false)
+	const [editingResumeId, setEditingResumeId] = useState<string | null>(null)
 	const canvasRef = useRef<HTMLDivElement>(null)
 
 	const secRefs: Record<string, React.RefObject<HTMLDivElement>> = {
@@ -946,8 +947,28 @@ export default function ResumeBuilder() {
 											{[2, 1.5, 1.5, 1.5].map((h, i) => <div key={i} style={{ height: h, background: i === 0 ? '#333' : '#bbb', borderRadius: 1, width: i === 2 ? '80%' : '100%' }} />)}
 										</div>
 									</div>
-									<div style={{ overflow: 'hidden' }}>
-										<div style={{ fontSize: 13, color: formData.id === r.id ? c.text : c.muted, fontWeight: formData.id === r.id ? 500 : 400, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{r.name || r.job?.title || 'Untitled'}</div>
+									<div style={{ overflow: 'hidden', flex: 1 }}>
+										{editingResumeId === r.id ? (
+											<input autoFocus defaultValue={r.name || r.job?.title || 'Untitled'}
+												style={{ fontSize: 13, color: c.text, fontWeight: 500, background: c.bgSurf, border: `1px solid ${BRAND}`, borderRadius: 3, padding: '1px 4px', width: '100%', outline: 'none', fontFamily: 'inherit' }}
+												onClick={e => e.stopPropagation()}
+												onBlur={e => {
+													const val = e.currentTarget.value.trim()
+													if (val && val !== (r.name || r.job?.title || 'Untitled')) {
+														const newFormData = { ...formData, name: val }
+														setFormData(newFormData)
+														debouncedSave(newFormData)
+													}
+													setEditingResumeId(null)
+												}}
+												onKeyDown={e => {
+													if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur()
+													if (e.key === 'Escape') setEditingResumeId(null)
+												}} />
+										) : (
+											<div onDoubleClick={e => { e.stopPropagation(); setEditingResumeId(r.id!) }}
+												style={{ fontSize: 13, color: formData.id === r.id ? c.text : c.muted, fontWeight: formData.id === r.id ? 500 : 400, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{r.name || r.job?.title || 'Untitled'}</div>
+										)}
 									</div>
 								</div>
 							))}
