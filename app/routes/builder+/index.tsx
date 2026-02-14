@@ -452,6 +452,8 @@ export default function ResumeBuilder() {
 	const [cmdSelected, setCmdSelected] = useState(0)
 	const [onboardingDismissed, setOnboardingDismissed] = useState(false)
 	const [onboardingCollapsed, setOnboardingCollapsed] = useState(false)
+	const [contentOverflows, setContentOverflows] = useState(false)
+	const canvasRef = useRef<HTMLDivElement>(null)
 
 	const secRefs = {
 		summary: useRef<HTMLDivElement>(null),
@@ -576,6 +578,17 @@ export default function ResumeBuilder() {
 			})
 		}
 	}, [resumeUploadedTracking])
+
+	/* ═══ OVERFLOW DETECTION ═══ */
+	useEffect(() => {
+		const el = canvasRef.current
+		if (!el) return
+		const observer = new ResizeObserver(() => {
+			setContentOverflows(el.scrollHeight > 880)
+		})
+		observer.observe(el)
+		return () => observer.disconnect()
+	}, [])
 
 	/* ═══ EDIT HANDLERS ═══ */
 	const updateField = (field: string, val: string) => {
@@ -958,8 +971,17 @@ export default function ResumeBuilder() {
 
 				{/* CENTER CANVAS */}
 				<div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: c.bg }}>
+					{contentOverflows && (
+						<div className="preview-only" style={{ padding: '8px 16px', background: '#FEF3C7', borderBottom: '1px solid #FDE68A', display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#92400E', flexShrink: 0 }}>
+							⚠ Your resume exceeds one page. Consider removing or condensing content.
+						</div>
+					)}
 					<div style={{ flex: 1, overflow: 'auto', display: 'flex', justifyContent: 'center', padding: '32px 24px', background: c.canvas }}>
-						<div id="resume-content" style={{ width: 680, minHeight: 880, background: '#FFFFFF', borderRadius: 2, boxShadow: '0 4px 24px rgba(0,0,0,0.4), 0 1px 4px rgba(0,0,0,0.3)', padding: '40px 40px', color: '#1a1a1a', flexShrink: 0, fontFamily: resumeFont, position: 'relative' }}>
+						<div ref={canvasRef} id="resume-content" style={{ width: 680, minHeight: 880, background: '#FFFFFF', borderRadius: 2, boxShadow: '0 4px 24px rgba(0,0,0,0.4), 0 1px 4px rgba(0,0,0,0.3)', padding: '40px 40px', color: '#1a1a1a', flexShrink: 0, fontFamily: resumeFont, position: 'relative' }}>
+							{/* Page break indicator */}
+							<div className="preview-only" style={{ position: 'absolute', left: 0, right: 0, top: 880, borderTop: '1px dashed #ccc', pointerEvents: 'none', zIndex: 10 }}>
+								<span style={{ position: 'absolute', right: 8, top: -10, fontSize: 10, color: '#999', background: '#fff', padding: '0 4px' }}>Page 1 ends here</span>
+							</div>
 							{/* Name & Contact */}
 							<div style={{ marginBottom: 24 }}>
 								<EditableText value={formData.name || ''} onChange={v => updateField('name', v)}
