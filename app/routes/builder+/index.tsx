@@ -18,7 +18,8 @@ import {
 	FileText, ChevronDown, ChevronUp, Search, Sun, Moon, Sparkles,
 	Download, LayoutTemplate, Type, Check, X, Plus, Briefcase, GraduationCap,
 	Code2, AlignLeft, Target, TrendingUp, Zap, ArrowRight, CheckCircle2, Circle,
-	PanelLeftClose, PanelRightClose, KeyRound,
+	PanelLeftClose, PanelRightClose, KeyRound, GripVertical, Palette, Command,
+	ChevronRight, Rocket,
 } from 'lucide-react'
 import { SubscribeModal } from '~/components/subscribe-modal.tsx'
 import { getStripeSubscription, getUserId } from '~/utils/auth.server.ts'
@@ -52,6 +53,20 @@ import { track } from '~/lib/analytics.client.ts'
 import { toast } from '~/components/ui/use-toast.ts'
 import { useOnboardingFlow } from '~/hooks/use-onboarding-flow.ts'
 import { JobPasteModal } from '~/components/job-paste-modal.tsx'
+import {
+	DndContext,
+	closestCenter,
+	PointerSensor,
+	useSensor,
+	useSensors,
+	type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+	SortableContext,
+	verticalListSortingStrategy,
+	useSortable,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 function base64ToUint8Array(base64: string): Uint8Array {
 	return Uint8Array.from(atob(base64), c => c.charCodeAt(0))
@@ -242,6 +257,36 @@ const scoreMsg = (s: number) =>
 
 const fonts = ['Calibri', 'Georgia', 'Arial', 'Helvetica', 'Garamond', 'Lato']
 
+/* ═══ FONT / TEMPLATE OPTIONS ═══ */
+const FONT_OPTIONS = [
+	{ value: 'font-crimson', label: 'Crimson Pro', family: 'Crimson Pro, Georgia, serif' },
+	{ value: 'font-sans', label: 'Arial', family: 'Arial, Helvetica, sans-serif' },
+	{ value: 'font-serif', label: 'Georgia', family: 'Georgia, "Times New Roman", serif' },
+	{ value: 'font-mono', label: 'Courier', family: '"Courier New", Courier, monospace' },
+	{ value: 'font-garamond', label: 'Garamond', family: 'Garamond, "Times New Roman", serif' },
+	{ value: 'font-trebuchet', label: 'Trebuchet', family: '"Trebuchet MS", Helvetica, sans-serif' },
+	{ value: 'font-verdana', label: 'Verdana', family: 'Verdana, Geneva, sans-serif' },
+]
+const ACCENT_COLORS = ['#6B45FF', '#2563EB', '#059669', '#E11D48', '#F76B15', '#7C3AED', '#111113', '#1E3A5F']
+const TEMPLATES = [
+	{ id: 'classic', name: 'Classic', layout: 'traditional', font: 'font-crimson', accent: '#111113' },
+	{ id: 'professional', name: 'Professional', layout: 'professional', font: 'font-sans', accent: '#2563EB' },
+	{ id: 'modern', name: 'Modern', layout: 'modern', font: 'font-serif', accent: '#6B45FF' },
+	{ id: 'executive', name: 'Executive', layout: 'traditional', font: 'font-garamond', accent: '#1E3A5F' },
+	{ id: 'creative', name: 'Creative', layout: 'modern', font: 'font-trebuchet', accent: '#E11D48' },
+	{ id: 'minimal', name: 'Minimal', layout: 'professional', font: 'font-verdana', accent: '#333333' },
+	{ id: 'tech', name: 'Tech', layout: 'modern', font: 'font-mono', accent: '#059669' },
+	{ id: 'elegant', name: 'Elegant', layout: 'traditional', font: 'font-serif', accent: '#7C3AED' },
+]
+const DEFAULT_SECTION_ORDER = ['summary', 'experience', 'education', 'skills']
+
+function moveArray<T>(arr: T[], from: number, to: number): T[] {
+	const result = [...arr]
+	const [removed] = result.splice(from, 1)
+	result.splice(to, 0, removed)
+	return result
+}
+
 /* ═══ SCORE ARC ═══ */
 function ScoreArc({ score, size = 128, onClick, c }: { score: number; size?: number; onClick?: () => void; c: Theme }) {
 	const [a, setA] = useState(0)
@@ -338,6 +383,41 @@ function JobDropdown({ jobs, current, onSelect, onAddJob, c }: {
 	)
 }
 
+/* ═══ SORTABLE SECTION ═══ */
+function SortableSection({ id, children }: { id: string; children: React.ReactNode }) {
+	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
+	const [hovered, setHovered] = useState(false)
+	return (
+		<div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1, position: 'relative' }} {...attributes}
+			onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
+			<div {...listeners} className="preview-only"
+				style={{ position: 'absolute', left: -36, top: 4, cursor: 'grab', opacity: hovered ? 0.6 : 0, transition: 'opacity 150ms', padding: '4px 2px', borderRadius: 3, zIndex: 5 }}>
+				<GripVertical size={14} color="#999" />
+			</div>
+			{children}
+		</div>
+	)
+}
+
+/* ═══ SLIDE-OVER PANEL ═══ */
+function SlideOver({ open, onClose, title, children, c }: { open: boolean; onClose: () => void; title: string; children: React.ReactNode; c: Theme }) {
+	if (!open) return null
+	return (
+		<div style={{ position: 'fixed', inset: 0, zIndex: 300, display: 'flex', justifyContent: 'flex-end' }}>
+			<div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }} />
+			<div style={{ position: 'relative', width: 400, maxWidth: '90vw', background: c.bgEl, borderLeft: `1px solid ${c.border}`, display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '-8px 0 32px rgba(0,0,0,0.2)' }}>
+				<div style={{ padding: '16px 20px', borderBottom: `1px solid ${c.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+					<span style={{ fontSize: 15, fontWeight: 600, color: c.text }}>{title}</span>
+					<button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 5, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+						<X size={16} color={c.dim} />
+					</button>
+				</div>
+				<div style={{ flex: 1, overflow: 'auto', padding: 20 }}>{children}</div>
+			</div>
+		</div>
+	)
+}
+
 /* ═══════════════════════════════════════ */
 /* ═══ MAIN BUILDER COMPONENT ═══ */
 /* ═══════════════════════════════════════ */
@@ -362,6 +442,14 @@ export default function ResumeBuilder() {
 	const [selectedExperience, setSelectedExperience] = useState<BuilderExperience | undefined>(undefined)
 	const [selectedJob, setSelectedJob] = useState<BuilderJob | null | undefined>(formData.job)
 	const [downloadClicked, setDownloadClicked] = useState(false)
+	const [sectionOrder, setSectionOrder] = useState(DEFAULT_SECTION_ORDER)
+	const [showScoreDetail, setShowScoreDetail] = useState(false)
+	const [showTemplateGallery, setShowTemplateGallery] = useState(false)
+	const [showCommandPalette, setShowCommandPalette] = useState(false)
+	const [cmdSearch, setCmdSearch] = useState('')
+	const [cmdSelected, setCmdSelected] = useState(0)
+	const [onboardingDismissed, setOnboardingDismissed] = useState(false)
+	const [onboardingCollapsed, setOnboardingCollapsed] = useState(false)
 
 	const secRefs = {
 		summary: useRef<HTMLDivElement>(null),
@@ -372,7 +460,66 @@ export default function ResumeBuilder() {
 
 	const c = isDark ? darkTheme : lightTheme
 	const sW = sidebar ? 240 : 52
-	const resumeFont = formData.font === 'font-crimson' ? 'Crimson Pro, Georgia, serif' : 'Calibri, Arial, sans-serif'
+	const resumeFontObj = FONT_OPTIONS.find(f => f.value === formData.font) || FONT_OPTIONS[0]
+	const resumeFont = resumeFontObj.family
+
+	/* ═══ DND SENSORS ═══ */
+	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
+	const handleDragEnd = (event: DragEndEvent) => {
+		const { active, over } = event
+		if (over && active.id !== over.id) {
+			setSectionOrder(prev => {
+				const oldIndex = prev.indexOf(active.id as string)
+				const newIndex = prev.indexOf(over.id as string)
+				return moveArray(prev, oldIndex, newIndex)
+			})
+		}
+	}
+
+	/* ═══ RESUME SWITCHING ═══ */
+	const resumeSwitchFetcher = useFetcher()
+	const handleResumeSwitch = useCallback((resumeId: string) => {
+		if (resumeId === formData.id) return
+		resumeSwitchFetcher.submit({ resumeId }, { method: 'POST', action: '/resumes' })
+	}, [formData.id, resumeSwitchFetcher])
+
+	useEffect(() => {
+		if (savedData.id !== formData.id && savedData.id !== undefined) {
+			setFormData(savedData)
+			setSelectedJob(savedData.job)
+		}
+	}, [savedData.id])
+
+	/* ═══ DARK MODE PERSISTENCE ═══ */
+	const themeFetcher = useFetcher()
+	useEffect(() => {
+		try {
+			const match = document.cookie.match(/(?:^|;\s*)theme=([^;]*)/)
+			if (match?.[1] === 'dark') setIsDark(true)
+		} catch {}
+	}, [])
+	const toggleDarkMode = useCallback(() => {
+		const newDark = !isDark
+		setIsDark(newDark)
+		themeFetcher.submit({ theme: newDark ? 'dark' : 'light' }, { method: 'POST', action: '/resources/theme' })
+	}, [isDark, themeFetcher])
+
+	/* ═══ COMMAND PALETTE (⌘K) ═══ */
+	useEffect(() => {
+		const handler = (e: KeyboardEvent) => {
+			if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+				e.preventDefault()
+				setShowCommandPalette(prev => !prev)
+				setCmdSearch('')
+				setCmdSelected(0)
+			}
+			if (e.key === 'Escape' && showCommandPalette) {
+				setShowCommandPalette(false)
+			}
+		}
+		window.addEventListener('keydown', handler)
+		return () => window.removeEventListener('keydown', handler)
+	}, [showCommandPalette])
 
 	/* ═══ SAVE ═══ */
 	const fetcher = useFetcher<{ success: boolean; error?: string }>()
@@ -632,6 +779,39 @@ export default function ResumeBuilder() {
 		setTimeout(() => setHighlight(null), 2000)
 	}
 
+	/* ═══ TEMPLATE APPLY ═══ */
+	const applyTemplate = (tmpl: typeof TEMPLATES[0]) => {
+		const newFormData = { ...formData, layout: tmpl.layout, font: tmpl.font, nameColor: tmpl.accent }
+		setFormData(newFormData)
+		debouncedSave(newFormData)
+		trackLegacyEvent('template_applied', { template: tmpl.id, layout: tmpl.layout, font: tmpl.font })
+	}
+	const applyFont = (fontValue: string) => {
+		const newFormData = { ...formData, font: fontValue }
+		setFormData(newFormData)
+		debouncedSave(newFormData)
+	}
+	const applyAccentColor = (color: string) => {
+		const newFormData = { ...formData, nameColor: color }
+		setFormData(newFormData)
+		debouncedSave(newFormData)
+	}
+
+	/* ═══ COMMAND PALETTE ACTIONS ═══ */
+	const commands = useMemo(() => [
+		{ id: 'new-resume', label: 'New Resume', icon: Plus, action: () => setShowCreationModal(true) },
+		{ id: 'download', label: 'Download PDF', icon: Download, action: handleClickDownloadPDF },
+		{ id: 'templates', label: 'Change Template', icon: LayoutTemplate, action: () => setShowTemplateGallery(true) },
+		{ id: 'dark-mode', label: `Switch to ${isDark ? 'Light' : 'Dark'} Mode`, icon: isDark ? Sun : Moon, action: toggleDarkMode },
+		{ id: 'sidebar', label: 'Toggle Sidebar', icon: PanelLeftClose, action: () => setSidebar(s => !s) },
+		{ id: 'score', label: 'View Score Details', icon: Target, action: () => setShowScoreDetail(true) },
+		{ id: 'add-job', label: 'Add Target Job', icon: Briefcase, action: () => setShowCreateJob(true) },
+	], [isDark, toggleDarkMode])
+
+	const filteredCommands = cmdSearch
+		? commands.filter(cmd => cmd.label.toLowerCase().includes(cmdSearch.toLowerCase()))
+		: commands
+
 	const handleUploadResume = () => {
 		if (!userId) { navigate('/login?redirectTo=/builder'); return false }
 		return true
@@ -658,7 +838,7 @@ export default function ResumeBuilder() {
 			<CreateJobModal isOpen={showCreateJob} onClose={() => setShowCreateJob(false)} onCreate={handleJobChange} />
 			<ResumeCreationModal isOpen={showCreationModal} onClose={() => setShowCreationModal(false)}
 				resumes={resumes} userId={userId} handleUploadResume={handleUploadResume} />
-			{onboarding.showJobModal && <JobPasteModal onClose={() => onboarding.handleSkipJob()} onCreate={handleJobChange} />}
+			{onboarding.showJobModal && <JobPasteModal isOpen={onboarding.showJobModal} onSkip={() => onboarding.handleSkipJob()} onComplete={handleJobChange} />}
 
 			{/* TOP BAR */}
 			<div style={{ height: 48, borderBottom: `1px solid ${c.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', flexShrink: 0, background: c.bgEl }}>
@@ -669,11 +849,24 @@ export default function ResumeBuilder() {
 						<span style={{ fontSize: 11, color: BRAND, fontWeight: 500, background: `${BRAND}15`, padding: '1px 6px', borderRadius: 4 }}>.ai</span>
 					</div>
 				</div>
+				{/* ⌘K Quick Actions */}
+				<div onClick={() => { setShowCommandPalette(true); setCmdSearch(''); setCmdSelected(0) }}
+					style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 12px', borderRadius: 6, border: `1px solid ${c.border}`, background: c.bgSurf, cursor: 'pointer', minWidth: 200 }}
+					onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = BRAND + '60' }}
+					onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = c.border }}>
+					<Search size={13} color={c.dim} strokeWidth={1.75} />
+					<span style={{ fontSize: 12, color: c.dim, flex: 1 }}>Quick actions...</span>
+					<span style={{ fontSize: 10, color: c.dim, background: c.bgSurf, border: `1px solid ${c.borderSub}`, borderRadius: 3, padding: '1px 5px', fontFamily: 'system-ui' }}>⌘K</span>
+				</div>
 				<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
 					<span style={{ fontSize: 11, color: saveStatus === 'saving' ? AMBER : saveStatus === 'saved' ? SUCCESS : c.dim, display: 'flex', alignItems: 'center', gap: 4, transition: 'color 300ms' }}>
 						<Check size={12} strokeWidth={2} />{saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved' : saveStatus === 'error' ? 'Error' : ''}
 					</span>
-					<button onClick={() => setIsDark(!isDark)} style={{ width: 32, height: 32, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+					<button onClick={() => setShowTemplateGallery(true)} style={{ width: 32, height: 32, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+						title="Templates">
+						<Palette size={16} color={c.dim} strokeWidth={1.75} />
+					</button>
+					<button onClick={toggleDarkMode} style={{ width: 32, height: 32, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
 						{isDark ? <Sun size={16} color={c.dim} strokeWidth={1.75} /> : <Moon size={16} color={c.dim} strokeWidth={1.75} />}
 					</button>
 					<button onClick={handleClickDownloadPDF} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 5, border: 'none', background: BRAND, color: '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
@@ -696,9 +889,7 @@ export default function ResumeBuilder() {
 						<div style={{ flex: 1, overflow: 'auto', padding: '0 8px' }}>
 							{/* Resume list */}
 							{resumes.map(r => (
-								<div key={r.id} onClick={() => {
-									/* TODO: switch resume via cookie + navigate */
-								}}
+								<div key={r.id} onClick={() => handleResumeSwitch(r.id!)}
 									style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 6, cursor: 'pointer', background: formData.id === r.id ? c.bgSurf : 'transparent', borderLeft: formData.id === r.id ? `2px solid ${BRAND}` : '2px solid transparent', transition: 'all 150ms' }}
 									onMouseEnter={e => { if (formData.id !== r.id) (e.currentTarget as HTMLElement).style.background = c.bgSurf }}
 									onMouseLeave={e => { if (formData.id !== r.id) (e.currentTarget as HTMLElement).style.background = 'transparent' }}>
@@ -777,103 +968,120 @@ export default function ResumeBuilder() {
 									style={{ fontSize: 11.5, color: '#555', marginTop: 6, fontFamily: resumeFont }} c={c} />
 							</div>
 
-							{/* Summary */}
-							<div style={{ marginBottom: 20 }}>
-								<div ref={secRefs.summary} style={{ fontSize: 12, fontWeight: 700, color: '#111', textTransform: 'uppercase', letterSpacing: '0.08em', borderBottom: '2px solid #111', paddingBottom: 4, marginBottom: 10, fontFamily: resumeFont, transition: 'all 300ms', boxShadow: highlight === 'summary' ? `inset 4px 0 0 ${BRAND}, 0 0 12px ${BRAND}20` : 'none', paddingLeft: highlight === 'summary' ? 8 : 0 }}>
-									{formData.headers?.aboutHeader || 'Summary'}
-								</div>
-								<EditableText value={formData.about || ''} onChange={v => updateField('about', v)} multiline
-									placeholder="In 2-3 sentences, tell employers why you're the one"
-									style={{ fontSize: 12.5, lineHeight: 1.6, color: '#333', fontFamily: resumeFont }} c={c} />
-							</div>
-
-							{/* Experience */}
-							<div style={{ marginBottom: 20 }}>
-								<div ref={secRefs.experience} style={{ fontSize: 12, fontWeight: 700, color: '#111', textTransform: 'uppercase', letterSpacing: '0.08em', borderBottom: '2px solid #111', paddingBottom: 4, marginBottom: 10, fontFamily: resumeFont, transition: 'all 300ms', boxShadow: highlight === 'experience' ? `inset 4px 0 0 ${BRAND}, 0 0 12px ${BRAND}20` : 'none', paddingLeft: highlight === 'experience' ? 8 : 0 }}>
-									{formData.headers?.experienceHeader || 'Experience'}
-								</div>
-								{formData.experiences?.map((exp, ei) => (
-									<div key={exp.id || ei} style={{ marginBottom: 14 }}>
-										<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-											<div style={{ display: 'flex', gap: 4, alignItems: 'baseline' }}>
-												<EditableText value={exp.role || ''} onChange={v => updateExpField(exp.id!, 'role', v)} style={{ fontSize: 13, fontWeight: 700, color: '#111', fontFamily: resumeFont }} c={c} />
-												<span style={{ fontSize: 12.5, color: '#444', fontFamily: resumeFont }}> · </span>
-												<EditableText value={exp.company || ''} onChange={v => updateExpField(exp.id!, 'company', v)} style={{ fontSize: 12.5, color: '#444', fontFamily: resumeFont }} c={c} />
-											</div>
-											<span style={{ fontSize: 11, color: '#666', fontFamily: resumeFont, flexShrink: 0 }}>
-												{[exp.startDate, exp.endDate].filter(Boolean).join(' – ')}
-											</span>
-										</div>
-										<ul style={{ margin: 0, paddingLeft: 16, marginTop: 4 }}>
-											{exp.descriptions?.map((b, bi) => (
-												<li key={b.id || bi} style={{ fontSize: 12, lineHeight: 1.55, color: '#333', marginBottom: 3, fontFamily: resumeFont, listStyleType: 'disc', position: 'relative' }}>
-													<span style={{ display: 'inline' }}>
-														<EditableText value={b.content || ''} onChange={v => updateBullet(exp.id!, bi, v)}
-															style={{ fontSize: 12, lineHeight: 1.55, color: '#333', fontFamily: resumeFont, display: 'inline' }}
-															placeholder="Start with your proudest achievement" c={c} />
-													</span>
-													<span onClick={() => handleAIClick(exp.id!, bi, b.content || '')}
-														style={{ display: 'inline-flex', marginLeft: 6, verticalAlign: 'middle', cursor: 'pointer', opacity: 0.5, transition: 'opacity 150ms' }}
+							{/* DnD Section Reordering */}
+							<DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+								<SortableContext items={sectionOrder} strategy={verticalListSortingStrategy}>
+									{sectionOrder.map(secId => {
+										if (secId === 'summary') return (
+											<SortableSection key="summary" id="summary">
+												<div style={{ marginBottom: 20 }}>
+													<div ref={secRefs.summary} style={{ fontSize: 12, fontWeight: 700, color: '#111', textTransform: 'uppercase', letterSpacing: '0.08em', borderBottom: '2px solid #111', paddingBottom: 4, marginBottom: 10, fontFamily: resumeFont, transition: 'all 300ms', boxShadow: highlight === 'summary' ? `inset 4px 0 0 ${BRAND}, 0 0 12px ${BRAND}20` : 'none', paddingLeft: highlight === 'summary' ? 8 : 0 }}>
+														{formData.headers?.aboutHeader || 'Summary'}
+													</div>
+													<EditableText value={formData.about || ''} onChange={v => updateField('about', v)} multiline
+														placeholder="In 2-3 sentences, tell employers why you're the one"
+														style={{ fontSize: 12.5, lineHeight: 1.6, color: '#333', fontFamily: resumeFont }} c={c} />
+												</div>
+											</SortableSection>
+										)
+										if (secId === 'experience') return (
+											<SortableSection key="experience" id="experience">
+												<div style={{ marginBottom: 20 }}>
+													<div ref={secRefs.experience} style={{ fontSize: 12, fontWeight: 700, color: '#111', textTransform: 'uppercase', letterSpacing: '0.08em', borderBottom: '2px solid #111', paddingBottom: 4, marginBottom: 10, fontFamily: resumeFont, transition: 'all 300ms', boxShadow: highlight === 'experience' ? `inset 4px 0 0 ${BRAND}, 0 0 12px ${BRAND}20` : 'none', paddingLeft: highlight === 'experience' ? 8 : 0 }}>
+														{formData.headers?.experienceHeader || 'Experience'}
+													</div>
+													{formData.experiences?.map((exp, ei) => (
+														<div key={exp.id || ei} style={{ marginBottom: 14 }}>
+															<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+																<div style={{ display: 'flex', gap: 4, alignItems: 'baseline' }}>
+																	<EditableText value={exp.role || ''} onChange={v => updateExpField(exp.id!, 'role', v)} style={{ fontSize: 13, fontWeight: 700, color: '#111', fontFamily: resumeFont }} c={c} />
+																	<span style={{ fontSize: 12.5, color: '#444', fontFamily: resumeFont }}> · </span>
+																	<EditableText value={exp.company || ''} onChange={v => updateExpField(exp.id!, 'company', v)} style={{ fontSize: 12.5, color: '#444', fontFamily: resumeFont }} c={c} />
+																</div>
+																<span style={{ fontSize: 11, color: '#666', fontFamily: resumeFont, flexShrink: 0 }}>
+																	{[exp.startDate, exp.endDate].filter(Boolean).join(' – ')}
+																</span>
+															</div>
+															<ul style={{ margin: 0, paddingLeft: 16, marginTop: 4 }}>
+																{exp.descriptions?.map((b, bi) => (
+																	<li key={b.id || bi} style={{ fontSize: 12, lineHeight: 1.55, color: '#333', marginBottom: 3, fontFamily: resumeFont, listStyleType: 'disc', position: 'relative' }}>
+																		<span style={{ display: 'inline' }}>
+																			<EditableText value={b.content || ''} onChange={v => updateBullet(exp.id!, bi, v)}
+																				style={{ fontSize: 12, lineHeight: 1.55, color: '#333', fontFamily: resumeFont, display: 'inline' }}
+																				placeholder="Start with your proudest achievement" c={c} />
+																		</span>
+																		<span onClick={() => handleAIClick(exp.id!, bi, b.content || '')}
+																			style={{ display: 'inline-flex', marginLeft: 6, verticalAlign: 'middle', cursor: 'pointer', opacity: 0.5, transition: 'opacity 150ms' }}
+																			onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
+																			onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '0.5' }}
+																			title="Strengthen This Bullet">
+																			<Sparkles size={12} color={BRAND} strokeWidth={2} />
+																		</span>
+																	</li>
+																))}
+															</ul>
+															<div onClick={() => addBulletPoint(exp.id!)} className="preview-only" style={{ fontSize: 11, color: BRAND, cursor: 'pointer', marginTop: 4, marginLeft: 16, opacity: 0.7, display: 'flex', alignItems: 'center', gap: 4 }}
+																onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
+																onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '0.7' }}>
+																<Plus size={12} strokeWidth={2} />Add bullet
+															</div>
+														</div>
+													))}
+													<div onClick={addExperience} className="preview-only" style={{ fontSize: 11, color: BRAND, cursor: 'pointer', marginTop: 4, opacity: 0.7, display: 'flex', alignItems: 'center', gap: 4 }}
 														onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
-														onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '0.5' }}
-														title="Strengthen This Bullet">
-														<Sparkles size={12} color={BRAND} strokeWidth={2} />
-													</span>
-												</li>
-											))}
-										</ul>
-										<div onClick={() => addBulletPoint(exp.id!)} style={{ fontSize: 11, color: BRAND, cursor: 'pointer', marginTop: 4, marginLeft: 16, opacity: 0.7, display: 'flex', alignItems: 'center', gap: 4 }}
-											onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
-											onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '0.7' }}>
-											<Plus size={12} strokeWidth={2} />Add bullet
-										</div>
-									</div>
-								))}
-								<div onClick={addExperience} style={{ fontSize: 11, color: BRAND, cursor: 'pointer', marginTop: 4, opacity: 0.7, display: 'flex', alignItems: 'center', gap: 4 }}
-									onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
-									onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '0.7' }}>
-									<Plus size={12} strokeWidth={2} />Add experience
-								</div>
-							</div>
-
-							{/* Education */}
-							<div style={{ marginBottom: 20 }}>
-								<div ref={secRefs.education} style={{ fontSize: 12, fontWeight: 700, color: '#111', textTransform: 'uppercase', letterSpacing: '0.08em', borderBottom: '2px solid #111', paddingBottom: 4, marginBottom: 10, fontFamily: resumeFont, transition: 'all 300ms', boxShadow: highlight === 'education' ? `inset 4px 0 0 ${BRAND}, 0 0 12px ${BRAND}20` : 'none', paddingLeft: highlight === 'education' ? 8 : 0 }}>
-									{formData.headers?.educationHeader || 'Education'}
-								</div>
-								{formData.education?.map((edu, ei) => (
-									<div key={edu.id || ei} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-										<div>
-											<EditableText value={edu.school || ''} onChange={v => updateEduField(edu.id!, 'school', v)} style={{ fontSize: 13, fontWeight: 700, color: '#111', fontFamily: resumeFont }} c={c} />
-											<EditableText value={edu.degree || ''} onChange={v => updateEduField(edu.id!, 'degree', v)} style={{ fontSize: 12, color: '#444', fontFamily: resumeFont }} c={c} />
-										</div>
-										<span style={{ fontSize: 11, color: '#666', fontFamily: resumeFont }}>
-											{[edu.startDate, edu.endDate].filter(Boolean).join(' – ')}
-										</span>
-									</div>
-								))}
-								<div onClick={addEducation} style={{ fontSize: 11, color: BRAND, cursor: 'pointer', marginTop: 4, opacity: 0.7, display: 'flex', alignItems: 'center', gap: 4 }}
-									onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
-									onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '0.7' }}>
-									<Plus size={12} strokeWidth={2} />Add education
-								</div>
-							</div>
-
-							{/* Skills */}
-							<div>
-								<div ref={secRefs.skills} style={{ fontSize: 12, fontWeight: 700, color: '#111', textTransform: 'uppercase', letterSpacing: '0.08em', borderBottom: '2px solid #111', paddingBottom: 4, marginBottom: 10, fontFamily: resumeFont, transition: 'all 300ms', boxShadow: highlight === 'skills' ? `inset 4px 0 0 ${BRAND}, 0 0 12px ${BRAND}20` : 'none', paddingLeft: highlight === 'skills' ? 8 : 0 }}>
-									{formData.headers?.skillsHeader || 'Skills'}
-								</div>
-								{formData.skills?.map((skill, si) => (
-									<EditableText key={skill.id || si} value={skill.name || ''} onChange={v => updateSkill(skill.id!, v)}
-										style={{ fontSize: 12, color: '#333', lineHeight: 1.6, fontFamily: resumeFont }} placeholder="Add a skill" c={c} />
-								))}
-								<div onClick={addSkill} style={{ fontSize: 11, color: BRAND, cursor: 'pointer', marginTop: 4, opacity: 0.7, display: 'flex', alignItems: 'center', gap: 4 }}
-									onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
-									onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '0.7' }}>
-									<Plus size={12} strokeWidth={2} />Add skill
-								</div>
-							</div>
+														onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '0.7' }}>
+														<Plus size={12} strokeWidth={2} />Add experience
+													</div>
+												</div>
+											</SortableSection>
+										)
+										if (secId === 'education') return (
+											<SortableSection key="education" id="education">
+												<div style={{ marginBottom: 20 }}>
+													<div ref={secRefs.education} style={{ fontSize: 12, fontWeight: 700, color: '#111', textTransform: 'uppercase', letterSpacing: '0.08em', borderBottom: '2px solid #111', paddingBottom: 4, marginBottom: 10, fontFamily: resumeFont, transition: 'all 300ms', boxShadow: highlight === 'education' ? `inset 4px 0 0 ${BRAND}, 0 0 12px ${BRAND}20` : 'none', paddingLeft: highlight === 'education' ? 8 : 0 }}>
+														{formData.headers?.educationHeader || 'Education'}
+													</div>
+													{formData.education?.map((edu, ei) => (
+														<div key={edu.id || ei} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+															<div>
+																<EditableText value={edu.school || ''} onChange={v => updateEduField(edu.id!, 'school', v)} style={{ fontSize: 13, fontWeight: 700, color: '#111', fontFamily: resumeFont }} c={c} />
+																<EditableText value={edu.degree || ''} onChange={v => updateEduField(edu.id!, 'degree', v)} style={{ fontSize: 12, color: '#444', fontFamily: resumeFont }} c={c} />
+															</div>
+															<span style={{ fontSize: 11, color: '#666', fontFamily: resumeFont }}>
+																{[edu.startDate, edu.endDate].filter(Boolean).join(' – ')}
+															</span>
+														</div>
+													))}
+													<div onClick={addEducation} className="preview-only" style={{ fontSize: 11, color: BRAND, cursor: 'pointer', marginTop: 4, opacity: 0.7, display: 'flex', alignItems: 'center', gap: 4 }}
+														onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
+														onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '0.7' }}>
+														<Plus size={12} strokeWidth={2} />Add education
+													</div>
+												</div>
+											</SortableSection>
+										)
+										if (secId === 'skills') return (
+											<SortableSection key="skills" id="skills">
+												<div style={{ marginBottom: 20 }}>
+													<div ref={secRefs.skills} style={{ fontSize: 12, fontWeight: 700, color: '#111', textTransform: 'uppercase', letterSpacing: '0.08em', borderBottom: '2px solid #111', paddingBottom: 4, marginBottom: 10, fontFamily: resumeFont, transition: 'all 300ms', boxShadow: highlight === 'skills' ? `inset 4px 0 0 ${BRAND}, 0 0 12px ${BRAND}20` : 'none', paddingLeft: highlight === 'skills' ? 8 : 0 }}>
+														{formData.headers?.skillsHeader || 'Skills'}
+													</div>
+													{formData.skills?.map((skill, si) => (
+														<EditableText key={skill.id || si} value={skill.name || ''} onChange={v => updateSkill(skill.id!, v)}
+															style={{ fontSize: 12, color: '#333', lineHeight: 1.6, fontFamily: resumeFont }} placeholder="Add a skill" c={c} />
+													))}
+													<div onClick={addSkill} className="preview-only" style={{ fontSize: 11, color: BRAND, cursor: 'pointer', marginTop: 4, opacity: 0.7, display: 'flex', alignItems: 'center', gap: 4 }}
+														onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
+														onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '0.7' }}>
+														<Plus size={12} strokeWidth={2} />Add skill
+													</div>
+												</div>
+											</SortableSection>
+										)
+										return null
+									})}
+								</SortableContext>
+							</DndContext>
 						</div>
 					</div>
 				</div>
@@ -887,9 +1095,9 @@ export default function ResumeBuilder() {
 								<PanelRightClose size={15} color={c.dim} strokeWidth={1.75} />
 							</button>
 						</div>
-						<ScoreArc score={scores.overall} c={c} />
+						<ScoreArc score={scores.overall} onClick={() => setShowScoreDetail(true)} c={c} />
 						<div style={{ padding: '0 16px 4px', textAlign: 'center' }}>
-							<span style={{ fontSize: 11, color: BRAND, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center' }}>
+							<span onClick={() => setShowScoreDetail(true)} style={{ fontSize: 11, color: BRAND, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center' }}>
 								View full analysis <ArrowRight size={11} />
 							</span>
 						</div>
@@ -954,6 +1162,219 @@ export default function ResumeBuilder() {
 					</div>
 				)}
 			</div>
+
+			{/* ═══ COMMAND PALETTE ═══ */}
+			{showCommandPalette && (
+				<Backdrop onClick={() => setShowCommandPalette(false)}>
+					<div onClick={e => e.stopPropagation()} style={{ width: 480, maxWidth: '90vw', background: c.bgEl, borderRadius: 12, border: `1px solid ${c.border}`, boxShadow: '0 16px 48px rgba(0,0,0,0.4)', overflow: 'hidden' }}>
+						<div style={{ padding: '12px 16px', borderBottom: `1px solid ${c.border}`, display: 'flex', alignItems: 'center', gap: 10 }}>
+							<Search size={16} color={c.dim} strokeWidth={1.75} />
+							<input autoFocus value={cmdSearch} onChange={e => { setCmdSearch(e.target.value); setCmdSelected(0) }}
+								onKeyDown={e => {
+									if (e.key === 'ArrowDown') { e.preventDefault(); setCmdSelected(s => Math.min(s + 1, filteredCommands.length - 1)) }
+									if (e.key === 'ArrowUp') { e.preventDefault(); setCmdSelected(s => Math.max(s - 1, 0)) }
+									if (e.key === 'Enter' && filteredCommands[cmdSelected]) { setShowCommandPalette(false); filteredCommands[cmdSelected].action() }
+								}}
+								placeholder="Type a command..."
+								style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: 14, color: c.text, fontFamily: 'Nunito Sans,system-ui' }} />
+							<span style={{ fontSize: 10, color: c.dim, background: c.bgSurf, border: `1px solid ${c.borderSub}`, borderRadius: 3, padding: '2px 6px' }}>esc</span>
+						</div>
+						<div style={{ maxHeight: 320, overflow: 'auto', padding: '6px 0' }}>
+							{filteredCommands.map((cmd, i) => (
+								<div key={cmd.id} onClick={() => { setShowCommandPalette(false); cmd.action() }}
+									style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', cursor: 'pointer', background: i === cmdSelected ? `${BRAND}12` : 'transparent', borderLeft: i === cmdSelected ? `2px solid ${BRAND}` : '2px solid transparent' }}
+									onMouseEnter={() => setCmdSelected(i)}>
+									<cmd.icon size={16} color={i === cmdSelected ? BRAND : c.dim} strokeWidth={1.75} />
+									<span style={{ flex: 1, fontSize: 13, color: i === cmdSelected ? c.text : c.muted, fontWeight: i === cmdSelected ? 500 : 400 }}>{cmd.label}</span>
+								</div>
+							))}
+							{filteredCommands.length === 0 && (
+								<div style={{ padding: '20px 16px', textAlign: 'center', color: c.dim, fontSize: 13 }}>No commands found</div>
+							)}
+						</div>
+					</div>
+				</Backdrop>
+			)}
+
+			{/* ═══ TEMPLATE GALLERY SLIDE-OVER ═══ */}
+			<SlideOver open={showTemplateGallery} onClose={() => setShowTemplateGallery(false)} title="Templates" c={c}>
+				<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24 }}>
+					{TEMPLATES.map(tmpl => {
+						const isActive = formData.layout === tmpl.layout && formData.font === tmpl.font && formData.nameColor === tmpl.accent
+						return (
+							<div key={tmpl.id} onClick={() => applyTemplate(tmpl)}
+								style={{ padding: 12, borderRadius: 8, border: `2px solid ${isActive ? BRAND : c.border}`, background: isActive ? `${BRAND}08` : c.bgSurf, cursor: 'pointer', transition: 'all 150ms' }}
+								onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.borderColor = BRAND + '60' }}
+								onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.borderColor = c.border }}>
+								{/* Mini preview */}
+								<div style={{ width: '100%', height: 80, background: '#fff', borderRadius: 4, border: `1px solid ${c.borderSub}`, marginBottom: 8, padding: 8, display: 'flex', flexDirection: 'column', gap: 3 }}>
+									<div style={{ height: 6, width: '60%', background: tmpl.accent, borderRadius: 2 }} />
+									<div style={{ height: 3, width: '80%', background: '#ddd', borderRadius: 1 }} />
+									<div style={{ height: 3, width: '70%', background: '#eee', borderRadius: 1 }} />
+									<div style={{ height: 2, width: '50%', background: '#eee', borderRadius: 1, marginTop: 4 }} />
+									<div style={{ height: 2, width: '90%', background: '#f0f0f0', borderRadius: 1 }} />
+								</div>
+								<div style={{ fontSize: 12, fontWeight: 600, color: isActive ? BRAND : c.text }}>{tmpl.name}</div>
+								<div style={{ fontSize: 10, color: c.dim, marginTop: 2 }}>{tmpl.layout}</div>
+							</div>
+						)
+					})}
+				</div>
+
+				{/* Accent Color */}
+				<div style={{ marginBottom: 20 }}>
+					<span style={{ fontSize: 11, fontWeight: 600, color: c.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Accent Color</span>
+					<div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+						{ACCENT_COLORS.map(color => (
+							<div key={color} onClick={() => applyAccentColor(color)}
+								style={{ width: 28, height: 28, borderRadius: '50%', background: color, cursor: 'pointer', border: formData.nameColor === color ? `2px solid ${c.text}` : '2px solid transparent', boxShadow: formData.nameColor === color ? `0 0 0 2px ${color}40` : 'none', transition: 'all 150ms' }} />
+						))}
+					</div>
+				</div>
+
+				{/* Font Picker */}
+				<div>
+					<span style={{ fontSize: 11, fontWeight: 600, color: c.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Font</span>
+					<div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 10 }}>
+						{FONT_OPTIONS.map(f => (
+							<div key={f.value} onClick={() => applyFont(f.value)}
+								style={{ padding: '8px 12px', borderRadius: 6, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: formData.font === f.value ? `${BRAND}12` : 'transparent', border: `1px solid ${formData.font === f.value ? BRAND + '40' : 'transparent'}` }}
+								onMouseEnter={e => { if (formData.font !== f.value) (e.currentTarget as HTMLElement).style.background = c.bgSurf }}
+								onMouseLeave={e => { if (formData.font !== f.value) (e.currentTarget as HTMLElement).style.background = 'transparent' }}>
+								<span style={{ fontSize: 13, color: formData.font === f.value ? BRAND : c.text, fontFamily: f.family }}>{f.label}</span>
+								{formData.font === f.value && <Check size={14} color={BRAND} strokeWidth={2} />}
+							</div>
+						))}
+					</div>
+				</div>
+			</SlideOver>
+
+			{/* ═══ SCORE DETAIL SLIDE-OVER ═══ */}
+			<SlideOver open={showScoreDetail} onClose={() => setShowScoreDetail(false)} title="Score Analysis" c={c}>
+				<ScoreArc score={scores.overall} size={160} c={c} />
+				<div style={{ padding: '8px 0 16px', textAlign: 'center' }}>
+					<div style={{ padding: '10px 12px', borderRadius: 6, background: `${getTier(scores.overall).color}08`, border: `1px solid ${getTier(scores.overall).color}20`, fontSize: 13, color: getTier(scores.overall).color, lineHeight: 1.4 }}>
+						{scoreMsg(scores.overall)}
+					</div>
+				</div>
+
+				{/* Section Scores */}
+				<div style={{ marginBottom: 20 }}>
+					<span style={{ fontSize: 11, fontWeight: 600, color: c.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Section Breakdown</span>
+					<div style={{ marginTop: 10 }}>
+						{([['Keyword Match', scores.keyword, Target], ['Metrics', scores.metrics, TrendingUp], ['Action Verbs', scores.actionVerbs, Zap], ['Length', scores.length, AlignLeft]] as [string, number, any][]).map(([l, s, I]) => (
+							<div key={l} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: `1px solid ${c.borderSub}` }}>
+								<div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+									<div style={{ width: 32, height: 32, borderRadius: 6, background: `${getTier(s).color}12`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+										<I size={16} color={getTier(s).color} strokeWidth={1.75} />
+									</div>
+									<div>
+										<div style={{ fontSize: 13, color: c.text, fontWeight: 500 }}>{l}</div>
+										<div style={{ fontSize: 11, color: c.dim }}>{getTier(s).label}</div>
+									</div>
+								</div>
+								<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+									<div style={{ width: 60, height: 5, borderRadius: 3, background: c.border, overflow: 'hidden' }}>
+										<div style={{ width: `${s}%`, height: '100%', borderRadius: 3, background: getTier(s).color, transition: 'width 0.8s' }} />
+									</div>
+									<span style={{ fontSize: 14, color: getTier(s).color, fontWeight: 600, width: 28, textAlign: 'right' }}>{s}</span>
+								</div>
+							</div>
+						))}
+					</div>
+				</div>
+
+				{/* Strengths */}
+				{checklist.filter(ch => ch.completed).length > 0 && (
+					<div style={{ marginBottom: 20 }}>
+						<span style={{ fontSize: 11, fontWeight: 600, color: SUCCESS, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Strengths</span>
+						<div style={{ marginTop: 8 }}>
+							{checklist.filter(ch => ch.completed).map((ch, i) => (
+								<div key={ch.id || i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0' }}>
+									<CheckCircle2 size={14} color={SUCCESS} strokeWidth={1.75} />
+									<span style={{ fontSize: 13, color: c.muted }}>{ch.text}</span>
+								</div>
+							))}
+						</div>
+					</div>
+				)}
+
+				{/* Opportunities with Fix This → */}
+				{checklist.filter(ch => !ch.completed).length > 0 && (
+					<div>
+						<span style={{ fontSize: 11, fontWeight: 600, color: WARN, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Opportunities</span>
+						<div style={{ marginTop: 8 }}>
+							{checklist.filter(ch => !ch.completed).map((ch, i) => {
+								const targetSec = ch.text.toLowerCase().includes('experience') || ch.text.toLowerCase().includes('bullet') || ch.text.toLowerCase().includes('achievement') ? 'experience'
+									: ch.text.toLowerCase().includes('skill') || ch.text.toLowerCase().includes('keyword') ? 'skills'
+									: ch.text.toLowerCase().includes('summary') || ch.text.toLowerCase().includes('about') ? 'summary'
+									: ch.text.toLowerCase().includes('education') ? 'education' : 'experience'
+								return (
+									<div key={ch.id || i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 0', borderBottom: `1px solid ${c.borderSub}` }}>
+										<Circle size={14} color={c.dim} strokeWidth={1.75} style={{ marginTop: 2, flexShrink: 0 }} />
+										<div style={{ flex: 1 }}>
+											<span style={{ fontSize: 13, color: c.text, lineHeight: 1.4 }}>{ch.text}</span>
+											<div onClick={() => { setShowScoreDetail(false); scrollToSection(targetSec) }}
+												style={{ fontSize: 11, color: BRAND, cursor: 'pointer', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+												Fix this <ArrowRight size={10} />
+											</div>
+										</div>
+										<span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: ch.priority === 'high' ? `${WARN}18` : `${BRAND}18`, color: ch.priority === 'high' ? WARN : BRAND, textTransform: 'uppercase', flexShrink: 0 }}>{ch.priority}</span>
+									</div>
+								)
+							})}
+						</div>
+					</div>
+				)}
+			</SlideOver>
+
+			{/* ═══ ONBOARDING WIDGET ═══ */}
+			{!onboarding.isComplete && !onboardingDismissed && (
+				<div style={{ position: 'fixed', bottom: 20, right: 20, zIndex: 150, width: onboardingCollapsed ? 48 : 280, background: c.bgEl, borderRadius: 12, border: `1px solid ${c.border}`, boxShadow: '0 8px 32px rgba(0,0,0,0.15)', overflow: 'hidden', transition: 'width 200ms' }}>
+					{onboardingCollapsed ? (
+						<div onClick={() => setOnboardingCollapsed(false)} style={{ width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+							<Rocket size={20} color={BRAND} strokeWidth={1.75} />
+						</div>
+					) : (
+						<>
+							<div style={{ padding: '12px 16px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+								<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+									<Rocket size={16} color={BRAND} strokeWidth={1.75} />
+									<span style={{ fontSize: 13, fontWeight: 600, color: c.text }}>Getting Started</span>
+								</div>
+								<div style={{ display: 'flex', gap: 2 }}>
+									<button onClick={() => setOnboardingCollapsed(true)} style={{ width: 24, height: 24, borderRadius: 4, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+										<ChevronDown size={14} color={c.dim} />
+									</button>
+									<button onClick={() => setOnboardingDismissed(true)} style={{ width: 24, height: 24, borderRadius: 4, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+										<X size={14} color={c.dim} />
+									</button>
+								</div>
+							</div>
+							<div style={{ padding: '4px 16px 16px' }}>
+								{[
+									{ id: 'resume', label: 'Create a resume', done: !!(formData.name || formData.role), action: () => scrollToSection('summary') },
+									{ id: 'job', label: 'Add a target job', done: !!selectedJob, action: () => setShowCreateJob(true) },
+									{ id: 'tailor', label: 'Tailor with AI', done: (gettingStartedProgress?.tailorCount ?? 0) > 0, action: () => { if (formData.experiences?.[0]?.descriptions?.[0]) handleAIClick(formData.experiences[0].id!, 0, formData.experiences[0].descriptions[0].content || '') } },
+								].map(step => (
+									<div key={step.id} onClick={!step.done ? step.action : undefined}
+										style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', cursor: step.done ? 'default' : 'pointer', opacity: step.done ? 0.6 : 1 }}>
+										{step.done
+											? <CheckCircle2 size={16} color={SUCCESS} strokeWidth={1.75} />
+											: <Circle size={16} color={c.dim} strokeWidth={1.75} />}
+										<span style={{ fontSize: 13, color: step.done ? c.dim : c.text, textDecoration: step.done ? 'line-through' : 'none' }}>{step.label}</span>
+										{!step.done && <ChevronRight size={12} color={c.dim} style={{ marginLeft: 'auto' }} />}
+									</div>
+								))}
+								{/* Progress bar */}
+								<div style={{ marginTop: 8, height: 3, borderRadius: 2, background: c.border, overflow: 'hidden' }}>
+									<div style={{ height: '100%', borderRadius: 2, background: BRAND, transition: 'width 300ms', width: `${([!!(formData.name || formData.role), !!selectedJob, (gettingStartedProgress?.tailorCount ?? 0) > 0].filter(Boolean).length / 3) * 100}%` }} />
+								</div>
+							</div>
+						</>
+					)}
+				</div>
+			)}
 		</div>
 	)
 }
