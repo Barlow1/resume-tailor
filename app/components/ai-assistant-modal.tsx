@@ -52,6 +52,18 @@ const BRAND = '#6B45FF'
 const SUCCESS = '#30A46C'
 const WARN = '#F76B15'
 const ERROR = '#E5484D'
+const METRIC = '#A855F7'
+
+/** Highlight [placeholder] metric tokens in purple so they stand out */
+function highlightMetrics(text: string) {
+	const parts = text.split(/(\[[^\]]+\])/)
+	if (parts.length === 1) return text
+	return parts.map((part, i) =>
+		/^\[.+\]$/.test(part) ? (
+			<span key={i} style={{ color: METRIC, fontWeight: 600 }}>{part}</span>
+		) : part
+	)
+}
 
 const ANGLE_META: Record<
 	TailorOption['angle'],
@@ -590,7 +602,7 @@ export function AIAssistantModal({
 																fontSize: 12, color: c.dim, margin: '2px 0 0', overflow: 'hidden',
 																textOverflow: 'ellipsis', whiteSpace: 'nowrap',
 															}}>
-																{currentText}
+																{highlightMetrics(currentText)}
 															</p>
 														)}
 													</div>
@@ -663,7 +675,7 @@ export function AIAssistantModal({
 														) : (
 															/* Normal text */
 															<p style={{ fontSize: 13, lineHeight: 1.55, color: c.text, margin: '0 0 10px' }}>
-																{currentText}
+																{highlightMetrics(currentText)}
 															</p>
 														)}
 
@@ -745,7 +757,7 @@ export function AIAssistantModal({
 											position: 'relative', transition: 'all 150ms',
 										}}>
 											<p style={{ fontSize: 13, color: c.muted, margin: 0, paddingRight: 20, lineHeight: 1.5 }}>
-												{option}
+												{highlightMetrics(option)}
 											</p>
 											{selectedItems.includes(index) && (
 												<CheckIcon style={{ position: 'absolute', right: 10, top: 10, width: 16, height: 16, color: BRAND }} />
