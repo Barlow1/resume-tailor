@@ -21,12 +21,8 @@ export async function getPdfFromHtml(html: string): Promise<Uint8Array> {
 	// Set viewport to match Letter paper dimensions at 96dpi
 	await page.setViewport({ width: 816, height: 1056 })
 
-	// Load Crimson Pro font weights before generating PDF
+	// Wait for all fonts (Google Fonts loaded via <link> tags) to be ready
 	await page.evaluate(async () => {
-		await Promise.all([
-			document.fonts.load('500 16px "Crimson Pro"'),
-			document.fonts.load('800 16px "Crimson Pro"'),
-		])
 		await document.fonts.ready
 	})
 

@@ -13,14 +13,16 @@ import {
 	type LoaderFunctionArgs,
 	type ActionFunctionArgs,
 } from '@remix-run/node'
-import { useLoaderData, useFetcher, useNavigate } from '@remix-run/react'
+import { useLoaderData, useFetcher, useNavigate, useSubmit, Form } from '@remix-run/react'
+import { useOptionalUser } from '~/utils/user.ts'
+import { getUserImgSrc } from '~/utils/misc.ts'
 import { useTheme } from '~/routes/resources+/theme/index.tsx'
 import {
 	FileText, ChevronDown, Search, Sun, Moon, Sparkles,
 	Download, LayoutTemplate, Check, X, Plus, Briefcase, GraduationCap,
 	Code2, AlignLeft, Target, TrendingUp, Zap, ArrowRight, CheckCircle2, Circle,
 	PanelLeftClose, PanelRightClose, GripVertical, Palette, Pencil, Eye, EyeOff,
-	ChevronRight, Rocket,
+	ChevronRight, Rocket, LogOut, User as UserIcon, CreditCard,
 } from 'lucide-react'
 import { SubscribeModal } from '~/components/subscribe-modal.tsx'
 import { getStripeSubscription, getUserId } from '~/utils/auth.server.ts'
@@ -43,6 +45,7 @@ import { prisma } from '~/utils/db.server.ts'
 import { ResumeCreationModal } from '~/components/resume-creation-modal.tsx'
 import { getUserBuilderResumes } from '~/utils/builder-resume.server.ts'
 import { type Jsonify } from '@remix-run/server-runtime/dist/jsonify.js'
+import { generateResumeHtml } from '~/utils/generate-resume-html.ts'
 import type { SubmitTarget } from 'react-router-dom/dist/dom.d.ts'
 import { type Job } from '@prisma/client'
 import type OpenAI from 'openai'
@@ -444,9 +447,14 @@ export default function ResumeBuilder() {
 	const [cmdSelected, setCmdSelected] = useState(0)
 	const [onboardingDismissed, setOnboardingDismissed] = useState(false)
 	const [onboardingCollapsed, setOnboardingCollapsed] = useState(false)
-	const [contentOverflows, setContentOverflows] = useState(false)
 	const [editingResumeId, setEditingResumeId] = useState<string | null>(null)
 	const canvasRef = useRef<HTMLDivElement>(null)
+	const user = useOptionalUser()
+	const submitForm = useSubmit()
+	const [profileOpen, setProfileOpen] = useState(false)
+	const profileRef = useRef<HTMLDivElement>(null)
+	const logoutFormRef = useRef<HTMLFormElement>(null)
+	const manageSubFormRef = useRef<HTMLFormElement>(null)
 
 	const secRefs: Record<string, React.RefObject<HTMLDivElement>> = {
 		summary: useRef<HTMLDivElement>(null),
@@ -500,6 +508,17 @@ export default function ResumeBuilder() {
 		window.addEventListener('keydown', handler)
 		return () => window.removeEventListener('keydown', handler)
 	}, [])
+
+	useEffect(() => {
+		if (!profileOpen) return
+		function handleClickOutside(e: MouseEvent) {
+			if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+				setProfileOpen(false)
+			}
+		}
+		document.addEventListener('mousedown', handleClickOutside)
+		return () => document.removeEventListener('mousedown', handleClickOutside)
+	}, [profileOpen])
 
 	/* ═══ SAVE ═══ */
 	const fetcher = useFetcher<{ success: boolean; error?: string }>()
@@ -575,17 +594,6 @@ export default function ResumeBuilder() {
 			})
 		}
 	}, [resumeUploadedTracking])
-
-	/* ═══ OVERFLOW DETECTION ═══ */
-	useEffect(() => {
-		const el = canvasRef.current
-		if (!el) return
-		const observer = new ResizeObserver(() => {
-			setContentOverflows(el.scrollHeight > 880)
-		})
-		observer.observe(el)
-		return () => observer.disconnect()
-	}, [])
 
 	/* ═══ EDIT HANDLERS ═══ */
 	const updateField = (field: string, val: string) => {
@@ -742,23 +750,10 @@ export default function ResumeBuilder() {
 			return
 		}
 		handlePDFDownloadRequested({ downloadPDFRequested: false, subscribe: false })
-		const resumeElement = document.querySelector('#resume-content')?.cloneNode(true) as HTMLElement
-		if (!resumeElement) return
-		resumeElement.querySelectorAll('.preview-only').forEach(el => el.remove())
-		resumeElement.style.border = 'none'
-		resumeElement.style.boxShadow = 'none'
-		resumeElement.style.overflow = 'visible'
-		resumeElement.style.height = 'auto'
-		resumeElement.style.padding = '0'
-		resumeElement.style.width = '100%'
-		resumeElement.classList.remove('overflow-hidden')
 		if (pdfFetcher.state !== 'idle') return
-		const styles = getRenderedStyles()
-		const fontLinks = getGoogleFontsLinks()
-		const baseUrl = window.location.origin
-		const html = `<!DOCTYPE html><html><head><base href="${baseUrl}/">${fontLinks}${styles}</head><body>${resumeElement.outerHTML}</body></html>`
+		const html = generateResumeHtml(formData, sectionOrder)
 		pdfFetcher.submit({ html, resumeId: formData.id ?? '' }, { method: 'post', action: '/resources/generate-pdf' })
-	}, [subscription?.active, gettingStartedProgress?.downloadCount, handlePDFDownloadRequested, pdfFetcher, formData.id])
+	}, [subscription?.active, gettingStartedProgress?.downloadCount, handlePDFDownloadRequested, pdfFetcher, formData, sectionOrder])
 
 	const handleClickDownloadPDF = useCallback(() => {
 		if (!userId) { navigate('/login?redirectTo=/builder'); return }
@@ -925,7 +920,42 @@ export default function ResumeBuilder() {
 					<button onClick={handleClickDownloadPDF} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 5, border: 'none', background: BRAND, color: '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
 						<Download size={14} strokeWidth={2} />Download Resume
 					</button>
-					{!userId && (
+					{user ? (
+						<div ref={profileRef} style={{ position: 'relative' }}>
+							<button onClick={() => setProfileOpen(!profileOpen)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 10px 4px 4px', borderRadius: 6, border: `1px solid ${c.border}`, background: 'transparent', cursor: 'pointer', color: c.text, fontSize: 13, fontWeight: 500 }}>
+								<img src={getUserImgSrc(user.imageId)} alt={user.name ?? user.username} style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' as const }} />
+								<span style={{ maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{user.name ?? user.username}</span>
+								<ChevronDown size={12} color={c.dim} />
+							</button>
+							{profileOpen && (
+								<div style={{ position: 'absolute', top: '100%', right: 0, marginTop: 4, width: 200, background: c.bgEl, border: `1px solid ${c.border}`, borderRadius: 8, boxShadow: '0 8px 24px rgba(0,0,0,0.15)', zIndex: 100, overflow: 'hidden', padding: '4px 0' }}>
+									<a href={`/users/${user.username}`} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', color: c.text, fontSize: 13, textDecoration: 'none', cursor: 'pointer' }}
+										onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = c.bgSurf }}
+										onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}>
+										<UserIcon size={14} color={c.dim} strokeWidth={1.75} />Profile
+									</a>
+									<Form action={`/resources/stripe/manage-subscription?redirectTo=${encodeURIComponent('/builder')}`} method="POST" ref={manageSubFormRef} style={{ display: 'contents' }}>
+										<input type="hidden" name="userId" value={user.id} />
+										<button type="button" onClick={() => { submitForm(manageSubFormRef.current); setProfileOpen(false) }}
+											style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', color: c.text, fontSize: 13, background: 'transparent', border: 'none', width: '100%', textAlign: 'left' as const, cursor: 'pointer' }}
+											onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = c.bgSurf }}
+											onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}>
+											<CreditCard size={14} color={c.dim} strokeWidth={1.75} />Manage Subscription
+										</button>
+									</Form>
+									<div style={{ height: 1, background: c.border, margin: '4px 0' }} />
+									<Form action="/logout" method="POST" ref={logoutFormRef} style={{ display: 'contents' }}>
+										<button type="button" onClick={() => { submitForm(logoutFormRef.current); setProfileOpen(false) }}
+											style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', color: c.text, fontSize: 13, background: 'transparent', border: 'none', width: '100%', textAlign: 'left' as const, cursor: 'pointer' }}
+											onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = c.bgSurf }}
+											onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}>
+											<LogOut size={14} color={c.dim} strokeWidth={1.75} />Logout
+										</button>
+									</Form>
+								</div>
+							)}
+						</div>
+					) : (
 						<button onClick={() => navigate('/login?redirectTo=/builder')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 5, border: `1px solid ${c.border}`, background: 'transparent', color: c.text, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
 							Log in
 						</button>
@@ -1042,15 +1072,10 @@ export default function ResumeBuilder() {
 
 				{/* CENTER CANVAS */}
 				<div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: c.bg }}>
-					{contentOverflows && (
-						<div className="preview-only" style={{ padding: '8px 16px', background: '#FEF3C7', borderBottom: '1px solid #FDE68A', display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#92400E', flexShrink: 0 }}>
-							⚠ Your resume exceeds one page. Consider removing or condensing content.
-						</div>
-					)}
 					<div style={{ flex: 1, overflow: 'auto', display: 'flex', justifyContent: 'center', padding: '32px 24px', background: c.canvas }}>
-						<div ref={canvasRef} id="resume-content" style={{ width: 680, minHeight: 880, background: '#FFFFFF', borderRadius: 2, boxShadow: '0 4px 24px rgba(0,0,0,0.4), 0 1px 4px rgba(0,0,0,0.3)', padding: '40px 40px', color: '#1a1a1a', flexShrink: 0, fontFamily: resumeFont, position: 'relative' }}>
+						<div ref={canvasRef} id="resume-content" style={{ width: 816, minHeight: 1056, background: '#FFFFFF', borderRadius: 2, boxShadow: '0 4px 24px rgba(0,0,0,0.4), 0 1px 4px rgba(0,0,0,0.3)', padding: '48px 48px', color: '#1a1a1a', flexShrink: 0, fontFamily: resumeFont, position: 'relative' }}>
 							{/* Page break indicator */}
-							<div className="preview-only" style={{ position: 'absolute', left: 0, right: 0, top: 880, borderTop: '1px dashed #ccc', pointerEvents: 'none', zIndex: 10 }}>
+							<div className="preview-only" style={{ position: 'absolute', left: 0, right: 0, top: 1056, borderTop: '1px dashed #ccc', pointerEvents: 'none', zIndex: 10 }}>
 								<span style={{ position: 'absolute', right: 8, top: -10, fontSize: 10, color: '#999', background: '#fff', padding: '0 4px' }}>Page 1 ends here</span>
 							</div>
 							{/* Name & Contact */}
@@ -1125,14 +1150,14 @@ export default function ResumeBuilder() {
 																	</li>
 																))}
 															</ul>
-															<div onClick={() => addBulletPoint(exp.id!)} className="preview-only" style={{ fontSize: 11, color: BRAND, cursor: 'pointer', marginTop: 4, marginLeft: 16, opacity: 0.7, display: 'flex', alignItems: 'center', gap: 4 }}
+															<div onClick={() => addBulletPoint(exp.id!)} className="preview-only" style={{ fontSize: 11, color: BRAND, cursor: 'pointer', marginTop: 4, marginLeft: 16, opacity: 0.7, display: 'flex', alignItems: 'center', gap: 4, height: 0, overflow: 'visible' }}
 																onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
 																onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '0.7' }}>
 																<Plus size={12} strokeWidth={2} />Add bullet
 															</div>
 														</div>
 													))}
-													<div onClick={addExperience} className="preview-only" style={{ fontSize: 11, color: BRAND, cursor: 'pointer', marginTop: 4, opacity: 0.7, display: 'flex', alignItems: 'center', gap: 4 }}
+													<div onClick={addExperience} className="preview-only" style={{ fontSize: 11, color: BRAND, cursor: 'pointer', marginTop: 4, opacity: 0.7, display: 'flex', alignItems: 'center', gap: 4, height: 0, overflow: 'visible' }}
 														onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
 														onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '0.7' }}>
 														<Plus size={12} strokeWidth={2} />Add experience
@@ -1158,7 +1183,7 @@ export default function ResumeBuilder() {
 															</span>
 														</div>
 													))}
-													<div onClick={addEducation} className="preview-only" style={{ fontSize: 11, color: BRAND, cursor: 'pointer', marginTop: 4, opacity: 0.7, display: 'flex', alignItems: 'center', gap: 4 }}
+													<div onClick={addEducation} className="preview-only" style={{ fontSize: 11, color: BRAND, cursor: 'pointer', marginTop: 4, opacity: 0.7, display: 'flex', alignItems: 'center', gap: 4, height: 0, overflow: 'visible' }}
 														onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
 														onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '0.7' }}>
 														<Plus size={12} strokeWidth={2} />Add education
@@ -1177,7 +1202,7 @@ export default function ResumeBuilder() {
 														<EditableText key={skill.id || si} value={skill.name || ''} onChange={v => updateSkill(skill.id!, v)}
 															style={{ fontSize: ts(12), color: '#333', lineHeight: 1.6, fontFamily: resumeFont }} placeholder="Add a skill" c={c} />
 													))}
-													<div onClick={addSkill} className="preview-only" style={{ fontSize: 11, color: BRAND, cursor: 'pointer', marginTop: 4, opacity: 0.7, display: 'flex', alignItems: 'center', gap: 4 }}
+													<div onClick={addSkill} className="preview-only" style={{ fontSize: 11, color: BRAND, cursor: 'pointer', marginTop: 4, opacity: 0.7, display: 'flex', alignItems: 'center', gap: 4, height: 0, overflow: 'visible' }}
 														onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
 														onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '0.7' }}>
 														<Plus size={12} strokeWidth={2} />Add skill
@@ -1196,7 +1221,7 @@ export default function ResumeBuilder() {
 														<EditableText key={hobby.id || hi} value={hobby.name || ''} onChange={v => updateHobby(hobby.id!, v)}
 															style={{ fontSize: ts(12), color: '#333', lineHeight: 1.6, fontFamily: resumeFont }} placeholder="Add an interest or activity" c={c} />
 													))}
-													<div onClick={addHobby} className="preview-only" style={{ fontSize: 11, color: BRAND, cursor: 'pointer', marginTop: 4, opacity: 0.7, display: 'flex', alignItems: 'center', gap: 4 }}
+													<div onClick={addHobby} className="preview-only" style={{ fontSize: 11, color: BRAND, cursor: 'pointer', marginTop: 4, opacity: 0.7, display: 'flex', alignItems: 'center', gap: 4, height: 0, overflow: 'visible' }}
 														onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
 														onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '0.7' }}>
 														<Plus size={12} strokeWidth={2} />Add interest
@@ -1534,50 +1559,3 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 	return null
 }
 
-function getRenderedStyles() {
-	const fontOverrides = `
-		.font-crimson,
-		.font-crimson * {
-			font-family: 'Crimson Pro', Georgia, serif !important;
-		}
-		.resume-name, .resume-company, .resume-job-title, .resume-dates, .resume-degree, .resume-skill-label {
-			font-weight: 800 !important;
-		}
-		.resume-body, .resume-section-header, .resume-contact, .resume-role, .resume-school, .resume-skill {
-			font-weight: 500 !important;
-		}
-		body {
-			font-family: 'Crimson Pro', Georgia, serif !important;
-			font-weight: 500 !important;
-		}
-	`
-	const styles = Array.from(document.styleSheets)
-		.map(sheet => {
-			try {
-				return Array.from(sheet.cssRules)
-					.filter(rule => {
-						if (rule instanceof CSSFontFaceRule) {
-							const ruleText = rule.cssText
-							if (ruleText.includes('font-weight: 200') || ruleText.includes('font-weight: 300') || ruleText.includes('font-weight:200') || ruleText.includes('font-weight:300')) {
-								return false
-							}
-						}
-						return true
-					})
-					.map(rule => rule.cssText)
-					.join('\n')
-			} catch (e) {
-				return ''
-			}
-		})
-		.join('\n')
-	return `<style>${styles}\n${fontOverrides}</style>`
-}
-
-function getGoogleFontsLinks() {
-	return `
-		<link rel="preconnect" href="https://fonts.googleapis.com">
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-		<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;800&display=swap" rel="stylesheet">
-	`
-}
