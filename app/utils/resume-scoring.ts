@@ -137,7 +137,7 @@ function extractKeywords(text: string): Set<string> {
 	const normalized = text.toLowerCase()
 
 	const words = normalized
-		.replace(/[^a-z0-9+#.\-\/&\s]/g, ' ')
+		.replace(/[^a-z0-9+#.\-/&\s]/g, ' ')
 		.split(/\s+/)
 		.filter(word => word.length > 1 && !STOP_WORDS.has(word))
 
@@ -190,7 +190,7 @@ function keywordExistsInText(kwLower: string, textLower: string, tokens: Set<str
 		}
 
 		// Path 2: Special chars (& or /) → regex word-boundary match
-		if (/[&\/]/.test(variant)) {
+		if (/[&/]/.test(variant)) {
 			if (new RegExp(`\\b${escapeRegex(variant)}\\b`, 'i').test(textLower)) return true
 			continue
 		}

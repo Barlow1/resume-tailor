@@ -13,7 +13,7 @@ import {
 	type LoaderFunctionArgs,
 	type ActionFunctionArgs,
 } from '@remix-run/node'
-import { useLoaderData, useFetcher, useNavigate, useSubmit, Form } from '@remix-run/react'
+import { useLoaderData, useFetcher, useNavigate, useSubmit, Form, Link } from '@remix-run/react'
 import { useOptionalUser } from '~/utils/user.ts'
 import { getUserImgSrc } from '~/utils/misc.ts'
 import { useTheme } from '~/routes/resources+/theme/index.tsx'
@@ -21,7 +21,7 @@ import {
 	FileText, ChevronDown, Search, Sun, Moon, Sparkles,
 	Download, LayoutTemplate, Check, X, Plus, Minus, Briefcase, GraduationCap,
 	Code2, AlignLeft, Target, TrendingUp, Zap, ArrowRight, CheckCircle2, Circle,
-	PanelLeftClose, PanelRightClose, GripVertical, Palette, Pencil, Eye, EyeOff,
+	PanelLeftClose, PanelRightClose, GripVertical, Palette, Eye, EyeOff,
 	ChevronRight, Rocket, LogOut, User as UserIcon, CreditCard,
 } from 'lucide-react'
 import { SubscribeModal } from '~/components/subscribe-modal.tsx'
@@ -32,9 +32,6 @@ import { AIAssistantModal, type DiagnosticContext } from '~/components/ai-assist
 import {
 	type BuilderEducation,
 	type BuilderExperience,
-	type BuilderHeaders,
-	type BuilderHobby,
-	type BuilderSkill,
 	type BuilderJob,
 	getBuilderResume,
 	type ResumeData,
@@ -46,11 +43,9 @@ import { ResumeCreationModal } from '~/components/resume-creation-modal.tsx'
 import { getUserBuilderResumes } from '~/utils/builder-resume.server.ts'
 import { type Jsonify } from '@remix-run/server-runtime/dist/jsonify.js'
 import { generateResumeHtml } from '~/utils/generate-resume-html.ts'
-import type { SubmitTarget } from 'react-router-dom/dist/dom.d.ts'
 import { type Job } from '@prisma/client'
-import type OpenAI from 'openai'
 import { useResumeScore } from '~/hooks/use-resume-score.ts'
-import { type ChecklistItem, type FlaggedBullet, type KeywordMatch } from '~/utils/resume-scoring.ts'
+import { type ChecklistItem, type KeywordMatch } from '~/utils/resume-scoring.ts'
 import { parseTieredKeywords } from '~/utils/keyword-utils.ts'
 import { trackEvent } from '~/utils/analytics.ts'
 import { trackEvent as trackLegacyEvent } from '~/utils/tracking.client.ts'
@@ -259,8 +254,6 @@ const scoreMsg = (s: number) =>
 	s <= 70 ? "Looking good. Let's sharpen it for this specific role." :
 	s <= 85 ? "Strong resume. Fine-tune these details to really stand out." :
 	"Your resume is in great shape. Apply with confidence."
-
-const fonts = ['Calibri', 'Georgia', 'Arial', 'Helvetica', 'Garamond', 'Lato']
 
 /* ═══ FONT / TEMPLATE OPTIONS ═══ */
 const FONT_OPTIONS = [
@@ -576,7 +569,7 @@ export default function ResumeBuilder() {
 	const extractedKeywords = tieredKeywords?.all ?? null
 	const primaryKeywords = tieredKeywords?.primary ?? null
 
-	const { scores, previousScore, checklist } = useResumeScore({
+	const { scores, checklist } = useResumeScore({
 		resumeData: formData,
 		jobDescription: formData.job?.content ?? undefined,
 		extractedKeywords,
@@ -1076,11 +1069,11 @@ export default function ResumeBuilder() {
 							</button>
 							{profileOpen && (
 								<div style={{ position: 'absolute', top: '100%', right: 0, marginTop: 4, width: 200, background: c.bgEl, border: `1px solid ${c.border}`, borderRadius: 8, boxShadow: '0 8px 24px rgba(0,0,0,0.15)', zIndex: 100, overflow: 'hidden', padding: '4px 0' }}>
-									<a href={`/users/${user.username}`} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', color: c.text, fontSize: 13, textDecoration: 'none', cursor: 'pointer' }}
+									<Link to={`/users/${user.username}`} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', color: c.text, fontSize: 13, textDecoration: 'none', cursor: 'pointer' }}
 										onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = c.bgSurf }}
 										onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}>
 										<UserIcon size={14} color={c.dim} strokeWidth={1.75} />Profile
-									</a>
+									</Link>
 									<Form action={`/resources/stripe/manage-subscription?redirectTo=${encodeURIComponent('/builder')}`} method="POST" ref={manageSubFormRef} style={{ display: 'contents' }}>
 										<input type="hidden" name="userId" value={user.id} />
 										<button type="button" onClick={() => { submitForm(manageSubFormRef.current); setProfileOpen(false) }}

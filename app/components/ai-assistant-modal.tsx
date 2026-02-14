@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import {
 	CheckIcon,
 	ChevronDownIcon,
-	ChevronUpIcon,
 } from '@heroicons/react/24/outline'
 import { type GettingStartedProgress, type Subscription } from '@prisma/client'
 import {

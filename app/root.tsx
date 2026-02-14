@@ -70,8 +70,6 @@ import {
 	QueueListIcon,
 	ChevronLeftIcon,
 	ChevronRightIcon,
-	MagnifyingGlassIcon,
-	MegaphoneIcon,
 } from '@heroicons/react/24/outline'
 import { redirect } from '@remix-run/router'
 import { Crisp } from 'crisp-sdk-web'
