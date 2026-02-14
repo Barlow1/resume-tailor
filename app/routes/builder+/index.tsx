@@ -51,6 +51,7 @@ import { type Job } from '@prisma/client'
 import type OpenAI from 'openai'
 import { useResumeScore } from '~/hooks/use-resume-score.ts'
 import { type ChecklistItem, type FlaggedBullet, type KeywordMatch } from '~/utils/resume-scoring.ts'
+import { parseTieredKeywords } from '~/utils/keyword-utils.ts'
 import { trackEvent } from '~/utils/analytics.ts'
 import { trackEvent as trackLegacyEvent } from '~/utils/tracking.client.ts'
 import { track } from '~/lib/analytics.client.ts'
@@ -571,14 +572,15 @@ export default function ResumeBuilder() {
 	}, [savedData.id])
 
 	/* ═══ SCORING ═══ */
-	const extractedKeywords = formData.job?.extractedKeywords
-		? (JSON.parse(formData.job.extractedKeywords) as string[])
-		: null
+	const tieredKeywords = parseTieredKeywords(formData.job?.extractedKeywords ?? null)
+	const extractedKeywords = tieredKeywords?.all ?? null
+	const primaryKeywords = tieredKeywords?.primary ?? null
 
 	const { scores, previousScore, checklist } = useResumeScore({
 		resumeData: formData,
 		jobDescription: formData.job?.content ?? undefined,
 		extractedKeywords,
+		primaryKeywords,
 		debounceMs: 500,
 	})
 
@@ -958,7 +960,9 @@ export default function ResumeBuilder() {
 					<div onClick={() => setKeywordPopover(null)} style={{ position: 'fixed', inset: 0, zIndex: 90 }} />
 					<div style={{
 						position: 'fixed', zIndex: 91, width: 280,
-						top: keywordPopover.anchorRect.bottom + 6,
+						...(keywordPopover.anchorRect.bottom + 250 > window.innerHeight
+							? { bottom: window.innerHeight - keywordPopover.anchorRect.top + 6 }
+							: { top: keywordPopover.anchorRect.bottom + 6 }),
 						left: Math.min(keywordPopover.anchorRect.left, window.innerWidth - 296),
 						background: c.bgEl, borderRadius: 10,
 						border: `1px solid ${c.border}`, boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
@@ -1414,42 +1418,69 @@ export default function ResumeBuilder() {
 						</div>
 
 						{/* Keywords — uses consolidated keywordMatches from scoring engine */}
-						{scores.keywordMatches.length > 0 && (
-							<>
-								<div style={{ height: 1, background: c.border, margin: '0 21px' }} />
-								<div style={{ padding: 21 }}>
-									<span style={{ fontSize: 14, fontWeight: 600, color: c.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Keyword Match</span>
-									<div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
-										{scores.keywordMatches.slice(0, 12).map((m: KeywordMatch) => {
-											const chipColor = m.status === 'full' ? SUCCESS : m.status === 'partial' ? WARN : ERROR
-											const chipBg = m.status === 'full' ? `${SUCCESS}15` : m.status === 'partial' ? `${WARN}12` : `${ERROR}12`
-											const isClickable = m.status !== 'full'
-											const tooltip = m.status === 'full'
-												? `Found in ${m.sections.join(', ')}`
-												: m.status === 'partial'
-													? `In ${m.sections[0]} only — click to add to another role`
-													: 'Missing — click to generate a bullet'
-											return (
-												<span key={m.keyword} title={tooltip}
-													onClick={isClickable ? (e) => {
-														const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-														setKeywordPopover({ keyword: m.keyword, status: m.status as 'missing' | 'partial', anchorRect: rect })
-													} : undefined}
-													style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 14, padding: '5px 10px', borderRadius: 5, fontWeight: 500, background: chipBg, color: chipColor, border: `1px solid ${chipColor}30`, cursor: isClickable ? 'pointer' : 'default', transition: 'filter 150ms' }}
-													onMouseEnter={isClickable ? e => { (e.currentTarget as HTMLElement).style.filter = 'brightness(1.15)' } : undefined}
-													onMouseLeave={isClickable ? e => { (e.currentTarget as HTMLElement).style.filter = 'none' } : undefined}>
-													{m.status === 'full' ? <Check size={13} strokeWidth={2.5} /> : m.status === 'partial' ? <Minus size={13} strokeWidth={2.5} /> : <X size={13} strokeWidth={2.5} />}
-													{m.keyword}
-													{m.status === 'partial' && <span style={{ fontSize: 11, opacity: 0.8 }}>({m.sections[0]})</span>}
-													{m.status === 'full' && <span style={{ fontSize: 11, opacity: 0.8 }}>({m.sectionCount})</span>}
-													{isClickable && <Sparkles size={11} strokeWidth={2} style={{ marginLeft: 2, opacity: 0.8 }} />}
-												</span>
-											)
-										})}
+						{scores.keywordMatches.length > 0 && (() => {
+							const primaryMatches = scores.keywordMatches.filter((m: KeywordMatch) => m.tier === 'primary')
+							const secondaryMatches = scores.keywordMatches.filter((m: KeywordMatch) => m.tier === 'secondary')
+							const hasTiers = primaryMatches.length > 0
+
+							const renderChip = (m: KeywordMatch, isPrimary: boolean) => {
+								const chipColor = m.status === 'full' ? SUCCESS : m.status === 'partial' ? WARN : ERROR
+								const chipBg = m.status === 'full' ? `${SUCCESS}15` : m.status === 'partial' ? `${WARN}12` : `${ERROR}12`
+								const isClickable = m.status !== 'full'
+								const tooltip = m.status === 'full'
+									? `Found in ${m.sections.join(', ')}`
+									: m.status === 'partial'
+										? `In ${m.sections[0]} only — click to add to another role`
+										: 'Missing — click to generate a bullet'
+								return (
+									<span key={m.keyword} title={tooltip}
+										onClick={isClickable ? (e) => {
+											const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+											setKeywordPopover({ keyword: m.keyword, status: m.status as 'missing' | 'partial', anchorRect: rect })
+										} : undefined}
+										style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: isPrimary ? 14 : 13, padding: isPrimary ? '6px 12px' : '4px 9px', borderRadius: 5, fontWeight: 500, background: chipBg, color: chipColor, border: `1px solid ${chipColor}30`, cursor: isClickable ? 'pointer' : 'default', transition: 'filter 150ms' }}
+										onMouseEnter={isClickable ? e => { (e.currentTarget as HTMLElement).style.filter = 'brightness(1.15)' } : undefined}
+										onMouseLeave={isClickable ? e => { (e.currentTarget as HTMLElement).style.filter = 'none' } : undefined}>
+										{m.status === 'full' ? <Check size={13} strokeWidth={2.5} /> : m.status === 'partial' ? <Minus size={13} strokeWidth={2.5} /> : <X size={13} strokeWidth={2.5} />}
+										{m.keyword}
+										{m.status === 'partial' && <span style={{ fontSize: 11, opacity: 0.8 }}>({m.sections[0]})</span>}
+										{m.status === 'full' && <span style={{ fontSize: 11, opacity: 0.8 }}>({m.sectionCount})</span>}
+										{isClickable && <Sparkles size={11} strokeWidth={2} style={{ marginLeft: 2, opacity: 0.8 }} />}
+									</span>
+								)
+							}
+
+							return (
+								<>
+									<div style={{ height: 1, background: c.border, margin: '0 21px' }} />
+									<div style={{ padding: 21 }}>
+										{hasTiers ? (
+											<>
+												<span style={{ fontSize: 14, fontWeight: 600, color: c.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Must-Haves</span>
+												<div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
+													{primaryMatches.map((m: KeywordMatch) => renderChip(m, true))}
+												</div>
+												{secondaryMatches.length > 0 && (
+													<>
+														<span style={{ fontSize: 14, fontWeight: 600, color: c.dim, textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginTop: 18 }}>Supporting</span>
+														<div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
+															{secondaryMatches.map((m: KeywordMatch) => renderChip(m, false))}
+														</div>
+													</>
+												)}
+											</>
+										) : (
+											<>
+												<span style={{ fontSize: 14, fontWeight: 600, color: c.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Keyword Match</span>
+												<div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
+													{scores.keywordMatches.slice(0, 12).map((m: KeywordMatch) => renderChip(m, false))}
+												</div>
+											</>
+										)}
 									</div>
-								</div>
-							</>
-						)}
+								</>
+							)
+						})()}
 					</div>
 				)}
 			</div>
