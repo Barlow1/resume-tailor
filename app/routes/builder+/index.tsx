@@ -883,7 +883,8 @@ export default function ResumeBuilder() {
 				onUpdate={handleBulletUpdate} onMultipleUpdate={handleMultipleBulletUpdate}
 				content={selectedBullet?.content} experience={selectedExperience} job={selectedJob}
 				resumeData={formData} subscription={subscription} gettingStartedProgress={gettingStartedProgress}
-				setShowSubscribeModal={setShowSubscribeModal} onTailorClick={onboarding.handleTailorComplete} />
+				setShowSubscribeModal={setShowSubscribeModal} onTailorClick={onboarding.handleTailorComplete}
+				theme={c} />
 			<CreateJobModal isOpen={showCreateJob} onClose={() => setShowCreateJob(false)} onCreate={handleJobChange} />
 			<ResumeCreationModal isOpen={showCreationModal} onClose={() => setShowCreationModal(false)}
 				resumes={resumes} userId={userId} handleUploadResume={handleUploadResume} />
@@ -911,16 +912,24 @@ export default function ResumeBuilder() {
 					<span style={{ fontSize: 11, color: saveStatus === 'saving' ? AMBER : saveStatus === 'saved' ? SUCCESS : c.dim, display: 'flex', alignItems: 'center', gap: 4, transition: 'color 300ms' }}>
 						<Check size={12} strokeWidth={2} />{saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved' : saveStatus === 'error' ? 'Error' : ''}
 					</span>
-					<button onClick={() => setShowTemplateGallery(true)} style={{ width: 32, height: 32, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-						title="Templates">
-						<Palette size={16} color={c.dim} strokeWidth={1.75} />
+					<button onClick={() => setShowTemplateGallery(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 5, border: `1px solid ${c.border}`, background: 'transparent', color: c.muted, fontSize: 12, cursor: 'pointer' }}>
+						<Palette size={14} color={c.dim} strokeWidth={1.75} />Templates
 					</button>
 					<button onClick={toggleDarkMode} style={{ width: 32, height: 32, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
 						{isDark ? <Sun size={16} color={c.dim} strokeWidth={1.75} /> : <Moon size={16} color={c.dim} strokeWidth={1.75} />}
 					</button>
+					<div style={{ width: 1, height: 20, background: c.border, margin: '0 4px' }} />
+					<button onClick={() => { setScorePanel(!scorePanel) }} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 5, border: `1px solid ${c.border}`, background: 'transparent', color: c.muted, fontSize: 12, cursor: 'pointer' }}>
+						<Target size={14} color={c.dim} strokeWidth={1.75} /><span style={{ color: getTier(scores.overall).color, fontWeight: 600 }}>{scores.overall}</span>
+					</button>
 					<button onClick={handleClickDownloadPDF} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 5, border: 'none', background: BRAND, color: '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
 						<Download size={14} strokeWidth={2} />Download Resume
 					</button>
+					{!userId && (
+						<button onClick={() => navigate('/login?redirectTo=/builder')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 5, border: `1px solid ${c.border}`, background: 'transparent', color: c.text, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
+							Log in
+						</button>
+					)}
 				</div>
 			</div>
 
