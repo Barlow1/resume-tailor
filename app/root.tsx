@@ -304,6 +304,7 @@ const hideNavPages = [
 	'routes/_auth+/forgot-username/index',
 	'routes/pricing+/index',
 	'routes/ai-resume-builder+/index',
+	'routes/builder+/index',
 ]
 
 function App() {
@@ -439,18 +440,6 @@ function App() {
 			href: `/builder`,
 			icon: DocumentTextIcon,
 			current: path?.includes('builder'),
-		},
-		{
-			name: 'Resume Analyzer',
-			href: `/analyze`,
-			icon: MagnifyingGlassIcon,
-			current: path?.includes('analyze'),
-		},
-		{
-			name: 'Recruiter Outreach',
-			href: `/outreach`,
-			icon: MegaphoneIcon,
-			current: path?.includes('outreach'),
 		},
 		{
 			name: 'Resumes',
