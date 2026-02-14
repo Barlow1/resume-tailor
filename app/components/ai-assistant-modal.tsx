@@ -243,11 +243,11 @@ export function AIAssistantModal({
 			formData.append('extractedKeywords', job.extractedKeywords)
 		}
 
-		if (type === 'tailor' && resumeData) {
+		if (resumeData) {
 			formData.append('resumeData', JSON.stringify(resumeData))
 		}
 
-		if (type === 'tailor' && diagnosticContext) {
+		if (diagnosticContext) {
 			formData.append('diagnosticContext', JSON.stringify(diagnosticContext))
 		}
 
@@ -293,7 +293,7 @@ export function AIAssistantModal({
 				}
 			} else {
 				parsedGenerateOptions =
-					(JSON.parse(rawContent) as { experiences: string[] }).experiences ?? []
+					((JSON.parse(rawContent) as { experiences: string[] }).experiences ?? []).slice(0, 5)
 			}
 		}
 	} catch {
@@ -453,19 +453,37 @@ export function AIAssistantModal({
 
 			{/* Scrollable content */}
 			<div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
-				{/* Original bullet */}
+				{/* Original bullet or keyword context */}
 				<div style={{ padding: '12px 16px 8px', flexShrink: 0 }}>
-					<div style={{ fontSize: 11, fontWeight: 600, color: c.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-						Original
-					</div>
-					<div style={{
-						marginTop: 8, padding: '8px 12px', borderRadius: 6,
-						background: c.bgSurf, border: `1px solid ${c.borderSub}`,
-					}}>
-						<p style={{ fontSize: 13, lineHeight: 1.5, color: c.muted, fontStyle: 'italic', margin: 0 }}>
-							"{content}"
-						</p>
-					</div>
+					{!content && diagnosticContext?.missingKeywords?.length ? (
+						<>
+							<div style={{ fontSize: 11, fontWeight: 600, color: c.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+								Generate
+							</div>
+							<div style={{
+								marginTop: 8, padding: '8px 12px', borderRadius: 6,
+								background: `${BRAND}08`, border: `1px solid ${BRAND}20`,
+							}}>
+								<p style={{ fontSize: 13, lineHeight: 1.5, color: c.text, margin: 0 }}>
+									Generate a new bullet for <span style={{ fontWeight: 600 }}>{experience?.role}{experience?.company ? ` at ${experience.company}` : ''}</span> incorporating: "<span style={{ color: BRAND, fontWeight: 600 }}>{diagnosticContext.missingKeywords[0]}</span>"
+								</p>
+							</div>
+						</>
+					) : (
+						<>
+							<div style={{ fontSize: 11, fontWeight: 600, color: c.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+								Original
+							</div>
+							<div style={{
+								marginTop: 8, padding: '8px 12px', borderRadius: 6,
+								background: c.bgSurf, border: `1px solid ${c.borderSub}`,
+							}}>
+								<p style={{ fontSize: 13, lineHeight: 1.5, color: c.muted, fontStyle: 'italic', margin: 0 }}>
+									"{content}"
+								</p>
+							</div>
+						</>
+					)}
 				</div>
 
 				{/* Diagnostic context banner */}

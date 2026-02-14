@@ -30,6 +30,7 @@ const builderCompletionSchema = z.object({
 	entireResume: z.string().optional(),
 	resumeData: z.string().optional(),
 	extractedKeywords: z.string().optional(),
+	diagnosticContext: z.string().optional(),
 })
 
 export async function action({ request }: DataFunctionArgs) {
@@ -55,7 +56,8 @@ export async function action({ request }: DataFunctionArgs) {
 		return json({ status: 'error', submission } as const, { status: 400 })
 	}
 
-	const { experience, jobTitle, jobDescription, currentJobTitle, currentJobCompany, entireResume, resumeData, extractedKeywords } = submission.value
+	const { experience, jobTitle, jobDescription, currentJobTitle, currentJobCompany, entireResume, resumeData, extractedKeywords, diagnosticContext: diagnosticContextRaw } = submission.value
+	const parsedDiagnostic = diagnosticContextRaw ? JSON.parse(diagnosticContextRaw) as { issueType: string; reason: string; missingKeywords?: string[] } : null
 
 	const startTime = Date.now()
 
@@ -338,6 +340,8 @@ export async function action({ request }: DataFunctionArgs) {
 
 		try {
 			const parsedKeywords = extractedKeywords ? (JSON.parse(extractedKeywords) as string[]) : undefined
+			const targetKeyword = parsedDiagnostic?.missingKeywords?.[0]
+			const parsedResumeForGenerate = resumeData ? (JSON.parse(resumeData) as ResumeData) : undefined
 			;[{ response }] = await Promise.all([
 				await getBuilderGeneratedExperienceResponse({
 					jobDescription,
@@ -346,6 +350,8 @@ export async function action({ request }: DataFunctionArgs) {
 					jobTitle,
 					user,
 					extractedKeywords: parsedKeywords,
+					targetKeyword,
+					resumeData: parsedResumeForGenerate,
 				}),
 				await prisma.gettingStartedProgress.upsert({
 					where: { ownerId: userId },

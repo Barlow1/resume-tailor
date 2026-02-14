@@ -489,6 +489,8 @@ export const getBuilderGeneratedExperienceResponse = async ({
 	currentJobCompany,
 	user,
 	extractedKeywords,
+	targetKeyword,
+	resumeData,
 }: {
 	jobTitle: string
 	jobDescription: string
@@ -496,6 +498,8 @@ export const getBuilderGeneratedExperienceResponse = async ({
 	currentJobCompany: string
 	user: Partial<User>
 	extractedKeywords?: string[]
+	targetKeyword?: string
+	resumeData?: ResumeData
 }) => {
 	const name = user.name ? user.name.replace(/ /g, '_') : user.username
 
@@ -506,9 +510,72 @@ export const getBuilderGeneratedExperienceResponse = async ({
 		titleLower.includes('junior') || titleLower.includes('associate') || titleLower.includes('entry') ? 'junior' :
 		'mid'
 
+	// Build resume context from existing bullets for grounding
+	let existingBulletsContext = ''
+	if (targetKeyword && resumeData) {
+		const targetExp = resumeData.experiences?.find(
+			exp => exp.role === currentJobTitle && exp.company === currentJobCompany
+		) ?? resumeData.experiences?.[0]
+		if (targetExp?.descriptions?.length) {
+			const bullets = targetExp.descriptions
+				.map(d => d.content)
+				.filter(Boolean)
+				.join('\n- ')
+			if (bullets) {
+				existingBulletsContext = `\n\nEXISTING BULLETS FOR THIS ROLE (use as context for what this person actually did):\n- ${bullets}`
+			}
+		}
+	}
+
 	const messages =
 		jobTitle && jobDescription
-			? [
+			? targetKeyword
+				// ── Keyword-focused generation: 3 grounded bullets for a single keyword ──
+				? [
+					{
+						role: 'system' as const,
+						content: `You are an expert resume writer who helps candidates incorporate missing keywords into their resume honestly.
+
+Job Description Context:
+${jobDescription}
+
+TARGET ROLE: ${currentJobTitle} at ${currentJobCompany}
+SENIORITY LEVEL: ${seniority}${existingBulletsContext}`,
+					},
+					{
+						role: 'user' as const,
+						content: `Generate 3 alternative resume bullet points for a ${currentJobTitle} at ${currentJobCompany} that naturally incorporate the keyword "${targetKeyword}".
+
+CRITICAL RULES:
+- Each bullet MUST use the keyword "${targetKeyword}" naturally — do not force it
+- Base bullets on what a ${currentJobTitle} at ${currentJobCompany} would realistically do
+- If existing bullets are provided above, use them as context for the type of work this person does
+- Do NOT invent specific metrics, percentages, dollar amounts, or outcomes
+- Use placeholders like [X%], [X users], [$X], or [specific metric] where the user should fill in their real numbers
+- The bullet should be a realistic starting point the user will edit, NOT a finished fabrication
+- Maximum 180 characters per bullet
+- Start each bullet with a strong action verb
+
+GOOD EXAMPLE:
+"Implemented ${targetKeyword} workflows across [X] projects, improving [specific outcome] by [X%]"
+
+BAD EXAMPLE (DO NOT DO THIS):
+"Implemented ${targetKeyword} workflows across 12 projects, improving efficiency by 34% and saving $2.1M annually"
+(Bad because 12, 34%, and $2.1M are all fabricated)
+
+Each bullet should take a different angle:
+1. A direct responsibility or project involving "${targetKeyword}"
+2. A collaborative or cross-functional angle involving "${targetKeyword}"
+3. An improvement or initiative related to "${targetKeyword}"
+
+Return ONLY a JSON object: { "experiences": ["bullet 1", "bullet 2", "bullet 3"] }
+
+No markdown, no extra text, just the JSON.`,
+						name,
+					},
+				]
+				// ── Generic generation: 5 bullets across all keywords ──
+				: [
 					{
 						role: 'system' as const,
 						content: `You are an elite resume writer specializing in ${jobTitle} roles with 20 years of experience crafting achievement-focused bullets that pass ATS systems and impress hiring managers.
@@ -527,9 +594,9 @@ SENIORITY LEVEL: ${seniority}`,
 					},
 					{
 						role: 'user' as const,
-						content: `Generate 10 realistic, impressive resume bullet points that a ${seniority}-level ${currentJobTitle} at ${currentJobCompany} would have on their resume when applying to the target ${jobTitle} role.
+						content: `Generate 5 realistic, impressive resume bullet points that a ${seniority}-level ${currentJobTitle} at ${currentJobCompany} would have on their resume when applying to the target ${jobTitle} role.
 
-LENGTH (CRITICAL): 
+LENGTH (CRITICAL):
 - Each bullet point (description.content): Maximum 180 characters (about 15-30 words)
 - Count characters before returning - reject any bullet over 200 chars
 - One-two lines per bullet when rendered on a resume
@@ -540,8 +607,8 @@ STRUCTURE (CAR/STAR format):
 - Result: Quantified outcome (%, $, time, users, uptime, efficiency)
 
 QUANTIFICATION RULES:
-- 7 bullets MUST include metrics (%, $, time saved, users served, performance gains, cost reduction)
-- 3 bullets can focus on technical depth, architecture, or strategic initiatives without explicit metrics
+- 3 bullets MUST include metrics (%, $, time saved, users served, performance gains, cost reduction)
+- 2 bullets can focus on technical depth, architecture, or strategic initiatives without explicit metrics
 - Numbers should be realistic for a ${currentJobCompany}-sized company and ${seniority} level
 
 SENIORITY CALIBRATION:
