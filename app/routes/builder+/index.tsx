@@ -15,10 +15,10 @@ import {
 } from '@remix-run/node'
 import { useLoaderData, useFetcher, useNavigate } from '@remix-run/react'
 import {
-	FileText, ChevronDown, ChevronUp, Search, Sun, Moon, Sparkles,
-	Download, LayoutTemplate, Type, Check, X, Plus, Briefcase, GraduationCap,
+	FileText, ChevronDown, Search, Sun, Moon, Sparkles,
+	Download, LayoutTemplate, Check, X, Plus, Briefcase, GraduationCap,
 	Code2, AlignLeft, Target, TrendingUp, Zap, ArrowRight, CheckCircle2, Circle,
-	PanelLeftClose, PanelRightClose, KeyRound, GripVertical, Palette, Command,
+	PanelLeftClose, PanelRightClose, GripVertical, Palette, Pencil, Eye, EyeOff,
 	ChevronRight, Rocket,
 } from 'lucide-react'
 import { SubscribeModal } from '~/components/subscribe-modal.tsx'
@@ -328,12 +328,12 @@ function EditableText({ value, onChange, style, multiline, placeholder, c }: {
 	)
 	return multiline ? (
 		<textarea ref={r => { if (r) { r.focus(); r.setSelectionRange(r.value.length, r.value.length) } }} value={val} onChange={e => setVal(e.target.value)}
-			onBlur={() => { setEditing(false); onChange(val) }} onKeyDown={e => { if (e.key === 'Escape') { setEditing(false); setVal(value) } }}
+			onBlur={() => { setEditing(false); onChange(val) }} onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setEditing(false); setVal(value) } }}
 			style={{ ...style, width: '100%', background: 'rgba(107,69,255,0.06)', border: `1px solid ${BRAND}60`, borderRadius: 3, outline: 'none', resize: 'none', padding: '2px 4px', fontFamily: 'inherit', minHeight: 40, boxSizing: 'border-box' }} />
 	) : (
 		<input ref={r => { if (r) { r.focus(); r.setSelectionRange(r.value.length, r.value.length) } }} value={val} onChange={e => setVal(e.target.value)}
 			onBlur={() => { setEditing(false); onChange(val) }}
-			onKeyDown={e => { if (e.key === 'Enter' || e.key === 'Escape') { setEditing(false); if (e.key === 'Enter') onChange(val); else setVal(value) } }}
+			onKeyDown={e => { if (e.key === 'Enter' || e.key === 'Escape') { e.stopPropagation(); setEditing(false); if (e.key === 'Enter') onChange(val); else setVal(value) } }}
 			style={{ ...style, width: '100%', background: 'rgba(107,69,255,0.06)', border: `1px solid ${BRAND}60`, borderRadius: 3, outline: 'none', padding: '2px 4px', fontFamily: 'inherit', boxSizing: 'border-box' }} />
 	)
 }
@@ -388,7 +388,7 @@ function SortableSection({ id, children }: { id: string; children: React.ReactNo
 	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
 	const [hovered, setHovered] = useState(false)
 	return (
-		<div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1, position: 'relative' }} {...attributes}
+		<div ref={setNodeRef} style={{ transform: transform ? CSS.Transform.toString(transform) : undefined, transition, opacity: isDragging ? 0.5 : 1, position: 'relative' }} {...attributes}
 			onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
 			<div {...listeners} className="preview-only"
 				style={{ position: 'absolute', left: -36, top: 4, cursor: 'grab', opacity: hovered ? 0.6 : 0, transition: 'opacity 150ms', padding: '4px 2px', borderRadius: 3, zIndex: 5 }}>
@@ -457,6 +457,7 @@ export default function ResumeBuilder() {
 		education: useRef<HTMLDivElement>(null),
 		skills: useRef<HTMLDivElement>(null),
 	}
+	const scrollHighlightTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
 
 	const c = isDark ? darkTheme : lightTheme
 	const sW = sidebar ? 240 : 52
@@ -475,20 +476,6 @@ export default function ResumeBuilder() {
 			})
 		}
 	}
-
-	/* ═══ RESUME SWITCHING ═══ */
-	const resumeSwitchFetcher = useFetcher()
-	const handleResumeSwitch = useCallback((resumeId: string) => {
-		if (resumeId === formData.id) return
-		resumeSwitchFetcher.submit({ resumeId }, { method: 'POST', action: '/resumes' })
-	}, [formData.id, resumeSwitchFetcher])
-
-	useEffect(() => {
-		if (savedData.id !== formData.id && savedData.id !== undefined) {
-			setFormData(savedData)
-			setSelectedJob(savedData.job)
-		}
-	}, [savedData.id])
 
 	/* ═══ DARK MODE PERSISTENCE ═══ */
 	const themeFetcher = useFetcher()
@@ -513,13 +500,13 @@ export default function ResumeBuilder() {
 				setCmdSearch('')
 				setCmdSelected(0)
 			}
-			if (e.key === 'Escape' && showCommandPalette) {
+			if (e.key === 'Escape') {
 				setShowCommandPalette(false)
 			}
 		}
 		window.addEventListener('keydown', handler)
 		return () => window.removeEventListener('keydown', handler)
-	}, [showCommandPalette])
+	}, [])
 
 	/* ═══ SAVE ═══ */
 	const fetcher = useFetcher<{ success: boolean; error?: string }>()
@@ -549,6 +536,22 @@ export default function ResumeBuilder() {
 		}
 	}, [fetcher.state, fetcher.data])
 
+	/* ═══ RESUME SWITCHING ═══ */
+	const resumeSwitchFetcher = useFetcher()
+	const handleResumeSwitch = useCallback((resumeId: string) => {
+		if (resumeId === formData.id) return
+		debouncedSave.cancel()
+		resumeSwitchFetcher.submit({ resumeId }, { method: 'POST', action: '/resumes' })
+	}, [formData.id, resumeSwitchFetcher, debouncedSave])
+
+	useEffect(() => {
+		if (savedData.id !== formData.id && savedData.id !== undefined) {
+			setFormData(savedData)
+			setSelectedJob(savedData.job)
+		}
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [savedData.id])
+
 	/* ═══ SCORING ═══ */
 	const extractedKeywords = formData.job?.extractedKeywords
 		? (JSON.parse(formData.job.extractedKeywords) as string[])
@@ -562,6 +565,7 @@ export default function ResumeBuilder() {
 	})
 
 	/* ═══ ANALYTICS ═══ */
+	// eslint-disable-next-line react-hooks/exhaustive-deps
 	useEffect(() => {
 		track('builder_opened', {
 			resume_id: savedData.id || 'new',
@@ -736,12 +740,12 @@ export default function ResumeBuilder() {
 		pdfFetcher.submit({ html, resumeId: formData.id ?? '' }, { method: 'post', action: '/resources/generate-pdf' })
 	}, [subscription?.active, gettingStartedProgress?.downloadCount, handlePDFDownloadRequested, pdfFetcher, formData.id])
 
-	const handleClickDownloadPDF = () => {
+	const handleClickDownloadPDF = useCallback(() => {
 		if (!userId) { navigate('/login?redirectTo=/builder'); return }
 		setDownloadClicked(true)
 		handlePDFDownloadRequested({ downloadPDFRequested: true, subscribe: subscription ? false : true })
 		handleDownloadPDF()
-	}
+	}, [userId, navigate, handlePDFDownloadRequested, subscription, handleDownloadPDF])
 
 	const lastPdfDataRef = useRef<{ fileData: string; fileType: string } | null>(null)
 	useEffect(() => {
@@ -776,25 +780,35 @@ export default function ResumeBuilder() {
 		setHighlight(sec)
 		const ref = secRefs[sec as keyof typeof secRefs]
 		ref?.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-		setTimeout(() => setHighlight(null), 2000)
+		clearTimeout(scrollHighlightTimeoutRef.current)
+		scrollHighlightTimeoutRef.current = setTimeout(() => setHighlight(null), 2000)
 	}
+	useEffect(() => {
+		return () => { clearTimeout(scrollHighlightTimeoutRef.current) }
+	}, [])
 
 	/* ═══ TEMPLATE APPLY ═══ */
 	const applyTemplate = (tmpl: typeof TEMPLATES[0]) => {
-		const newFormData = { ...formData, layout: tmpl.layout, font: tmpl.font, nameColor: tmpl.accent }
-		setFormData(newFormData)
-		debouncedSave(newFormData)
+		setFormData(prev => {
+			const next = { ...prev, layout: tmpl.layout, font: tmpl.font, nameColor: tmpl.accent }
+			debouncedSave(next)
+			return next
+		})
 		trackLegacyEvent('template_applied', { template: tmpl.id, layout: tmpl.layout, font: tmpl.font })
 	}
 	const applyFont = (fontValue: string) => {
-		const newFormData = { ...formData, font: fontValue }
-		setFormData(newFormData)
-		debouncedSave(newFormData)
+		setFormData(prev => {
+			const next = { ...prev, font: fontValue }
+			debouncedSave(next)
+			return next
+		})
 	}
 	const applyAccentColor = (color: string) => {
-		const newFormData = { ...formData, nameColor: color }
-		setFormData(newFormData)
-		debouncedSave(newFormData)
+		setFormData(prev => {
+			const next = { ...prev, nameColor: color }
+			debouncedSave(next)
+			return next
+		})
 	}
 
 	/* ═══ COMMAND PALETTE ACTIONS ═══ */
@@ -806,7 +820,7 @@ export default function ResumeBuilder() {
 		{ id: 'sidebar', label: 'Toggle Sidebar', icon: PanelLeftClose, action: () => setSidebar(s => !s) },
 		{ id: 'score', label: 'View Score Details', icon: Target, action: () => setShowScoreDetail(true) },
 		{ id: 'add-job', label: 'Add Target Job', icon: Briefcase, action: () => setShowCreateJob(true) },
-	], [isDark, toggleDarkMode])
+	], [isDark, toggleDarkMode, handleClickDownloadPDF])
 
 	const filteredCommands = cmdSearch
 		? commands.filter(cmd => cmd.label.toLowerCase().includes(cmdSearch.toLowerCase()))
@@ -1355,7 +1369,7 @@ export default function ResumeBuilder() {
 								{[
 									{ id: 'resume', label: 'Create a resume', done: !!(formData.name || formData.role), action: () => scrollToSection('summary') },
 									{ id: 'job', label: 'Add a target job', done: !!selectedJob, action: () => setShowCreateJob(true) },
-									{ id: 'tailor', label: 'Tailor with AI', done: (gettingStartedProgress?.tailorCount ?? 0) > 0, action: () => { if (formData.experiences?.[0]?.descriptions?.[0]) handleAIClick(formData.experiences[0].id!, 0, formData.experiences[0].descriptions[0].content || '') } },
+									{ id: 'tailor', label: 'Tailor with AI', done: (gettingStartedProgress?.tailorCount ?? 0) > 0, action: () => { const firstExp = formData.experiences?.[0]; const firstBullet = firstExp?.descriptions?.[0]; if (firstExp?.id && firstBullet) handleAIClick(firstExp.id, 0, firstBullet.content || '') } },
 								].map(step => (
 									<div key={step.id} onClick={!step.done ? step.action : undefined}
 										style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', cursor: step.done ? 'default' : 'pointer', opacity: step.done ? 0.6 : 1 }}>
