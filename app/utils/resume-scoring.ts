@@ -1,28 +1,85 @@
 /**
  * Client-side Resume Scoring Engine
  *
- * Provides instant feedback on resume quality with 5 scoring dimensions:
- * 1. Keyword Match (0-100): How well resume matches job description keywords
+ * Provides instant feedback on resume quality with 4 scoring dimensions:
+ * 1. Keyword Match (0-100): Frequency-aware match against job description keywords
+ *    - Keywords in 0 sections → 0 points (missing)
+ *    - Keywords in 1 section → 0.6 points (partial)
+ *    - Keywords in 2+ sections → 1.0 points (full)
+ *    - Includes a spread bonus (0-7 pts) for keyword distribution across sections
  * 2. Quantifiable Metrics (0-100): Presence of numbers, percentages, metrics
  * 3. Action Verbs (0-100): Strong action verbs at start of bullets
  * 4. Length Appropriateness (0-100): Optimal content density
- * 5. Formatting Quality (0-100): Completeness of sections
  *
  * Overall score is weighted average with keyword match having highest weight.
+ * Weights: keyword 50%, metrics 20%, action verbs 20%, length 10%.
  */
 
 import type { ResumeData } from './builder-resume.server.ts'
 
-// Common action verbs for resume bullets
+// Strong action verbs for resume bullets (lowercase, 150+)
 const ACTION_VERBS = new Set([
-	'achieved', 'accelerated', 'accomplished', 'acquired', 'analyzed', 'architected',
-	'built', 'created', 'collaborated', 'conducted', 'developed', 'designed',
-	'delivered', 'drove', 'enabled', 'engineered', 'enhanced', 'established',
-	'executed', 'expanded', 'generated', 'grew', 'implemented', 'improved',
-	'increased', 'initiated', 'launched', 'led', 'managed', 'optimized',
-	'organized', 'orchestrated', 'pioneered', 'produced', 'reduced', 'resolved',
-	'scaled', 'spearheaded', 'streamlined', 'transformed', 'upgraded',
+	// Leadership / Strategy
+	'led', 'directed', 'managed', 'oversaw', 'headed', 'chaired', 'orchestrated',
+	'spearheaded', 'championed', 'pioneered', 'established', 'founded', 'shaped',
+	'owned', 'governed',
+	// Building / Creating
+	'built', 'created', 'designed', 'developed', 'engineered', 'architected',
+	'constructed', 'launched', 'shipped', 'deployed', 'implemented', 'prototyped',
+	'configured', 'assembled', 'authored', 'produced', 'crafted',
+	// Improving / Optimizing
+	'improved', 'optimized', 'streamlined', 'revamped', 'redesigned', 'rebuilt',
+	'restructured', 'modernized', 'upgraded', 'refined', 'enhanced', 'transformed',
+	'overhauled', 'consolidated', 'strengthened', 'elevated', 'repositioned',
+	// Analysis / Research
+	'analyzed', 'researched', 'evaluated', 'assessed', 'audited', 'benchmarked',
+	'investigated', 'mapped', 'identified', 'discovered', 'spotted', 'diagnosed',
+	'validated', 'tested', 'surveyed', 'interviewed', 'examined', 'inspected',
+	'uncovered', 'surfaced',
+	// Growth / Revenue
+	'grew', 'increased', 'expanded', 'scaled', 'boosted', 'doubled', 'tripled',
+	'accelerated', 'maximized', 'generated', 'monetized', 'captured',
+	// Reduction / Efficiency
+	'reduced', 'cut', 'decreased', 'eliminated', 'killed', 'removed', 'minimized',
+	'shortened', 'simplified', 'automated',
+	// Communication / Influence
+	'presented', 'pitched', 'negotiated', 'persuaded', 'advocated', 'communicated',
+	'published', 'documented', 'reported', 'briefed', 'advised', 'coached',
+	'mentored', 'trained', 'educated', 'informed',
+	// Execution / Delivery
+	'delivered', 'executed', 'completed', 'achieved', 'accomplished', 'fulfilled',
+	'resolved', 'solved', 'fixed', 'addressed', 'handled', 'processed',
+	'facilitated', 'coordinated', 'organized', 'prioritized', 'triaged',
+	// Acquisition / Growth
+	'recruited', 'hired', 'sourced', 'acquired', 'secured', 'won', 'closed',
+	'converted', 'attracted', 'onboarded',
+	// Data / Technical
+	'migrated', 'integrated', 'debugged', 'programmed', 'coded', 'scripted',
+	'queried', 'modeled', 'forecasted', 'calculated', 'quantified', 'measured',
+	'tracked', 'monitored', 'instrumented',
+	// Collaboration
+	'partnered', 'collaborated', 'aligned', 'unified', 'mobilized', 'rallied',
+	'supported', 'enabled', 'empowered',
+	// Process / Operations
+	'standardized', 'formalized', 'systematized', 'instituted', 'introduced',
+	'initiated', 'defined', 'scoped', 'planned', 'budgeted', 'allocated',
+	'distributed', 'maintained', 'sustained',
+	// Common resume verbs often missed
+	'ran', 'turned', 'found', 'drove', 'conducted', 'navigated', 'transitioned',
+	'synthesized', 'distilled', 'leveraged', 'utilized', 'translated',
 ])
+
+/**
+ * Extract the leading verb from a bullet, stripping markdown/list prefixes.
+ * Handles "- Built...", "* Shipped...", "• Ran...", etc.
+ */
+function extractLeadingVerb(bullet: string): string {
+	return bullet
+		.trim()
+		.replace(/^[-*•–—]\s+/, '') // strip list markers
+		.toLowerCase()
+		.split(/\s+/)[0] || ''
+}
 
 // Stop words to ignore when extracting keywords
 const STOP_WORDS = new Set([
@@ -34,12 +91,21 @@ const STOP_WORDS = new Set([
 	'how', 'all', 'each', 'every', 'both', 'few', 'more', 'most', 'some', 'such',
 ])
 
+export interface KeywordMatch {
+	keyword: string
+	sections: string[]
+	sectionCount: number
+	score: number        // 0 | 0.6 | 1.0
+	status: 'missing' | 'partial' | 'full'
+}
+
 export interface ScoreBreakdown {
 	overall: number
 	keyword: number
 	metrics: number
 	actionVerbs: number
 	length: number
+	keywordMatches: KeywordMatch[]
 }
 
 export interface FlaggedBullet {
@@ -101,69 +167,148 @@ function extractKeywords(text: string): Set<string> {
 }
 
 /**
+ * Check if a keyword exists in a text block using hybrid matching.
+ * Multi-word keywords: substring match. Single-word: token set match.
+ */
+function keywordExistsInText(kwLower: string, textLower: string, tokens: Set<string>): boolean {
+	if (kwLower.includes(' ')) {
+		return textLower.includes(kwLower)
+	}
+	return tokens.has(kwLower)
+}
+
+/**
+ * Build a map of resume sections with their text content and token sets.
+ * Each section is a distinct scoring unit for frequency matching.
+ */
+function buildSectionMap(resumeData: ResumeData): Map<string, { text: string, tokens: Set<string> }> {
+	const sections = new Map<string, { text: string, tokens: Set<string> }>()
+
+	// Summary
+	const aboutText = resumeData.about || ''
+	if (aboutText.trim()) {
+		sections.set('Summary', { text: aboutText.toLowerCase(), tokens: extractKeywords(aboutText) })
+	}
+
+	// Each experience entry is its own section
+	resumeData.experiences?.forEach((exp: any) => {
+		const parts = [
+			exp.role || '',
+			exp.company || '',
+			...(exp.descriptions?.map((d: any) => d.content || '') || []),
+		]
+		const text = parts.join(' ')
+		if (text.trim()) {
+			const label = exp.company || exp.role || 'Experience'
+			sections.set(label, { text: text.toLowerCase(), tokens: extractKeywords(text) })
+		}
+	})
+
+	// Education (all entries combined as one section)
+	const eduText = resumeData.education
+		?.map((e: any) => `${e.degree || ''} ${e.school || ''} ${e.description || ''}`)
+		.join(' ') || ''
+	if (eduText.trim()) {
+		sections.set('Education', { text: eduText.toLowerCase(), tokens: extractKeywords(eduText) })
+	}
+
+	// Skills (all skills combined as one section)
+	const skillsText = resumeData.skills?.map((s: any) => s.name || '').join(' ') || ''
+	if (skillsText.trim()) {
+		sections.set('Skills', { text: skillsText.toLowerCase(), tokens: extractKeywords(skillsText) })
+	}
+
+	return sections
+}
+
+/**
+ * Match each keyword against individual resume sections.
+ * Returns per-keyword match data with section names and frequency score.
+ */
+function matchKeywordsToSections(
+	resumeData: ResumeData,
+	extractedKeywords: string[],
+): KeywordMatch[] {
+	const sections = buildSectionMap(resumeData)
+
+	return extractedKeywords.map(keyword => {
+		const kwLower = keyword.toLowerCase()
+		const matchedSections: string[] = []
+
+		for (const [sectionName, { text, tokens }] of sections) {
+			if (keywordExistsInText(kwLower, text, tokens)) {
+				matchedSections.push(sectionName)
+			}
+		}
+
+		const sectionCount = matchedSections.length
+		let score: number
+		let status: KeywordMatch['status']
+
+		if (sectionCount === 0) {
+			score = 0
+			status = 'missing'
+		} else if (sectionCount === 1) {
+			score = 0.6
+			status = 'partial'
+		} else {
+			score = 1.0
+			status = 'full'
+		}
+
+		return { keyword, sections: matchedSections, sectionCount, score, status }
+	})
+}
+
+/**
  * Calculate keyword match score (0-100)
- * Measures overlap between resume and job description using hybrid matching
+ * Frequency-aware: rewards keywords appearing across multiple sections.
+ * Includes spread bonus for keyword distribution.
  */
 function calculateKeywordScore(
 	resumeData: ResumeData,
 	jobDescription: string,
 	extractedKeywords?: string[] | null,
-): number {
+): { score: number; matches: KeywordMatch[] } {
 	if (!jobDescription || !extractedKeywords || extractedKeywords.length === 0) {
-		return 50 // Neutral score when no job selected or no keywords
+		return { score: 50, matches: [] }
 	}
 
-	// Extract resume text
-	const resumeText = [
-		resumeData.about || '',
-		resumeData.role || '',
-		...(resumeData.experiences?.flatMap((exp: any) => [
-			exp.role || '',
-			exp.company || '',
-			...(exp.descriptions?.map((d: any) => d.content || '') || []),
-		]) || []),
-		...(resumeData.skills?.map((s: any) => s.name || '') || []),
-		...(resumeData.education?.map((e: any) => `${e.degree} ${e.school}`) || []),
-	].join(' ')
+	const matches = matchKeywordsToSections(resumeData, extractedKeywords)
 
-	const resumeLower = resumeText.toLowerCase()
-	const resumeKeywords = extractKeywords(resumeText)
+	// Frequency-aware scoring
+	const totalScore = matches.reduce((sum, m) => sum + m.score, 0)
+	const maxPossible = extractedKeywords.length * 1.0
+	const matchRatio = totalScore / maxPossible
 
-	// Match keywords with hybrid approach
-	let matchCount = 0
-
-	extractedKeywords.forEach(keyword => {
-		const kwLower = keyword.toLowerCase()
-
-		// Strategy 1: Exact phrase match (for multi-word keywords)
-		if (kwLower.includes(' ')) {
-			if (resumeLower.includes(kwLower)) {
-				matchCount++
-			}
-		}
-		// Strategy 2: Token-based match (for single words)
-		else {
-			if (resumeKeywords.has(kwLower)) {
-				matchCount++
-			}
-		}
-	})
-
-	const matchRatio = matchCount / extractedKeywords.length
-
-	// Scoring with adjusted thresholds (more forgiving)
-	let score: number
+	// Scoring curve (same thresholds as before)
+	let baseScore: number
 	if (matchRatio >= 0.8) {
-		score = 100 // 80%+ match = excellent
+		baseScore = 100
 	} else if (matchRatio >= 0.6) {
-		score = 85 + ((matchRatio - 0.6) / 0.2) * 15 // 60-80% = 85-100
+		baseScore = 85 + ((matchRatio - 0.6) / 0.2) * 15
 	} else if (matchRatio >= 0.4) {
-		score = 70 + ((matchRatio - 0.4) / 0.2) * 15 // 40-60% = 70-85
+		baseScore = 70 + ((matchRatio - 0.4) / 0.2) * 15
 	} else {
-		score = matchRatio * 175 // Below 40% = 0-70
+		baseScore = matchRatio * 175
 	}
 
-	return Math.round(score)
+	// Spread bonus: reward keyword distribution across sections
+	const sectionMap = buildSectionMap(resumeData)
+	const totalSections = sectionMap.size
+	if (totalSections > 0) {
+		const sectionsWithKeywords = new Set<string>()
+		for (const m of matches) {
+			for (const s of m.sections) {
+				sectionsWithKeywords.add(s)
+			}
+		}
+		const spreadRatio = sectionsWithKeywords.size / totalSections
+		const spreadBonus = spreadRatio * 7 // 0-7 bonus points
+		baseScore = Math.min(100, baseScore + spreadBonus)
+	}
+
+	return { score: Math.round(baseScore), matches }
 }
 
 /**
@@ -211,8 +356,7 @@ function calculateActionVerbsScore(resumeData: ResumeData): number {
 
 	// Count bullets starting with action verbs
 	const bulletsWithActionVerbs = bullets.filter((b: any) => {
-		const firstWord = b.trim().toLowerCase().split(/\s+/)[0]
-		return ACTION_VERBS.has(firstWord)
+		return ACTION_VERBS.has(extractLeadingVerb(b))
 	}).length
 
 	const ratio = bulletsWithActionVerbs / bullets.length
@@ -301,7 +445,7 @@ function findBulletsWithoutMetrics(resumeData: ResumeData): FlaggedBullet[] {
 					experienceId: exp.id,
 					bulletIndex: bi,
 					content,
-					reason: 'No quantified metrics — add numbers, percentages, or dollar amounts to show impact',
+					reason: 'Add a number to this bullet — revenue, users, team size, time saved, or a percentage. Even ranges like "20-30%" work.',
 				})
 			}
 		})
@@ -320,13 +464,12 @@ function findBulletsWithoutActionVerbs(resumeData: ResumeData): FlaggedBullet[] 
 		exp.descriptions?.forEach((d: any, bi: number) => {
 			const content = d.content || ''
 			if (content.trim().length > 0) {
-				const firstWord = content.trim().toLowerCase().split(/\s+/)[0]
-				if (!ACTION_VERBS.has(firstWord)) {
+				if (!ACTION_VERBS.has(extractLeadingVerb(content))) {
 					flagged.push({
 						experienceId: exp.id,
 						bulletIndex: bi,
 						content,
-						reason: `Starts with "${firstWord}" — use a strong action verb like Led, Built, Increased, or Delivered`,
+						reason: 'Lead with a strong verb — Shipped, Reduced, Drove, Launched — to grab attention in the first 2 seconds.',
 					})
 				}
 			}
@@ -344,7 +487,9 @@ export function calculateResumeScore(
 	jobDescription?: string,
 	extractedKeywords?: string[] | null
 ): ScoreBreakdown {
-	const keyword = calculateKeywordScore(resumeData, jobDescription || '', extractedKeywords)
+	const { score: keyword, matches: keywordMatches } = calculateKeywordScore(
+		resumeData, jobDescription || '', extractedKeywords,
+	)
 	const metrics = calculateMetricsScore(resumeData)
 	const actionVerbs = calculateActionVerbsScore(resumeData)
 	const length = calculateLengthScore(resumeData)
@@ -361,6 +506,7 @@ export function calculateResumeScore(
 		metrics,
 		actionVerbs,
 		length,
+		keywordMatches,
 	}
 }
 
@@ -377,24 +523,7 @@ export function generateChecklist(
 
 	// Keyword optimization (if job selected)
 	if (jobDescription && jobDescription.trim().length > 0) {
-		// Extract keywords to find what's missing
-		const resumeText = [
-			resumeData.about || '',
-			resumeData.role || '',
-			...(resumeData.experiences?.flatMap((exp: any) => [
-				exp.role || '',
-				exp.company || '',
-				...(exp.descriptions?.map((d: any) => d.content || '') || []),
-			]) || []),
-			...(resumeData.skills?.map((s: any) => s.name || '') || []),
-			...(resumeData.education?.map((e: any) => `${e.degree} ${e.school}`) || []),
-		].join(' ')
-
-		const resumeKeywords = extractKeywords(resumeText)
-
-		// ONLY use AI-extracted keywords
 		if (!extractedKeywords || extractedKeywords.length === 0) {
-			// No keywords extracted yet, show a helpful message
 			checklist.push({
 				id: 'keywords-pending',
 				text: 'Keywords are being extracted from job description...',
@@ -405,8 +534,12 @@ export function generateChecklist(
 			return checklist
 		}
 
-		// Find missing keywords with categorization (hybrid matching)
-		const resumeLower = resumeText.toLowerCase()
+		// Use pre-computed keyword matches from scoring
+		const { keywordMatches } = scores
+		const missing = keywordMatches.filter(m => m.status === 'missing')
+		const partial = keywordMatches.filter(m => m.status === 'partial')
+
+		// Categorize missing keywords
 		const missingByCategory = {
 			technical: [] as string[],
 			experience: [] as string[],
@@ -415,49 +548,29 @@ export function generateChecklist(
 			soft: [] as string[],
 		}
 
-		extractedKeywords.forEach(keyword => {
-			const kwLower = keyword.toLowerCase()
-
-			// Check if keyword is present (hybrid matching)
-			let isPresent = false
-			if (kwLower.includes(' ')) {
-				// Multi-word: exact phrase match
-				isPresent = resumeLower.includes(kwLower)
+		missing.forEach(({ keyword }) => {
+			if (/\d+\+?\s*years?/i.test(keyword)) {
+				missingByCategory.experience.push(keyword)
+			} else if (
+				/^[A-Z]{2,}$/.test(keyword) ||
+				/API|SDK|CLI|UI|UX/i.test(keyword)
+			) {
+				missingByCategory.technical.push(keyword)
+			} else if (
+				/docker|kubernetes|jira|hubspot|salesforce|aws|azure|gcp/i.test(keyword)
+			) {
+				missingByCategory.tools.push(keyword)
+			} else if (
+				/leadership|communication|agile|remote|team|collaboration/i.test(keyword)
+			) {
+				missingByCategory.soft.push(keyword)
 			} else {
-				// Single word: token match
-				isPresent = resumeKeywords.has(kwLower)
-			}
-
-			if (!isPresent) {
-				// Categorize missing keyword
-				if (/\d+\+?\s*years?/i.test(keyword)) {
-					missingByCategory.experience.push(keyword)
-				} else if (
-					/^[A-Z]{2,}$/.test(keyword) ||
-					/API|SDK|CLI|UI|UX/i.test(keyword)
-				) {
-					missingByCategory.technical.push(keyword)
-				} else if (
-					/docker|kubernetes|jira|hubspot|salesforce|aws|azure|gcp/i.test(
-						keyword,
-					)
-				) {
-					missingByCategory.tools.push(keyword)
-				} else if (
-					/leadership|communication|agile|remote|team|collaboration/i.test(
-						keyword,
-					)
-				) {
-					missingByCategory.soft.push(keyword)
-				} else {
-					missingByCategory.domain.push(keyword)
-				}
+				missingByCategory.domain.push(keyword)
 			}
 		})
 
-		const totalMissing = Object.values(missingByCategory).flat().length
-
-		const allMissingKeywords = Object.values(missingByCategory).flat()
+		const totalMissing = missing.length
+		const allMissingKeywords = missing.map(m => m.keyword)
 
 		if (scores.keyword < 90 && totalMissing > 0) {
 			let explanation =
@@ -495,7 +608,7 @@ export function generateChecklist(
 
 			checklist.push({
 				id: 'keywords-missing',
-				text: `Add ${totalMissing} missing keyword${totalMissing !== 1 ? 's' : ''}`,
+				text: `Add ${totalMissing} more relevant skill${totalMissing !== 1 ? 's' : ''} to catch ATS keywords that don't appear in your bullets`,
 				completed: false,
 				explanation: explanation.trim(),
 				priority: scores.keyword < 70 ? 'high' : 'medium',
@@ -510,6 +623,90 @@ export function generateChecklist(
 					'Your resume has excellent keyword alignment with the job description.',
 				priority: 'high',
 			})
+		}
+
+		// Keyword spread: suggest distributing partial-match keywords
+		if (partial.length > 0) {
+			// Show up to 3 partial-match coaching items
+			const topPartials = partial.slice(0, 3)
+			for (const pm of topPartials) {
+				const sectionName = pm.sections[0] || 'Skills'
+				// Find an experience the keyword is NOT in, to suggest adding it there
+				const experiences = resumeData.experiences?.filter(
+					(exp: any) => (exp.role || exp.company) && exp.descriptions?.some((d: any) => d.content?.trim())
+				) || []
+				const targetExp = experiences.find(
+					(exp: any) => !pm.sections.includes(exp.company || exp.role || '')
+				)
+				const targetName = targetExp?.company || targetExp?.role || 'an experience entry'
+
+				checklist.push({
+					id: `keyword-spread-${pm.keyword}`,
+					text: `You mention "${pm.keyword}" only in ${sectionName} — add it to a bullet under ${targetName} too. ATS tools score keywords higher when they appear across multiple sections.`,
+					completed: false,
+					explanation: `"${pm.keyword}" was found in ${sectionName} but not elsewhere. Keywords that appear in multiple sections (Skills + Experience bullets) score higher in ATS screening.`,
+					priority: 'medium',
+				})
+			}
+		}
+
+		// Role-level skill detection: flag experiences with 0 keyword matches
+		const experiencesWithContent = resumeData.experiences?.filter(
+			(exp: any) => (exp.role || exp.company) && exp.descriptions?.some((d: any) => d.content?.trim())
+		) || []
+
+		// Only check the top 3 most recent experiences
+		const topExperiences = experiencesWithContent.slice(0, 3)
+		for (const exp of topExperiences) {
+			const expLabel = exp.company || exp.role || 'Experience'
+			const hasKeywordHit = keywordMatches.some(m =>
+				m.sections.includes(expLabel)
+			)
+			if (!hasKeywordHit) {
+				checklist.push({
+					id: `role-skills-${exp.id}`,
+					text: `Add relevant skills to your ${expLabel} role — ATS tools score keywords under specific roles higher than a single skills section.`,
+					completed: false,
+					explanation: `Your ${expLabel} experience has no matching keywords from the job description. Weave target keywords into your bullet points or add a skills line for this role.`,
+					priority: 'medium',
+				})
+			}
+		}
+
+		// Bullet ordering: check if strongest bullet is first
+		for (const exp of experiencesWithContent) {
+			const bullets = exp.descriptions?.filter((d: any) => d.content?.trim()) || []
+			if (bullets.length < 2) continue
+
+			// Count keyword matches per bullet
+			let maxCount = 0
+			let maxIndex = 0
+			bullets.forEach((d: any, idx: number) => {
+				const bulletText = (d.content || '').toLowerCase()
+				const bulletTokens = extractKeywords(d.content || '')
+				let count = 0
+				for (const kw of (extractedKeywords || [])) {
+					if (keywordExistsInText(kw.toLowerCase(), bulletText, bulletTokens)) {
+						count++
+					}
+				}
+				if (count > maxCount) {
+					maxCount = count
+					maxIndex = idx
+				}
+			})
+
+			// Only suggest if there's a clearly strongest bullet not in first position
+			if (maxCount > 0 && maxIndex !== 0) {
+				const expLabel = exp.company || exp.role || 'Experience'
+				checklist.push({
+					id: `bullet-order-${exp.id}`,
+					text: `Move your strongest bullet to the top of ${expLabel} — recruiters often only read the first 2.`,
+					completed: false,
+					explanation: `Your bullet #${maxIndex + 1} at ${expLabel} has the most keyword matches (${maxCount}). Moving it to the top position increases visibility.`,
+					priority: 'low',
+				})
+			}
 		}
 	}
 
@@ -533,9 +730,8 @@ export function generateChecklist(
 		const metricsNeededForPerfect = Math.max(0, targetForPerfect - bulletsWithMetrics)
 
 		if (bulletsWithMetrics >= 3 && currentPercent >= 30) {
-			// Have at least 3 bullets with metrics and 30%+ - show as complete but encourage more
 			const improvementText = metricsNeededForPerfect > 0
-				? ` Adding ${metricsNeededForPerfect} more will boost your score to 100.`
+				? ` Adding numbers to ${metricsNeededForPerfect} more will boost your score to 100.`
 				: ' You have excellent metric coverage!'
 
 			checklist.push({
@@ -547,26 +743,24 @@ export function generateChecklist(
 				flaggedBullets: bulletsWithoutMetrics,
 			})
 		} else {
-			// Need more metrics to show basic competency
 			const targetBasic = Math.max(3, Math.ceil(bulletCount * 0.30))
 			const metricsNeeded = targetBasic - bulletsWithMetrics
 
 			if (metricsNeeded <= 0) {
-				// Edge case: they technically meet the threshold
 				checklist.push({
 					id: 'metrics-good',
 					text: `${bulletsWithMetrics} of ${bulletCount} bullets have metrics (${currentPercent}%)`,
 					completed: true,
-					explanation: `Good! Adding metrics to ${metricsNeededForPerfect} more bullets will boost your score from ${scores.metrics} to 100.`,
+					explanation: `Good! Adding numbers to ${metricsNeededForPerfect} more bullets will boost your score from ${scores.metrics} to 100.`,
 					priority: 'high',
 					flaggedBullets: bulletsWithoutMetrics,
 				})
 			} else {
 				checklist.push({
 					id: 'metrics',
-					text: `Add metrics to ${metricsNeeded} more bullet${metricsNeeded !== 1 ? 's' : ''} (currently ${currentPercent}%, target 30%+)`,
+					text: `Add a number to ${metricsNeeded} more bullet${metricsNeeded !== 1 ? 's' : ''} — revenue, users, team size, time saved, or a percentage`,
 					completed: false,
-					explanation: 'Quantified achievements are 40% more likely to get interviews. Add numbers, percentages, or dollar amounts to show impact (e.g., "increased revenue by 25%" or "managed team of 10").',
+					explanation: `Currently ${currentPercent}% of your bullets have metrics (target 30%+). Even ranges like "20-30%" work. Numbers make achievements concrete and 40% more likely to get interviews.`,
 					priority: 'high',
 					flaggedBullets: bulletsWithoutMetrics,
 				})
@@ -577,18 +771,15 @@ export function generateChecklist(
 	// Action verbs (based on percentage)
 	const bulletsWithoutActionVerbs = bulletCount > 0 ? findBulletsWithoutActionVerbs(resumeData) : []
 
-	if (bulletCount === 0) {
-		// No bullets yet - already covered in metrics section
-	} else {
+	if (bulletCount > 0) {
 		const bulletsWithActionVerbs = Math.round((scores.actionVerbs / 100) * bulletCount)
 		const currentPercent = Math.round((bulletsWithActionVerbs / bulletCount) * 100)
 		const targetForPerfect = Math.ceil(bulletCount * 0.90) // 90% for perfect score
 		const actionVerbsNeededForPerfect = Math.max(0, targetForPerfect - bulletsWithActionVerbs)
 
 		if (currentPercent >= 50) {
-			// Have 50%+ with action verbs - show as complete but encourage more
 			const improvementText = actionVerbsNeededForPerfect > 0
-				? ` Starting ${actionVerbsNeededForPerfect} more with action verbs will boost your score to 100.`
+				? ` Leading ${actionVerbsNeededForPerfect} more with strong verbs will boost your score to 100.`
 				: ' You have excellent action verb usage!'
 
 			checklist.push({
@@ -604,21 +795,20 @@ export function generateChecklist(
 			const actionVerbsNeeded = targetBasic - bulletsWithActionVerbs
 
 			if (actionVerbsNeeded <= 0) {
-				// Edge case: they technically meet the threshold
 				checklist.push({
 					id: 'action-verbs-good',
 					text: `${bulletsWithActionVerbs} of ${bulletCount} bullets use action verbs (${currentPercent}%)`,
 					completed: true,
-					explanation: `Good! Starting ${actionVerbsNeededForPerfect} more bullets with action verbs will boost your score from ${scores.actionVerbs} to 100.`,
+					explanation: `Good! Leading ${actionVerbsNeededForPerfect} more bullets with strong verbs will boost your score from ${scores.actionVerbs} to 100.`,
 					priority: 'medium',
 					flaggedBullets: bulletsWithoutActionVerbs,
 				})
 			} else {
 				checklist.push({
 					id: 'action-verbs',
-					text: `Start ${actionVerbsNeeded} more bullet${actionVerbsNeeded !== 1 ? 's' : ''} with action verbs (currently ${currentPercent}%, target 50%+)`,
+					text: `Lead with a strong verb on ${actionVerbsNeeded} more bullet${actionVerbsNeeded !== 1 ? 's' : ''} — Shipped, Reduced, Drove, Launched — to grab attention in the first 2 seconds`,
 					completed: false,
-					explanation: 'Action verbs (like "built", "led", "increased") make accomplishments more impactful. Avoid weak starts like "responsible for" or "helped with".',
+					explanation: `Currently ${currentPercent}% of your bullets start with action verbs (target 50%+). Avoid weak starts like "responsible for" or "helped with."`,
 					priority: 'medium',
 					flaggedBullets: bulletsWithoutActionVerbs,
 				})
@@ -652,9 +842,9 @@ export function generateChecklist(
 	if (summaryLength < 100) {
 		checklist.push({
 			id: 'summary',
-			text: 'Write a compelling summary (100-250 characters)',
+			text: 'Add a summary — your 10-second pitch to hiring managers. 2-3 sentences on why you\'re the one.',
 			completed: false,
-			explanation: 'A strong summary helps recruiters quickly understand your value proposition.',
+			explanation: 'A strong summary (100-250 characters) helps recruiters quickly understand your value proposition. Focus on your top skills and what you bring to this specific role.',
 			priority: 'medium',
 		})
 	} else if (summaryLength > 350) {

@@ -19,7 +19,7 @@ import { getUserImgSrc } from '~/utils/misc.ts'
 import { useTheme } from '~/routes/resources+/theme/index.tsx'
 import {
 	FileText, ChevronDown, Search, Sun, Moon, Sparkles,
-	Download, LayoutTemplate, Check, X, Plus, Briefcase, GraduationCap,
+	Download, LayoutTemplate, Check, X, Plus, Minus, Briefcase, GraduationCap,
 	Code2, AlignLeft, Target, TrendingUp, Zap, ArrowRight, CheckCircle2, Circle,
 	PanelLeftClose, PanelRightClose, GripVertical, Palette, Pencil, Eye, EyeOff,
 	ChevronRight, Rocket, LogOut, User as UserIcon, CreditCard,
@@ -50,7 +50,7 @@ import type { SubmitTarget } from 'react-router-dom/dist/dom.d.ts'
 import { type Job } from '@prisma/client'
 import type OpenAI from 'openai'
 import { useResumeScore } from '~/hooks/use-resume-score.ts'
-import { type ChecklistItem, type FlaggedBullet } from '~/utils/resume-scoring.ts'
+import { type ChecklistItem, type FlaggedBullet, type KeywordMatch } from '~/utils/resume-scoring.ts'
 import { trackEvent } from '~/utils/analytics.ts'
 import { trackEvent as trackLegacyEvent } from '~/utils/tracking.client.ts'
 import { track } from '~/lib/analytics.client.ts'
@@ -1328,19 +1328,27 @@ export default function ResumeBuilder() {
 							))}
 						</div>
 
-						{/* Keywords */}
-						{extractedKeywords && extractedKeywords.length > 0 && (
+						{/* Keywords — uses consolidated keywordMatches from scoring engine */}
+						{scores.keywordMatches.length > 0 && (
 							<>
 								<div style={{ height: 1, background: c.border, margin: '0 21px' }} />
 								<div style={{ padding: 21 }}>
 									<span style={{ fontSize: 14, fontWeight: 600, color: c.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Keyword Match</span>
 									<div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
-										{extractedKeywords.map(w => {
-											const allText = [formData.about, ...(formData.experiences?.flatMap(e => e.descriptions?.map(d => d.content) || []) || []), ...(formData.skills?.map(s => s.name) || [])].join(' ').toLowerCase()
-											const found = allText.includes(w.toLowerCase())
+										{scores.keywordMatches.slice(0, 12).map((m: KeywordMatch) => {
+											const chipColor = m.status === 'full' ? SUCCESS : m.status === 'partial' ? WARN : ERROR
+											const chipBg = m.status === 'full' ? `${SUCCESS}15` : m.status === 'partial' ? `${WARN}12` : `${ERROR}12`
+											const tooltip = m.status === 'full'
+												? `Found in ${m.sections.join(', ')}`
+												: m.status === 'partial'
+													? `${m.sections[0]} only`
+													: 'Missing'
 											return (
-												<span key={w} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 14, padding: '5px 10px', borderRadius: 5, fontWeight: 500, background: found ? `${SUCCESS}15` : `${ERROR}12`, color: found ? SUCCESS : ERROR, border: `1px solid ${found ? SUCCESS : ERROR}30` }}>
-													{found ? <Check size={13} strokeWidth={2.5} /> : <X size={13} strokeWidth={2.5} />}{w}
+												<span key={m.keyword} title={tooltip} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 14, padding: '5px 10px', borderRadius: 5, fontWeight: 500, background: chipBg, color: chipColor, border: `1px solid ${chipColor}30` }}>
+													{m.status === 'full' ? <Check size={13} strokeWidth={2.5} /> : m.status === 'partial' ? <Minus size={13} strokeWidth={2.5} /> : <X size={13} strokeWidth={2.5} />}
+													{m.keyword}
+													{m.status === 'partial' && <span style={{ fontSize: 11, opacity: 0.8 }}>({m.sections[0]})</span>}
+													{m.status === 'full' && <span style={{ fontSize: 11, opacity: 0.8 }}>({m.sectionCount})</span>}
 												</span>
 											)
 										})}
