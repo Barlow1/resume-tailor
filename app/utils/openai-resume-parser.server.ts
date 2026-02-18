@@ -182,9 +182,43 @@ REMEMBER: Extract EVERY detail. Never summarize or condense bullet points. Prese
 
 		const result = JSON.parse(content) as OpenAIResumeData
 
-		// Validation: ensure required fields exist
-		if (!result.personal_info || !result.personal_info.full_name) {
-			throw new Error('Failed to extract personal information from resume')
+		// Ensure personal_info exists with safe defaults
+		if (!result.personal_info) {
+			result.personal_info = {
+				full_name: '',
+				first_name: '',
+				last_name: '',
+				email: '',
+				phone: '',
+				location: '',
+			}
+		}
+
+		// Coerce email to string (OpenAI sometimes returns an array when multiple emails exist)
+		if (Array.isArray(result.personal_info.email)) {
+			result.personal_info.email = result.personal_info.email[0] ?? ''
+		}
+
+		// Coerce full_name to string
+		result.personal_info.full_name = result.personal_info.full_name ?? ''
+		result.personal_info.first_name = result.personal_info.first_name ?? ''
+		result.personal_info.last_name = result.personal_info.last_name ?? ''
+
+		// Sanitize education fields that OpenAI may return as wrong types
+		if (result.education) {
+			result.education = result.education.map(ed => ({
+				...ed,
+				honors: Array.isArray(ed.honors)
+					? ed.honors
+					: ed.honors
+						? [String(ed.honors)]
+						: undefined,
+				relevant_coursework: Array.isArray(ed.relevant_coursework)
+					? ed.relevant_coursework
+					: ed.relevant_coursework
+						? [String(ed.relevant_coursework)]
+						: undefined,
+			}))
 		}
 
 		// Validation: ensure skills_extracted doesn't duplicate skills

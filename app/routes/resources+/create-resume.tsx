@@ -48,9 +48,11 @@ export async function action({ request }: DataFunctionArgs) {
 
 			// Transform OpenAI format to builder format
 			const builderResume = {
-				name: parsedResume.personal_info.full_name,
+				name: parsedResume.personal_info.full_name ?? '',
 				role: parsedResume.experiences[0]?.title ?? '',
-				email: parsedResume.personal_info.email,
+				email: Array.isArray(parsedResume.personal_info.email)
+					? parsedResume.personal_info.email[0] ?? null
+					: parsedResume.personal_info.email ?? null,
 				phone: parsedResume.personal_info.phone,
 				location: parsedResume.personal_info.location,
 				website:
@@ -84,10 +86,16 @@ export async function action({ request }: DataFunctionArgs) {
 						: null,
 					description: [
 						ed.gpa ? `GPA: ${ed.gpa}` : null,
-						ed.honors?.join('\n'),
-						ed.relevant_coursework?.length
+						Array.isArray(ed.honors)
+							? ed.honors.join('\n')
+							: ed.honors
+								? String(ed.honors)
+								: null,
+						Array.isArray(ed.relevant_coursework) && ed.relevant_coursework.length
 							? `Relevant Coursework: ${ed.relevant_coursework.join(', ')}`
-							: null,
+							: ed.relevant_coursework
+								? `Relevant Coursework: ${String(ed.relevant_coursework)}`
+								: null,
 					]
 						.filter(Boolean)
 						.join('\n') || null,
