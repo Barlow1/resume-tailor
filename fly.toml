@@ -8,9 +8,9 @@ processes = [ ]
 allowed_public_ports = [ ]
 auto_rollback = true
 
-[mounts]
-source = "data"
-destination = "/data"
+# [mounts]
+# source = "data"
+# destination = "/data"
 
 [deploy]
 release_command = "node ./other/sentry-create-release"
