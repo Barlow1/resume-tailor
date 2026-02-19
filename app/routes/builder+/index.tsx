@@ -700,6 +700,7 @@ export default function ResumeBuilder() {
 		setDiagnosticContext(diagnostic ?? null)
 		setAiModalInitialTab(undefined)
 		setShowAIModal(true)
+		onboarding.handleAIModalOpen()
 	}
 
 	const handleKeywordRolePick = (experience: BuilderExperience) => {

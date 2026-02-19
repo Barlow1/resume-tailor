@@ -22,6 +22,7 @@ import {
 	RotateCcw,
 	X,
 } from 'lucide-react'
+import { track, trackAiModalOpened, markAiModalResult, trackAiModalClosed } from '~/lib/analytics.client.ts'
 
 // v2: Type for the new structured tailor response
 interface TailorOption {
@@ -188,10 +189,12 @@ export function AIAssistantModal({
 	const [editValues, setEditValues] = useState<Record<number, string>>({})
 	const editTextareaRef = useRef<HTMLTextAreaElement>(null)
 	const logActionFetcher = useFetcher()
+	const completionStartTime = useRef<number | null>(null)
 
 	useEffect(() => {
 		if (isOpen) {
 			setActiveTab(initialTab ?? 'tailor')
+			trackAiModalOpened(initialTab ?? 'tailor', experience?.id ?? undefined)
 		} else {
 			setSelectedItems([])
 			setExpandedOption(null)
@@ -200,7 +203,7 @@ export function AIAssistantModal({
 			setEditingOption(null)
 			setEditValues({})
 		}
-	}, [isOpen, initialTab])
+	}, [isOpen, initialTab, experience?.id])
 
 	const resetState = () => {
 		setSelectedItems([])
@@ -241,6 +244,15 @@ export function AIAssistantModal({
 			onTailorClick()
 		}
 
+		completionStartTime.current = Date.now()
+		track('ai_tailor_started', {
+			experience_id: experience?.id ?? '',
+			has_job_context: !!job?.content,
+			is_free_tier: !subscription,
+			resume_id: resumeData?.id ?? undefined,
+			job_id: job?.id ?? undefined,
+		})
+
 		const endpoint = type === 'tailor' ? 'experience' : 'generated-experience'
 		const formData = new FormData()
 		formData.append('jobTitle', job?.title ?? '')
@@ -270,15 +282,24 @@ export function AIAssistantModal({
 
 	useEffect(() => {
 		if (builderCompletionsFetcher.state === 'idle' && builderCompletionsFetcher.data) {
-			setRawContent(
-				builderCompletionsFetcher.data?.choices[0].message.content ?? '{}',
-			)
+			const responseContent = builderCompletionsFetcher.data?.choices[0].message.content ?? '{}'
+			setRawContent(responseContent)
 			const logId = (builderCompletionsFetcher.data as any)?.tailorLogId
 			if (logId) {
 				setTailorLogId(logId)
 			}
+			const duration = completionStartTime.current ? Date.now() - completionStartTime.current : 0
+			track('ai_tailor_completed', {
+				experience_id: experience?.id ?? '',
+				duration_ms: duration,
+				success: !!responseContent && responseContent !== '{}',
+				resume_id: resumeData?.id ?? undefined,
+				job_id: job?.id ?? undefined,
+			})
+			markAiModalResult()
+			completionStartTime.current = null
 		}
-	}, [builderCompletionsFetcher.state, builderCompletionsFetcher.data])
+	}, [builderCompletionsFetcher.state, builderCompletionsFetcher.data, experience?.id, resumeData?.id, job?.id])
 
 	let parsedTailorResponse: TailorResponse | null = null
 	let parsedGenerateOptions: string[] = []
@@ -335,6 +356,13 @@ export function AIAssistantModal({
 		setAcceptedOption(index)
 		onUpdate(bullet)
 
+		const changeCount = content ? wordDiff(content, bullet).filter(d => d.type === 'added').length : 0
+		track('ai_tailor_accepted', {
+			experience_id: experience?.id ?? '',
+			changes_made: changeCount,
+		})
+		trackAiModalClosed(true)
+
 		if (tailorLogId) {
 			const formData = new FormData()
 			formData.append('logId', tailorLogId)
@@ -360,6 +388,13 @@ export function AIAssistantModal({
 		if (activeTab === 'tailor') {
 			onUpdate(selectedContent[0])
 
+			const changeCount = content ? wordDiff(content, selectedContent[0]).filter(d => d.type === 'added').length : 0
+			track('ai_tailor_accepted', {
+				experience_id: experience?.id ?? '',
+				changes_made: changeCount,
+			})
+			trackAiModalClosed(true)
+
 			if (tailorLogId) {
 				const formData = new FormData()
 				formData.append('logId', tailorLogId)
@@ -372,6 +407,7 @@ export function AIAssistantModal({
 			}
 		} else {
 			onMultipleUpdate(selectedContent)
+			trackAiModalClosed(true)
 		}
 
 		resetState()
@@ -380,6 +416,9 @@ export function AIAssistantModal({
 
 	const handleClose = () => {
 		if (tailorLogId && displayOptions.length > 0) {
+			track('ai_tailor_rejected', {
+				experience_id: experience?.id ?? '',
+			})
 			const formData = new FormData()
 			formData.append('logId', tailorLogId)
 			formData.append('action', 'abandoned')
@@ -388,6 +427,7 @@ export function AIAssistantModal({
 				action: '/resources/tailor-log-action',
 			})
 		}
+		trackAiModalClosed(false)
 		resetState()
 		onClose()
 	}
