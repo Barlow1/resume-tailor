@@ -24,6 +24,7 @@ const defaultTheme: ThemeColors = {
 interface ResumeCreationModalProps {
 	isOpen: boolean
 	onClose: () => void
+	onStartScratch: () => void
 	resumes: ResumeData[] | null
 	userId: string | null
 	handleUploadResume: () => boolean
@@ -33,6 +34,7 @@ interface ResumeCreationModalProps {
 export function ResumeCreationModal({
 	isOpen,
 	onClose,
+	onStartScratch,
 	resumes,
 	userId,
 	handleUploadResume,
@@ -150,7 +152,7 @@ export function ResumeCreationModal({
 							<>
 								{/* Start from scratch */}
 								<div
-									onClick={() => { if (!isSubmitting) onClose() }}
+									onClick={() => { if (!isSubmitting) { onStartScratch(); onClose() } }}
 									style={optionStyle()}
 									onMouseEnter={e => { if (!isSubmitting) (e.currentTarget as HTMLElement).style.background = c.bgSurf }}
 									onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}

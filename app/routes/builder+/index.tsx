@@ -4,9 +4,6 @@ import {
 	useRef,
 	useState,
 	useMemo,
-	createContext,
-	type Dispatch,
-	type SetStateAction,
 } from 'react'
 import {
 	json,
@@ -21,8 +18,8 @@ import {
 	FileText, ChevronDown, Search, Sun, Moon, Sparkles,
 	Download, LayoutTemplate, Check, X, Plus, Minus, Briefcase, GraduationCap,
 	Code2, AlignLeft, Target, TrendingUp, Zap, ArrowRight, CheckCircle2, Circle,
-	PanelLeftClose, PanelRightClose, GripVertical, Palette, Eye, EyeOff,
-	ChevronRight, Rocket, LogOut, User as UserIcon, CreditCard,
+	PanelLeftClose, PanelRightClose, Palette, Eye, EyeOff,
+	ChevronRight, Rocket, LogOut, User as UserIcon, CreditCard, Trash2,
 } from 'lucide-react'
 import { SubscribeModal } from '~/components/subscribe-modal.tsx'
 import { getStripeSubscription, getUserId } from '~/utils/auth.server.ts'
@@ -43,6 +40,8 @@ import { ResumeCreationModal } from '~/components/resume-creation-modal.tsx'
 import { getUserBuilderResumes } from '~/utils/builder-resume.server.ts'
 import { type Jsonify } from '@remix-run/server-runtime/dist/jsonify.js'
 import { generateResumeHtml } from '~/utils/generate-resume-html.ts'
+import { ResumeIframe, type ResumeIframeHandle, type StructuralAction, type HoveredElementInfo } from '~/components/resume-iframe.tsx'
+import { FloatingToolbar } from '~/components/floating-toolbar.tsx'
 import { type Job } from '@prisma/client'
 import { useResumeScore } from '~/hooks/use-resume-score.ts'
 import { type ChecklistItem, type KeywordMatch } from '~/utils/resume-scoring.ts'
@@ -53,20 +52,6 @@ import { track } from '~/lib/analytics.client.ts'
 import { toast } from '~/components/ui/use-toast.ts'
 import { useOnboardingFlow } from '~/hooks/use-onboarding-flow.ts'
 import { JobPasteModal } from '~/components/job-paste-modal.tsx'
-import {
-	DndContext,
-	closestCenter,
-	PointerSensor,
-	useSensor,
-	useSensors,
-	type DragEndEvent,
-} from '@dnd-kit/core'
-import {
-	SortableContext,
-	verticalListSortingStrategy,
-	useSortable,
-} from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
 
 function base64ToUint8Array(base64: string): Uint8Array {
 	return Uint8Array.from(atob(base64), c => c.charCodeAt(0))
@@ -221,14 +206,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 	)
 }
 
-export const DraggingContext = createContext<{
-	isDraggingAny: boolean
-	setIsDraggingAny: Dispatch<SetStateAction<boolean>>
-}>({
-	isDraggingAny: false,
-	setIsDraggingAny: () => {},
-})
-
 /* ═══ DESIGN TOKENS ═══ */
 const BRAND = '#6B45FF'
 const SUCCESS = '#30A46C'
@@ -285,6 +262,8 @@ function moveArray<T>(arr: T[], from: number, to: number): T[] {
 	return result
 }
 
+/* ═══ PAGE DIMENSIONS ═══ */
+
 /* ═══ SCORE ARC ═══ */
 function ScoreArc({ score, size = 148, onClick, c }: { score: number; size?: number; onClick?: () => void; c: Theme }) {
 	const [a, setA] = useState(0)
@@ -311,31 +290,6 @@ function ScoreArc({ score, size = 148, onClick, c }: { score: number; size?: num
 }
 
 /* ═══ EDITABLE TEXT ═══ */
-function EditableText({ value, onChange, style, multiline, placeholder, c }: {
-	value: string; onChange: (v: string) => void; style?: React.CSSProperties; multiline?: boolean; placeholder?: string; c: Theme
-}) {
-	const [editing, setEditing] = useState(false)
-	const [val, setVal] = useState(value)
-	useEffect(() => { setVal(value) }, [value])
-	if (!editing) return (
-		<div onClick={() => setEditing(true)} style={{ ...style, cursor: 'text', minHeight: multiline ? 40 : 20, borderRadius: 3, transition: 'box-shadow 150ms', outline: 'none' }}
-			onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = `inset 0 0 0 1px ${BRAND}40` }}
-			onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = 'none' }}>
-			{value || <span style={{ color: '#999', fontStyle: 'italic' }}>{placeholder || 'Click to edit...'}</span>}
-		</div>
-	)
-	return multiline ? (
-		<textarea ref={r => { if (r) { r.focus(); r.setSelectionRange(r.value.length, r.value.length) } }} value={val} onChange={e => setVal(e.target.value)}
-			onBlur={() => { setEditing(false); onChange(val) }} onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setEditing(false); setVal(value) } }}
-			style={{ ...style, width: '100%', background: 'rgba(107,69,255,0.06)', border: `1px solid ${BRAND}60`, borderRadius: 3, outline: 'none', resize: 'none', padding: '2px 4px', fontFamily: 'inherit', minHeight: 40, boxSizing: 'border-box' }} />
-	) : (
-		<input ref={r => { if (r) { r.focus(); r.setSelectionRange(r.value.length, r.value.length) } }} value={val} onChange={e => setVal(e.target.value)}
-			onBlur={() => { setEditing(false); onChange(val) }}
-			onKeyDown={e => { if (e.key === 'Enter' || e.key === 'Escape') { e.stopPropagation(); setEditing(false); if (e.key === 'Enter') onChange(val); else setVal(value) } }}
-			style={{ ...style, width: '100%', background: 'rgba(107,69,255,0.06)', border: `1px solid ${BRAND}60`, borderRadius: 3, outline: 'none', padding: '2px 4px', fontFamily: 'inherit', boxSizing: 'border-box' }} />
-	)
-}
-
 /* ═══ BACKDROP ═══ */
 const Backdrop = ({ children, onClick }: { children: React.ReactNode; onClick: () => void }) => (
 	<div onClick={onClick} style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(8px)' }}>
@@ -371,22 +325,6 @@ function JobDropdown({ jobs, current, onSelect, c }: {
 					))}
 				</div>
 			)}
-		</div>
-	)
-}
-
-/* ═══ SORTABLE SECTION ═══ */
-function SortableSection({ id, children }: { id: string; children: React.ReactNode }) {
-	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
-	const [hovered, setHovered] = useState(false)
-	return (
-		<div ref={setNodeRef} style={{ transform: transform ? CSS.Transform.toString(transform) : undefined, transition, opacity: isDragging ? 0.5 : 1, position: 'relative' }} {...attributes}
-			onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
-			<div {...listeners} className="preview-only"
-				style={{ position: 'absolute', left: -36, top: 4, cursor: 'grab', opacity: hovered ? 0.6 : 0, transition: 'opacity 150ms', padding: '4px 2px', borderRadius: 3, zIndex: 5 }}>
-				<GripVertical size={14} color="#999" />
-			</div>
-			{children}
 		</div>
 	)
 }
@@ -443,12 +381,14 @@ export default function ResumeBuilder() {
 	const [showScoreDetail, setShowScoreDetail] = useState(false)
 	const [showTemplateGallery, setShowTemplateGallery] = useState(false)
 	const [showCommandPalette, setShowCommandPalette] = useState(false)
+	const [showAllResumes, setShowAllResumes] = useState(false)
 	const [cmdSearch, setCmdSearch] = useState('')
 	const [cmdSelected, setCmdSelected] = useState(0)
 	const [onboardingDismissed, setOnboardingDismissed] = useState(false)
 	const [onboardingCollapsed, setOnboardingCollapsed] = useState(false)
 	const [editingResumeId, setEditingResumeId] = useState<string | null>(null)
-	const canvasRef = useRef<HTMLDivElement>(null)
+	const [hoveredElement, setHoveredElement] = useState<HoveredElementInfo | null>(null)
+	const iframeComponentRef = useRef<ResumeIframeHandle>(null)
 	const user = useOptionalUser()
 	const submitForm = useSubmit()
 	const [profileOpen, setProfileOpen] = useState(false)
@@ -467,24 +407,6 @@ export default function ResumeBuilder() {
 
 	const c = isDark ? darkTheme : lightTheme
 	const sW = sidebar ? 304 : 64
-	const resumeFontObj = FONT_OPTIONS.find(f => f.value === formData.font) || FONT_OPTIONS[0]
-	const resumeFont = resumeFontObj.family
-	const accentColor = formData.nameColor || '#111'
-	const textScale = formData.textSize === 'small' ? 0.833 : formData.textSize === 'large' ? 1.167 : 1
-	const ts = (base: number) => Math.round(base * textScale * 10) / 10
-
-	/* ═══ DND SENSORS ═══ */
-	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
-	const handleDragEnd = (event: DragEndEvent) => {
-		const { active, over } = event
-		if (over && active.id !== over.id) {
-			setSectionOrder(prev => {
-				const oldIndex = prev.indexOf(active.id as string)
-				const newIndex = prev.indexOf(over.id as string)
-				return moveArray(prev, oldIndex, newIndex)
-			})
-		}
-	}
 
 	/* ═══ DARK MODE (synced with app theme) ═══ */
 	const themeFetcher = useFetcher()
@@ -636,6 +558,33 @@ export default function ResumeBuilder() {
 		debouncedSave(newFormData)
 	}
 
+	const deleteBullet = (experienceId: string, bulletIndex: number) => {
+		if (!formData.experiences) return
+		const newFormData = {
+			...formData,
+			experiences: formData.experiences.map(exp => {
+				if (exp.id !== experienceId || !exp.descriptions) return exp
+				const filtered = exp.descriptions.filter((_, i) => i !== bulletIndex)
+				return { ...exp, descriptions: filtered.length > 0 ? filtered : [{ id: crypto.randomUUID(), content: '' }] }
+			}),
+		}
+		setFormData(newFormData)
+		debouncedSave(newFormData)
+	}
+
+	const reorderBullets = (experienceId: string, oldIndex: number, newIndex: number) => {
+		if (!formData.experiences) return
+		const newFormData = {
+			...formData,
+			experiences: formData.experiences.map(exp => {
+				if (exp.id !== experienceId || !exp.descriptions) return exp
+				return { ...exp, descriptions: moveArray(exp.descriptions, oldIndex, newIndex) }
+			}),
+		}
+		setFormData(newFormData)
+		debouncedSave(newFormData)
+	}
+
 	const updateEduField = (eduId: string, field: keyof BuilderEducation, val: string) => {
 		if (!formData.education) return
 		const newFormData = { ...formData, education: formData.education.map(edu => edu.id === eduId ? { ...edu, [field]: val } : edu) }
@@ -691,14 +640,67 @@ export default function ResumeBuilder() {
 		debouncedSave(newFormData)
 	}
 
+	const deleteExperience = (experienceId: string) => {
+		if (!formData.experiences) return
+		const newFormData = { ...formData, experiences: formData.experiences.filter(exp => exp.id !== experienceId) }
+		setFormData(newFormData)
+		debouncedSave(newFormData)
+	}
+
+	const deleteEducation = (educationId: string) => {
+		if (!formData.education) return
+		const newFormData = { ...formData, education: formData.education.filter(edu => edu.id !== educationId) }
+		setFormData(newFormData)
+		debouncedSave(newFormData)
+	}
+
+	const deleteSkill = (skillId: string) => {
+		if (!formData.skills) return
+		const newFormData = { ...formData, skills: formData.skills.filter(s => s.id !== skillId) }
+		setFormData(newFormData)
+		debouncedSave(newFormData)
+	}
+
+	const deleteHobby = (hobbyId: string) => {
+		if (!formData.hobbies) return
+		const newFormData = { ...formData, hobbies: formData.hobbies.filter(h => h.id !== hobbyId) }
+		setFormData(newFormData)
+		debouncedSave(newFormData)
+	}
+
 	/* ═══ JOB SELECTION ═══ */
+	const keywordExtractFetcher = useFetcher<{ extractedKeywords: string | null }>()
+	useEffect(() => {
+		if (keywordExtractFetcher.state === 'idle' && keywordExtractFetcher.data?.extractedKeywords) {
+			setFormData(prev => {
+				if (!prev.job) return prev
+				return { ...prev, job: { ...prev.job, extractedKeywords: keywordExtractFetcher.data!.extractedKeywords } }
+			})
+		}
+	}, [keywordExtractFetcher.state, keywordExtractFetcher.data])
+
+	// On mount: auto-extract keywords if job exists but extractedKeywords is missing
+	const hasTriggeredExtractRef = useRef(false)
+	useEffect(() => {
+		if (hasTriggeredExtractRef.current) return
+		const job = formData.job
+		if (job?.id && job?.content?.trim() && !job.extractedKeywords) {
+			hasTriggeredExtractRef.current = true
+			keywordExtractFetcher.submit({ jobId: job.id }, { method: 'POST', action: '/resources/extract-keywords' })
+		}
+	}, []) // eslint-disable-line react-hooks/exhaustive-deps
+
 	const handleJobChange = useCallback((job: any) => {
 		setSelectedJob(job)
 		const newFormData = { ...formData, jobId: job?.id ?? null, job: job ?? null }
 		setFormData(newFormData)
 		debouncedSave(newFormData)
 		trackLegacyEvent('job_selected', { jobId: job?.id, hasJobDescription: !!(job?.content && job.content.trim().length > 0), userId, category: 'Resume Builder' })
-	}, [formData, debouncedSave, userId])
+		// Auto-extract keywords if job has content but no extracted keywords
+		if (job?.id && job?.content?.trim() && !job.extractedKeywords) {
+			keywordExtractFetcher.submit({ jobId: job.id }, { method: 'POST', action: '/resources/extract-keywords' })
+		}
+	}, [formData, debouncedSave, userId, keywordExtractFetcher])
 
 	/* ═══ AI ═══ */
 	const handleAIClick = (experienceId: string, bulletIndex: number, content: string, diagnostic?: DiagnosticContext | null) => {
@@ -932,6 +934,13 @@ export default function ResumeBuilder() {
 		return true
 	}
 
+	const handleStartScratch = () => {
+		const blank = getDefaultFormData() as typeof formData
+		setFormData(blank)
+		setSelectedJob(null)
+		debouncedSave(blank)
+	}
+
 	const sections = [
 		{ id: 'summary', l: formData.headers?.aboutHeader || 'Summary', icon: AlignLeft, visKey: 'about' as const },
 		{ id: 'experience', l: formData.headers?.experienceHeader || 'Experience', icon: Briefcase, visKey: 'experience' as const },
@@ -954,6 +963,88 @@ export default function ResumeBuilder() {
 		debouncedSave(newFormData)
 	}
 
+	/* ═══ IFRAME HANDLERS ═══ */
+	const handleIframeFieldChange = useCallback((fieldPath: string, value: string) => {
+		if (['name', 'role', 'email', 'phone', 'location', 'website', 'about'].includes(fieldPath)) {
+			updateField(fieldPath, value)
+			return
+		}
+		if (fieldPath.startsWith('headers.')) {
+			const headerKey = fieldPath.split('.')[1]
+			updateHeader(headerKey, value)
+			return
+		}
+		if (fieldPath.startsWith('experiences.')) {
+			const parts = fieldPath.split('.')
+			const expIndex = parseInt(parts[1])
+			const exp = formData.experiences?.[expIndex]
+			if (!exp?.id) return
+			if (parts[2] === 'descriptions') {
+				const bulletIndex = parseInt(parts[3])
+				updateBullet(exp.id, bulletIndex, value)
+			} else {
+				updateExpField(exp.id, parts[2] as keyof BuilderExperience, value)
+			}
+			return
+		}
+		if (fieldPath.startsWith('education.')) {
+			const parts = fieldPath.split('.')
+			const eduIndex = parseInt(parts[1])
+			const edu = formData.education?.[eduIndex]
+			if (!edu?.id) return
+			updateEduField(edu.id, parts[2] as keyof BuilderEducation, value)
+			return
+		}
+		if (fieldPath.startsWith('skills.')) {
+			const skillIndex = parseInt(fieldPath.split('.')[1])
+			const skill = formData.skills?.[skillIndex]
+			if (!skill?.id) return
+			updateSkill(skill.id, value)
+			return
+		}
+		if (fieldPath.startsWith('hobbies.')) {
+			const hobbyIndex = parseInt(fieldPath.split('.')[1])
+			const hobby = formData.hobbies?.[hobbyIndex]
+			if (!hobby?.id) return
+			updateHobby(hobby.id, value)
+			return
+		}
+	}, [formData, updateField, updateHeader, updateExpField, updateBullet, updateEduField, updateSkill, updateHobby])
+
+	const handleStructuralAction = useCallback((action: StructuralAction) => {
+		iframeComponentRef.current?.flushPendingEdits()
+		iframeComponentRef.current?.markStructuralUpdate()
+		switch (action.type) {
+			case 'addBullet': addBulletPoint(action.experienceId); break
+			case 'deleteBullet': deleteBullet(action.experienceId, action.bulletIndex); break
+			case 'reorderBullet': reorderBullets(action.experienceId, action.oldIndex, action.newIndex); break
+			case 'addExperience': addExperience(); break
+			case 'addEducation': addEducation(); break
+			case 'addSkill': addSkill(); break
+			case 'addHobby': addHobby(); break
+			case 'deleteExperience': deleteExperience(action.experienceId); break
+			case 'deleteEducation': deleteEducation(action.educationId); break
+			case 'deleteSkill': deleteSkill(action.skillId); break
+			case 'deleteHobby': deleteHobby(action.hobbyId); break
+			case 'reorderSection': setSectionOrder(prev => moveArray(prev, action.oldIndex, action.newIndex)); break
+			case 'toggleSection': toggleSectionVisibility(action.sectionId); break
+		}
+		// Hide toolbar after structural action — iframe will re-render
+		setHoveredElement(null)
+	}, [addBulletPoint, deleteBullet, reorderBullets, addExperience, addEducation, addSkill, addHobby, deleteExperience, deleteEducation, deleteSkill, deleteHobby, toggleSectionVisibility])
+
+	const handleHoverElement = useCallback((info: HoveredElementInfo | null) => {
+		setHoveredElement(info)
+	}, [])
+
+	const handleToolbarAITailor = useCallback((experienceId: string, bulletIndex: number) => {
+		const exp = formData.experiences?.find(e => e.id === experienceId)
+		if (!exp) return
+		const bullet = exp.descriptions?.[bulletIndex]
+		handleAIClick(experienceId, bulletIndex, bullet?.content || '')
+		setHoveredElement(null)
+	}, [formData, handleAIClick])
+
 	/* ═══ RENDER ═══ */
 	return (
 		<div style={{ width: '100%', height: '100vh', background: c.bg, color: c.text, fontFamily: 'Nunito Sans,system-ui,-apple-system,sans-serif', display: 'flex', flexDirection: 'column', overflow: 'hidden', letterSpacing: '-0.01em' }}>
@@ -968,6 +1059,7 @@ export default function ResumeBuilder() {
 				theme={c} diagnosticContext={diagnosticContext} initialTab={aiModalInitialTab} />
 			<CreateJobModal isOpen={showCreateJob} onClose={() => setShowCreateJob(false)} onCreate={handleJobChange} theme={c} />
 			<ResumeCreationModal isOpen={showCreationModal} onClose={() => setShowCreationModal(false)}
+				onStartScratch={handleStartScratch}
 				resumes={resumes} userId={userId} handleUploadResume={handleUploadResume} theme={c} />
 			{onboarding.showJobModal && <JobPasteModal isOpen={onboarding.showJobModal} onSkip={() => onboarding.handleSkipJob()} onComplete={handleJobChange} theme={c} />}
 
@@ -1028,11 +1120,9 @@ export default function ResumeBuilder() {
 			{/* TOP BAR */}
 			<div style={{ height: 48, borderBottom: `1px solid ${c.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', flexShrink: 0, background: c.bgEl }}>
 				<div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-					<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-						<div style={{ width: 22, height: 22, borderRadius: 5, background: BRAND, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FileText size={13} color="#fff" strokeWidth={2} /></div>
-						<span style={{ fontSize: 15, fontWeight: 600, color: c.text, letterSpacing: '-0.02em' }}>ResumeTailor</span>
-						<span style={{ fontSize: 11, color: BRAND, fontWeight: 500, background: `${BRAND}15`, padding: '1px 6px', borderRadius: 4 }}>.ai</span>
-					</div>
+					<Link to="/" style={{ display: 'flex', alignItems: 'center' }}>
+						<img src="/RT_Logo_stacked.png" alt="Resume Tailor" style={{ height: 28 }} className="dark:brightness-0 dark:invert" />
+					</Link>
 				</div>
 				{/* ⌘K Quick Actions */}
 				<div onClick={() => { setShowCommandPalette(true); setCmdSearch(''); setCmdSelected(0) }}
@@ -1048,7 +1138,7 @@ export default function ResumeBuilder() {
 						<Check size={12} strokeWidth={2} />{saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved' : saveStatus === 'error' ? 'Error' : ''}
 					</span>
 					<button onClick={() => setShowTemplateGallery(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 5, border: `1px solid ${c.border}`, background: 'transparent', color: c.muted, fontSize: 12, cursor: 'pointer' }}>
-						<Palette size={14} color={c.dim} strokeWidth={1.75} />Templates
+						<Palette size={14} color={c.dim} strokeWidth={1.75} />Customize
 					</button>
 					<button onClick={toggleDarkMode} style={{ width: 32, height: 32, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
 						{isDark ? <Sun size={16} color={c.dim} strokeWidth={1.75} /> : <Moon size={16} color={c.dim} strokeWidth={1.75} />}
@@ -1116,7 +1206,7 @@ export default function ResumeBuilder() {
 					{sidebar ? (
 						<div style={{ flex: 1, overflow: 'auto', padding: '0 9px' }}>
 							{/* Resume list */}
-							{resumes.map(r => (
+							{(showAllResumes ? resumes : resumes.slice(0, 5)).map(r => (
 								<div key={r.id} onClick={() => handleResumeSwitch(r.id!)}
 									style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', borderRadius: 7, cursor: 'pointer', background: formData.id === r.id ? c.bgSurf : 'transparent', borderLeft: formData.id === r.id ? `2px solid ${BRAND}` : '2px solid transparent', transition: 'all 150ms' }}
 									onMouseEnter={e => { if (formData.id !== r.id) (e.currentTarget as HTMLElement).style.background = c.bgSurf }}
@@ -1151,6 +1241,11 @@ export default function ResumeBuilder() {
 									</div>
 								</div>
 							))}
+							{resumes.length > 5 && (
+								<div onClick={() => setShowAllResumes(prev => !prev)} style={{ display: "flex", alignItems: "center", gap: 9, padding: "6px 16px", borderRadius: 7, cursor: "pointer", color: BRAND, fontSize: 13, fontWeight: 500 }}>
+									{showAllResumes ? "Show less" : "View all (" + resumes.length + ")"}
+								</div>
+							)}
 							<div onClick={() => setShowCreationModal(true)} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '10px 16px', borderRadius: 7, cursor: 'pointer', marginTop: 5, color: c.dim }}
 								onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = BRAND }}
 								onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = c.dim }}>
@@ -1160,9 +1255,11 @@ export default function ResumeBuilder() {
 							{/* Job selector */}
 							<div style={{ marginTop: 21, padding: '0 5px' }}>
 								<span style={{ fontSize: 14, fontWeight: 600, color: c.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Target Job</span>
+								{jobs.length > 0 && (
 								<div style={{ marginTop: 9 }}>
 									<JobDropdown jobs={jobs} current={formData.jobId ?? null} onSelect={handleJobChange} c={c} />
 								</div>
+								)}
 								<div onClick={() => setShowCreateJob(true)} style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 9, cursor: 'pointer', color: c.dim }}
 									onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = BRAND }}
 									onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = c.dim }}>
@@ -1212,172 +1309,23 @@ export default function ResumeBuilder() {
 
 				{/* CENTER CANVAS */}
 				<div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: c.bg }}>
-					<div style={{ flex: 1, overflow: 'auto', display: 'flex', justifyContent: 'center', padding: '32px 24px', background: c.canvas }}>
-						<div ref={canvasRef} id="resume-content" style={{ width: 816, minHeight: 1056, background: '#FFFFFF', borderRadius: 2, boxShadow: '0 4px 24px rgba(0,0,0,0.4), 0 1px 4px rgba(0,0,0,0.3)', padding: '48px 48px', color: '#1a1a1a', flexShrink: 0, fontFamily: resumeFont, position: 'relative' }}>
-							{/* Page break indicator */}
-							<div className="preview-only" style={{ position: 'absolute', left: 0, right: 0, top: 1056, borderTop: '1px dashed #ccc', pointerEvents: 'none', zIndex: 10 }}>
-								<span style={{ position: 'absolute', right: 8, top: -10, fontSize: 10, color: '#999', background: '#fff', padding: '0 4px' }}>Page 1 ends here</span>
-							</div>
-							{/* Name & Contact */}
-							<div style={{ marginBottom: 24 }}>
-								<EditableText value={formData.name || ''} onChange={v => updateField('name', v)}
-									style={{ fontSize: ts(24), fontWeight: 700, color: accentColor, letterSpacing: '-0.01em', fontFamily: resumeFont }} c={c} />
-								{formData.role && <EditableText value={formData.role} onChange={v => updateField('role', v)}
-									style={{ fontSize: ts(14), color: '#444', marginTop: 4, fontFamily: resumeFont }} c={c} />}
-								<EditableText
-									value={[formData.location, formData.email, formData.phone, formData.website].filter(Boolean).join(' · ')}
-									onChange={v => {
-										const parts = v.split(' · ')
-										updateField('location', parts[0] || '')
-										updateField('email', parts[1] || '')
-										updateField('phone', parts[2] || '')
-										updateField('website', parts[3] || '')
-									}}
-									style={{ fontSize: ts(11.5), color: '#555', marginTop: 6, fontFamily: resumeFont }} c={c} />
-							</div>
-
-							{/* DnD Section Reordering */}
-							<DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-								<SortableContext items={sectionOrder} strategy={verticalListSortingStrategy}>
-									{sectionOrder.map(secId => {
-										if (secId === 'summary' && formData.visibleSections?.about !== false) return (
-											<SortableSection key="summary" id="summary">
-												<div style={{ marginBottom: 20 }}>
-													<div ref={secRefs.summary} style={{ fontSize: ts(12), fontWeight: 700, color: accentColor, textTransform: 'uppercase', letterSpacing: '0.08em', borderBottom: `2px solid ${accentColor}`, paddingBottom: 4, marginBottom: 10, fontFamily: resumeFont, transition: 'all 300ms', boxShadow: highlight === 'summary' ? `inset 4px 0 0 ${BRAND}, 0 0 12px ${BRAND}20` : 'none', paddingLeft: highlight === 'summary' ? 8 : 0 }}>
-														<EditableText value={formData.headers?.aboutHeader || 'Summary'} onChange={v => updateHeader('aboutHeader', v)}
-														style={{ fontSize: ts(12), fontWeight: 700, color: accentColor, textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: resumeFont }} c={c} />
-													</div>
-													<EditableText value={formData.about || ''} onChange={v => updateField('about', v)} multiline
-														placeholder="In 2-3 sentences, tell employers why you're the one"
-														style={{ fontSize: ts(12.5), lineHeight: 1.6, color: '#333', fontFamily: resumeFont }} c={c} />
-												</div>
-											</SortableSection>
-										)
-										if (secId === 'experience' && formData.visibleSections?.experience !== false) return (
-											<SortableSection key="experience" id="experience">
-												<div style={{ marginBottom: 20 }}>
-													<div ref={secRefs.experience} style={{ fontSize: ts(12), fontWeight: 700, color: accentColor, textTransform: 'uppercase', letterSpacing: '0.08em', borderBottom: `2px solid ${accentColor}`, paddingBottom: 4, marginBottom: 10, fontFamily: resumeFont, transition: 'all 300ms', boxShadow: highlight === 'experience' ? `inset 4px 0 0 ${BRAND}, 0 0 12px ${BRAND}20` : 'none', paddingLeft: highlight === 'experience' ? 8 : 0 }}>
-														<EditableText value={formData.headers?.experienceHeader || 'Experience'} onChange={v => updateHeader('experienceHeader', v)}
-														style={{ fontSize: ts(12), fontWeight: 700, color: accentColor, textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: resumeFont }} c={c} />
-													</div>
-													{formData.experiences?.map((exp, ei) => (
-														<div key={exp.id || ei} style={{ marginBottom: 14 }}>
-															<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-																<div style={{ display: 'flex', gap: 4, alignItems: 'baseline' }}>
-																	<EditableText value={exp.role || ''} onChange={v => updateExpField(exp.id!, 'role', v)} style={{ fontSize: ts(13), fontWeight: 700, color: '#111', fontFamily: resumeFont }} c={c} />
-																	<span style={{ fontSize: ts(12.5), color: '#444', fontFamily: resumeFont }}> · </span>
-																	<EditableText value={exp.company || ''} onChange={v => updateExpField(exp.id!, 'company', v)} style={{ fontSize: ts(12.5), color: '#444', fontFamily: resumeFont }} c={c} />
-																</div>
-																<span style={{ fontSize: ts(11), color: '#666', fontFamily: resumeFont, flexShrink: 0 }}>
-																	{[exp.startDate, exp.endDate].filter(Boolean).join(' – ')}
-																</span>
-															</div>
-															<ul style={{ margin: 0, paddingLeft: 16, marginTop: 4 }}>
-																{exp.descriptions?.map((b, bi) => {
-																	const bulletKey = `${exp.id}_${bi}`
-																	const isHighlighted = highlightedBullets.has(bulletKey)
-																	return (
-																	<li key={b.id || bi} style={{ fontSize: ts(12), lineHeight: 1.55, color: '#333', marginBottom: 3, fontFamily: resumeFont, listStyleType: 'disc', position: 'relative', ...(isHighlighted ? { background: `${WARN}15`, borderRadius: 3, marginLeft: -4, paddingLeft: 4, marginRight: -4, paddingRight: 4, transition: 'background 300ms' } : {}) }}>
-																		<span style={{ display: 'inline' }}>
-																			<EditableText value={b.content || ''} onChange={v => updateBullet(exp.id!, bi, v)}
-																				style={{ fontSize: ts(12), lineHeight: 1.55, color: '#333', fontFamily: resumeFont, display: 'inline' }}
-																				placeholder="Start with your proudest achievement" c={c} />
-																		</span>
-																		<span onClick={() => handleAIClick(exp.id!, bi, b.content || '')}
-																			style={{ display: 'inline-flex', marginLeft: 6, verticalAlign: 'middle', cursor: 'pointer', opacity: isHighlighted ? 1 : 0.5, transition: 'opacity 150ms' }}
-																			onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
-																			onMouseLeave={e => { if (!isHighlighted) (e.currentTarget as HTMLElement).style.opacity = '0.5' }}
-																			title="Strengthen This Bullet">
-																			<Sparkles size={12} color={BRAND} strokeWidth={2} />
-																		</span>
-																	</li>
-																)})}
-															</ul>
-															<div onClick={() => addBulletPoint(exp.id!)} className="preview-only" style={{ fontSize: 11, color: BRAND, cursor: 'pointer', marginTop: 4, marginLeft: 16, opacity: 0.7, display: 'flex', alignItems: 'center', gap: 4, height: 0, overflow: 'visible' }}
-																onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
-																onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '0.7' }}>
-																<Plus size={12} strokeWidth={2} />Add bullet
-															</div>
-														</div>
-													))}
-													<div onClick={addExperience} className="preview-only" style={{ fontSize: 11, color: BRAND, cursor: 'pointer', marginTop: 4, opacity: 0.7, display: 'flex', alignItems: 'center', gap: 4, height: 0, overflow: 'visible' }}
-														onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
-														onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '0.7' }}>
-														<Plus size={12} strokeWidth={2} />Add experience
-													</div>
-												</div>
-											</SortableSection>
-										)
-										if (secId === 'education' && formData.visibleSections?.education !== false) return (
-											<SortableSection key="education" id="education">
-												<div style={{ marginBottom: 20 }}>
-													<div ref={secRefs.education} style={{ fontSize: ts(12), fontWeight: 700, color: accentColor, textTransform: 'uppercase', letterSpacing: '0.08em', borderBottom: `2px solid ${accentColor}`, paddingBottom: 4, marginBottom: 10, fontFamily: resumeFont, transition: 'all 300ms', boxShadow: highlight === 'education' ? `inset 4px 0 0 ${BRAND}, 0 0 12px ${BRAND}20` : 'none', paddingLeft: highlight === 'education' ? 8 : 0 }}>
-														<EditableText value={formData.headers?.educationHeader || 'Education'} onChange={v => updateHeader('educationHeader', v)}
-														style={{ fontSize: ts(12), fontWeight: 700, color: accentColor, textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: resumeFont }} c={c} />
-													</div>
-													{formData.education?.map((edu, ei) => (
-														<div key={edu.id || ei} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-															<div>
-																<EditableText value={edu.school || ''} onChange={v => updateEduField(edu.id!, 'school', v)} style={{ fontSize: ts(13), fontWeight: 700, color: '#111', fontFamily: resumeFont }} c={c} />
-																<EditableText value={edu.degree || ''} onChange={v => updateEduField(edu.id!, 'degree', v)} style={{ fontSize: ts(12), color: '#444', fontFamily: resumeFont }} c={c} />
-															</div>
-															<span style={{ fontSize: ts(11), color: '#666', fontFamily: resumeFont }}>
-																{[edu.startDate, edu.endDate].filter(Boolean).join(' – ')}
-															</span>
-														</div>
-													))}
-													<div onClick={addEducation} className="preview-only" style={{ fontSize: 11, color: BRAND, cursor: 'pointer', marginTop: 4, opacity: 0.7, display: 'flex', alignItems: 'center', gap: 4, height: 0, overflow: 'visible' }}
-														onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
-														onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '0.7' }}>
-														<Plus size={12} strokeWidth={2} />Add education
-													</div>
-												</div>
-											</SortableSection>
-										)
-										if (secId === 'skills' && formData.visibleSections?.skills !== false) return (
-											<SortableSection key="skills" id="skills">
-												<div style={{ marginBottom: 20 }}>
-													<div ref={secRefs.skills} style={{ fontSize: ts(12), fontWeight: 700, color: accentColor, textTransform: 'uppercase', letterSpacing: '0.08em', borderBottom: `2px solid ${accentColor}`, paddingBottom: 4, marginBottom: 10, fontFamily: resumeFont, transition: 'all 300ms', boxShadow: highlight === 'skills' ? `inset 4px 0 0 ${BRAND}, 0 0 12px ${BRAND}20` : 'none', paddingLeft: highlight === 'skills' ? 8 : 0 }}>
-														<EditableText value={formData.headers?.skillsHeader || 'Skills'} onChange={v => updateHeader('skillsHeader', v)}
-														style={{ fontSize: ts(12), fontWeight: 700, color: accentColor, textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: resumeFont }} c={c} />
-													</div>
-													{formData.skills?.map((skill, si) => (
-														<EditableText key={skill.id || si} value={skill.name || ''} onChange={v => updateSkill(skill.id!, v)}
-															style={{ fontSize: ts(12), color: '#333', lineHeight: 1.6, fontFamily: resumeFont }} placeholder="Add a skill" c={c} />
-													))}
-													<div onClick={addSkill} className="preview-only" style={{ fontSize: 11, color: BRAND, cursor: 'pointer', marginTop: 4, opacity: 0.7, display: 'flex', alignItems: 'center', gap: 4, height: 0, overflow: 'visible' }}
-														onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
-														onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '0.7' }}>
-														<Plus size={12} strokeWidth={2} />Add skill
-													</div>
-												</div>
-											</SortableSection>
-										)
-										if (secId === 'hobbies' && formData.visibleSections?.hobbies !== false) return (
-											<SortableSection key="hobbies" id="hobbies">
-												<div style={{ marginBottom: 20 }}>
-													<div ref={secRefs.hobbies} style={{ fontSize: ts(12), fontWeight: 700, color: accentColor, textTransform: 'uppercase', letterSpacing: '0.08em', borderBottom: `2px solid ${accentColor}`, paddingBottom: 4, marginBottom: 10, fontFamily: resumeFont, transition: 'all 300ms', boxShadow: highlight === 'hobbies' ? `inset 4px 0 0 ${BRAND}, 0 0 12px ${BRAND}20` : 'none', paddingLeft: highlight === 'hobbies' ? 8 : 0 }}>
-														<EditableText value={formData.headers?.hobbiesHeader || 'Interests & Activities'} onChange={v => updateHeader('hobbiesHeader', v)}
-															style={{ fontSize: ts(12), fontWeight: 700, color: accentColor, textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: resumeFont }} c={c} />
-													</div>
-													{formData.hobbies?.map((hobby, hi) => (
-														<EditableText key={hobby.id || hi} value={hobby.name || ''} onChange={v => updateHobby(hobby.id!, v)}
-															style={{ fontSize: ts(12), color: '#333', lineHeight: 1.6, fontFamily: resumeFont }} placeholder="Add an interest or activity" c={c} />
-													))}
-													<div onClick={addHobby} className="preview-only" style={{ fontSize: 11, color: BRAND, cursor: 'pointer', marginTop: 4, opacity: 0.7, display: 'flex', alignItems: 'center', gap: 4, height: 0, overflow: 'visible' }}
-														onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
-														onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '0.7' }}>
-														<Plus size={12} strokeWidth={2} />Add interest
-													</div>
-												</div>
-											</SortableSection>
-										)
-										return null
-									})}
-								</SortableContext>
-							</DndContext>
-						</div>
-					</div>
+					<ResumeIframe
+						ref={iframeComponentRef}
+						formData={formData}
+						sectionOrder={sectionOrder}
+						onFieldChange={handleIframeFieldChange}
+						onStructuralAction={handleStructuralAction}
+						onHoverElement={handleHoverElement}
+						canvasBackground={c.canvas}
+					/>
+					<FloatingToolbar
+						hovered={hoveredElement}
+						onAction={handleStructuralAction}
+						onAITailor={handleToolbarAITailor}
+						onToggleSection={toggleSectionVisibility}
+						sectionOrder={sectionOrder}
+						formData={formData}
+					/>
 				</div>
 
 				{/* SCORE PANEL */}
@@ -1389,6 +1337,17 @@ export default function ResumeBuilder() {
 								<PanelRightClose size={18} color={c.dim} strokeWidth={1.75} />
 							</button>
 						</div>
+						{!formData.jobId ? (
+							<div style={{ padding: '40px 21px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+								<Target size={32} color={c.dim} strokeWidth={1.5} />
+								<div style={{ fontSize: 15, fontWeight: 500, color: c.muted }}>Select a target job to see your Fit Score</div>
+								<div style={{ fontSize: 13, color: c.dim, lineHeight: 1.4 }}>Your resume will be scored against the job description's keywords and requirements.</div>
+								<button onClick={() => setShowCreateJob(true)} style={{ marginTop: 8, padding: '8px 18px', borderRadius: 6, border: 'none', background: BRAND, color: '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+									<Plus size={14} strokeWidth={2} />Add a Job
+								</button>
+							</div>
+						) : (
+						<>
 						<ScoreArc score={scores.overall} onClick={() => setShowScoreDetail(true)} c={c} />
 						<div style={{ padding: '0 21px 5px', textAlign: 'center' }}>
 							<span onClick={() => setShowScoreDetail(true)} style={{ fontSize: 14, color: BRAND, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'center' }}>
@@ -1506,6 +1465,8 @@ export default function ResumeBuilder() {
 								</>
 							)
 						})()}
+					</>
+					)}
 					</div>
 				)}
 			</div>
@@ -1544,30 +1505,7 @@ export default function ResumeBuilder() {
 			)}
 
 			{/* ═══ TEMPLATE GALLERY SLIDE-OVER ═══ */}
-			<SlideOver open={showTemplateGallery} onClose={() => setShowTemplateGallery(false)} title="Templates" c={c}>
-				<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24 }}>
-					{TEMPLATES.map(tmpl => {
-						const isActive = formData.layout === tmpl.layout && formData.font === tmpl.font && formData.nameColor === tmpl.accent
-						return (
-							<div key={tmpl.id} onClick={() => applyTemplate(tmpl)}
-								style={{ padding: 12, borderRadius: 8, border: `2px solid ${isActive ? BRAND : c.border}`, background: isActive ? `${BRAND}08` : c.bgSurf, cursor: 'pointer', transition: 'all 150ms' }}
-								onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.borderColor = BRAND + '60' }}
-								onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.borderColor = c.border }}>
-								{/* Mini preview */}
-								<div style={{ width: '100%', height: 80, background: '#fff', borderRadius: 4, border: `1px solid ${c.borderSub}`, marginBottom: 8, padding: 8, display: 'flex', flexDirection: 'column', gap: 3 }}>
-									<div style={{ height: 6, width: '60%', background: tmpl.accent, borderRadius: 2 }} />
-									<div style={{ height: 3, width: '80%', background: '#ddd', borderRadius: 1 }} />
-									<div style={{ height: 3, width: '70%', background: '#eee', borderRadius: 1 }} />
-									<div style={{ height: 2, width: '50%', background: '#eee', borderRadius: 1, marginTop: 4 }} />
-									<div style={{ height: 2, width: '90%', background: '#f0f0f0', borderRadius: 1 }} />
-								</div>
-								<div style={{ fontSize: 12, fontWeight: 600, color: isActive ? BRAND : c.text }}>{tmpl.name}</div>
-								<div style={{ fontSize: 10, color: c.dim, marginTop: 2 }}>{tmpl.layout}</div>
-							</div>
-						)
-					})}
-				</div>
-
+			<SlideOver open={showTemplateGallery} onClose={() => setShowTemplateGallery(false)} title="Customize" c={c}>
 				{/* Accent Color */}
 				<div style={{ marginBottom: 20 }}>
 					<span style={{ fontSize: 11, fontWeight: 600, color: c.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Accent Color</span>

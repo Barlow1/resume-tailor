@@ -111,7 +111,7 @@ export const links: LinksFunction = () => {
 			crossOrigin: 'use-credentials',
 		} as const, // necessary to make typescript happy
 		//These should match the css preloads above to avoid css as render blocking resource
-		{ rel: 'icon', type: 'image/svg+xml', href: '/favicons/favicon.svg' },
+		{ rel: 'icon', type: 'image/png', href: '/favicons/favicon-32x32.png' },
 		{ rel: 'stylesheet', href: fontStylestylesheetUrl },
 		{ rel: 'stylesheet', href: tailwindStylesheetUrl },
 		cssBundleHref ? { rel: 'stylesheet', href: cssBundleHref } : null,
@@ -303,6 +303,7 @@ const hideNavPages = [
 	'routes/pricing+/index',
 	'routes/ai-resume-builder+/index',
 	'routes/builder+/index',
+	'routes/users+/$username',
 ]
 
 function App() {
@@ -512,14 +513,11 @@ function App() {
 												<div className="flex grow flex-col gap-y-6 overflow-y-auto bg-[#6B45FF] px-7 pb-5">
 													<div className="flex h-[72px] shrink-0 items-center">
 														<Link to="/">
-															<div
-																className={clsx(
-																	'md:text-xl text-center text-lg font-extrabold text-white lg:text-3xl',
-																	{ hidden: isCollapsed },
-																)}
-															>
-																RESUME TAILOR
-															</div>
+															<img
+																src="/RT_Logo_stacked.png"
+																alt="Resume Tailor"
+																className="h-10 w-auto brightness-0 invert"
+															/>
 														</Link>
 													</div>
 													<nav className="flex flex-1 flex-col">
@@ -591,13 +589,14 @@ function App() {
 										<div className="flex grow flex-col gap-y-6 overflow-y-auto bg-[#6B45FF] px-7 pb-5">
 											<div className="flex h-[72px] shrink-0 items-center">
 												<Link to="/">
-													<div
+													<img
+														src={isCollapsed ? '/RT_Logo_icon.png' : '/RT_Logo_stacked.png'}
+														alt="Resume Tailor"
 														className={clsx(
-															'md:text-xl text-center text-lg font-extrabold text-white lg:text-3xl',
+															'w-auto brightness-0 invert',
+															isCollapsed ? 'h-9' : 'h-10',
 														)}
-													>
-														{!isCollapsed ? 'RESUME TAILOR' : 'RT'}
-													</div>
+													/>
 												</Link>
 											</div>
 
@@ -736,13 +735,11 @@ function App() {
 												{shouldHideNav ? (
 													<div className="flex items-center gap-x-4 lg:gap-x-6">
 														<Link to="/">
-															<div
-																className={clsx(
-																	'text-center text-xl font-extrabold text-primary md:text-3xl lg:text-4xl',
-																)}
-															>
-																RESUME TAILOR
-															</div>
+															<img
+																src="/RT_Logo_stacked.png"
+																alt="Resume Tailor"
+																className="h-10 w-auto md:h-12 lg:h-14 dark:brightness-0 dark:invert"
+															/>
 														</Link>
 														<div className="flex flex-1 items-center justify-end gap-x-4 self-stretch text-xl lg:gap-x-6">
 															<Link

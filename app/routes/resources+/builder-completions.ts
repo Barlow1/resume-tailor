@@ -89,6 +89,7 @@ export async function action({ request }: DataFunctionArgs) {
 					jobTitle,
 					user,
 					extractedKeywords: parsedKeywords,
+					diagnosticContext: parsedDiagnostic,
 				}),
 				await prisma.gettingStartedProgress.upsert({
 					where: { ownerId: userId },

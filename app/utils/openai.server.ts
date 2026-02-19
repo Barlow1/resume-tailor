@@ -222,6 +222,7 @@ export const getEntireTailoredResumeResponse = async ({
 	jobDescription: string
 	user: Partial<User>
 	extractedKeywords?: string[]
+	diagnosticContext?: { issueType: string; reason: string; missingKeywords?: string[] } | null
 }) => {
 	const name = user.name ? user.name.replace(/ /g, '_') : user.username
 
@@ -312,6 +313,7 @@ export const getBuilderExperienceResponse = async ({
 	resumeData,
 	user,
 	extractedKeywords,
+	diagnosticContext,
 }: {
 	experience: string
 	jobTitle: string
@@ -321,6 +323,7 @@ export const getBuilderExperienceResponse = async ({
 	resumeData?: ResumeData
 	user: Partial<User>
 	extractedKeywords?: string[]
+	diagnosticContext?: { issueType: string; reason: string; missingKeywords?: string[] } | null
 }) => {
 	const name = user.name ? user.name.replace(/ /g, '_') : user.username
 
@@ -415,6 +418,12 @@ Otherwise set coverage_gap_flag to null. Only flag genuine critical gaps, not ni
 
 KEYWORD COVERAGE NOTE:
 In keyword_coverage_note, briefly state which keywords this bullet now covers, which are already covered elsewhere on the resume, and any critical JD keywords not covered anywhere.
+
+${diagnosticContext?.issueType === "no-metrics" ? `
+
+SPECIAL INSTRUCTION: The user has been told this bullet needs quantifiable metrics. Override RULE 1's no-metric constraint for this request. Each of the 3 options MUST include a plausible placeholder metric (e.g. "X%", "Y+", "") that the user can replace with their real numbers. Use brackets like [X%] to signal the user should fill in the actual figure.` : diagnosticContext?.issueType === "weak-verb" ? `
+
+SPECIAL INSTRUCTION: The user has been told this bullet uses a weak action verb. Each option MUST start with a strong, specific action verb.` : ""}
 
 Return ONLY valid JSON matching the required schema.`,
 						name,
