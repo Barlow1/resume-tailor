@@ -15,11 +15,11 @@ import { useOptionalUser } from '~/utils/user.ts'
 import { getUserImgSrc } from '~/utils/misc.ts'
 import { useTheme } from '~/routes/resources+/theme/index.tsx'
 import {
-	FileText, ChevronDown, Search, Sun, Moon, Sparkles,
+	ChevronDown, Search, Sun, Moon, Sparkles,
 	Download, LayoutTemplate, Check, X, Plus, Minus, Briefcase, GraduationCap,
 	Code2, AlignLeft, Target, TrendingUp, Zap, ArrowRight, CheckCircle2, Circle,
 	PanelLeftClose, PanelRightClose, Palette, Eye, EyeOff,
-	ChevronRight, Rocket, LogOut, User as UserIcon, CreditCard, Trash2,
+	ChevronRight, Rocket, LogOut, User as UserIcon, CreditCard,
 } from 'lucide-react'
 import { SubscribeModal } from '~/components/subscribe-modal.tsx'
 import { getStripeSubscription, getUserId } from '~/utils/auth.server.ts'
@@ -243,16 +243,6 @@ const FONT_OPTIONS = [
 	{ value: 'font-verdana', label: 'Verdana', family: 'Verdana, Geneva, sans-serif' },
 ]
 const ACCENT_COLORS = ['#6B45FF', '#2563EB', '#059669', '#E11D48', '#F76B15', '#7C3AED', '#111113', '#1E3A5F']
-const TEMPLATES = [
-	{ id: 'classic', name: 'Classic', layout: 'traditional', font: 'font-crimson', accent: '#111113' },
-	{ id: 'professional', name: 'Professional', layout: 'professional', font: 'font-sans', accent: '#2563EB' },
-	{ id: 'modern', name: 'Modern', layout: 'modern', font: 'font-serif', accent: '#6B45FF' },
-	{ id: 'executive', name: 'Executive', layout: 'traditional', font: 'font-garamond', accent: '#1E3A5F' },
-	{ id: 'creative', name: 'Creative', layout: 'modern', font: 'font-trebuchet', accent: '#E11D48' },
-	{ id: 'minimal', name: 'Minimal', layout: 'professional', font: 'font-verdana', accent: '#333333' },
-	{ id: 'tech', name: 'Tech', layout: 'modern', font: 'font-mono', accent: '#059669' },
-	{ id: 'elegant', name: 'Elegant', layout: 'traditional', font: 'font-serif', accent: '#7C3AED' },
-]
 const DEFAULT_SECTION_ORDER = ['summary', 'experience', 'education', 'skills', 'hobbies']
 
 function moveArray<T>(arr: T[], from: number, to: number): T[] {
@@ -364,7 +354,7 @@ export default function ResumeBuilder() {
 	const [sidebar, setSidebar] = useState(true)
 	const [scorePanel, setScorePanel] = useState(true)
 	const [activeSection, setActiveSection] = useState('experience')
-	const [highlight, setHighlight] = useState<string | null>(null)
+	const [, setHighlight] = useState<string | null>(null)
 	const [showSubscribeModal, setShowSubscribeModal] = useState(false)
 	const [showCreateJob, setShowCreateJob] = useState(false)
 	const [showCreationModal, setShowCreationModal] = useState(!formData.id)
@@ -373,7 +363,7 @@ export default function ResumeBuilder() {
 	const [selectedBullet, setSelectedBullet] = useState<{ experienceId: string; bulletIndex: number; content: string } | null>(null)
 	const [selectedExperience, setSelectedExperience] = useState<BuilderExperience | undefined>(undefined)
 	const [diagnosticContext, setDiagnosticContext] = useState<DiagnosticContext | null>(null)
-	const [highlightedBullets, setHighlightedBullets] = useState<Set<string>>(new Set())
+	const [, setHighlightedBullets] = useState<Set<string>>(new Set())
 	const [keywordPopover, setKeywordPopover] = useState<{ keyword: string; status: 'missing' | 'partial'; anchorRect: DOMRect } | null>(null)
 	const [selectedJob, setSelectedJob] = useState<BuilderJob | null | undefined>(formData.job)
 	const [downloadClicked, setDownloadClicked] = useState(false)
@@ -891,14 +881,6 @@ export default function ResumeBuilder() {
 	}, [])
 
 	/* ═══ TEMPLATE APPLY ═══ */
-	const applyTemplate = (tmpl: typeof TEMPLATES[0]) => {
-		setFormData(prev => {
-			const next = { ...prev, layout: tmpl.layout, font: tmpl.font, nameColor: tmpl.accent }
-			debouncedSave(next)
-			return next
-		})
-		trackLegacyEvent('template_applied', { template: tmpl.id, layout: tmpl.layout, font: tmpl.font })
-	}
 	const applyFont = (fontValue: string) => {
 		setFormData(prev => {
 			const next = { ...prev, font: fontValue }
