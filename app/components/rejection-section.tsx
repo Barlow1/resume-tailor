@@ -7,7 +7,7 @@ import { trackCtaClick } from '~/lib/analytics.client.ts'
 export function RejectionSection() {
 	return (
 		<div className="mt-24 grid grid-cols-1 items-center gap-12 md:grid-cols-2">
-			<div className="relative h-full rounded-xl bg-muted px-12 py-20 shadow-lg">
+			<div className="relative h-full overflow-hidden rounded-xl bg-muted px-12 py-20 shadow-lg">
 				<OptimizedImage
 					src={colorBlur}
 					alt="Color blur"

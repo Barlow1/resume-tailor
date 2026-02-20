@@ -57,6 +57,8 @@ export interface ResumeIframeHandle {
 	forceRerender: (focusFieldAfter?: string) => void
 	/** Signal that a structural change is coming so the next html update re-renders even if a field is focused */
 	markStructuralUpdate: () => void
+	/** Scroll the resume canvas to bring a section into view */
+	scrollToSection: (sectionId: string) => void
 }
 
 const PAGE_HEIGHT = 1056
@@ -111,6 +113,7 @@ export const ResumeIframe = forwardRef<ResumeIframeHandle, ResumeIframeProps>(
 		const isComposingRef = useRef(false)
 		const observerRef = useRef<MutationObserver | null>(null)
 		const blurTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
+		const pageBreakTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
 		const [srcdoc, setSrcdoc] = useState('')
 
 		// Stable ref for onHoverElement to avoid re-attaching listeners
@@ -145,11 +148,24 @@ export const ResumeIframe = forwardRef<ResumeIframeHandle, ResumeIframeProps>(
 			isStructuralUpdateRef.current = true
 		}, [])
 
+		const scrollToSection = useCallback((sectionId: string) => {
+			const doc = iframeRef.current?.contentDocument
+			if (!doc) return
+			const el = doc.querySelector(`[data-section-id="${sectionId}"]`) as HTMLElement
+			if (!el) return
+			const scrollContainer = iframeRef.current?.parentElement?.parentElement
+			if (!scrollContainer) return
+			// el.offsetTop is the element's distance from the top of the iframe document.
+			// The scroll container has 32px padding-top, so subtract a bit for a visible gap.
+			scrollContainer.scrollTo({ top: Math.max(0, el.offsetTop - 16), behavior: 'smooth' })
+		}, [])
+
 		useImperativeHandle(ref, () => ({
 			flushPendingEdits,
 			forceRerender,
 			markStructuralUpdate,
-		}), [flushPendingEdits, forceRerender, markStructuralUpdate])
+			scrollToSection,
+		}), [flushPendingEdits, forceRerender, markStructuralUpdate, scrollToSection])
 
 		// Generate HTML
 		const html = useMemo(
@@ -275,6 +291,7 @@ export const ResumeIframe = forwardRef<ResumeIframeHandle, ResumeIframeProps>(
 
 				editingFieldRef.current = field
 				clearTimeout(blurTimeoutRef.current)
+				clearTimeout(pageBreakTimeoutRef.current)
 
 				const info = resolveToolbarInfo(el)
 				onHoverElementRef.current?.(info)
@@ -411,9 +428,30 @@ export const ResumeIframe = forwardRef<ResumeIframeHandle, ResumeIframeProps>(
 			calculatePageBreaks(doc)
 			resizeIframe()
 
-			// MutationObserver for auto-resize
-			const observer = new MutationObserver(() => {
+			// Re-run after fonts load — offsetHeight is inaccurate until fonts are ready
+			void doc.fonts?.ready.then(() => {
+				calculatePageBreaks(doc)
 				resizeIframe()
+			})
+
+			// MutationObserver for auto-resize and debounced page-break recalculation
+			const observer = new MutationObserver((mutations) => {
+				resizeIframe()
+				// Skip if all mutations are page-gap elements we just inserted
+				const isOnlyPageGapChanges = mutations.length > 0 && mutations.every(m =>
+					m.type === 'childList' &&
+					[...m.addedNodes, ...m.removedNodes].length > 0 &&
+					[...m.addedNodes, ...m.removedNodes].every(
+						n => (n as Element).classList?.contains('page-gap'),
+					)
+				)
+				if (!isOnlyPageGapChanges) {
+					clearTimeout(pageBreakTimeoutRef.current)
+					pageBreakTimeoutRef.current = setTimeout(() => {
+						calculatePageBreaks(doc)
+						resizeIframe()
+					}, 400)
+				}
 			})
 			observer.observe(doc.body, {
 				childList: true,

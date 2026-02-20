@@ -423,7 +423,9 @@ ${diagnosticContext?.issueType === "no-metrics" ? `
 
 SPECIAL INSTRUCTION: The user has been told this bullet needs quantifiable metrics. Override RULE 1's no-metric constraint for this request. Each of the 3 options MUST include a plausible placeholder metric (e.g. "X%", "Y+", "") that the user can replace with their real numbers. Use brackets like [X%] to signal the user should fill in the actual figure.` : diagnosticContext?.issueType === "weak-verb" ? `
 
-SPECIAL INSTRUCTION: The user has been told this bullet uses a weak action verb. Each option MUST start with a strong, specific action verb.` : ""}
+SPECIAL INSTRUCTION: The user has been told this bullet uses a weak action verb. Each option MUST start with a strong, specific action verb.` : diagnosticContext?.issueType === "missing-keywords" && diagnosticContext?.missingKeywords?.length ? `
+
+SPECIAL INSTRUCTION: The keyword "${diagnosticContext.missingKeywords[0]}" is missing from this bullet but is required for the target role. ALL 3 options MUST incorporate "${diagnosticContext.missingKeywords[0]}" naturally. If this skill or technology appears anywhere on the user's resume (skills section, other bullets, etc.), you MUST include it — you are simply making explicit what they have implicitly done. Only omit it if there is genuinely no truthful connection to this specific bullet's work, and if so, explain why in keyword_coverage_note.` : ""}
 
 Return ONLY valid JSON matching the required schema.`,
 						name,

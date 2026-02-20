@@ -159,6 +159,7 @@ interface AIAssistantModalProps {
 	theme: ThemeColors
 	diagnosticContext?: DiagnosticContext | null
 	initialTab?: 'tailor' | 'generate'
+	onBulletChange?: (content: string, experience: BuilderExperience, bulletIndex: number) => void
 }
 
 export function AIAssistantModal({
@@ -177,6 +178,7 @@ export function AIAssistantModal({
 	theme: c,
 	diagnosticContext,
 	initialTab,
+	onBulletChange,
 }: AIAssistantModalProps) {
 	const [activeTab, setActiveTab] = useState<'tailor' | 'generate'>(initialTab ?? 'tailor')
 	const [selectedItems, setSelectedItems] = useState<number[]>([])
@@ -187,23 +189,37 @@ export function AIAssistantModal({
 	const [acceptedOption, setAcceptedOption] = useState<number | null>(null)
 	const [editingOption, setEditingOption] = useState<number | null>(null)
 	const [editValues, setEditValues] = useState<Record<number, string>>({})
+	const [tailorContent, setTailorContent] = useState<string | undefined>(content)
+	const [tailorExperience, setTailorExperience] = useState<BuilderExperience | undefined>(experience)
+	const [showBulletPicker, setShowBulletPicker] = useState(false)
 	const editTextareaRef = useRef<HTMLTextAreaElement>(null)
 	const logActionFetcher = useFetcher()
 	const completionStartTime = useRef<number | null>(null)
+	const wasOpenRef = useRef(false)
 
 	useEffect(() => {
 		if (isOpen) {
-			setActiveTab(initialTab ?? 'tailor')
-			trackAiModalOpened(initialTab ?? 'tailor', experience?.id ?? undefined)
+			setTailorContent(content)
+			setTailorExperience(experience)
+			setShowBulletPicker(!content)
+			if (!wasOpenRef.current) {
+				// Modal just opened — reset tab and track
+				setActiveTab(initialTab ?? 'tailor')
+				trackAiModalOpened(initialTab ?? 'tailor', experience?.id ?? undefined)
+				wasOpenRef.current = true
+			}
 		} else {
+			wasOpenRef.current = false
 			setSelectedItems([])
 			setExpandedOption(null)
 			setShowDiff({})
 			setAcceptedOption(null)
 			setEditingOption(null)
 			setEditValues({})
+			setShowBulletPicker(false)
 		}
-	}, [isOpen, initialTab, experience?.id])
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [isOpen, initialTab, experience?.id, content])
 
 	const resetState = () => {
 		setSelectedItems([])
@@ -254,12 +270,14 @@ export function AIAssistantModal({
 		})
 
 		const endpoint = type === 'tailor' ? 'experience' : 'generated-experience'
+		const activeExp = type === 'tailor' ? tailorExperience : experience
+		const activeContent = type === 'tailor' ? tailorContent : content
 		const formData = new FormData()
 		formData.append('jobTitle', job?.title ?? '')
 		formData.append('jobDescription', job?.content ?? '')
-		formData.append('currentJobTitle', experience?.role ?? '')
-		formData.append('currentJobCompany', experience?.company ?? '')
-		formData.append('experience', content ?? '')
+		formData.append('currentJobTitle', activeExp?.role ?? '')
+		formData.append('currentJobCompany', activeExp?.company ?? '')
+		formData.append('experience', activeContent ?? '')
 		formData.append('type', endpoint)
 
 		if (job?.extractedKeywords) {
@@ -356,7 +374,7 @@ export function AIAssistantModal({
 		setAcceptedOption(index)
 		onUpdate(bullet)
 
-		const changeCount = content ? wordDiff(content, bullet).filter(d => d.type === 'added').length : 0
+		const changeCount = tailorContent ? wordDiff(tailorContent, bullet).filter(d => d.type === 'added').length : 0
 		track('ai_tailor_accepted', {
 			experience_id: experience?.id ?? '',
 			changes_made: changeCount,
@@ -388,7 +406,7 @@ export function AIAssistantModal({
 		if (activeTab === 'tailor') {
 			onUpdate(selectedContent[0])
 
-			const changeCount = content ? wordDiff(content, selectedContent[0]).filter(d => d.type === 'added').length : 0
+			const changeCount = tailorContent ? wordDiff(tailorContent, selectedContent[0]).filter(d => d.type === 'added').length : 0
 			track('ai_tailor_accepted', {
 				experience_id: experience?.id ?? '',
 				changes_made: changeCount,
@@ -506,7 +524,7 @@ export function AIAssistantModal({
 			<div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
 				{/* Original bullet or keyword context */}
 				<div style={{ padding: '12px 16px 8px', flexShrink: 0 }}>
-					{!content && diagnosticContext?.missingKeywords?.length ? (
+					{!content && diagnosticContext?.missingKeywords?.length && activeTab === 'generate' ? (
 						<>
 							<div style={{ fontSize: 11, fontWeight: 600, color: c.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
 								Generate
@@ -522,17 +540,68 @@ export function AIAssistantModal({
 						</>
 					) : (
 						<>
-							<div style={{ fontSize: 11, fontWeight: 600, color: c.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+							<div style={{ fontSize: 11, fontWeight: 600, color: c.dim, textTransform: 'uppercase', letterSpacing: '0.04em', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
 								Original
+								{activeTab === 'tailor' && (
+									<button
+										onClick={() => setShowBulletPicker(p => !p)}
+										style={{ fontSize: 11, fontWeight: 500, color: BRAND, background: 'transparent', border: 'none', cursor: 'pointer', padding: '2px 6px', borderRadius: 4 }}
+									>
+										{showBulletPicker ? 'Cancel' : 'Change'}
+									</button>
+								)}
 							</div>
-							<div style={{
-								marginTop: 8, padding: '8px 12px', borderRadius: 6,
-								background: c.bgSurf, border: `1px solid ${c.borderSub}`,
-							}}>
-								<p style={{ fontSize: 13, lineHeight: 1.5, color: c.muted, fontStyle: 'italic', margin: 0 }}>
-									"{content}"
-								</p>
-							</div>
+							{showBulletPicker && activeTab === 'tailor' ? (
+								<div style={{ marginTop: 8, maxHeight: 220, overflow: 'auto', borderRadius: 6, border: `1px solid ${c.border}` }}>
+									{[...(resumeData?.experiences ?? [])].sort((a, b) => a.id === tailorExperience?.id ? -1 : b.id === tailorExperience?.id ? 1 : 0).filter(exp => (exp.descriptions ?? []).some(d => d.content?.trim())).map(exp => (
+										<div key={exp.id}>
+											<div style={{ padding: '5px 10px', fontSize: 11, fontWeight: 600, color: c.dim, textTransform: 'uppercase', letterSpacing: '0.04em', background: c.bgSurf, borderBottom: `1px solid ${c.border}` }}>
+												{exp.role}{exp.company ? ` · ${exp.company}` : ''}
+											</div>
+											{(exp.descriptions ?? []).filter(d => d.content?.trim()).map((desc, idx) => {
+												const isSelected = desc.content === tailorContent && exp.id === tailorExperience?.id
+												return (
+													<div
+														key={desc.id ?? idx}
+														onClick={() => {
+															if (!desc.content) return
+															setTailorContent(desc.content)
+															setTailorExperience(exp)
+															setShowBulletPicker(false)
+															resetState()
+															onBulletChange?.(desc.content, exp, idx)
+														}}
+														style={{
+															padding: '7px 10px', fontSize: 12, lineHeight: 1.45, cursor: 'pointer',
+															color: isSelected ? BRAND : c.text,
+															background: isSelected ? `${BRAND}08` : 'transparent',
+															borderBottom: `1px solid ${c.borderSub}`,
+														}}
+														onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = c.bgSurf }}
+														onMouseLeave={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+													>
+														{desc.content}
+													</div>
+												)
+											})}
+										</div>
+									))}
+								</div>
+							) : (
+								<div style={{
+									marginTop: 8, padding: '8px 12px', borderRadius: 6,
+									background: c.bgSurf, border: `1px solid ${c.borderSub}`,
+								}}>
+									<p style={{ fontSize: 13, lineHeight: 1.5, color: c.muted, fontStyle: 'italic', margin: 0 }}>
+										"{tailorContent}"
+									</p>
+									{tailorExperience && tailorExperience.id !== experience?.id && (
+										<p style={{ fontSize: 11, color: c.dim, margin: '4px 0 0' }}>
+											{tailorExperience.role}{tailorExperience.company ? ` · ${tailorExperience.company}` : ''}
+										</p>
+									)}
+								</div>
+							)}
 						</>
 					)}
 				</div>
@@ -568,13 +637,20 @@ export function AIAssistantModal({
 							{((!parsedTailorResponse && activeTab === 'tailor' && !isLoading) ||
 							(!parsedGenerateOptions.length && activeTab === 'generate' && !isLoading)) && (
 								<div style={{ padding: 16, borderRadius: 8, border: `1px solid ${c.border}` }}>
+									{activeTab === 'tailor' && showBulletPicker && !tailorContent && (
+										<p style={{ fontSize: 12, color: c.dim, textAlign: 'center', margin: '0 0 10px' }}>
+											Select a bullet above to tailor
+										</p>
+									)}
 									<button
 										onClick={() => handleCompletion(activeTab)}
-										disabled={isLoading}
+										disabled={isLoading || (activeTab === 'tailor' && showBulletPicker && !tailorContent)}
 										data-tailor-achievement-button={activeTab === 'tailor' ? true : undefined}
 										style={{
 											...btnPrimary, width: '100%', justifyContent: 'center',
 											padding: '10px 16px', fontSize: 13, gap: 8,
+											opacity: isLoading || (activeTab === 'tailor' && showBulletPicker && !tailorContent) ? 0.45 : 1,
+											cursor: isLoading || (activeTab === 'tailor' && showBulletPicker && !tailorContent) ? 'not-allowed' : 'pointer',
 										}}
 									>
 										<Sparkles size={14} />
@@ -613,7 +689,7 @@ export function AIAssistantModal({
 										const isAccepted = acceptedOption === index
 										const isEditing = editingOption === index
 										const currentText = editValues[index] ?? option.bullet
-										const diff = isDiffShown && content ? wordDiff(content, currentText) : null
+										const diff = isDiffShown && tailorContent ? wordDiff(tailorContent, currentText) : null
 
 										return (
 											<div key={index} style={{

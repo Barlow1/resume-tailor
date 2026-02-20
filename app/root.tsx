@@ -418,6 +418,7 @@ function App() {
 
 	const [sidebarOpen, setSidebarOpen] = useState(false)
 	const [isCollapsed, setIsCollapsed] = useState(false)
+	const [landingMenuOpen, setLandingMenuOpen] = useState(false)
 
 	// Load collapsed state from localStorage on mount
 	useEffect(() => {
@@ -733,39 +734,97 @@ function App() {
 
 											<div className="flex flex-1 justify-between">
 												{shouldHideNav ? (
-													<div className="flex items-center gap-x-4 lg:gap-x-6">
-														<Link to="/">
-															<img
-																src="/RT_Logo_stacked.png"
-																alt="Resume Tailor"
-																className="h-6 w-auto md:h-8 lg:h-10 dark:brightness-0 dark:invert"
+													<>
+														{/* Mobile drawer for landing nav */}
+														<Dialog
+															className="relative z-50 lg:hidden"
+															open={landingMenuOpen}
+															onClose={setLandingMenuOpen}
+														>
+															<DialogBackdrop
+																transition
+																className="fixed inset-0 bg-gray-900/80 transition-opacity duration-300 ease-linear data-[closed]:opacity-0"
 															/>
-														</Link>
-														<div className="flex flex-1 items-center justify-end gap-x-4 self-stretch text-xl lg:gap-x-6">
-															<Link
-																to="/pricing"
-																className="text-primary hover:underline"
+															<div className="fixed inset-0 flex">
+																<DialogPanel
+																	transition
+																	className="relative flex w-full max-w-xs flex-1 transform flex-col bg-background p-6 shadow-xl transition duration-300 ease-in-out data-[closed]:-translate-x-full"
+																>
+																	<div className="mb-6 flex items-center justify-between">
+																		<Link to="/" onClick={() => setLandingMenuOpen(false)}>
+																			<img
+																				src="/RT_Logo_stacked.png"
+																				alt="Resume Tailor"
+																				className="h-8 w-auto dark:brightness-0 dark:invert"
+																			/>
+																		</Link>
+																		<button
+																			type="button"
+																			className="-m-2.5 p-2.5"
+																			onClick={() => setLandingMenuOpen(false)}
+																		>
+																			<span className="sr-only">Close menu</span>
+																			<XMarkIcon className="h-6 w-6" aria-hidden="true" />
+																		</button>
+																	</div>
+																	<nav className="flex flex-col gap-6 text-xl">
+																		<Link
+																			to="/pricing"
+																			className="text-primary hover:underline"
+																			onClick={() => setLandingMenuOpen(false)}
+																		>
+																			Pricing
+																		</Link>
+																		<Link
+																			to="/ai-resume-builder"
+																			className="text-primary hover:underline"
+																			onClick={() => setLandingMenuOpen(false)}
+																		>
+																			Resume Builder
+																		</Link>
+																		<Link
+																			to="/blog"
+																			className="text-primary hover:underline"
+																			onClick={() => setLandingMenuOpen(false)}
+																		>
+																			Blog
+																		</Link>
+																	</nav>
+																</DialogPanel>
+															</div>
+														</Dialog>
+
+														<div className="flex items-center gap-x-3 lg:gap-x-6">
+															{/* Hamburger — mobile only */}
+															<button
+																type="button"
+																className="-m-2.5 p-2.5 text-primary lg:hidden"
+																onClick={() => setLandingMenuOpen(true)}
 															>
-																Pricing
+																<span className="sr-only">Open menu</span>
+																<Bars3Icon className="h-6 w-6" aria-hidden="true" />
+															</button>
+															<Link to="/">
+																<img
+																	src="/RT_Logo_stacked.png"
+																	alt="Resume Tailor"
+																	className="h-6 w-auto md:h-8 lg:h-10 dark:brightness-0 dark:invert"
+																/>
 															</Link>
+															{/* Desktop nav links */}
+															<div className="hidden items-center gap-x-6 text-xl lg:flex">
+																<Link to="/pricing" className="text-primary hover:underline">
+																	Pricing
+																</Link>
+																<Link to="/ai-resume-builder" className="whitespace-nowrap text-primary hover:underline">
+																	Resume Builder
+																</Link>
+																<Link to="/blog" className="whitespace-nowrap text-primary hover:underline">
+																	Blog
+																</Link>
+															</div>
 														</div>
-														<div className="flex flex-1 items-center justify-end gap-x-4 self-stretch text-xl lg:gap-x-6">
-															<Link
-																to="/ai-resume-builder"
-																className="whitespace-nowrap  text-primary hover:underline"
-															>
-																Resume Builder
-															</Link>
-														</div>
-														<div className="flex flex-1 items-center justify-end gap-x-4 self-stretch text-xl lg:gap-x-6">
-															<Link
-																to="/blog"
-																className="whitespace-nowrap  text-primary hover:underline"
-															>
-																Blog
-															</Link>
-														</div>
-													</div>
+													</>
 												) : null}
 
 												<div className="flex flex-1 justify-end gap-x-4 self-stretch lg:gap-x-6">
@@ -793,7 +852,7 @@ function App() {
 																	isOnLandingPage={isOnLandingPage ?? false}
 																/>
 															) : (
-																<Button asChild variant={'primary'} size="sm">
+																<Button asChild variant={'primary'} size="sm" className="text-sm px-4 py-1.5">
 																	<Link to="/login">Log In</Link>
 																</Button>
 															)}
