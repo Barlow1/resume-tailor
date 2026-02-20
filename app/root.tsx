@@ -738,7 +738,7 @@ function App() {
 															<img
 																src="/RT_Logo_stacked.png"
 																alt="Resume Tailor"
-																className="h-10 w-auto md:h-12 lg:h-14 dark:brightness-0 dark:invert"
+																className="h-6 w-auto md:h-8 lg:h-10 dark:brightness-0 dark:invert"
 															/>
 														</Link>
 														<div className="flex flex-1 items-center justify-end gap-x-4 self-stretch text-xl lg:gap-x-6">
