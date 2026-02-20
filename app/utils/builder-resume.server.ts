@@ -312,6 +312,7 @@ export async function getBuilderResume(id: string) {
 					id: true,
 					title: true,
 					content: true,
+					extractedKeywords: true,
 				},
 			},
 			headers: {
@@ -390,6 +391,7 @@ export async function getUserBuilderResumes(
 					id: true,
 					title: true,
 					content: true,
+					extractedKeywords: true,
 				},
 			},
 			headers: {

@@ -1,38 +1,52 @@
-import { Button } from './ui/button.tsx'
-import { Icon } from './ui/icon.tsx'
-import { DialogModal } from './ui/dialog-modal.tsx'
 import { useFetcher } from '@remix-run/react'
 import { useRef, useState } from 'react'
 import { type ResumeData } from '~/utils/builder-resume.server.ts'
-import {
-	Listbox,
-	ListboxButton,
-	ListboxOption,
-	ListboxOptions,
-} from '@headlessui/react'
-import { ChevronUpDownIcon, CheckIcon } from '@heroicons/react/24/outline'
-import moment from 'moment'
+import { X, FilePlus, Upload, Copy, Loader2, ChevronRight, Check } from 'lucide-react'
+
+const BRAND = '#6B45FF'
+
+interface ThemeColors {
+	bg: string
+	bgEl: string
+	bgSurf: string
+	border: string
+	borderSub: string
+	text: string
+	muted: string
+	dim: string
+}
+
+const defaultTheme: ThemeColors = {
+	bg: '#FAFAFA', bgEl: '#FFFFFF', bgSurf: '#F4F4F5', border: '#E0E0E6',
+	borderSub: '#EBEBEF', text: '#111113', muted: '#63636A', dim: '#9C9CA3',
+}
+
 interface ResumeCreationModalProps {
 	isOpen: boolean
 	onClose: () => void
+	onStartScratch: () => void
 	resumes: ResumeData[] | null
 	userId: string | null
 	handleUploadResume: () => boolean
+	theme?: ThemeColors
 }
 
 export function ResumeCreationModal({
 	isOpen,
 	onClose,
+	onStartScratch,
 	resumes,
 	userId,
 	handleUploadResume,
+	theme,
 }: ResumeCreationModalProps) {
+	const c = theme ?? defaultTheme
 	const fetcher = useFetcher()
 	const fileInputRef = useRef<HTMLInputElement>(null)
 	const [selectedResumeId, setSelectedResumeId] = useState<string | null>(null)
 	const [showResumes, setShowResumes] = useState(false)
 
-	const selectedResume = resumes?.find(r => r.id === selectedResumeId)
+	const isSubmitting = fetcher.state !== 'idle'
 
 	const handleClickUpload = () => {
 		const isLoggedInAndHasSubscription = handleUploadResume()
@@ -67,179 +81,231 @@ export function ResumeCreationModal({
 		})
 	}
 
-	const handleStartFresh = () => {
-		onClose()
-	}
+	if (!isOpen) return null
 
-	const handleShowResumes = () => {
-		setShowResumes(true)
-	}
+	const optionStyle = (hovered?: boolean): React.CSSProperties => ({
+		padding: '14px 16px',
+		borderRadius: 8,
+		border: `1px solid ${c.border}`,
+		background: hovered ? c.bgSurf : 'transparent',
+		cursor: isSubmitting ? 'not-allowed' : 'pointer',
+		display: 'flex',
+		alignItems: 'center',
+		gap: 12,
+		transition: 'background 150ms',
+		opacity: isSubmitting ? 0.5 : 1,
+	})
 
 	return (
-		<DialogModal
-			size="md"
-			isOpen={isOpen}
-			onClose={onClose}
-			title="Create Your Resume"
-		>
-			<input
-				type="file"
-				ref={fileInputRef}
-				className="hidden"
-				onChange={handleFileChange}
-				accept=".doc, .docx, application/msword,
-        application/vnd.openxmlformats-officedocument.wordprocessingml.document,
-        application/pdf, application/msword, image/png, image/jpeg, .txt"
-			/>
+		<div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+			<div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)' }} />
 
-			<div className="flex flex-1 flex-col gap-6 p-6">
-				<div className="space-y-2">
-					<h3 className="text-lg font-semibold text-foreground">
-						Choose how to start
-					</h3>
-					<p className="text-sm text-muted-foreground">
-						Select one of the following options to begin creating your resume
-					</p>
+			<div style={{
+				position: 'relative',
+				width: '100%',
+				maxWidth: 480,
+				margin: '0 16px',
+				background: c.bgEl,
+				border: `1px solid ${c.border}`,
+				borderRadius: 12,
+				boxShadow: '0 16px 48px rgba(0,0,0,0.3)',
+				overflow: 'hidden',
+			}}>
+				{/* Header */}
+				<div style={{
+					display: 'flex',
+					alignItems: 'center',
+					justifyContent: 'space-between',
+					padding: '16px 20px',
+					borderBottom: `1px solid ${c.border}`,
+				}}>
+					<div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+						<div style={{ width: 28, height: 28, borderRadius: 7, background: `${BRAND}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+							<FilePlus size={15} color={BRAND} strokeWidth={2} />
+						</div>
+						<span style={{ fontSize: 16, fontWeight: 600, color: c.text }}>Create Your Resume</span>
+					</div>
+					<div
+						onClick={onClose}
+						style={{ width: 28, height: 28, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: c.dim }}
+						onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = c.bgSurf }}
+						onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+					>
+						<X size={16} strokeWidth={2} />
+					</div>
 				</div>
 
-				<div className="grid gap-4">
-					{!showResumes ? (
-						<>
-							<Button
-								onClick={handleStartFresh}
-								variant="outline"
-								className="flex h-auto flex-col items-start gap-1 p-4"
-								disabled={fetcher.state !== 'idle'}
-							>
-								<div className="flex w-full items-center gap-2">
-									<Icon name="plus" />
-									<span className="flex-1 font-semibold">
-										Start from scratch
-									</span>
-									<Icon name="arrow-right" className="text-muted-foreground" />
-								</div>
-								<p className="text-left text-sm text-muted-foreground">
-									Begin with a blank resume and build it step by step
-								</p>
-							</Button>
+				{/* Body */}
+				<div style={{ padding: '20px' }}>
+					<p style={{ fontSize: 13, color: c.muted, marginBottom: 16 }}>Choose how to start</p>
 
-								<Button
-								onClick={handleClickUpload}
-								variant="outline"
-								className="flex h-auto w-full flex-col items-start gap-1 p-4"
-								disabled={fetcher.state !== 'idle'}
-							>
-								<div className="flex w-full items-center gap-2">
-									{fetcher.state !== 'idle' ? (
-										<Icon name="update" className="animate-spin" />
-									) : (
-										<Icon name="upload" />
-									)}
-									<span className="flex-1 font-semibold">
-										{fetcher.state !== 'idle' ? 'Uploading...' : 'Upload existing resume'}
-									</span>
-									{fetcher.state === 'idle' && (
-										<Icon
-											name="arrow-right"
-											className="text-muted-foreground"
-										/>
-									)}
-								</div>
-								<p className="text-left text-sm text-muted-foreground">
-									{fetcher.state !== 'idle'
-										? 'Processing your resume, please wait...'
-										: 'Upload your current resume and we\'ll help you improve it'}
-								</p>
-							</Button>
-						</>
-					) : null}
-					{resumes && resumes.length > 0 ? (
-						<>
-							{!showResumes ? (
-								<Button
-									onClick={handleShowResumes}
-									variant="outline"
-									className="flex h-auto flex-col items-start gap-1 p-4"
-									disabled={fetcher.state !== 'idle'}
+					<input
+						type="file"
+						ref={fileInputRef}
+						style={{ display: 'none' }}
+						onChange={handleFileChange}
+						accept=".doc, .docx, application/msword, application/vnd.openxmlformats-officedocument.wordprocessingml.document, application/pdf, image/png, image/jpeg, .txt"
+					/>
+
+					<div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+						{!showResumes && (
+							<>
+								{/* Start from scratch */}
+								<div
+									onClick={() => { if (!isSubmitting) { onStartScratch(); onClose() } }}
+									style={optionStyle()}
+									onMouseEnter={e => { if (!isSubmitting) (e.currentTarget as HTMLElement).style.background = c.bgSurf }}
+									onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
 								>
-									<div className="flex w-full items-center gap-2">
-										<Icon name="copy" />
-										<span className="flex-1 font-semibold">
-											Use existing resume
-										</span>
-										<Icon
-											name="arrow-right"
-											className="text-muted-foreground"
-										/>
+									<div style={{ width: 32, height: 32, borderRadius: 8, background: `${BRAND}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+										<FilePlus size={16} color={BRAND} strokeWidth={2} />
 									</div>
-									<p className="text-left text-sm text-muted-foreground">
-										Start with your previously tailored resume
-									</p>
-								</Button>
-							) : null}
-							{showResumes ? (
-								<div className="space-y-4">
-									<Listbox
-										value={selectedResumeId}
-										onChange={setSelectedResumeId}
-									>
-										<div className="relative mt-2">
-											<ListboxButton className="grid w-full cursor-default grid-cols-1 rounded-md bg-white py-1.5 pl-3 pr-2 text-left text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-brand-800 sm:text-sm/6">
-												<span className="col-start-1 row-start-1 truncate pr-6">
-													{(selectedResume?.job?.title ||
-														selectedResume?.name) ??
-														'Choose a resume...'}
-												</span>
-												<ChevronUpDownIcon
-													aria-hidden="true"
-													className="col-start-1 row-start-1 h-5 w-5 self-center justify-self-end text-gray-500 sm:h-4 sm:w-4"
-												/>
-											</ListboxButton>
-
-											<ListboxOptions className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none data-[closed]:data-[leave]:opacity-0 data-[leave]:transition data-[leave]:duration-100 data-[leave]:ease-in sm:text-sm">
-												{resumes?.map(resume => (
-													<ListboxOption
-														key={resume.id}
-														value={resume.id}
-														className="group relative cursor-default select-none py-2 pl-6 pr-9 text-gray-900 data-[focus]:bg-brand-800 data-[focus]:text-white data-[focus]:outline-none"
-													>
-														<span className="absolute inset-y-0 left-1 flex items-center pr-4 text-brand-800 group-[&:not([data-selected])]:hidden group-data-[focus]:text-white">
-															<CheckIcon
-																aria-hidden="true"
-																className="h-5 w-5"
-															/>
-														</span>
-														<div>
-															<p className="block truncate font-normal group-data-[selected]:font-semibold">
-																{resume.name || 'No name'}
-															</p>
-															<p className="block truncate font-normal group-data-[selected]:font-semibold">
-																{resume.job?.title || 'No job title'}
-															</p>
-															<p className="font-xs font-gray-200 block truncate  group-data-[selected]:font-semibold">
-																{moment(resume.updatedAt).format('MM/DD/YYYY')}
-															</p>
-														</div>
-													</ListboxOption>
-												))}
-											</ListboxOptions>
-										</div>
-									</Listbox>
-
-									<Button
-										onClick={handleUseExisting}
-										variant="outline"
-										className="w-full"
-										disabled={!selectedResumeId || fetcher.state !== 'idle'}
-									>
-										Use Selected Resume
-									</Button>
+									<div style={{ flex: 1 }}>
+										<div style={{ fontSize: 14, fontWeight: 600, color: c.text }}>Start from scratch</div>
+										<div style={{ fontSize: 12, color: c.dim, marginTop: 2 }}>Begin with a blank resume and build it step by step</div>
+									</div>
+									<ChevronRight size={16} color={c.dim} style={{ flexShrink: 0 }} />
 								</div>
-							) : null}
-						</>
-					) : null}
+
+								{/* Upload */}
+								<div
+									onClick={() => { if (!isSubmitting) handleClickUpload() }}
+									style={optionStyle()}
+									onMouseEnter={e => { if (!isSubmitting) (e.currentTarget as HTMLElement).style.background = c.bgSurf }}
+									onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+								>
+									<div style={{ width: 32, height: 32, borderRadius: 8, background: `${BRAND}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+										{isSubmitting
+											? <Loader2 size={16} color={BRAND} strokeWidth={2} style={{ animation: 'spin 1s linear infinite' }} />
+											: <Upload size={16} color={BRAND} strokeWidth={2} />
+										}
+									</div>
+									<div style={{ flex: 1 }}>
+										<div style={{ fontSize: 14, fontWeight: 600, color: c.text }}>{isSubmitting ? 'Uploading...' : 'Upload existing resume'}</div>
+										<div style={{ fontSize: 12, color: c.dim, marginTop: 2 }}>
+											{isSubmitting ? 'Processing your resume, please wait...' : "Upload your current resume and we'll help you improve it"}
+										</div>
+									</div>
+									{!isSubmitting && <ChevronRight size={16} color={c.dim} style={{ flexShrink: 0 }} />}
+								</div>
+
+								{/* Use existing */}
+								{resumes && resumes.length > 0 && (
+									<div
+										onClick={() => { if (!isSubmitting) setShowResumes(true) }}
+										style={optionStyle()}
+										onMouseEnter={e => { if (!isSubmitting) (e.currentTarget as HTMLElement).style.background = c.bgSurf }}
+										onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+									>
+										<div style={{ width: 32, height: 32, borderRadius: 8, background: `${BRAND}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+											<Copy size={16} color={BRAND} strokeWidth={2} />
+										</div>
+										<div style={{ flex: 1 }}>
+											<div style={{ fontSize: 14, fontWeight: 600, color: c.text }}>Use existing resume</div>
+											<div style={{ fontSize: 12, color: c.dim, marginTop: 2 }}>Start with a previously created resume</div>
+										</div>
+										<ChevronRight size={16} color={c.dim} style={{ flexShrink: 0 }} />
+									</div>
+								)}
+							</>
+						)}
+
+						{/* Resume picker */}
+						{showResumes && resumes && resumes.length > 0 && (
+							<div>
+								<div style={{ maxHeight: 240, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
+									{resumes.map(r => {
+										const selected = selectedResumeId === r.id
+										return (
+											<div
+												key={r.id}
+												onClick={() => setSelectedResumeId(r.id!)}
+												style={{
+													padding: '10px 12px',
+													borderRadius: 7,
+													border: `1px solid ${selected ? BRAND : c.border}`,
+													background: selected ? `${BRAND}08` : 'transparent',
+													cursor: 'pointer',
+													display: 'flex',
+													alignItems: 'center',
+													gap: 10,
+												}}
+												onMouseEnter={e => { if (!selected) (e.currentTarget as HTMLElement).style.background = c.bgSurf }}
+												onMouseLeave={e => { if (!selected) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+											>
+												<div style={{
+													width: 20, height: 20, borderRadius: 5,
+													border: `1.5px solid ${selected ? BRAND : c.border}`,
+													background: selected ? BRAND : 'transparent',
+													display: 'flex', alignItems: 'center', justifyContent: 'center',
+													flexShrink: 0,
+												}}>
+													{selected && <Check size={12} color="#fff" strokeWidth={3} />}
+												</div>
+												<div style={{ flex: 1, minWidth: 0 }}>
+													<div style={{ fontSize: 14, fontWeight: 500, color: c.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+														{r.name || 'Untitled'}
+													</div>
+													<div style={{ fontSize: 12, color: c.dim }}>
+														{r.job?.title || 'No target job'}
+													</div>
+												</div>
+											</div>
+										)
+									})}
+								</div>
+
+								<div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+									<button
+										type="button"
+										onClick={() => { setShowResumes(false); setSelectedResumeId(null) }}
+										style={{
+											flex: 1,
+											padding: '10px 16px',
+											fontSize: 14,
+											fontWeight: 500,
+											color: c.muted,
+											background: 'transparent',
+											border: `1px solid ${c.border}`,
+											borderRadius: 8,
+											cursor: 'pointer',
+										}}
+										onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = c.bgSurf }}
+										onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+									>
+										Back
+									</button>
+									<button
+										type="button"
+										onClick={handleUseExisting}
+										disabled={!selectedResumeId || isSubmitting}
+										style={{
+											flex: 1,
+											padding: '10px 16px',
+											fontSize: 14,
+											fontWeight: 600,
+											color: '#fff',
+											background: !selectedResumeId ? `${BRAND}44` : BRAND,
+											border: 'none',
+											borderRadius: 8,
+											cursor: !selectedResumeId ? 'not-allowed' : 'pointer',
+											display: 'flex',
+											alignItems: 'center',
+											justifyContent: 'center',
+											gap: 8,
+										}}
+										onMouseEnter={e => { if (selectedResumeId) (e.currentTarget as HTMLElement).style.background = '#5A35E0' }}
+										onMouseLeave={e => { if (selectedResumeId) (e.currentTarget as HTMLElement).style.background = BRAND }}
+									>
+										Use Selected
+									</button>
+								</div>
+							</div>
+						)}
+					</div>
 				</div>
 			</div>
-		</DialogModal>
+			{isSubmitting && <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>}
+		</div>
 	)
 }

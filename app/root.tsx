@@ -70,8 +70,6 @@ import {
 	QueueListIcon,
 	ChevronLeftIcon,
 	ChevronRightIcon,
-	MagnifyingGlassIcon,
-	MegaphoneIcon,
 } from '@heroicons/react/24/outline'
 import { redirect } from '@remix-run/router'
 import { Crisp } from 'crisp-sdk-web'
@@ -113,7 +111,7 @@ export const links: LinksFunction = () => {
 			crossOrigin: 'use-credentials',
 		} as const, // necessary to make typescript happy
 		//These should match the css preloads above to avoid css as render blocking resource
-		{ rel: 'icon', type: 'image/svg+xml', href: '/favicons/favicon.svg' },
+		{ rel: 'icon', type: 'image/png', href: '/favicons/favicon-32x32.png' },
 		{ rel: 'stylesheet', href: fontStylestylesheetUrl },
 		{ rel: 'stylesheet', href: tailwindStylesheetUrl },
 		cssBundleHref ? { rel: 'stylesheet', href: cssBundleHref } : null,
@@ -304,6 +302,8 @@ const hideNavPages = [
 	'routes/_auth+/forgot-username/index',
 	'routes/pricing+/index',
 	'routes/ai-resume-builder+/index',
+	'routes/builder+/index',
+	'routes/users+/$username',
 ]
 
 function App() {
@@ -349,6 +349,7 @@ function App() {
 		m.id.startsWith('routes/resume-summary+')
 	)
 	const shouldHideNav = Boolean(matches.find(m => hideNavPages.includes(m.id))) || isBlogRoute || isSeoRoute
+	const isBuilderRoute = Boolean(matches.find(m => m.id === 'routes/builder+/index'))
 
 	const location = useLocation()
 	const path = location.pathname
@@ -417,6 +418,7 @@ function App() {
 
 	const [sidebarOpen, setSidebarOpen] = useState(false)
 	const [isCollapsed, setIsCollapsed] = useState(false)
+	const [landingMenuOpen, setLandingMenuOpen] = useState(false)
 
 	// Load collapsed state from localStorage on mount
 	useEffect(() => {
@@ -439,18 +441,6 @@ function App() {
 			href: `/builder`,
 			icon: DocumentTextIcon,
 			current: path?.includes('builder'),
-		},
-		{
-			name: 'Resume Analyzer',
-			href: `/analyze`,
-			icon: MagnifyingGlassIcon,
-			current: path?.includes('analyze'),
-		},
-		{
-			name: 'Recruiter Outreach',
-			href: `/outreach`,
-			icon: MegaphoneIcon,
-			current: path?.includes('outreach'),
 		},
 		{
 			name: 'Resumes',
@@ -521,17 +511,14 @@ function App() {
 												</TransitionChild>
 												{/* Sidebar component, swap this element with another sidebar if you like */}
 
-												<div className="flex grow flex-col gap-y-5 overflow-y-auto bg-[#6B45FF] px-6 pb-4">
-													<div className="flex h-16 shrink-0 items-center">
+												<div className="flex grow flex-col gap-y-6 overflow-y-auto bg-[#6B45FF] px-7 pb-5">
+													<div className="flex h-[72px] shrink-0 items-center">
 														<Link to="/">
-															<div
-																className={clsx(
-																	'md:text-md text-center text-sm font-extrabold text-white lg:text-xl',
-																	{ hidden: isCollapsed },
-																)}
-															>
-																RESUME TAILOR
-															</div>
+															<img
+																src="/RT_Logo_stacked.png"
+																alt="Resume Tailor"
+																className="h-10 w-auto brightness-0 invert"
+															/>
 														</Link>
 													</div>
 													<nav className="flex flex-1 flex-col">
@@ -547,7 +534,7 @@ function App() {
 																					item.current
 																						? 'bg-brand-800 text-white'
 																						: 'text-purple-200 hover:bg-brand-800/50 hover:text-white',
-																					'group relative flex items-center gap-x-3 rounded-md p-2 text-sm font-semibold leading-6',
+																					'group relative flex items-center gap-x-3.5 rounded-md p-3 text-[17px] font-semibold leading-7',
 																				)}
 																				onClick={() => setSidebarOpen(false)}
 																			>
@@ -556,7 +543,7 @@ function App() {
 																						item.current
 																							? 'text-white'
 																							: 'text-purple-200 group-hover:text-white',
-																						'h-6 w-6 shrink-0',
+																						'h-8 w-8 shrink-0',
 																					)}
 																				/>
 																				{!isCollapsed && (
@@ -596,32 +583,33 @@ function App() {
 									<div
 										className={clsx(
 											'hidden transition-all duration-300 lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:flex-col',
-											isCollapsed ? 'lg:w-20' : 'lg:w-72',
+											isCollapsed ? 'lg:w-[100px]' : 'lg:w-[350px]',
 										)}
 									>
 										{/* Sidebar component, swap this element with another sidebar if you like */}
-										<div className="flex grow flex-col gap-y-5 overflow-y-auto bg-[#6B45FF] px-6 pb-4">
-											<div className="flex h-16 shrink-0 items-center">
+										<div className="flex grow flex-col gap-y-6 overflow-y-auto bg-[#6B45FF] px-7 pb-5">
+											<div className="flex h-[72px] shrink-0 items-center">
 												<Link to="/">
-													<div
+													<img
+														src={isCollapsed ? '/RT_Logo_icon.png' : '/RT_Logo_stacked.png'}
+														alt="Resume Tailor"
 														className={clsx(
-															'md:text-md text-center text-sm font-extrabold text-white lg:text-xl',
+															'w-auto brightness-0 invert',
+															isCollapsed ? 'h-9' : 'h-10',
 														)}
-													>
-														{!isCollapsed ? 'RESUME TAILOR' : 'RT'}
-													</div>
+													/>
 												</Link>
 											</div>
 
 											{/* Collapse toggle button */}
 											<button
 												onClick={toggleCollapse}
-												className="absolute right-0 top-[50vh] -mr-3 flex h-6 w-6 items-center justify-center rounded-full bg-brand-500 text-white shadow-md hover:bg-brand-800"
+												className="absolute right-0 top-[50vh] -mr-3.5 flex h-7 w-7 items-center justify-center rounded-full bg-brand-500 text-white shadow-md hover:bg-brand-800"
 											>
 												{isCollapsed ? (
-													<ChevronRightIcon className="h-4 w-4" />
+													<ChevronRightIcon className="h-5 w-5" />
 												) : (
-													<ChevronLeftIcon className="h-4 w-4" />
+													<ChevronLeftIcon className="h-5 w-5" />
 												)}
 											</button>
 
@@ -643,7 +631,7 @@ function App() {
 																						item.current
 																							? 'bg-brand-800 text-white'
 																							: 'text-purple-200 hover:bg-brand-800/50 hover:text-white',
-																						'group relative flex items-center gap-x-3 rounded-md p-2 text-sm font-semibold leading-6',
+																						'group relative flex items-center gap-x-3.5 rounded-md p-3 text-[17px] font-semibold leading-7',
 																					)}
 																					title={item.name}
 																				>
@@ -652,7 +640,7 @@ function App() {
 																							item.current
 																								? 'text-white'
 																								: 'text-purple-200 group-hover:text-white',
-																							'h-6 w-6 shrink-0',
+																							'h-8 w-8 shrink-0',
 																						)}
 																					/>
 																					{!isCollapsed && (
@@ -712,112 +700,175 @@ function App() {
 
 							<div
 								className={`${
-									shouldHideNav ? '' : isCollapsed ? 'lg:pl-20' : 'lg:pl-72'
+									shouldHideNav ? '' : isCollapsed ? 'lg:pl-[100px]' : 'lg:pl-[350px]'
 								}`}
 							>
-								<div
-									className={`${
-										shouldHideNav ? '' : 'sticky bg-background'
-									} top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 px-4 shadow-sm dark:shadow-gray-500/50 sm:gap-x-6 sm:px-6 lg:px-8`}
-								>
-									<button
-										type="button"
-										className={`-m-2.5 p-2.5 text-primary lg:hidden ${
-											shouldHideNav ? 'hidden' : ''
-										}`}
-										onClick={() => setSidebarOpen(true)}
-									>
-										<span className="sr-only">Open sidebar</span>
-										<Bars3Icon className="h-6 w-6" aria-hidden="true" />
-									</button>
+								{isBuilderRoute ? (
+									/* Builder route: full-screen, no header or wrapper padding */
+									<Outlet />
+								) : (
+									<>
+										<div
+											className={`${
+												shouldHideNav ? '' : 'sticky bg-background'
+											} top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 px-4 shadow-sm dark:shadow-gray-500/50 sm:gap-x-6 sm:px-6 lg:px-8`}
+										>
+											<button
+												type="button"
+												className={`-m-2.5 p-2.5 text-primary lg:hidden ${
+													shouldHideNav ? 'hidden' : ''
+												}`}
+												onClick={() => setSidebarOpen(true)}
+											>
+												<span className="sr-only">Open sidebar</span>
+												<Bars3Icon className="h-6 w-6" aria-hidden="true" />
+											</button>
 
-									{/* Separator */}
-									<div
-										className={`h-6 w-px bg-gray-900/10 dark:bg-gray-500/50 lg:hidden ${
-											shouldHideNav ? 'hidden' : ''
-										}`}
-										aria-hidden="true"
-									/>
+											{/* Separator */}
+											<div
+												className={`h-6 w-px bg-gray-900/10 dark:bg-gray-500/50 lg:hidden ${
+													shouldHideNav ? 'hidden' : ''
+												}`}
+												aria-hidden="true"
+											/>
 
-									<div className="flex flex-1 justify-between">
-										{shouldHideNav ? (
-											<div className="flex items-center gap-x-4 lg:gap-x-6">
-												<Link to="/">
-													<div
-														className={clsx(
-															'text-center text-xl font-extrabold text-primary md:text-3xl lg:text-4xl',
-														)}
-													>
-														RESUME TAILOR
-													</div>
-												</Link>
-												<div className="flex flex-1 items-center justify-end gap-x-4 self-stretch text-xl lg:gap-x-6">
-													<Link
-														to="/pricing"
-														className="text-primary hover:underline"
-													>
-														Pricing
-													</Link>
-												</div>
-												<div className="flex flex-1 items-center justify-end gap-x-4 self-stretch text-xl lg:gap-x-6">
-													<Link
-														to="/ai-resume-builder"
-														className="whitespace-nowrap  text-primary hover:underline"
-													>
-														Resume Builder
-													</Link>
-												</div>
-												<div className="flex flex-1 items-center justify-end gap-x-4 self-stretch text-xl lg:gap-x-6">
-													<Link
-														to="/blog"
-														className="whitespace-nowrap  text-primary hover:underline"
-													>
-														Blog 
-													</Link>
-												</div>
-											</div>
-										) : null}
+											<div className="flex flex-1 justify-between">
+												{shouldHideNav ? (
+													<>
+														{/* Mobile drawer for landing nav */}
+														<Dialog
+															className="relative z-50 lg:hidden"
+															open={landingMenuOpen}
+															onClose={setLandingMenuOpen}
+														>
+															<DialogBackdrop
+																transition
+																className="fixed inset-0 bg-gray-900/80 transition-opacity duration-300 ease-linear data-[closed]:opacity-0"
+															/>
+															<div className="fixed inset-0 flex">
+																<DialogPanel
+																	transition
+																	className="relative flex w-full max-w-xs flex-1 transform flex-col bg-background p-6 shadow-xl transition duration-300 ease-in-out data-[closed]:-translate-x-full"
+																>
+																	<div className="mb-6 flex items-center justify-between">
+																		<Link to="/" onClick={() => setLandingMenuOpen(false)}>
+																			<img
+																				src="/RT_Logo_stacked.png"
+																				alt="Resume Tailor"
+																				className="h-8 w-auto dark:brightness-0 dark:invert"
+																			/>
+																		</Link>
+																		<button
+																			type="button"
+																			className="-m-2.5 p-2.5"
+																			onClick={() => setLandingMenuOpen(false)}
+																		>
+																			<span className="sr-only">Close menu</span>
+																			<XMarkIcon className="h-6 w-6" aria-hidden="true" />
+																		</button>
+																	</div>
+																	<nav className="flex flex-col gap-6 text-xl">
+																		<Link
+																			to="/pricing"
+																			className="text-primary hover:underline"
+																			onClick={() => setLandingMenuOpen(false)}
+																		>
+																			Pricing
+																		</Link>
+																		<Link
+																			to="/ai-resume-builder"
+																			className="text-primary hover:underline"
+																			onClick={() => setLandingMenuOpen(false)}
+																		>
+																			Resume Builder
+																		</Link>
+																		<Link
+																			to="/blog"
+																			className="text-primary hover:underline"
+																			onClick={() => setLandingMenuOpen(false)}
+																		>
+																			Blog
+																		</Link>
+																	</nav>
+																</DialogPanel>
+															</div>
+														</Dialog>
 
-										<div className="flex flex-1 justify-end gap-x-4 self-stretch lg:gap-x-6">
-											<div className="flex items-center gap-x-4 lg:gap-x-6">
-												<button
-													type="button"
-													className="-m-2.5 p-2.5 text-primary hover:text-primary/50"
-												>
-													<span className="sr-only">Toggle Theme</span>
-													<ThemeSwitch
-														userPreference={data.requestInfo.userPrefs.theme}
-													/>
-												</button>
+														<div className="flex items-center gap-x-3 lg:gap-x-6">
+															{/* Hamburger — mobile only */}
+															<button
+																type="button"
+																className="-m-2.5 p-2.5 text-primary lg:hidden"
+																onClick={() => setLandingMenuOpen(true)}
+															>
+																<span className="sr-only">Open menu</span>
+																<Bars3Icon className="h-6 w-6" aria-hidden="true" />
+															</button>
+															<Link to="/">
+																<img
+																	src="/RT_Logo_stacked.png"
+																	alt="Resume Tailor"
+																	className="h-6 w-auto md:h-8 lg:h-10 dark:brightness-0 dark:invert"
+																/>
+															</Link>
+															{/* Desktop nav links */}
+															<div className="hidden items-center gap-x-6 text-xl lg:flex">
+																<Link to="/pricing" className="text-primary hover:underline">
+																	Pricing
+																</Link>
+																<Link to="/ai-resume-builder" className="whitespace-nowrap text-primary hover:underline">
+																	Resume Builder
+																</Link>
+																<Link to="/blog" className="whitespace-nowrap text-primary hover:underline">
+																	Blog
+																</Link>
+															</div>
+														</div>
+													</>
+												) : null}
 
-												{/* Separator */}
-												<div
-													className="hidden dark:bg-gray-500/50 lg:block lg:h-6 lg:w-px lg:bg-gray-900/10"
-													aria-hidden="true"
-												/>
+												<div className="flex flex-1 justify-end gap-x-4 self-stretch lg:gap-x-6">
+													<div className="flex items-center gap-x-4 lg:gap-x-6">
+														<button
+															type="button"
+															className="-m-2.5 p-2.5 text-primary hover:text-primary/50"
+														>
+															<span className="sr-only">Toggle Theme</span>
+															<ThemeSwitch
+																userPreference={data.requestInfo.userPrefs.theme}
+															/>
+														</button>
 
-												{/* Profile dropdown */}
-												<div className="relative">
-													{user ? (
-														<UserDropdown
-															isOnLandingPage={isOnLandingPage ?? false}
+														{/* Separator */}
+														<div
+															className="hidden dark:bg-gray-500/50 lg:block lg:h-6 lg:w-px lg:bg-gray-900/10"
+															aria-hidden="true"
 														/>
-													) : (
-														<Button asChild variant={'primary'} size="sm">
-															<Link to="/login">Log In</Link>
-														</Button>
-													)}
+
+														{/* Profile dropdown */}
+														<div className="relative">
+															{user ? (
+																<UserDropdown
+																	isOnLandingPage={isOnLandingPage ?? false}
+																/>
+															) : (
+																<Button asChild variant={'primary'} size="sm" className="text-sm px-4 py-1.5">
+																	<Link to="/login">Log In</Link>
+																</Button>
+															)}
+														</div>
+													</div>
 												</div>
 											</div>
 										</div>
-									</div>
-								</div>
 
-								<div className="mx-auto py-10">
-									<div className="mx-au">
-										<Outlet />
-									</div>
-								</div>
+										<div className="mx-auto py-10">
+											<div className="mx-au">
+												<Outlet />
+											</div>
+										</div>
+									</>
+								)}
 							</div>
 						</div>
 					</>
