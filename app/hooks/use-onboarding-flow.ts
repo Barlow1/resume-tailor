@@ -8,7 +8,7 @@
  * 3. Connect tailor handlers
  */
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useRef } from 'react'
 import type { GettingStartedProgress, Job } from '@prisma/client'
 import type { Jsonify } from '@remix-run/server-runtime/dist/jsonify.js'
 import { toast } from '~/components/ui/use-toast.ts'
@@ -18,6 +18,7 @@ import {
 	getSpotlightHint,
 	type OnboardingStage,
 } from '~/utils/onboarding.ts'
+import { track } from '~/lib/analytics.client.ts'
 
 interface UseOnboardingFlowOptions {
 	/** Server-side progress data from loader */
@@ -64,6 +65,8 @@ export function useOnboardingFlow({
 	hasTailored,
 	onJobSelect,
 }: UseOnboardingFlowOptions): UseOnboardingFlowReturn {
+	const onboardingStartTime = useRef<number>(Date.now())
+
 	// Local state for session-level overrides
 	// These handle the case where server data is stale (action completed but loader hasn't refreshed)
 	const [jobModalDismissed, setJobModalDismissed] = useState(false)
@@ -108,6 +111,12 @@ export function useOnboardingFlow({
 			setJobModalDismissed(true)
 			onJobSelect(job)
 
+			track('onboarding_step_completed', {
+				step_name: 'job_added',
+				step_number: 1,
+				path: 'tailor',
+			})
+
 			toast({
 				title: 'Job added!',
 				description: 'Now improve your achievements with AI to match the job.',
@@ -135,6 +144,18 @@ export function useOnboardingFlow({
 	const handleTailorComplete = useCallback(() => {
 		setSessionTailorComplete(true)
 		setAiModalOpenDuringOnboarding(false)
+
+		track('onboarding_step_completed', {
+			step_name: 'first_tailor',
+			step_number: 2,
+			path: 'tailor',
+		})
+
+		const durationSeconds = Math.round((Date.now() - onboardingStartTime.current) / 1000)
+		track('onboarding_completed', {
+			path: 'tailor',
+			duration_seconds: durationSeconds,
+		})
 
 		toast({
 			title: 'Great start!',

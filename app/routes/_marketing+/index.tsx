@@ -47,11 +47,11 @@ export default function Index() {
 								BUILD YOUR RESUME NOW
 							</Link>
 						</div>
-						<div className="relative mt-10 max-w-4xl justify-self-center overflow-visible rounded-t-3xl bg-gradient-to-r from-brand-500 to-brand-800">
+						<div className="relative mt-10 w-full max-w-4xl justify-self-center overflow-hidden rounded-t-3xl bg-gradient-to-r from-brand-500 to-brand-800">
 							<OptimizedImage
 								src={banner1}
 								alt=""
-								className="absolute -left-52 -top-32 -z-10 w-[250px]"
+								className="absolute -left-52 -top-32 -z-10 hidden w-[250px] lg:block"
 								width={250}
 								height={250}
 								loading='eager'
@@ -59,7 +59,7 @@ export default function Index() {
 							<OptimizedImage
 								src={banner2}
 								alt=""
-								className="absolute -right-52 -top-44 -z-10 w-[300px]"
+								className="absolute -right-52 -top-44 -z-10 hidden w-[300px] lg:block"
 								width={300}
 								height={300}
 								loading='eager'
@@ -67,7 +67,7 @@ export default function Index() {
 							<OptimizedImage
 								src={connect}
 								alt=""
-								className="absolute left-1/2 top-[30%] -z-10 min-w-[100vw] -translate-x-1/2 -translate-y-1/2"
+								className="absolute left-1/2 top-[30%] -z-10 hidden -translate-x-1/2 -translate-y-1/2 lg:block lg:min-w-[100vw]"
 								width={1920}
 								height={1080}
 								loading='eager'

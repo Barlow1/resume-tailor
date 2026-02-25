@@ -1,8 +1,4 @@
 import { Link } from '@remix-run/react'
-import clsx from 'clsx'
-import step1 from '~/routes/_marketing+/logos/step-1.webp'
-import step2 from '~/routes/_marketing+/logos/step-2.webp'
-import step3 from '~/routes/_marketing+/logos/step-3.webp'
 import { trackCtaClick } from '~/lib/analytics.client.ts'
 
 export function StepsSection() {
@@ -11,125 +7,66 @@ export function StepsSection() {
 			number: '1',
 			title: 'Make Your Resume',
 			description: 'Start fresh or upload your existing one',
-			image: step1,
 		},
 		{
 			number: '2',
-			title: 'Tailor It (To Every Job)',
+			title: 'Tailor It To Every Job',
 			description:
 				'Match your resume to the job description and get more interviews with AI tailoring you can apply to effortlessly',
-			image: step2,
 		},
 		{
 			number: '3',
 			title: 'Land Interviews',
 			description: 'Stand out and impress recruiters with AI resume tailoring',
-			image: step3,
 		},
 	]
 
 	return (
 		<div className="mt-24">
-			<h2 className="text-center">
-				<div className="text-3xl font-bold">
+			<div className="text-center">
+				<span className="inline-block rounded-full bg-brand-500/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-brand-500">
+					How it works
+				</span>
+				<h2 className="mt-4 text-3xl font-bold md:text-4xl">
 					When You Use Resume Tailor,
 					<br />
 					You Get More Interviews
-				</div>
-				<div className="mt-1 text-sm text-muted-foreground">
-					It only takes 3 steps
-				</div>
-			</h2>
+				</h2>
+				<p className="mt-2 text-muted-foreground">It only takes 3 steps</p>
+			</div>
 
-			<div className="gap-y-18 relative mt-20 grid grid-cols-1">
+			<div className="relative mt-16 grid grid-cols-1 gap-6 md:grid-cols-3">
+				{/* Desktop connecting line */}
+				<div className="absolute left-[16%] right-[16%] top-10 hidden h-px bg-gradient-to-r from-brand-500/20 via-brand-500/40 to-brand-500/20 md:block" />
+
 				{steps.map((step, index) => (
-					<div key={index} className="relative grid grid-cols-2 gap-24">
-						<div
-							className={clsx(
-								'relative',
-								index % 2 === 0 ? 'order-first' : 'order-last',
-							)}
-						>
-							{/* Content */}
-							<div className="relative z-10 flex h-[500px] flex-col items-start justify-start rounded-xl p-8">
-								<div>
-									<h3 className="flex items-center text-xl font-bold">
-										<span className="mr-2 text-3xl text-brand-500">✦</span>
-										{step.title}
-									</h3>
-									<p className="mt-2 text-2xl text-muted-foreground">
-										{step.description}
-									</p>
-								</div>
-							</div>
+					<div key={index} className="flex flex-col items-center text-center">
+						{/* Step circle */}
+						<div className="relative z-10 mb-6 flex h-20 w-20 items-center justify-center rounded-full border-4 border-background bg-gradient-to-br from-brand-500 to-brand-800 shadow-lg">
+							<span className="text-2xl font-black text-white">{step.number}</span>
 						</div>
-						<div className="relative">
-							{/* Large background number */}
-							<div
-								className={clsx(
-									'text-brand-100 absolute text-[200px] font-bold opacity-50',
-									index % 2 === 0 ? '-left-24' : '-right-24',
-								)}
-							>
+
+						{/* Card */}
+						<div className="w-full flex-1 rounded-2xl border border-border bg-card p-8 shadow-sm transition-shadow duration-200 hover:shadow-md">
+							<div className="mb-1 text-[64px] font-black leading-none text-brand-500/8 select-none">
 								{step.number}
 							</div>
-							<div className="relative h-[80%] rounded-xl bg-muted p-8">
-								{/* Image placeholder */}
-								<div className="aspect-video h-full w-full rounded-lg bg-muted-foreground/10">
-									<img 
-										src={step.image} 
-										alt={step.title} 
-										className="h-full w-full object-fill rounded-lg"
-										loading="lazy"
-										width={800}
-										height={450} 
-									/>
-								</div>
-
-								{/* Connecting dotted lines */}
-								{index < steps.length - 1 && (
-									<div
-										className={clsx(
-											'absolute -z-10 h-full w-[160%] scale-x-[-1]',
-											index % 2 === 0
-												? 'right-24 top-[75%]'
-												: 'left-24 top-[75%]',
-										)}
-									>
-										<svg
-											className={clsx(
-												'absolute h-[300px] w-full',
-												index % 2 === 0 ? 'right-0' : 'left-0',
-											)}
-											preserveAspectRatio="none"
-											viewBox="0 0 710 300"
-											fill="none"
-											xmlns="http://www.w3.org/2000/svg"
-										>
-											<path
-												className="stroke-muted-foreground/30"
-												strokeWidth="2"
-												strokeDasharray="4 4"
-												d={
-													index % 2 === 0
-														? 'M684 150H50 M50 75V150 M684 150V225'
-														: 'M26 150h584 M610 75V150 M26 150V225'
-												}
-											/>
-										</svg>
-									</div>
-								)}
-							</div>
+							<h3 className="text-xl font-bold tracking-tight">{step.title}</h3>
+							<p className="mt-3 leading-relaxed text-muted-foreground">
+								{step.description}
+							</p>
 						</div>
 					</div>
 				))}
 			</div>
 
-			<div className="text-center">
+			<div className="mt-12 text-center">
 				<Link
 					to="/builder"
 					className="hover:bg-brand-600 inline-block rounded-lg bg-brand-500 px-8 py-4 text-lg font-semibold text-white"
-					onClick={() => trackCtaClick('BUILD YOUR RESUME NOW', 'steps_section', '/builder')}
+					onClick={() =>
+						trackCtaClick('BUILD YOUR RESUME NOW', 'steps_section', '/builder')
+					}
 				>
 					BUILD YOUR RESUME NOW
 				</Link>

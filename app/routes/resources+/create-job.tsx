@@ -10,6 +10,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const formData = await request.formData()
   const title = formData.get('title') as string
+  const company = formData.get('company') as string | null
   const content = formData.get('content') as string
 
   // Get job count BEFORE creating (for accurate job_number)
@@ -19,7 +20,7 @@ export async function action({ request }: ActionFunctionArgs) {
     jobNumber = existingJobCount + 1
   }
 
-  const job = await createJob({ userId, title, content })
+  const job = await createJob({ userId, title, company, content })
 
   // Track job created in PostHog with job_number for multi-job analysis
   if (userId) {

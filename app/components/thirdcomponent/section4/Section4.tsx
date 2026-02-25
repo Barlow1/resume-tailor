@@ -6,7 +6,6 @@ import frame3 from "../../thirdcomponent/assets/Frame3.png";
 import arc2 from "../../thirdcomponent/assets/Arc 2.png";
 import arc3 from "../../thirdcomponent/assets/Arc 3.png";
 // import copy from "../../thirdcomponent/assets/Frame copy.png";
-import arrow from "../../thirdcomponent/assets/arw.svg";
 import { Link } from "@remix-run/react";
 
 function Section4() {
@@ -67,13 +66,8 @@ function Section4() {
       </div>
 
       <div className="w-full flex items-center justify-center text-white mt-[50px]">
-        <Link to={"/builder"}>
-
-        <button className="flex items-center gap-4 bg-[#40BEA7] px-5 py-4 rounded-md text-xl font-poppins text-white mt-2 mx-auto lg:mx-0">
-                Build your AI Resume
-                <img src={arrow} alt="arrow" className="w-6 h-6" />
-              </button>
-
+        <Link to="/builder" className="hover:bg-brand-600 inline-block rounded-lg bg-brand-500 px-8 py-4 text-lg font-semibold text-white">
+          BUILD YOUR RESUME NOW
         </Link>
       
         {/* <button className="bg-[#40BEA7] flex items-center gap-2 poppins-semibold  text-[18px] sm:text-[22px] p-3 rounded-md">

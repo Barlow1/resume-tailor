@@ -123,6 +123,7 @@ model Session {
 model Job {
   id                String   @id @unique @default(cuid())
   title             String
+  company           String?
   content           String
   extractedKeywords String?
   createdAt         DateTime @default(now())

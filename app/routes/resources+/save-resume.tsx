@@ -15,8 +15,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
 	const type = formData.get('type')
 
-	const cookieHeader = request.headers.get('Cookie')
-
 	if (type === 'reset') {
 		return json(
 			{ success: true },
@@ -47,26 +45,24 @@ export async function action({ request }: ActionFunctionArgs) {
 	const downloadPDFRequested = formData.get('downloadPDFRequested') === 'true'
 	const subscribe = formData.get('subscribe') === 'true'
 
-	// Get existing cookie data
-	const { resumeId } = (await resumeCookie.parse(cookieHeader)) || {}
-
-	// Create or update resume in database
-	// Check if resume exists before trying to update (defensive against stale cookies)
+	// Determine whether to create or update based on resumeData.id
+	// If resumeData.id exists, update that resume
+	// If resumeData.id is missing/empty, create a new resume (ignore cookie)
 	let resume
 	try {
-		if (resumeId) {
-			const existingResume = await getBuilderResume(resumeId)
+		if (resumeData.id) {
+			const existingResume = await getBuilderResume(resumeData.id)
 
 			if (existingResume) {
 				// Resume exists, update it
-				resume = await updateBuilderResume(userId, resumeId, resumeData)
+				resume = await updateBuilderResume(userId, resumeData.id, resumeData)
 			} else {
-				// Resume doesn't exist (stale cookie), create new one instead
-				console.log(`Resume ${resumeId} not found, creating new one`)
+				// Resume doesn't exist, create new one
+				console.log(`Resume ${resumeData.id} not found, creating new one`)
 				resume = await createBuilderResume(userId, resumeData)
 			}
 		} else {
-			// No resumeId in cookie, create new resume
+			// No id in data - always create a new resume
 			resume = await createBuilderResume(userId, resumeData)
 		}
 	} catch (error) {
