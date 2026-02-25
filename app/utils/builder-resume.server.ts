@@ -347,6 +347,7 @@ export async function getUserBuilderResumes(
 ): Promise<ResumeData[]> {
 	return prisma.builderResume.findMany({
 		where: { userId },
+		orderBy: { updatedAt: 'desc' },
 		include: {
 			experiences: {
 				select: {

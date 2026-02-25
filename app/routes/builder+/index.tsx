@@ -914,9 +914,11 @@ export default function ResumeBuilder() {
 
 	/* ═══ EDIT HANDLERS ═══ */
 	const updateField = (field: string, val: string) => {
-		const newFormData = { ...formData, [field]: val }
-		setFormData(newFormData)
-		debouncedSave(newFormData)
+		setFormData(prev => {
+			const newFormData = { ...prev, [field]: val }
+			debouncedSave(newFormData)
+			return newFormData
+		})
 	}
 
 	const updateExpField = (
@@ -924,33 +926,37 @@ export default function ResumeBuilder() {
 		field: keyof BuilderExperience,
 		val: string,
 	) => {
-		if (!formData.experiences) return
-		const newFormData = {
-			...formData,
-			experiences: formData.experiences.map(exp =>
-				exp.id === expId ? { ...exp, [field]: val } : exp,
-			),
-		}
-		setFormData(newFormData)
-		debouncedSave(newFormData)
+		setFormData(prev => {
+			if (!prev.experiences) return prev
+			const newFormData = {
+				...prev,
+				experiences: prev.experiences.map(exp =>
+					exp.id === expId ? { ...exp, [field]: val } : exp,
+				),
+			}
+			debouncedSave(newFormData)
+			return newFormData
+		})
 	}
 
 	const updateBullet = (expId: string, bulletIndex: number, val: string) => {
-		if (!formData.experiences) return
-		const newFormData = {
-			...formData,
-			experiences: formData.experiences.map(exp => {
-				if (exp.id !== expId || !exp.descriptions) return exp
-				return {
-					...exp,
-					descriptions: exp.descriptions.map((b, i) =>
-						i === bulletIndex ? { id: b.id, content: val } : b,
-					),
-				}
-			}),
-		}
-		setFormData(newFormData)
-		debouncedSave(newFormData)
+		setFormData(prev => {
+			if (!prev.experiences) return prev
+			const newFormData = {
+				...prev,
+				experiences: prev.experiences.map(exp => {
+					if (exp.id !== expId || !exp.descriptions) return exp
+					return {
+						...exp,
+						descriptions: exp.descriptions.map((b, i) =>
+							i === bulletIndex ? { id: b.id, content: val } : b,
+						),
+					}
+				}),
+			}
+			debouncedSave(newFormData)
+			return newFormData
+		})
 	}
 
 	const addBulletPoint = (experienceId: string) => {
@@ -1017,27 +1023,31 @@ export default function ResumeBuilder() {
 		field: keyof BuilderEducation,
 		val: string,
 	) => {
-		if (!formData.education) return
-		const newFormData = {
-			...formData,
-			education: formData.education.map(edu =>
-				edu.id === eduId ? { ...edu, [field]: val } : edu,
-			),
-		}
-		setFormData(newFormData)
-		debouncedSave(newFormData)
+		setFormData(prev => {
+			if (!prev.education) return prev
+			const newFormData = {
+				...prev,
+				education: prev.education.map(edu =>
+					edu.id === eduId ? { ...edu, [field]: val } : edu,
+				),
+			}
+			debouncedSave(newFormData)
+			return newFormData
+		})
 	}
 
 	const updateSkill = (skillId: string, val: string) => {
-		if (!formData.skills) return
-		const newFormData = {
-			...formData,
-			skills: formData.skills.map(s =>
-				s.id === skillId ? { ...s, name: val } : s,
-			),
-		}
-		setFormData(newFormData)
-		debouncedSave(newFormData)
+		setFormData(prev => {
+			if (!prev.skills) return prev
+			const newFormData = {
+				...prev,
+				skills: prev.skills.map(s =>
+					s.id === skillId ? { ...s, name: val } : s,
+				),
+			}
+			debouncedSave(newFormData)
+			return newFormData
+		})
 	}
 
 	const addSkill = () => {
@@ -1091,15 +1101,17 @@ export default function ResumeBuilder() {
 	}
 
 	const updateHobby = (hobbyId: string, val: string) => {
-		if (!formData.hobbies) return
-		const newFormData = {
-			...formData,
-			hobbies: formData.hobbies.map(h =>
-				h.id === hobbyId ? { ...h, name: val } : h,
-			),
-		}
-		setFormData(newFormData)
-		debouncedSave(newFormData)
+		setFormData(prev => {
+			if (!prev.hobbies) return prev
+			const newFormData = {
+				...prev,
+				hobbies: prev.hobbies.map(h =>
+					h.id === hobbyId ? { ...h, name: val } : h,
+				),
+			}
+			debouncedSave(newFormData)
+			return newFormData
+		})
 	}
 
 	const addHobby = () => {
@@ -1599,11 +1611,17 @@ export default function ResumeBuilder() {
 		return true
 	}
 
-	const handleStartScratch = () => {
+	const handleStartScratch = async () => {
 		const blank = getDefaultFormData() as typeof formData
 		setFormData(blank)
 		setSelectedJob(null)
-		debouncedSave(blank)
+		// Save the new blank resume, then navigate to refresh the resumes list
+		const form = new FormData()
+		form.append('formData', JSON.stringify(blank))
+		form.append('downloadPDFRequested', 'false')
+		form.append('subscribe', 'false')
+		await fetch('/resources/save-resume', { method: 'POST', body: form })
+		navigate('/builder')
 	}
 
 	const sections = [
@@ -1640,37 +1658,41 @@ export default function ResumeBuilder() {
 	]
 
 	const updateHeader = (headerKey: string, val: string) => {
-		const newFormData = {
-			...formData,
-			headers: {
-				...formData.headers,
-				[headerKey]: val,
-			} as typeof formData.headers,
-		}
-		setFormData(newFormData)
-		debouncedSave(newFormData)
+		setFormData(prev => {
+			const newFormData = {
+				...prev,
+				headers: {
+					...prev.headers,
+					[headerKey]: val,
+				} as typeof prev.headers,
+			}
+			debouncedSave(newFormData)
+			return newFormData
+		})
 	}
 
 	const toggleSectionVisibility = (visKey: string) => {
-		const current =
-			formData.visibleSections?.[
-				visKey as keyof typeof formData.visibleSections
-			] ?? true
-		const vs = formData.visibleSections ?? {
-			about: true,
-			experience: true,
-			education: true,
-			skills: true,
-			hobbies: true,
-			personalDetails: true,
-			photo: true,
-		}
-		const newFormData = {
-			...formData,
-			visibleSections: { ...vs, [visKey]: !current },
-		}
-		setFormData(newFormData)
-		debouncedSave(newFormData)
+		setFormData(prev => {
+			const current =
+				prev.visibleSections?.[
+					visKey as keyof typeof prev.visibleSections
+				] ?? true
+			const vs = prev.visibleSections ?? {
+				about: true,
+				experience: true,
+				education: true,
+				skills: true,
+				hobbies: true,
+				personalDetails: true,
+				photo: true,
+			}
+			const newFormData = {
+				...prev,
+				visibleSections: { ...vs, [visKey]: !current },
+			}
+			debouncedSave(newFormData)
+			return newFormData
+		})
 	}
 
 	/* ═══ IFRAME HANDLERS ═══ */
@@ -2467,7 +2489,7 @@ export default function ResumeBuilder() {
 					{sidebar ? (
 						<div style={{ flex: 1, overflow: 'auto', padding: '0 9px' }}>
 							{/* Resume list */}
-							{(showAllResumes ? resumes : resumes.slice(0, 5)).map(r => (
+							{(showAllResumes ? resumes : resumes.slice(0, 3)).map(r => (
 								<div
 									key={r.id}
 									onClick={() => handleResumeSwitch(r.id!)}
@@ -2590,7 +2612,7 @@ export default function ResumeBuilder() {
 									</div>
 								</div>
 							))}
-							{resumes.length > 5 && (
+							{resumes.length > 3 && (
 								<div
 									onClick={() => setShowAllResumes(prev => !prev)}
 									style={{
@@ -2776,7 +2798,7 @@ export default function ResumeBuilder() {
 													</span>
 												</div>
 												<button
-													onClick={() => toggleSectionVisibility(s.visKey)}
+													onClick={() => handleStructuralAction({ type: 'toggleSection', sectionId: s.visKey })}
 													style={{
 														width: 30,
 														height: 30,
@@ -2895,13 +2917,14 @@ export default function ResumeBuilder() {
 						onFieldChange={handleIframeFieldChange}
 						onStructuralAction={handleStructuralAction}
 						onHoverElement={handleHoverElement}
+						onCommandK={() => setShowCommandPalette(true)}
 						canvasBackground={c.canvas}
 					/>
 					<FloatingToolbar
 						hovered={hoveredElement}
 						onAction={handleStructuralAction}
 						onAITailor={handleToolbarAITailor}
-						onToggleSection={toggleSectionVisibility}
+						onToggleSection={(sectionId) => handleStructuralAction({ type: 'toggleSection', sectionId })}
 						sectionOrder={sectionOrder}
 						formData={formData}
 					/>

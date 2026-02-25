@@ -48,6 +48,7 @@ interface ResumeIframeProps {
 	onFieldChange: (fieldPath: string, value: string) => void
 	onStructuralAction: (action: StructuralAction) => void
 	onHoverElement?: (info: HoveredElementInfo | null) => void
+	onCommandK?: () => void
 	className?: string
 	canvasBackground?: string
 }
@@ -105,7 +106,7 @@ function calculatePageBreaks(doc: Document) {
 }
 
 export const ResumeIframe = forwardRef<ResumeIframeHandle, ResumeIframeProps>(
-	function ResumeIframe({ formData, sectionOrder, onFieldChange, onStructuralAction, onHoverElement, className, canvasBackground }, ref) {
+	function ResumeIframe({ formData, sectionOrder, onFieldChange, onStructuralAction, onHoverElement, onCommandK, className, canvasBackground }, ref) {
 		const iframeRef = useRef<HTMLIFrameElement>(null)
 		const editingFieldRef = useRef<string | null>(null)
 		const pendingFocusRef = useRef<string | null>(null)
@@ -116,9 +117,11 @@ export const ResumeIframe = forwardRef<ResumeIframeHandle, ResumeIframeProps>(
 		const pageBreakTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
 		const [srcdoc, setSrcdoc] = useState('')
 
-		// Stable ref for onHoverElement to avoid re-attaching listeners
+		// Stable refs to avoid re-attaching listeners
 		const onHoverElementRef = useRef(onHoverElement)
 		onHoverElementRef.current = onHoverElement
+		const onCommandKRef = useRef(onCommandK)
+		onCommandKRef.current = onCommandK
 
 		// Debounced field update — updates formData in parent without iframe re-render
 		const debouncedFieldUpdate = useDebouncedCallback(
@@ -361,6 +364,14 @@ export const ResumeIframe = forwardRef<ResumeIframeHandle, ResumeIframeProps>(
 			// Keydown — block only rich text formatting; let all other shortcuts through
 			doc.addEventListener('keydown', (e) => {
 				const el = e.target as HTMLElement
+
+				// Command+K — open quick actions (works everywhere in iframe)
+				if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+					e.preventDefault()
+					onCommandKRef.current?.()
+					return
+				}
+
 				if (!el.hasAttribute('contenteditable')) return
 
 				// Block ONLY bold/italic/underline formatting shortcuts
