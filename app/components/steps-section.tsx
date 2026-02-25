@@ -1,76 +1,188 @@
-import { Link } from '@remix-run/react'
+import { lc } from './landing-colors.ts'
+import { FadeUp } from './fade-up.tsx'
+import { PrimaryBtn } from './landing-buttons.tsx'
+import { useMobile } from '~/hooks/use-mobile.ts'
 import { trackCtaClick } from '~/lib/analytics.client.ts'
 
+const steps = [
+	{
+		n: '01',
+		title: 'Upload or start fresh',
+		desc: 'Drop your existing resume or build one from scratch. We handle formatting.',
+	},
+	{
+		n: '02',
+		title: 'Paste any job description',
+		desc: 'Add the role you want. Our AI analyzes keywords, skills, and requirements in seconds.',
+	},
+	{
+		n: '03',
+		title: 'Tailor and apply',
+		desc: 'One click. Your resume is rewritten to match. Download as PDF and apply with confidence.',
+	},
+]
+
 export function StepsSection() {
-	const steps = [
-		{
-			number: '1',
-			title: 'Make Your Resume',
-			description: 'Start fresh or upload your existing one',
-		},
-		{
-			number: '2',
-			title: 'Tailor It To Every Job',
-			description:
-				'Match your resume to the job description and get more interviews with AI tailoring you can apply to effortlessly',
-		},
-		{
-			number: '3',
-			title: 'Land Interviews',
-			description: 'Stand out and impress recruiters with AI resume tailoring',
-		},
-	]
-
+	const mobile = useMobile()
 	return (
-		<div className="mt-24">
-			<div className="text-center">
-				<span className="inline-block rounded-full bg-brand-500/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-brand-500">
-					How it works
-				</span>
-				<h2 className="mt-4 text-3xl font-bold md:text-4xl">
-					When You Use Resume Tailor,
-					<br />
-					You Get More Interviews
-				</h2>
-				<p className="mt-2 text-muted-foreground">It only takes 3 steps</p>
-			</div>
-
-			<div className="relative mt-16 grid grid-cols-1 gap-6 md:grid-cols-3">
-				{/* Desktop connecting line */}
-				<div className="absolute left-[16%] right-[16%] top-10 hidden h-px bg-gradient-to-r from-brand-500/20 via-brand-500/40 to-brand-500/20 md:block" />
-
-				{steps.map((step, index) => (
-					<div key={index} className="flex flex-col items-center text-center">
-						{/* Step circle */}
-						<div className="relative z-10 mb-6 flex h-20 w-20 items-center justify-center rounded-full border-4 border-background bg-gradient-to-br from-brand-500 to-brand-800 shadow-lg">
-							<span className="text-2xl font-black text-white">{step.number}</span>
-						</div>
-
-						{/* Card */}
-						<div className="w-full flex-1 rounded-2xl border border-border bg-card p-8 shadow-sm transition-shadow duration-200 hover:shadow-md">
-							<div className="mb-1 text-[64px] font-black leading-none text-brand-500/8 select-none">
-								{step.number}
-							</div>
-							<h3 className="text-xl font-bold tracking-tight">{step.title}</h3>
-							<p className="mt-3 leading-relaxed text-muted-foreground">
-								{step.description}
-							</p>
-						</div>
+		<section
+			id="how-it-works"
+			style={{
+				padding: mobile ? '80px 20px' : '100px 24px',
+				scrollMarginTop: 96,
+			}}
+		>
+			<div style={{ maxWidth: 1120, margin: '0 auto' }}>
+				<FadeUp>
+					<div style={{ textAlign: 'center', marginBottom: 64 }}>
+						<span
+							style={{
+								display: 'inline-block',
+								padding: '6px 14px',
+								borderRadius: 999,
+								background: 'rgba(107,69,255,0.1)',
+								color: lc.brandL,
+								fontSize: 13,
+								fontWeight: 500,
+								border: '1px solid rgba(107,69,255,0.18)',
+								marginBottom: 16,
+							}}
+						>
+							How it works
+						</span>
+						<h2
+							style={{
+								color: lc.text,
+								fontSize: 'clamp(28px,4vw,42px)',
+								fontWeight: 700,
+								letterSpacing: '-0.035em',
+								lineHeight: 1.15,
+							}}
+						>
+							Three steps. One perfect resume.
+						</h2>
 					</div>
-				))}
-			</div>
+				</FadeUp>
 
-			<div className="mt-12 text-center">
-				<Link
-					to="/builder"
-					className="hover:bg-brand-600 inline-block rounded-lg bg-brand-500 px-8 py-4 text-lg font-semibold text-white"
-					onClick={() =>
-						trackCtaClick('BUILD YOUR RESUME NOW', 'steps_section', '/builder')
-					}
+				{/* Stepped flow */}
+				<div
+					style={{
+						position: 'relative',
+						maxWidth: 800,
+						margin: '0 auto',
+					}}
 				>
-					BUILD YOUR RESUME NOW
-				</Link>
+					{/* Connecting line */}
+					{!mobile && (
+						<div
+							style={{
+								position: 'absolute',
+								top: 24,
+								left: 24,
+								right: 24,
+								height: 2,
+								background: `linear-gradient(90deg,${lc.brand}40,${lc.brand}20,${lc.brand}40)`,
+								zIndex: 0,
+							}}
+						/>
+					)}
+					<div
+						style={{
+							display: 'flex',
+							flexDirection: mobile ? 'column' : 'row',
+							gap: mobile ? 40 : 0,
+							justifyContent: 'space-between',
+							position: 'relative',
+							zIndex: 1,
+						}}
+					>
+						{steps.map((s, i) => (
+							<FadeUp
+								key={s.n}
+								delay={i * 0.12}
+								style={{
+									flex: 1,
+									textAlign: mobile ? 'left' : 'center',
+									display: 'flex',
+									flexDirection: mobile ? 'row' : 'column',
+									alignItems: mobile ? 'flex-start' : 'center',
+									gap: mobile ? 16 : 0,
+								}}
+							>
+								{/* Number circle */}
+								<div
+									style={{
+										width: 48,
+										height: 48,
+										borderRadius: '50%',
+										background: lc.bg,
+										border: `2px solid ${lc.brand}`,
+										display: 'flex',
+										alignItems: 'center',
+										justifyContent: 'center',
+										flexShrink: 0,
+										boxShadow: `0 0 0 6px ${lc.bg}, 0 0 16px rgba(107,69,255,0.15)`,
+									}}
+								>
+									<span
+										style={{
+											color: lc.brandL,
+											fontSize: 16,
+											fontWeight: 700,
+											fontFamily: 'monospace',
+										}}
+									>
+										{s.n}
+									</span>
+								</div>
+								<div
+									style={{
+										marginTop: mobile ? 0 : 20,
+										maxWidth: mobile ? undefined : 220,
+									}}
+								>
+									<div
+										style={{
+											color: lc.text,
+											fontSize: 17,
+											fontWeight: 600,
+											marginBottom: 6,
+										}}
+									>
+										{s.title}
+									</div>
+									<div
+										style={{
+											color: lc.sec,
+											fontSize: 14,
+											lineHeight: 1.6,
+										}}
+									>
+										{s.desc}
+									</div>
+								</div>
+							</FadeUp>
+						))}
+					</div>
+				</div>
+
+				<FadeUp delay={0.35}>
+					<div style={{ textAlign: 'center', marginTop: 56 }}>
+						<PrimaryBtn
+							to="/builder"
+							onClick={() =>
+								trackCtaClick(
+									'Start tailoring free',
+									'steps_section',
+									'/builder',
+								)
+							}
+						>
+							Start tailoring free
+						</PrimaryBtn>
+					</div>
+				</FadeUp>
 			</div>
-		</div>
+		</section>
 	)
 }

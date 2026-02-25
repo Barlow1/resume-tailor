@@ -1,82 +1,134 @@
-import { Link } from '@remix-run/react'
+import { useState, useEffect } from 'react'
+import { lc } from './landing-colors.ts'
+import { BuilderMockup } from './builder-mockup.tsx'
+import { PrimaryBtn, SecondaryBtn } from './landing-buttons.tsx'
+import { useMobile } from '~/hooks/use-mobile.ts'
 import { trackCtaClick } from '~/lib/analytics.client.ts'
 
 export function HeroSection() {
+	const [mounted, setMounted] = useState(false)
+	const mobile = useMobile()
+	useEffect(() => {
+		setTimeout(() => setMounted(true), 100)
+	}, [])
+
+	const fade = (delay: number) => ({
+		opacity: mounted ? 1 : 0,
+		transform: mounted ? 'translateY(0)' : 'translateY(28px)',
+		transition: `opacity 0.9s cubic-bezier(0.16,1,0.3,1) ${delay}s, transform 0.9s cubic-bezier(0.16,1,0.3,1) ${delay}s`,
+	})
+
 	return (
-		<div className="mx-auto flex max-w-6xl flex-col items-center justify-center">
-			<div className="grid grid-cols-1 gap-8 py-12 lg:grid-cols-2 lg:divide-x lg:divide-gray-200 lg:dark:divide-gray-700">
-				<div className="space-y-6">
-					<h2 className="text-4xl font-bold text-gray-900 dark:text-white">
-						Most Job Seekers Struggle to Create Resumes That Stand Out
-					</h2>
-					<p className="text-lg text-gray-600 dark:text-gray-300">
-						At Resume Tailor, we know how challenging it can be to land the
-						perfect job. To stand out, you need more than just a resume—you need
-						one that's optimized, highlights your strengths, and is tailored to
-						the job description. But building and customizing resumes is
-						tedious, time-consuming, and frustrating.
-					</p>
-					<p className="text-lg text-gray-600 dark:text-gray-300">
-						Whether you're wondering how to use AI to write a resume, searching
-						for resume tailoring AI, AI resume summary generator or thinking,
-						"Can AI write my resume?"—the answer is yes. Our tool creates and
-						fixes your resume by analyzing job descriptions and ensuring it's
-						ATS-friendly.
-					</p>
+		<section
+			style={{
+				padding: mobile ? '100px 20px 40px' : '120px 24px 48px',
+				textAlign: 'center',
+				position: 'relative',
+				overflow: 'hidden',
+				background:
+					'radial-gradient(ellipse at 50% 0%,rgba(107,69,255,0.15) 0%,transparent 65%)',
+			}}
+		>
+			<div style={{ maxWidth: 1120, margin: '0 auto' }}>
+				{/* Pill badge */}
+				<div style={fade(0)}>
+					<span
+						style={{
+							display: 'inline-block',
+							padding: '6px 14px',
+							borderRadius: 999,
+							background: 'rgba(107,69,255,0.1)',
+							color: lc.brandL,
+							fontSize: 13,
+							fontWeight: 500,
+							border: '1px solid rgba(107,69,255,0.18)',
+							marginBottom: 16,
+						}}
+					>
+						16k+ Resumes tailored
+					</span>
 				</div>
-				<div className="space-y-6 lg:pl-8">
-					<div className="rounded-lg">
-						<p className="mb-6 text-xl text-gray-900 dark:text-white">
-							That's why we created Resume Tailor—a powerful AI-driven tool that
-							doesn't just tailor your resume but also helps you build one from
-							scratch if needed. Here's how it works:
-						</p>
-						<div className="space-y-4">
-							<div className="flex gap-4">
-								<span className="text-xl font-bold text-gray-900 dark:text-white">
-									1-
-								</span>
-								<p className="text-gray-600 dark:text-gray-300">
-									Upload your existing resume or start fresh
-								</p>
-							</div>
-							<div className="flex gap-4">
-								<span className="text-xl font-bold text-gray-900 dark:text-white">
-									2-
-								</span>
-								<p className="text-gray-600 dark:text-gray-300">
-									Let AI match your resume with the job description
-								</p>
-							</div>
-							<div className="flex gap-4">
-								<span className="text-xl font-bold text-gray-900 dark:text-white">
-									3-
-								</span>
-								<p className="text-gray-600 dark:text-gray-300">
-									Standout as the perfect candidate for the role. Stop wasting
-									time and start applying to your dream jobs with confidence
-								</p>
-							</div>
-						</div>
-						<p className="mt-6 text-gray-600 dark:text-gray-300">
-							Stop wondering, "How do I use AI to write a resume?" or "Can AI
-							write a resume for me?"—Resume Tailor AI does it all. Whether you
-							need to fix your resume, create a tailored resume for free, or
-							optimize your job applications, our AI-driven platform makes it
-							effortless.
-						</p>
-					</div>
-				</div>
-			</div>
-			<div className="mx-auto pt-4">
-				<Link
-					to="/builder"
-					className="hover:bg-brand-600 inline-block rounded-lg bg-brand-500 px-8 py-4 text-lg font-semibold text-white"
-					onClick={() => trackCtaClick('BUILD YOUR RESUME NOW', 'hero_section', '/builder')}
+
+				{/* Headline */}
+				<h1
+					style={{
+						...fade(0.1),
+						fontSize: 'clamp(36px,5.5vw,64px)',
+						fontWeight: 700,
+						letterSpacing: '-0.035em',
+						lineHeight: 1.08,
+						margin: '0 0 20px',
+						color: lc.text,
+					}}
 				>
-					BUILD YOUR RESUME NOW
-				</Link>
+					One resume. Every job.
+					<br />
+					<span
+						style={{
+							background: `linear-gradient(135deg,${lc.brandL},${lc.brandP},${lc.brand})`,
+							WebkitBackgroundClip: 'text',
+							WebkitTextFillColor: 'transparent',
+						}}
+					>
+						Perfectly matched.
+					</span>
+				</h1>
+
+				{/* Subtitle */}
+				<p
+					style={{
+						...fade(0.2),
+						color: lc.sec,
+						fontSize: 17,
+						lineHeight: 1.6,
+						maxWidth: 540,
+						margin: '0 auto 36px',
+					}}
+				>
+					Paste a job description. Get a resume optimized for it —
+					{!mobile && <br />}
+					right keywords, right structure, ATS-ready. In 30 seconds.
+				</p>
+
+				{/* CTAs */}
+				<div
+					style={{
+						...fade(0.3),
+						display: 'flex',
+						gap: 12,
+						justifyContent: 'center',
+						flexWrap: 'wrap',
+					}}
+				>
+					<PrimaryBtn
+						to="/builder"
+						onClick={() =>
+							trackCtaClick(
+								'Build your resume now',
+								'hero_section',
+								'/builder',
+							)
+						}
+					>
+						Build your resume now
+					</PrimaryBtn>
+					<SecondaryBtn href="#how-it-works">
+						How it works
+					</SecondaryBtn>
+				</div>
+
+				{/* Trust line */}
+				<div style={{ ...fade(0.4), marginTop: 40 }}>
+					<p style={{ color: lc.mut, fontSize: 14 }}>
+						Trusted by thousands of job seekers worldwide
+					</p>
+				</div>
+
+				{/* Builder mockup */}
+				<div style={{ ...fade(0.5), marginTop: 48 }}>
+					<BuilderMockup mobile={mobile} />
+				</div>
 			</div>
-		</div>
+		</section>
 	)
 }
