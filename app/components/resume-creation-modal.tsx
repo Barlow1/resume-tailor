@@ -125,14 +125,16 @@ export function ResumeCreationModal({
 						</div>
 						<span style={{ fontSize: 16, fontWeight: 600, color: c.text }}>Create Your Resume</span>
 					</div>
-					<div
+					<button
+						type="button"
 						onClick={onClose}
-						style={{ width: 28, height: 28, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: c.dim }}
+						aria-label="Close"
+						style={{ width: 28, height: 28, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: c.dim, background: 'transparent', border: 'none', padding: 0 }}
 						onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = c.bgSurf }}
 						onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
 					>
 						<X size={16} strokeWidth={2} />
-					</div>
+					</button>
 				</div>
 
 				{/* Body */}
