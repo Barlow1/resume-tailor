@@ -1,3 +1,4 @@
+import { Link } from '@remix-run/react'
 import { lc } from './landing-colors.ts'
 import { useState } from 'react'
 import { useMobile } from '~/hooks/use-mobile.ts'
@@ -46,8 +47,9 @@ export function AgentBanner() {
 					? ' — Stop applying. Let your agent do it.'
 					: ' — Stop applying to jobs. Your AI career agent finds, tailors, and applies for you.'}
 			</span>
-			<a
-				href="/agent"
+			<Link
+				to="/agent"
+				reloadDocument
 				style={{
 					flexShrink: 0,
 					padding: mobile ? '6px 14px' : '7px 18px',
@@ -70,7 +72,7 @@ export function AgentBanner() {
 				}}
 			>
 				Learn more
-			</a>
+			</Link>
 			<button
 				onClick={() => setDismissed(true)}
 				style={{
