@@ -119,6 +119,10 @@ export default {
 					from: { height: 'var(--radix-accordion-content-height)' },
 					to: { height: '0' },
 				},
+				'fade-up': {
+					'0%': { opacity: '0', transform: 'translateY(24px)' },
+					'100%': { opacity: '1', transform: 'translateY(0)' },
+				},
 				rainbow: {
 					'0%': {
 						filter: 'hue-rotate(0deg) brightness(1)',
@@ -146,6 +150,7 @@ export default {
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'rainbow-icon': 'rainbow 8s linear infinite',
 				'rainbow-text': 'rainbow-text 4s linear infinite',
+				'fade-up': 'fade-up 0.6s ease-out forwards',
 			},
 			backgroundImage: {
 				'rainbow-text': 'linear-gradient(to right, #6366f1, #ec4899, #6366f1)',

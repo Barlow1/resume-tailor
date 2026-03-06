@@ -84,8 +84,8 @@ export const FAQ: React.FC = () => {
   };
 
   return (
-    <div className="mx-auto mt-32 h-full max-w-5xl px-2 py-3 tracking-wide md:mt-44 md:px-4">
-      <h2 className="flex justify-center text-3xl font-bold text-black dark:text-primary">
+    <div className="mx-auto h-full max-w-3xl px-4 py-24 tracking-wide">
+      <h2 className="text-center text-3xl font-bold text-foreground">
         Frequently Asked Questions
       </h2>
 
@@ -95,7 +95,7 @@ export const FAQ: React.FC = () => {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
 
-      <div className="grid gap-3 py-8 text-lg leading-6 text-black dark:text-primary md:grid-cols-2 md:gap-8">
+      <div className="grid gap-3 py-8 text-lg leading-6 text-foreground">
         {faqData.map((faq, i) => {
           const isOpen = openTab === i;
           const panelId = `faq-panel-${i}`;
@@ -143,7 +143,7 @@ export const FAQ: React.FC = () => {
                     isOpen ? "pb-2" : ""
                   }`}
                 >
-                  <div className="px-6 pb-4 text-gray-600">{faq.answer}</div>
+                  <div className="px-6 pb-4 text-muted-foreground">{faq.answer}</div>
                 </div>
               </div>
             </div>

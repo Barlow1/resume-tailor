@@ -38,8 +38,12 @@ test('Fail to verify TOTP outside the specified time window', () => {
 
 test('Clock drift is handled by window', () => {
 	vi.useFakeTimers()
+	// Set a known base time safely within a 60-second period to avoid
+	// flakiness when the real clock is near a period boundary.
+	const baseTime = new Date('2024-01-01T00:00:10.000Z')
+	vi.setSystemTime(baseTime)
 	const { otp, secret: key } = totp.generateTOTP({ period: 60 })
-	const futureDate = new Date(Date.now() + 1000 * 61)
+	const futureDate = new Date(baseTime.getTime() + 1000 * 61)
 	vi.setSystemTime(futureDate)
 	const result = totp.verifyTOTP({ otp, secret: key, window: 1, period: 60 })
 	expect(result).toEqual({ delta: -1 })

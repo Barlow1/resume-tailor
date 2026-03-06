@@ -419,6 +419,16 @@ function App() {
 	const [sidebarOpen, setSidebarOpen] = useState(false)
 	const [isCollapsed, setIsCollapsed] = useState(false)
 	const [landingMenuOpen, setLandingMenuOpen] = useState(false)
+	const [scrolled, setScrolled] = useState(false)
+
+	// Glass nav scroll listener — only on landing page
+	useEffect(() => {
+		if (!isOnLandingPage) return
+		const onScroll = () => setScrolled(window.scrollY > 20)
+		onScroll()
+		window.addEventListener('scroll', onScroll, { passive: true })
+		return () => window.removeEventListener('scroll', onScroll)
+	}, [isOnLandingPage])
 
 	// Load collapsed state from localStorage on mount
 	useEffect(() => {
@@ -706,6 +716,246 @@ function App() {
 								{isBuilderRoute ? (
 									/* Builder route: full-screen, no header or wrapper padding */
 									<Outlet />
+								) : isOnLandingPage ? (
+									/* Landing page: fixed glass nav + no wrapper padding */
+									<>
+										{/* Glass-effect fixed nav — always dark to match landing bg */}
+										<nav
+											style={{
+												position: 'fixed',
+												top: 0,
+												left: 0,
+												right: 0,
+												zIndex: 100,
+												height: 60,
+												display: 'flex',
+												alignItems: 'center',
+												justifyContent: 'center',
+												background: scrolled
+													? 'rgba(8,8,10,0.82)'
+													: 'transparent',
+												backdropFilter: scrolled
+													? 'blur(20px)'
+													: 'none',
+												borderBottom: scrolled
+													? '1px solid rgba(255,255,255,0.06)'
+													: '1px solid transparent',
+												transition: 'all 0.35s ease',
+											}}
+										>
+											<div
+												style={{
+													maxWidth: 1120,
+													width: '100%',
+													padding: '0 24px',
+													display: 'flex',
+													alignItems: 'center',
+													justifyContent: 'space-between',
+												}}
+											>
+												{/* Mobile drawer for landing nav */}
+												<Dialog
+													className="relative z-50 lg:hidden"
+													open={landingMenuOpen}
+													onClose={setLandingMenuOpen}
+												>
+													<DialogBackdrop
+														transition
+														className="fixed inset-0 bg-gray-900/80 transition-opacity duration-300 ease-linear data-[closed]:opacity-0"
+													/>
+													<div className="fixed inset-0 flex">
+														<DialogPanel
+															transition
+															className="relative flex w-full max-w-xs flex-1 transform flex-col p-6 shadow-xl transition duration-300 ease-in-out data-[closed]:-translate-x-full"
+															style={{ background: '#111114' }}
+														>
+															<div className="mb-6 flex items-center justify-between">
+																<Link to="/" onClick={() => setLandingMenuOpen(false)}>
+																	<img
+																		src="/RT_Logo_stacked.png"
+																		alt="Resume Tailor"
+																		className="h-8 w-auto brightness-0 invert"
+																	/>
+																</Link>
+																<button
+																	type="button"
+																	className="-m-2.5 p-2.5"
+																	onClick={() => setLandingMenuOpen(false)}
+																>
+																	<span className="sr-only">Close menu</span>
+																	<XMarkIcon
+																		className="h-6 w-6"
+																		style={{ color: '#A1A1AA' }}
+																		aria-hidden="true"
+																	/>
+																</button>
+															</div>
+															<div className="flex flex-col gap-6 text-xl">
+																<Link
+																	to="/pricing"
+																	style={{ color: '#FAFAFA', textDecoration: 'none' }}
+																	onClick={() => setLandingMenuOpen(false)}
+																>
+																	Pricing
+																</Link>
+																<Link
+																	to="/ai-resume-builder"
+																	style={{ color: '#FAFAFA', textDecoration: 'none' }}
+																	onClick={() => setLandingMenuOpen(false)}
+																>
+																	Resume Builder
+																</Link>
+																<Link
+																	to="/blog"
+																	style={{ color: '#FAFAFA', textDecoration: 'none' }}
+																	onClick={() => setLandingMenuOpen(false)}
+																>
+																	Blog
+																</Link>
+															</div>
+														</DialogPanel>
+													</div>
+												</Dialog>
+
+												<div
+													style={{
+														display: 'flex',
+														alignItems: 'center',
+														gap: 10,
+													}}
+												>
+													{/* Hamburger — mobile only */}
+													<button
+														type="button"
+														className="-m-2.5 p-2.5 lg:hidden"
+														style={{ color: '#FAFAFA' }}
+														onClick={() => setLandingMenuOpen(true)}
+													>
+														<span className="sr-only">Open menu</span>
+														<Bars3Icon className="h-6 w-6" aria-hidden="true" />
+													</button>
+													<Link to="/">
+														<img
+															src="/RT_Logo_icon.png"
+															alt="Resume Tailor"
+															className="h-8 w-auto brightness-0 invert"
+														/>
+													</Link>
+													<span
+														className="hidden lg:inline"
+														style={{
+															color: '#FAFAFA',
+															fontWeight: 600,
+															fontSize: 15,
+														}}
+													>
+														Resume Tailor
+													</span>
+												</div>
+
+												<div
+													style={{
+														display: 'flex',
+														alignItems: 'center',
+														gap: 28,
+													}}
+												>
+													{/* Desktop nav links */}
+													<div className="hidden items-center lg:flex" style={{ gap: 28 }}>
+														<Link
+															to="/pricing"
+															style={{
+																color: '#71717A',
+																fontSize: 14,
+																textDecoration: 'none',
+																transition: 'color 0.2s',
+															}}
+															onMouseEnter={e =>
+																((e.target as HTMLElement).style.color = '#FAFAFA')
+															}
+															onMouseLeave={e =>
+																((e.target as HTMLElement).style.color = '#71717A')
+															}
+														>
+															Pricing
+														</Link>
+														<Link
+															to="/ai-resume-builder"
+															style={{
+																color: '#71717A',
+																fontSize: 14,
+																textDecoration: 'none',
+																transition: 'color 0.2s',
+																whiteSpace: 'nowrap',
+															}}
+															onMouseEnter={e =>
+																((e.target as HTMLElement).style.color = '#FAFAFA')
+															}
+															onMouseLeave={e =>
+																((e.target as HTMLElement).style.color = '#71717A')
+															}
+														>
+															Builder
+														</Link>
+														<Link
+															to="/blog"
+															style={{
+																color: '#71717A',
+																fontSize: 14,
+																textDecoration: 'none',
+																transition: 'color 0.2s',
+															}}
+															onMouseEnter={e =>
+																((e.target as HTMLElement).style.color = '#FAFAFA')
+															}
+															onMouseLeave={e =>
+																((e.target as HTMLElement).style.color = '#71717A')
+															}
+														>
+															Blog
+														</Link>
+													</div>
+
+													{user ? (
+														<UserDropdown
+															isOnLandingPage={true}
+														/>
+													) : (
+														<Link
+															to="/login"
+															style={{
+																background: 'transparent',
+																color: '#A1A1AA',
+																border: '1px solid rgba(255,255,255,0.06)',
+																borderRadius: 8,
+																padding: '8px 16px',
+																fontSize: 14,
+																fontWeight: 500,
+																textDecoration: 'none',
+																transition: 'all 0.2s',
+															}}
+															onMouseEnter={e => {
+																const el = e.currentTarget
+																el.style.transform = 'translateY(-1px)'
+																el.style.borderColor = 'rgba(255,255,255,0.12)'
+																el.style.color = '#FAFAFA'
+															}}
+															onMouseLeave={e => {
+																const el = e.currentTarget
+																el.style.transform = 'translateY(0)'
+																el.style.borderColor = 'rgba(255,255,255,0.06)'
+																el.style.color = '#A1A1AA'
+															}}
+														>
+															Get started free
+														</Link>
+													)}
+												</div>
+											</div>
+										</nav>
+
+										<Outlet />
+									</>
 								) : (
 									<>
 										<div
@@ -735,7 +985,7 @@ function App() {
 											<div className="flex flex-1 justify-between">
 												{shouldHideNav ? (
 													<>
-														{/* Mobile drawer for landing nav */}
+														{/* Mobile drawer for non-landing hideNav pages */}
 														<Dialog
 															className="relative z-50 lg:hidden"
 															open={landingMenuOpen}
