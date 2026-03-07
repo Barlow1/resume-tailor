@@ -293,6 +293,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
 const hideNavPages = [
 	'routes/_marketing+/index',
+	'routes/agent',
 	'routes/_auth+/signup/index',
 	'routes/_auth+/login',
 	'routes/_auth+/forgot-password/index',

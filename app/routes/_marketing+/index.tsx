@@ -1,4 +1,5 @@
 import type { MetaFunction } from '@remix-run/node'
+import { AgentBanner } from '~/components/agent-banner.tsx'
 import { HeroSection } from '~/components/hero-section.tsx'
 import { FeatureSection } from '~/components/feature-section.tsx'
 import { StepsSection } from '~/components/steps-section.tsx'
@@ -27,6 +28,7 @@ export default function Index() {
 				overflowX: 'hidden',
 			}}
 		>
+			<AgentBanner />
 			<HeroSection />
 			<FeatureSection />
 			<StepsSection />
