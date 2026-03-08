@@ -925,6 +925,7 @@ export default function AgentPage() {
 			document.removeEventListener('touchmove', onMove)
 			document.removeEventListener('touchend', onEnd)
 		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [])
 
 	const flyOut = useCallback(
@@ -1053,7 +1054,7 @@ export default function AgentPage() {
 					<Link to="/builder" className="nav-link" reloadDocument>
 						Builder
 					</Link>
-					<a href="#pricing" className="nav-cta-btn">
+					<Link to="#pricing" className="nav-cta-btn">
 						Get your agent
 					</a>
 				</div>
