@@ -7,7 +7,7 @@ export const lc = {
 	brandP: '#C4B5FD',
 	text: '#FAFAFA',
 	sec: '#A1A1AA',
-	mut: '#71717A',
+	mut: '#8E8E96',
 	brd: 'rgba(255,255,255,0.06)',
 	brdH: 'rgba(255,255,255,0.12)',
 } as const

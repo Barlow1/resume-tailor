@@ -146,7 +146,7 @@ function KeywordsList({ explanation }: { explanation: string }) {
 				{keywords.map((keyword, index) => (
 					<span
 						key={index}
-						className="inline-flex items-center rounded-md bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-800 ring-1 ring-inset ring-brand-600/20"
+						className="inline-flex items-center rounded-md bg-brand-50 dark:bg-brand-500/15 px-2.5 py-1 text-xs font-medium text-brand-800 dark:text-brand-300 ring-1 ring-inset ring-brand-600/20"
 					>
 						{keyword}
 					</span>

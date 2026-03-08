@@ -9,7 +9,7 @@ export default function Pricing() {
 		<div className="py-24 sm:py-32">
 			<div className="mx-auto max-w-7xl px-6 lg:px-8">
 				<div className="mx-auto max-w-4xl text-center">
-					<h2 className="text-base/7 font-semibold text-brand-800">Pricing</h2>
+					<h2 className="text-base/7 font-semibold text-brand-300">Pricing</h2>
 					<p className="text-balance mt-2 text-5xl font-semibold tracking-tight text-foreground sm:text-6xl">
 						Pricing that makes sense
 					</p>

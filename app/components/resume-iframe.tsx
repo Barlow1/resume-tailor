@@ -60,6 +60,8 @@ export interface ResumeIframeHandle {
 	markStructuralUpdate: () => void
 	/** Scroll the resume canvas to bring a section into view */
 	scrollToSection: (sectionId: string) => void
+	/** Scroll to a specific bullet and flash-highlight it */
+	highlightBullet: (experienceId: string, bulletIndex: number) => void
 }
 
 const PAGE_HEIGHT = 1056
@@ -163,12 +165,37 @@ export const ResumeIframe = forwardRef<ResumeIframeHandle, ResumeIframeProps>(
 			scrollContainer.scrollTo({ top: Math.max(0, el.offsetTop - 16), behavior: 'smooth' })
 		}, [])
 
+		const highlightBullet = useCallback((experienceId: string, bulletIndex: number) => {
+			const doc = iframeRef.current?.contentDocument
+			if (!doc) return
+			// Find the experience container, then the bullet within it
+			const expEl = doc.querySelector(`[data-experience-id="${experienceId}"]`) as HTMLElement
+			if (!expEl) return
+			const bullets = expEl.querySelectorAll(`[data-bullet-index]`)
+			const bulletEl = bullets[bulletIndex] as HTMLElement
+			if (!bulletEl) return
+			// Scroll the canvas to the bullet
+			const scrollContainer = iframeRef.current?.parentElement?.parentElement
+			if (scrollContainer) {
+				scrollContainer.scrollTo({ top: Math.max(0, bulletEl.offsetTop - 80), behavior: 'smooth' })
+			}
+			// Flash highlight
+			const origBg = bulletEl.style.background
+			bulletEl.style.background = '#c4956a22'
+			bulletEl.style.transition = 'background 600ms'
+			setTimeout(() => {
+				bulletEl.style.background = origBg || 'transparent'
+				setTimeout(() => { bulletEl.style.transition = '' }, 600)
+			}, 1500)
+		}, [])
+
 		useImperativeHandle(ref, () => ({
 			flushPendingEdits,
 			forceRerender,
 			markStructuralUpdate,
 			scrollToSection,
-		}), [flushPendingEdits, forceRerender, markStructuralUpdate, scrollToSection])
+			highlightBullet,
+		}), [flushPendingEdits, forceRerender, markStructuralUpdate, scrollToSection, highlightBullet])
 
 		// Generate HTML
 		const html = useMemo(

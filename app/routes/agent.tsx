@@ -84,7 +84,7 @@ const pageStyles = `
     --brand-glow-lg: rgba(107, 69, 255, 0.15);
     --text: #FAFAFA;
     --text-secondary: #A1A1AA;
-    --text-muted: #71717A;
+    --text-muted: #8E8E96;
     --border: rgba(255,255,255,0.06);
     --border-hover: rgba(255,255,255,0.12);
     --green: #22c55e;
@@ -351,7 +351,7 @@ const pageStyles = `
   .step-num {
     font-family: 'Nunito Sans', -apple-system, sans-serif;
     font-size: 48px; color: var(--brand);
-    opacity: 0.4; line-height: 1;
+    opacity: 0.7; line-height: 1;
   }
   .step-content h3 {
     font-size: 21px; font-weight: 600;
@@ -639,7 +639,7 @@ const pageStyles = `
     flex-shrink: 0; width: 20px; height: 20px; border-radius: 6px;
     background: var(--brand-dim);
     display: flex; align-items: center; justify-content: center;
-    font-size: 11px; color: var(--brand-light); font-weight: 700;
+    font-size: 11px; color: var(--brand-lighter); font-weight: 700;
   }
 
   .price-cta {

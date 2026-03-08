@@ -144,14 +144,14 @@ export function Pricing({
 								<h3
 									id={tier.id}
 									className={cn(
-										tier.mostPopular ? 'text-brand-800' : 'text-foreground',
+										tier.mostPopular ? 'text-brand-300' : 'text-foreground',
 										'text-lg/8 font-semibold',
 									)}
 								>
 									{tier.name}
 								</h3>
 								{tier.mostPopular ? (
-									<p className="rounded-full bg-brand-800/10 px-2.5 py-1 text-xs/5 font-semibold text-brand-800 dark:bg-brand-800/20">
+									<p className="rounded-full bg-brand-800/10 px-2.5 py-1 text-xs/5 font-semibold text-brand-300 dark:bg-brand-800/20">
 										Most popular
 									</p>
 								) : null}
@@ -214,7 +214,7 @@ export function Pricing({
 										className={cn(
 											tier.mostPopular
 												? 'bg-brand-800 text-primary-foreground hover:bg-brand-500'
-												: 'bg-background text-brand-800 ring-1 ring-inset ring-border hover:ring-brand-800/30',
+												: 'bg-background text-brand-300 ring-1 ring-inset ring-border hover:ring-brand-800/30',
 											'mt-6 block w-full',
 										)}
 									>
@@ -227,7 +227,7 @@ export function Pricing({
 									<li key={feature} className="flex gap-x-3">
 										<CheckIcon
 											aria-hidden="true"
-											className="h-6 w-5 flex-none text-brand-800"
+											className="h-6 w-5 flex-none text-brand-300"
 										/>
 										{feature}
 									</li>
