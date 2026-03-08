@@ -1056,7 +1056,7 @@ export default function AgentPage() {
 					</Link>
 					<Link to="#pricing" className="nav-cta-btn">
 						Get your agent
-					</a>
+					</Link>
 				</div>
 			</nav>
 
