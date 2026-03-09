@@ -37,6 +37,16 @@ export async function getPdfFromHtml(html: string): Promise<Uint8Array> {
 		const PADDING = 48        // .resume padding
 		const CONTENT_HEIGHT = PAGE_HEIGHT - 2 * PADDING // 960px
 
+		function isSectionContainer(el: HTMLElement): boolean {
+			return el.hasAttribute('data-section-id') && el.children.length > 1
+		}
+
+		/** offsetHeight + marginTop + marginBottom (conservative — overcounts due to collapsing, but that just means earlier breaks) */
+		function totalHeight(el: HTMLElement): number {
+			const s = window.getComputedStyle(el)
+			return el.offsetHeight + (parseFloat(s.marginTop) || 0) + (parseFloat(s.marginBottom) || 0)
+		}
+
 		// Collect children into page buckets using the same break algorithm
 		const children = Array.from(resume.children) as HTMLElement[]
 		const pages: HTMLElement[][] = [[]]
@@ -46,17 +56,47 @@ export async function getPdfFromHtml(html: string): Promise<Uint8Array> {
 			if (child.classList.contains('page-gap')) continue
 			if (child.classList.contains('page-break-marker')) continue
 
-			const childHeight = child.offsetHeight
+			const childHeight = totalHeight(child)
 			const remainingOnPage = CONTENT_HEIGHT - currentPageUsed
 
-			if (childHeight > remainingOnPage && currentPageUsed > 0) {
+			// If section container doesn't fit, break at item level
+			if (childHeight > remainingOnPage && currentPageUsed > 0 && isSectionContainer(child)) {
+				const sectionChildren = Array.from(child.children) as HTMLElement[]
+				// Create a wrapper for items that stay on the current page
+				let currentWrapper = child.cloneNode(false) as HTMLElement
+				pages[pages.length - 1].push(currentWrapper)
+
+				for (const item of sectionChildren) {
+					if (item.classList.contains('page-gap')) continue
+					const itemHeight = totalHeight(item)
+					const itemRemaining = CONTENT_HEIGHT - currentPageUsed
+
+					if (itemHeight > itemRemaining && currentPageUsed > 0) {
+						// Start a new page with a new wrapper for remaining items
+						pages.push([])
+						currentWrapper = child.cloneNode(false) as HTMLElement
+						pages[pages.length - 1].push(currentWrapper)
+						currentPageUsed = itemHeight
+					} else {
+						currentPageUsed += itemHeight
+					}
+
+					currentWrapper.appendChild(item)
+
+					while (currentPageUsed >= CONTENT_HEIGHT) {
+						currentPageUsed -= CONTENT_HEIGHT
+					}
+				}
+				// Remove the original section container since items were redistributed
+				child.remove()
+			} else if (childHeight > remainingOnPage && currentPageUsed > 0) {
 				pages.push([])
 				currentPageUsed = childHeight
+				pages[pages.length - 1].push(child)
 			} else {
 				currentPageUsed += childHeight
+				pages[pages.length - 1].push(child)
 			}
-
-			pages[pages.length - 1].push(child)
 
 			while (currentPageUsed >= CONTENT_HEIGHT) {
 				currentPageUsed -= CONTENT_HEIGHT

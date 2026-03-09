@@ -1,0 +1,151 @@
+{
+  "name": "Stripe Cancellation → Feedback Email",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "stripe",
+        "options": {}
+      },
+      "name": "Stripe Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.type }}",
+              "value2": "customer.subscription.deleted"
+            }
+          ]
+        }
+      },
+      "name": "Is Cancellation?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Extract relevant data from Stripe event\nconst event = $input.first().json;\nconst subscription = event.data?.object || {};\nconst customerId = subscription.customer;\nconst cancellationComment = subscription.cancellation_details?.comment || 'No comment provided';\nconst cancelReason = subscription.cancellation_details?.reason || 'unknown';\n\nreturn [{\n  json: {\n    customerId,\n    cancellationComment,\n    cancelReason,\n    subscriptionId: subscription.id,\n    canceledAt: subscription.canceled_at\n  }\n}];"
+      },
+      "name": "Extract Cancellation Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 250]
+    },
+    {
+      "parameters": {
+        "resource": "customer",
+        "operation": "get",
+        "customerId": "={{ $json.customerId }}"
+      },
+      "name": "Get Customer from Stripe",
+      "type": "n8n-nodes-base.stripe",
+      "typeVersion": 1,
+      "position": [850, 250],
+      "credentials": {
+        "stripeApi": {
+          "id": "CONFIGURE_ME",
+          "name": "Stripe API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are writing a short, empathetic follow-up email from Bray, the founder of Resume Tailor. The tone should be:\n- Direct and honest (acknowledge the issue)\n- Brief (under 100 words for the body)\n- Ask for a specific time commitment (10-15 min call)\n- Sign off as 'Bray'\n\nDo NOT be overly apologetic or corporate. Be human.\n\nReturn ONLY a JSON object with two fields:\n- \"subject\": email subject line\n- \"body\": the email body (plain text, use \\n for line breaks)"
+            },
+            {
+              "role": "user",
+              "content": "Write a follow-up email to {{ $json.customerName }} (email: {{ $json.customerEmail }}).\n\nTheir cancellation feedback was: \"{{ $node['Extract Cancellation Data'].json.cancellationComment }}\"\n\nCancel reason: {{ $node['Extract Cancellation Data'].json.cancelReason }}\n\nExamples of good emails:\n\n1. For bug feedback: \"Hey [Name], I saw your feedback: '[their quote]'. You're completely right - that shouldn't be happening. I want to understand what went wrong so we can fix it fast. Would you be open to a quick 10-minute chat this week to walk me through what happened? Best, Bray\"\n\n2. For quality feedback: \"Hey [Name], I saw your feedback: '[their quote]'. You actually used it for a while before canceling, so you gave it a real shot. I need to understand what made the output feel off. Would you give me 15 minutes this week to tell me what was wrong with the quality? Best, Bray\""
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.7
+        }
+      },
+      "name": "Generate Email with OpenAI",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [1050, 250],
+      "credentials": {
+        "openAiApi": {
+          "id": "CONFIGURE_ME",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "// Parse the OpenAI response\nconst aiResponse = $input.first().json.message?.content || $input.first().json.text;\nlet parsed;\ntry {\n  // Strip markdown code fences if present\n  const cleaned = aiResponse.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n  parsed = JSON.parse(cleaned);\n} catch (e) {\n  parsed = {\n    subject: 'Quick question about your Resume Tailor experience',\n    body: aiResponse\n  };\n}\n\nreturn [{\n  json: {\n    ...parsed,\n    to: $node['Get Customer from Stripe'].json.email,\n    customerName: $node['Get Customer from Stripe'].json.name\n  }\n}];"
+      },
+      "name": "Parse Email Content",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1250, 250]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.body }}",
+        "options": {
+          "senderName": "Brayan Londono"
+        }
+      },
+      "name": "Send Email (Gmail)",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [1450, 250],
+      "credentials": {
+        "gmailOAuth2Api": {
+          "id": "CONFIGURE_ME",
+          "name": "Gmail OAuth2"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Stripe Webhook": {
+      "main": [
+        [{ "node": "Is Cancellation?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Is Cancellation?": {
+      "main": [
+        [{ "node": "Extract Cancellation Data", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Extract Cancellation Data": {
+      "main": [
+        [{ "node": "Get Customer from Stripe", "type": "main", "index": 0 }]
+      ]
+    },
+    "Get Customer from Stripe": {
+      "main": [
+        [{ "node": "Generate Email with OpenAI", "type": "main", "index": 0 }]
+      ]
+    },
+    "Generate Email with OpenAI": {
+      "main": [
+        [{ "node": "Parse Email Content", "type": "main", "index": 0 }]
+      ]
+    },
+    "Parse Email Content": {
+      "main": [
+        [{ "node": "Send Email (Gmail)", "type": "main", "index": 0 }]
+      ]
+    }
+  }
+}
