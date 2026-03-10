@@ -60,17 +60,51 @@ export interface ResumeIframeHandle {
 	markStructuralUpdate: () => void
 	/** Scroll the resume canvas to bring a section into view */
 	scrollToSection: (sectionId: string) => void
+	/** Scroll to a specific bullet and flash-highlight it */
+	highlightBullet: (experienceId: string, bulletIndex: number) => void
 }
 
 const PAGE_HEIGHT = 1056
 const PAGE_PADDING = 48
 
+function createPageGap(doc: Document, remainingOnPage: number): HTMLElement {
+	const gap = doc.createElement('div')
+	gap.className = 'page-gap'
+	gap.style.cssText = 'pointer-events: none;'
+	gap.innerHTML = `
+		<div style="height: ${remainingOnPage + PAGE_PADDING}px; background: transparent;"></div>
+		<div style="height: 32px; background: #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #9ca3af; font-family: system-ui, sans-serif; margin: 0 -${PAGE_PADDING}px; border-top: 1px solid #d1d5db; border-bottom: 1px solid #d1d5db;">Page break</div>
+		<div style="height: ${PAGE_PADDING}px; background: transparent;"></div>
+	`
+	return gap
+}
+
+function isSectionContainer(el: HTMLElement): boolean {
+	// Section containers have data-section-id and contain multiple child items
+	return el.hasAttribute('data-section-id') && el.children.length > 1
+}
+
+/** offsetHeight + marginTop + marginBottom (conservative) */
+function totalHeight(el: HTMLElement): number {
+	const s = window.getComputedStyle(el)
+	return el.offsetHeight + (parseFloat(s.marginTop) || 0) + (parseFloat(s.marginBottom) || 0)
+}
+
 function calculatePageBreaks(doc: Document) {
 	const resume = doc.querySelector('.resume') as HTMLElement
 	if (!resume) return
 
-	// Remove existing page gaps
+	// Remove existing page gaps and merged section splits
 	resume.querySelectorAll('.page-gap').forEach(el => el.remove())
+	resume.querySelectorAll('[data-section-split]').forEach(el => {
+		// Move children back into the original section before removing the split
+		const originalId = el.getAttribute('data-section-split')
+		const original = resume.querySelector(`[data-section-id="${originalId}"]`)
+		if (original) {
+			while (el.firstChild) original.appendChild(el.firstChild)
+		}
+		el.remove()
+	})
 
 	const CONTENT_HEIGHT = PAGE_HEIGHT - 2 * PAGE_PADDING // 960px
 
@@ -81,18 +115,53 @@ function calculatePageBreaks(doc: Document) {
 		if (child.classList.contains('page-gap')) continue
 		if (child.classList.contains('page-break-marker')) continue
 
-		const childHeight = child.offsetHeight
+		const childHeight = totalHeight(child)
 		const remainingOnPage = CONTENT_HEIGHT - currentPageUsed
 
-		if (childHeight > remainingOnPage && currentPageUsed > 0) {
-			const gap = doc.createElement('div')
-			gap.className = 'page-gap'
-			gap.style.cssText = 'pointer-events: none;'
-			gap.innerHTML = `
-				<div style="height: ${remainingOnPage + PAGE_PADDING}px; background: transparent;"></div>
-				<div style="height: 32px; background: #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #9ca3af; font-family: system-ui, sans-serif; margin: 0 -${PAGE_PADDING}px; border-top: 1px solid #d1d5db; border-bottom: 1px solid #d1d5db;">Page break</div>
-				<div style="height: ${PAGE_PADDING}px; background: transparent;"></div>
-			`
+		// If this is a section container (experience, education, etc.) that doesn't fit,
+		// split it into two top-level sections with a page gap between them
+		if (childHeight > remainingOnPage && currentPageUsed > 0 && isSectionContainer(child)) {
+			const sectionChildren = Array.from(child.children) as HTMLElement[]
+			let splitIndex = -1
+
+			// Find the first item that doesn't fit on the current page
+			let usedInSection = 0
+			for (let i = 0; i < sectionChildren.length; i++) {
+				const itemHeight = totalHeight(sectionChildren[i])
+				if (usedInSection + itemHeight > remainingOnPage && usedInSection > 0) {
+					splitIndex = i
+					break
+				}
+				usedInSection += itemHeight
+			}
+
+			if (splitIndex > 0) {
+				// Create a continuation section for items that go to the next page
+				const continuation = child.cloneNode(false) as HTMLElement
+				const sectionId = child.getAttribute('data-section-id') || ''
+				continuation.removeAttribute('data-section-id')
+				continuation.setAttribute('data-section-split', sectionId)
+
+				// Move overflow items into the continuation
+				for (let i = splitIndex; i < sectionChildren.length; i++) {
+					continuation.appendChild(sectionChildren[i])
+				}
+
+				// Insert page gap + continuation after the original section
+				const gap = createPageGap(doc, remainingOnPage - usedInSection)
+				resume.insertBefore(gap, child.nextSibling)
+				resume.insertBefore(continuation, gap.nextSibling)
+
+				// Track page usage: continuation starts a new page
+				currentPageUsed = totalHeight(continuation)
+			} else {
+				// Nothing fits on current page — push whole section to next page
+				const gap = createPageGap(doc, remainingOnPage)
+				resume.insertBefore(gap, child)
+				currentPageUsed = totalHeight(child)
+			}
+		} else if (childHeight > remainingOnPage && currentPageUsed > 0) {
+			const gap = createPageGap(doc, remainingOnPage)
 			resume.insertBefore(gap, child)
 			currentPageUsed = childHeight
 		} else {
@@ -163,12 +232,37 @@ export const ResumeIframe = forwardRef<ResumeIframeHandle, ResumeIframeProps>(
 			scrollContainer.scrollTo({ top: Math.max(0, el.offsetTop - 16), behavior: 'smooth' })
 		}, [])
 
+		const highlightBullet = useCallback((experienceId: string, bulletIndex: number) => {
+			const doc = iframeRef.current?.contentDocument
+			if (!doc) return
+			// Find the experience container, then the bullet within it
+			const expEl = doc.querySelector(`[data-experience-id="${experienceId}"]`) as HTMLElement
+			if (!expEl) return
+			const bullets = expEl.querySelectorAll(`[data-bullet-index]`)
+			const bulletEl = bullets[bulletIndex] as HTMLElement
+			if (!bulletEl) return
+			// Scroll the canvas to the bullet
+			const scrollContainer = iframeRef.current?.parentElement?.parentElement
+			if (scrollContainer) {
+				scrollContainer.scrollTo({ top: Math.max(0, bulletEl.offsetTop - 80), behavior: 'smooth' })
+			}
+			// Flash highlight
+			const origBg = bulletEl.style.background
+			bulletEl.style.background = '#c4956a22'
+			bulletEl.style.transition = 'background 600ms'
+			setTimeout(() => {
+				bulletEl.style.background = origBg || 'transparent'
+				setTimeout(() => { bulletEl.style.transition = '' }, 600)
+			}, 1500)
+		}, [])
+
 		useImperativeHandle(ref, () => ({
 			flushPendingEdits,
 			forceRerender,
 			markStructuralUpdate,
 			scrollToSection,
-		}), [flushPendingEdits, forceRerender, markStructuralUpdate, scrollToSection])
+			highlightBullet,
+		}), [flushPendingEdits, forceRerender, markStructuralUpdate, scrollToSection, highlightBullet])
 
 		// Generate HTML
 		const html = useMemo(

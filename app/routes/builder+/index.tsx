@@ -264,6 +264,7 @@ const lightTheme = {
 	dim: '#9C9CA3',
 	canvas: '#E8E8EC',
 	white: '#FFFFFF',
+	brandText: BRAND,
 }
 const darkTheme = {
 	bg: '#111113',
@@ -273,9 +274,10 @@ const darkTheme = {
 	borderSub: '#222228',
 	text: '#ECECEE',
 	muted: '#8B8B8F',
-	dim: '#636366',
+	dim: '#858589',
 	canvas: '#0C0C0E',
 	white: '#FFFFFF',
+	brandText: '#9B7FFF',
 }
 type Theme = typeof lightTheme
 
@@ -377,6 +379,8 @@ function ScoreArc({
 	c: Theme
 }) {
 	const [a, setA] = useState(0)
+	const [pulse, setPulse] = useState(false)
+	const prevScoreRef = useRef(score)
 	const t = getTier(score)
 	useEffect(() => {
 		let s: number | null = null
@@ -396,6 +400,15 @@ function ScoreArc({
 		}
 		setA(0)
 		requestAnimationFrame(f)
+	}, [score])
+	useEffect(() => {
+		if (prevScoreRef.current !== score && prevScoreRef.current > 0) {
+			setPulse(true)
+			const timer = setTimeout(() => setPulse(false), 1800)
+			prevScoreRef.current = score
+			return () => clearTimeout(timer)
+		}
+		prevScoreRef.current = score
 	}, [score])
 	const r = 54,
 		cx = 64,
@@ -438,16 +451,17 @@ function ScoreArc({
 					stroke={t.color}
 					strokeWidth={sw}
 					strokeLinecap="round"
-					style={{ filter: `drop-shadow(0 0 6px ${t.color}44)` }}
+					style={{ filter: pulse ? `drop-shadow(0 0 12px ${t.color}88)` : `drop-shadow(0 0 6px ${t.color}44)`, transition: 'filter 600ms' }}
 				/>
 				<text
 					x={cx}
 					y={cy - 2}
 					textAnchor="middle"
-					fill={c.text}
+					fill={pulse ? t.color : c.text}
 					fontSize="34"
 					fontWeight="600"
 					fontFamily="Nunito Sans,system-ui"
+					style={{ transition: 'fill 600ms' }}
 				>
 					{Math.round(a)}
 				</text>
@@ -741,6 +755,16 @@ export default function ResumeBuilder() {
 		status: 'missing' | 'partial'
 		anchorRect: DOMRect
 	} | null>(null)
+	const [skillsAddPopover, setSkillsAddPopover] = useState<{
+		keywords: string[]
+		addedKeywords: Set<string>
+		anchorRect: DOMRect
+	} | null>(null)
+	const [summaryFixModal, setSummaryFixModal] = useState<{
+		original: string
+		shortened: string
+	} | null>(null)
+	const checklistClickRect = useRef<DOMRect | null>(null)
 	const [selectedJob, setSelectedJob] = useState<BuilderJob | null | undefined>(
 		formData.job,
 	)
@@ -1296,39 +1320,207 @@ export default function ResumeBuilder() {
 		}
 	}
 
-	const handleChecklistFix = (item: ChecklistItem) => {
-		if (!item.flaggedBullets || item.flaggedBullets.length === 0) return
+	const handleChecklistAction = (item: ChecklistItem, anchorRect?: DOMRect) => {
+		if (item.completed) return
 
-		// Highlight all flagged bullets
-		const bulletKeys = new Set(
-			item.flaggedBullets.map(b => `${b.experienceId}_${b.bulletIndex}`),
+		switch (item.fixType) {
+			case 'ai-modal': {
+				// Items with flaggedBullets (metrics, action verbs) → open AI modal
+				if (item.flaggedBullets && item.flaggedBullets.length > 0) {
+					const bulletKeys = new Set(
+						item.flaggedBullets.map(b => `${b.experienceId}_${b.bulletIndex}`),
+					)
+					setHighlightedBullets(bulletKeys)
+					const first = item.flaggedBullets[0]
+					const issueType: DiagnosticContext['issueType'] =
+						item.id === 'metrics' || item.id === 'metrics-good'
+							? 'no-metrics'
+							: item.id === 'action-verbs' || item.id === 'action-verbs-good'
+							? 'weak-verb'
+							: 'missing-keywords'
+					handleAIClick(first.experienceId, first.bulletIndex, first.content, {
+						issueType,
+						reason: first.reason,
+						missingKeywords: item.missingKeywords,
+					})
+				}
+				// Keyword spread items → open AI modal for target experience
+				else if (item.spreadKeyword && item.targetExperienceId) {
+					const experience = formData.experiences?.find(e => e.id === item.targetExperienceId)
+					if (!experience?.id) return
+					setSelectedExperience(experience)
+					setSelectedBullet({ content: '', experienceId: experience.id, bulletIndex: -1 })
+					setDiagnosticContext({
+						issueType: 'missing-keywords',
+						reason: `Incorporate the keyword "${item.spreadKeyword}" naturally into this achievement`,
+						missingKeywords: [item.spreadKeyword],
+					})
+					setAiModalInitialTab('generate')
+					setShowAIModal(true)
+				}
+				break
+			}
+
+			case 'keyword-popover': {
+				// Single or multiple missing keywords → open keyword popover
+				if (!item.missingKeywords?.length || !anchorRect) return
+				if (item.missingKeywords.length === 1) {
+					setKeywordPopover({
+						keyword: item.missingKeywords[0],
+						status: 'missing',
+						anchorRect,
+					})
+				} else {
+					// Multiple keywords → open skills-add popover for the first,
+					// but if there's a targetExperienceId, open AI modal instead
+					if (item.targetExperienceId) {
+						const experience = formData.experiences?.find(e => e.id === item.targetExperienceId)
+						if (!experience?.id) return
+						setSelectedExperience(experience)
+						setSelectedBullet({ content: '', experienceId: experience.id, bulletIndex: -1 })
+						setDiagnosticContext({
+							issueType: 'missing-keywords',
+							reason: `Add these keywords from the job description to your bullets: ${item.missingKeywords.join(', ')}`,
+							missingKeywords: item.missingKeywords,
+						})
+						setAiModalInitialTab('generate')
+						setShowAIModal(true)
+					} else {
+						setSkillsAddPopover({
+							keywords: item.missingKeywords,
+							addedKeywords: new Set(),
+							anchorRect,
+						})
+					}
+				}
+				break
+			}
+
+			case 'skills-add': {
+				// Missing secondary keywords → open multi-keyword add popover
+				if (!item.missingKeywords?.length || !anchorRect) return
+				setSkillsAddPopover({
+					keywords: item.missingKeywords,
+					addedKeywords: new Set(),
+					anchorRect,
+				})
+				break
+			}
+
+			case 'auto-reorder': {
+				// Move strongest bullet to top
+				if (!item.targetExperienceId || item.strongestBulletIndex == null) return
+				const exp = formData.experiences?.find(e => e.id === item.targetExperienceId)
+				if (!exp?.descriptions) return
+				const bulletContent = exp.descriptions[item.strongestBulletIndex]?.content || ''
+				const preview = bulletContent.length > 60 ? bulletContent.substring(0, 60) + '...' : bulletContent
+				const expLabel = exp.company || exp.role || 'Experience'
+				const oldIndex = item.strongestBulletIndex
+				reorderBullets(item.targetExperienceId, oldIndex, 0)
+				iframeComponentRef.current?.forceRerender()
+				setTimeout(() => iframeComponentRef.current?.highlightBullet(item.targetExperienceId!, 0), 400)
+				toast({
+					title: 'Bullet reordered',
+					description: `Moved "${preview}" to top of ${expLabel}.`,
+				})
+				break
+			}
+
+			case 'generate-bullets': {
+				// Open AI modal in generate mode for experience with fewest bullets
+				if (!item.targetExperienceId) return
+				const experience = formData.experiences?.find(e => e.id === item.targetExperienceId)
+				if (!experience?.id) return
+				setSelectedExperience(experience)
+				setSelectedBullet({ content: '', experienceId: experience.id, bulletIndex: -1 })
+				setDiagnosticContext(null)
+				setAiModalInitialTab('generate')
+				setShowAIModal(true)
+				break
+			}
+
+			case 'summary-shorten': {
+				// Generate shortened summary and show diff
+				const current = formData.about?.trim() || ''
+				if (!current) return
+				// Smart trim: cut to ~240 chars at last sentence boundary
+				const trimmed = current.substring(0, 245)
+				const lastPeriod = trimmed.lastIndexOf('.')
+				const lastSpace = trimmed.lastIndexOf(' ')
+				const shortened = lastPeriod > 100
+					? trimmed.substring(0, lastPeriod + 1)
+					: lastSpace > 100
+					? trimmed.substring(0, lastSpace)
+					: trimmed
+				setSummaryFixModal({ original: current, shortened })
+				break
+			}
+
+			case 'summary-add': {
+				// Scroll to summary section and focus it
+				scrollToSection('summary')
+				break
+			}
+
+			default: {
+				// Fallback: scroll to relevant section
+				const targetSec =
+					item.text.toLowerCase().includes('experience') ||
+					item.text.toLowerCase().includes('bullet') ||
+					item.text.toLowerCase().includes('achievement')
+						? 'experience'
+						: item.text.toLowerCase().includes('skill') ||
+						  item.text.toLowerCase().includes('keyword')
+						? 'skills'
+						: item.text.toLowerCase().includes('summary') ||
+						  item.text.toLowerCase().includes('about')
+						? 'summary'
+						: item.text.toLowerCase().includes('education')
+						? 'education'
+						: 'experience'
+				scrollToSection(targetSec)
+			}
+		}
+	}
+
+	const handleAddKeywordToSkills = (keyword: string) => {
+		if (!formData.skills) return
+		const capitalized = keyword.charAt(0).toUpperCase() + keyword.slice(1)
+		const alreadyExists = formData.skills.some(s =>
+			(s.name || '').toLowerCase().includes(keyword.toLowerCase()),
 		)
-		setHighlightedBullets(bulletKeys)
-
-		// Open AI modal on the first flagged bullet
-		const first = item.flaggedBullets[0]
-		const issueType: DiagnosticContext['issueType'] =
-			item.id === 'metrics' || item.id === 'metrics-good'
-				? 'no-metrics'
-				: item.id === 'action-verbs' || item.id === 'action-verbs-good'
-				? 'weak-verb'
-				: 'missing-keywords'
-
-		handleAIClick(first.experienceId, first.bulletIndex, first.content, {
-			issueType,
-			reason: first.reason,
-			missingKeywords: item.missingKeywords,
-		})
+		if (alreadyExists) return
+		const lastIdx = formData.skills.length - 1
+		if (lastIdx >= 0 && formData.skills[lastIdx].name?.trim()) {
+			const updatedSkills = formData.skills.map((s, i) =>
+				i === lastIdx ? { ...s, name: `${s.name}, ${capitalized}` } : s,
+			)
+			const newFormData = { ...formData, skills: updatedSkills }
+			setFormData(newFormData)
+			debouncedSave(newFormData)
+		} else {
+			const newFormData = {
+				...formData,
+				skills: [
+					...formData.skills,
+					{ id: crypto.randomUUID(), name: capitalized },
+				],
+			}
+			setFormData(newFormData)
+			debouncedSave(newFormData)
+		}
 	}
 
 	const handleBulletUpdate = (newContent: string) => {
 		if (!selectedBullet) return
-		if (selectedBullet.bulletIndex === -1) {
+		const expId = selectedBullet.experienceId
+		const bulletIdx = selectedBullet.bulletIndex
+		if (bulletIdx === -1) {
 			// Append new bullet to the experience
 			const newFormData = {
 				...formData,
 				experiences: (formData.experiences ?? []).map(exp =>
-					exp.id === selectedBullet.experienceId
+					exp.id === expId
 						? {
 								...exp,
 								descriptions: [
@@ -1341,12 +1533,13 @@ export default function ResumeBuilder() {
 			}
 			setFormData(newFormData)
 			debouncedSave(newFormData)
+			// Scroll to the new bullet (last index) after iframe re-renders
+			const newIdx = (formData.experiences?.find(e => e.id === expId)?.descriptions?.length) ?? 0
+			setTimeout(() => iframeComponentRef.current?.highlightBullet(expId, newIdx), 400)
 		} else {
-			updateBullet(
-				selectedBullet.experienceId,
-				selectedBullet.bulletIndex,
-				newContent,
-			)
+			updateBullet(expId, bulletIdx, newContent)
+			// Scroll to and flash the updated bullet after iframe re-renders
+			setTimeout(() => iframeComponentRef.current?.highlightBullet(expId, bulletIdx), 400)
 		}
 	}
 
@@ -1935,7 +2128,7 @@ export default function ResumeBuilder() {
 						style={{
 							position: 'fixed',
 							zIndex: 91,
-							width: 280,
+							width: 340,
 							...(keywordPopover.anchorRect.bottom + 250 > window.innerHeight
 								? {
 										bottom:
@@ -1944,7 +2137,7 @@ export default function ResumeBuilder() {
 								: { top: keywordPopover.anchorRect.bottom + 6 }),
 							left: Math.min(
 								keywordPopover.anchorRect.left,
-								window.innerWidth - 296,
+								window.innerWidth - 356,
 							),
 							background: c.bgEl,
 							borderRadius: 10,
@@ -1962,22 +2155,22 @@ export default function ResumeBuilder() {
 								gap: 8,
 							}}
 						>
-							<Plus size={14} color={BRAND} strokeWidth={2.5} />
-							<span style={{ fontSize: 13, fontWeight: 600, color: c.text }}>
+							<Plus size={16} color={c.brandText} strokeWidth={2.5} />
+							<span style={{ fontSize: 15, fontWeight: 600, color: c.text }}>
 								Add "
-								<span style={{ color: BRAND }}>{keywordPopover.keyword}</span>"
+								<span style={{ color: c.brandText }}>{keywordPopover.keyword}</span>"
 							</span>
 						</div>
-						<div style={{ maxHeight: 240, overflow: 'auto' }}>
+						<div style={{ maxHeight: 300, overflow: 'auto' }}>
 							{/* Add to Skills — instant, no AI */}
 							<div
 								onClick={handleKeywordAddToSkills}
 								style={{
-									padding: '10px 14px',
+									padding: '12px 16px',
 									cursor: 'pointer',
 									display: 'flex',
 									alignItems: 'center',
-									gap: 10,
+									gap: 12,
 									transition: 'background 100ms',
 									borderBottom: `1px solid ${c.border}`,
 								}}
@@ -1991,16 +2184,16 @@ export default function ResumeBuilder() {
 										'transparent'
 								}}
 							>
-								<Code2 size={14} color={BRAND} strokeWidth={1.75} />
+								<Code2 size={16} color={c.brandText} strokeWidth={1.75} />
 								<div style={{ flex: 1, minWidth: 0 }}>
-									<div style={{ fontSize: 13, fontWeight: 500, color: c.text }}>
+									<div style={{ fontSize: 14, fontWeight: 500, color: c.text }}>
 										Add to Skills
 									</div>
-									<div style={{ fontSize: 11, color: c.dim }}>
+									<div style={{ fontSize: 12, color: c.muted }}>
 										Instant — no AI needed
 									</div>
 								</div>
-								<Plus size={13} color={c.dim} strokeWidth={1.75} />
+								<Plus size={14} color={c.muted} strokeWidth={1.75} />
 							</div>
 							{/* Generate bullet for a role — AI */}
 							{(formData.experiences ?? [])
@@ -2010,11 +2203,11 @@ export default function ResumeBuilder() {
 										key={exp.id}
 										onClick={() => handleKeywordRolePick(exp)}
 										style={{
-											padding: '10px 14px',
+											padding: '12px 16px',
 											cursor: 'pointer',
 											display: 'flex',
 											alignItems: 'center',
-											gap: 10,
+											gap: 12,
 											transition: 'background 100ms',
 										}}
 										onMouseEnter={e => {
@@ -2027,11 +2220,11 @@ export default function ResumeBuilder() {
 												'transparent'
 										}}
 									>
-										<Briefcase size={14} color={c.dim} strokeWidth={1.75} />
+										<Briefcase size={16} color={c.muted} strokeWidth={1.75} />
 										<div style={{ flex: 1, minWidth: 0 }}>
 											<div
 												style={{
-													fontSize: 13,
+													fontSize: 14,
 													fontWeight: 500,
 													color: c.text,
 													whiteSpace: 'nowrap',
@@ -2044,8 +2237,8 @@ export default function ResumeBuilder() {
 											{exp.company && (
 												<div
 													style={{
-														fontSize: 11,
-														color: c.dim,
+														fontSize: 12,
+														color: c.muted,
 														whiteSpace: 'nowrap',
 														overflow: 'hidden',
 														textOverflow: 'ellipsis',
@@ -2055,9 +2248,220 @@ export default function ResumeBuilder() {
 												</div>
 											)}
 										</div>
-										<Sparkles size={13} color={c.dim} strokeWidth={1.75} />
+										<Sparkles size={14} color={c.muted} strokeWidth={1.75} />
 									</div>
 								))}
+						</div>
+					</div>
+				</>
+			)}
+
+			{/* Skills Add Popover — multi-keyword */}
+			{skillsAddPopover && (
+				<>
+					<div
+						onClick={() => setSkillsAddPopover(null)}
+						style={{ position: 'fixed', inset: 0, zIndex: 90 }}
+					/>
+					<div
+						style={{
+							position: 'fixed',
+							zIndex: 91,
+							width: 380,
+							...(skillsAddPopover.anchorRect.bottom + 350 > window.innerHeight
+								? { bottom: window.innerHeight - skillsAddPopover.anchorRect.top + 6 }
+								: { top: skillsAddPopover.anchorRect.bottom + 6 }),
+							left: Math.min(skillsAddPopover.anchorRect.left, window.innerWidth - 396),
+							background: c.bgEl,
+							borderRadius: 10,
+							border: `1px solid ${c.border}`,
+							boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+							overflow: 'hidden',
+						}}
+					>
+						<div style={{ padding: '12px 16px', borderBottom: `1px solid ${c.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+							<span style={{ fontSize: 15, fontWeight: 600, color: c.text }}>
+								Add Missing Keywords
+							</span>
+							<button
+								onClick={() => {
+									const remaining = skillsAddPopover.keywords.filter(kw => !skillsAddPopover.addedKeywords.has(kw))
+									remaining.forEach(kw => handleAddKeywordToSkills(kw))
+									setSkillsAddPopover(prev => prev ? {
+										...prev,
+										addedKeywords: new Set(prev.keywords),
+									} : null)
+									toast({ title: 'Keywords added', description: `Added ${remaining.length} keywords to Skills.` })
+								}}
+								style={{
+									fontSize: 12, fontWeight: 600, color: c.brandText,
+									background: `${BRAND}20`, border: `1px solid ${BRAND}40`,
+									borderRadius: 6, padding: '5px 12px', cursor: 'pointer',
+								}}
+							>
+								Add All to Skills
+							</button>
+						</div>
+						<div style={{ maxHeight: 360, overflow: 'auto', padding: '4px 0' }}>
+							{skillsAddPopover.keywords.map(kw => {
+								const isAdded = skillsAddPopover.addedKeywords.has(kw)
+								return (
+									<div key={kw} style={{ borderBottom: `1px solid ${c.borderSub}` }}>
+										<div
+											style={{
+												padding: '10px 16px',
+												display: 'flex',
+												alignItems: 'center',
+												justifyContent: 'space-between',
+												gap: 10,
+												opacity: isAdded ? 0.5 : 1,
+											}}
+										>
+											<span style={{ fontSize: 14, color: c.text, fontWeight: 500 }}>
+												{kw}
+											</span>
+											{isAdded ? (
+												<span style={{ fontSize: 12, color: SUCCESS, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+													<CheckCircle2 size={14} strokeWidth={2} /> Added
+												</span>
+											) : (
+												<button
+													onClick={() => {
+														handleAddKeywordToSkills(kw)
+														setSkillsAddPopover(prev => prev ? {
+															...prev,
+															addedKeywords: new Set([...prev.addedKeywords, kw]),
+														} : null)
+													}}
+													style={{
+														fontSize: 12, fontWeight: 600, color: c.brandText,
+														background: `${BRAND}15`, border: `1px solid ${BRAND}40`,
+														borderRadius: 5, padding: '4px 10px', cursor: 'pointer',
+														display: 'flex', alignItems: 'center', gap: 4,
+													}}
+												>
+													<Code2 size={12} strokeWidth={2} /> Add to Skills
+												</button>
+											)}
+										</div>
+										{/* Show experience options for adding keyword to a bullet */}
+										{!isAdded && (formData.experiences ?? []).filter(exp => exp.id).length > 0 && (
+											<div style={{ padding: '2px 16px 8px', display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+												{(formData.experiences ?? []).filter(exp => exp.id).map(exp => (
+													<button
+														key={exp.id}
+														onClick={() => {
+															setSkillsAddPopover(null)
+															setSelectedExperience(exp)
+															setSelectedBullet({ content: '', experienceId: exp.id!, bulletIndex: -1 })
+															setDiagnosticContext({
+																issueType: 'missing-keywords',
+																reason: `Incorporate the keyword "${kw}" naturally into this achievement`,
+																missingKeywords: [kw],
+															})
+															setAiModalInitialTab('generate')
+															setShowAIModal(true)
+														}}
+														style={{
+															fontSize: 11, color: c.muted, background: c.bgSurf,
+															border: `1px solid ${c.border}`, borderRadius: 5,
+															padding: '3px 8px', cursor: 'pointer',
+															display: 'flex', alignItems: 'center', gap: 4,
+															transition: 'all 100ms',
+														}}
+														onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = c.brandText; (e.currentTarget as HTMLElement).style.borderColor = `${BRAND}60` }}
+														onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = c.muted; (e.currentTarget as HTMLElement).style.borderColor = c.border }}
+													>
+														<Sparkles size={10} strokeWidth={2} />
+														{exp.company || exp.role || 'Role'}
+													</button>
+												))}
+											</div>
+										)}
+									</div>
+								)
+							})}
+						</div>
+					</div>
+				</>
+			)}
+
+			{/* Summary Fix Modal */}
+			{summaryFixModal && (
+				<>
+					<div
+						onClick={() => setSummaryFixModal(null)}
+						style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(0,0,0,0.5)' }}
+					/>
+					<div style={{
+						position: 'fixed', zIndex: 81,
+						top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+						width: 520, maxWidth: '90vw', maxHeight: '80vh',
+						background: c.bgEl, borderRadius: 12,
+						border: `1px solid ${c.border}`,
+						boxShadow: '0 16px 48px rgba(0,0,0,0.35)',
+						display: 'flex', flexDirection: 'column', overflow: 'hidden',
+					}}>
+						<div style={{ padding: '16px 20px', borderBottom: `1px solid ${c.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+							<span style={{ fontSize: 15, fontWeight: 600, color: c.text }}>Shorten Summary</span>
+							<button onClick={() => setSummaryFixModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: c.dim, padding: 4 }}>
+								<X size={16} />
+							</button>
+						</div>
+						<div style={{ padding: '16px 20px', overflow: 'auto', flex: 1 }}>
+							{/* Current */}
+							<div style={{ marginBottom: 16 }}>
+								<div style={{ fontSize: 11, fontWeight: 600, color: ERROR, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 6 }}>
+									Current ({summaryFixModal.original.length} chars)
+								</div>
+								<div style={{ padding: '10px 12px', borderRadius: 8, background: `${ERROR}08`, border: `1px solid ${ERROR}20`, fontSize: 13, color: c.muted, lineHeight: 1.5 }}>
+									{summaryFixModal.original}
+								</div>
+							</div>
+							{/* Shortened */}
+							<div>
+								<div style={{ fontSize: 11, fontWeight: 600, color: SUCCESS, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 6 }}>
+									Shortened ({summaryFixModal.shortened.length} chars)
+								</div>
+								<textarea
+									value={summaryFixModal.shortened}
+									onChange={e => setSummaryFixModal(prev => prev ? { ...prev, shortened: e.target.value } : null)}
+									style={{
+										width: '100%', minHeight: 80, padding: '10px 12px',
+										borderRadius: 8, border: `1px solid ${SUCCESS}30`,
+										background: `${SUCCESS}08`, color: c.text,
+										fontSize: 13, lineHeight: 1.5, fontFamily: 'inherit',
+										resize: 'vertical', outline: 'none', boxSizing: 'border-box',
+									}}
+								/>
+								<div style={{ fontSize: 11, color: summaryFixModal.shortened.length <= 250 ? SUCCESS : WARN, marginTop: 4 }}>
+									{summaryFixModal.shortened.length}/250 characters
+								</div>
+							</div>
+						</div>
+						<div style={{ padding: '12px 20px', borderTop: `1px solid ${c.border}`, display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+							<button onClick={() => setSummaryFixModal(null)} style={{
+								fontSize: 13, fontWeight: 500, padding: '7px 14px', borderRadius: 6,
+								background: 'transparent', border: `1px solid ${c.border}`, color: c.muted, cursor: 'pointer',
+							}}>
+								Cancel
+							</button>
+							<button
+								onClick={() => {
+									const newFormData = { ...formData, about: summaryFixModal.shortened }
+									setFormData(newFormData)
+									debouncedSave(newFormData)
+									setSummaryFixModal(null)
+									scrollToSection('summary')
+									toast({ title: 'Summary updated', description: `Shortened to ${summaryFixModal.shortened.length} characters.` })
+								}}
+								style={{
+									fontSize: 13, fontWeight: 600, padding: '7px 16px', borderRadius: 6,
+									background: BRAND, border: 'none', color: '#fff', cursor: 'pointer',
+								}}
+							>
+								Accept
+							</button>
 						</div>
 					</div>
 				</>
@@ -2622,7 +3026,7 @@ export default function ResumeBuilder() {
 										padding: '6px 16px',
 										borderRadius: 7,
 										cursor: 'pointer',
-										color: BRAND,
+										color: c.brandText,
 										fontSize: 13,
 										fontWeight: 500,
 									}}
@@ -2645,7 +3049,7 @@ export default function ResumeBuilder() {
 									color: c.dim,
 								}}
 								onMouseEnter={e => {
-									;(e.currentTarget as HTMLElement).style.color = BRAND
+									;(e.currentTarget as HTMLElement).style.color = c.brandText
 								}}
 								onMouseLeave={e => {
 									;(e.currentTarget as HTMLElement).style.color = c.dim
@@ -2691,7 +3095,7 @@ export default function ResumeBuilder() {
 										color: c.dim,
 									}}
 									onMouseEnter={e => {
-										;(e.currentTarget as HTMLElement).style.color = BRAND
+										;(e.currentTarget as HTMLElement).style.color = c.brandText
 									}}
 									onMouseLeave={e => {
 										;(e.currentTarget as HTMLElement).style.color = c.dim
@@ -2778,7 +3182,7 @@ export default function ResumeBuilder() {
 														size={20}
 														color={
 															activeSection === s.id && isVisible
-																? BRAND
+																? c.brandText
 																: c.dim
 														}
 														strokeWidth={1.75}
@@ -2891,7 +3295,7 @@ export default function ResumeBuilder() {
 								>
 									<s.icon
 										size={20}
-										color={activeSection === s.id ? BRAND : c.dim}
+										color={activeSection === s.id ? c.brandText : c.dim}
 										strokeWidth={1.75}
 									/>
 								</div>
@@ -3023,7 +3427,7 @@ export default function ResumeBuilder() {
 										onClick={() => setShowScoreDetail(true)}
 										style={{
 											fontSize: 14,
-											color: BRAND,
+											color: c.brandText,
 											cursor: 'pointer',
 											display: 'flex',
 											alignItems: 'center',
@@ -3164,18 +3568,39 @@ export default function ResumeBuilder() {
 											{checklist.filter(ch => !ch.completed).length} remaining
 										</span>
 									</div>
-									{checklist.map((ch, i) => (
+									{checklist.map((ch, i) => {
+										const hasFlaggedBullets = !ch.completed && ch.flaggedBullets && ch.flaggedBullets.length > 0
+										const actionHint = ch.completed ? null
+											: hasFlaggedBullets ? `Fix with AI (${ch.flaggedBullets!.length} bullet${ch.flaggedBullets!.length !== 1 ? 's' : ''})`
+											: ch.fixType === 'auto-reorder' ? 'Click to reorder'
+											: ch.fixType === 'skills-add' ? 'Click to add keywords'
+											: ch.fixType === 'keyword-popover' ? 'Click to add keywords'
+											: ch.fixType === 'summary-shorten' ? 'Click to shorten'
+											: ch.fixType === 'generate-bullets' ? 'Click to generate'
+											: ch.fixType === 'ai-modal' ? 'Fix with AI'
+											: ch.fixType === 'summary-add' ? 'Click to edit'
+											: 'Fix this'
+										return (
 										<div
 											key={ch.id || i}
+											onClick={(e) => {
+												if (ch.completed) return
+												checklistClickRect.current = (e.currentTarget as HTMLElement).getBoundingClientRect()
+												handleChecklistAction(ch, (e.currentTarget as HTMLElement).getBoundingClientRect())
+											}}
 											style={{
 												display: 'flex',
 												alignItems: 'flex-start',
 												gap: 9,
-												padding: '10px 0',
+												padding: '10px 4px',
 												borderBottom: `1px solid ${c.borderSub}`,
 												opacity: ch.completed ? 0.5 : 1,
 												cursor: ch.completed ? 'default' : 'pointer',
+												borderRadius: 6,
+												transition: 'background 120ms',
 											}}
+											onMouseEnter={e => { if (!ch.completed) (e.currentTarget as HTMLElement).style.background = '#c4956a14' }}
+											onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
 										>
 											{ch.completed ? (
 												<CheckCircle2
@@ -3206,31 +3631,28 @@ export default function ResumeBuilder() {
 												>
 													{ch.text}
 												</span>
-												{!ch.completed &&
-													ch.flaggedBullets &&
-													ch.flaggedBullets.length > 0 && (
-														<div
-															onClick={() => handleChecklistFix(ch)}
-															style={{
-																fontSize: 12,
-																color: BRAND,
-																cursor: 'pointer',
-																marginTop: 4,
-																display: 'flex',
-																alignItems: 'center',
-																gap: 4,
-																fontWeight: 500,
-															}}
-														>
+												{actionHint && (
+													<div
+														style={{
+															fontSize: 12,
+															color: c.brandText,
+															marginTop: 4,
+															display: 'flex',
+															alignItems: 'center',
+															gap: 4,
+															fontWeight: 500,
+														}}
+													>
+														{(hasFlaggedBullets || ch.fixType === 'ai-modal') && (
 															<Sparkles
 																size={11}
-																color={BRAND}
+																color={c.brandText}
 																strokeWidth={2}
 															/>
-															Fix with AI ({ch.flaggedBullets.length} bullet
-															{ch.flaggedBullets.length !== 1 ? 's' : ''})
-														</div>
-													)}
+														)}
+														{actionHint} {!hasFlaggedBullets && ch.fixType !== 'ai-modal' && <ArrowRight size={10} />}
+													</div>
+												)}
 											</div>
 											{!ch.completed && (
 												<span
@@ -3243,7 +3665,7 @@ export default function ResumeBuilder() {
 															ch.priority === 'high'
 																? `${WARN}18`
 																: `${BRAND}18`,
-														color: ch.priority === 'high' ? WARN : BRAND,
+														color: ch.priority === 'high' ? WARN : c.brandText,
 														textTransform: 'uppercase',
 														letterSpacing: '0.04em',
 														flexShrink: 0,
@@ -3254,7 +3676,8 @@ export default function ResumeBuilder() {
 												</span>
 											)}
 										</div>
-									))}
+										)
+									})}
 								</div>
 
 								{/* Keywords — uses consolidated keywordMatches from scoring engine */}
@@ -3572,7 +3995,7 @@ export default function ResumeBuilder() {
 								>
 									<cmd.icon
 										size={16}
-										color={i === cmdSelected ? BRAND : c.dim}
+										color={i === cmdSelected ? c.brandText : c.dim}
 										strokeWidth={1.75}
 									/>
 									<span
@@ -3703,14 +4126,14 @@ export default function ResumeBuilder() {
 								<span
 									style={{
 										fontSize: 13,
-										color: formData.font === f.value ? BRAND : c.text,
+										color: formData.font === f.value ? c.brandText : c.text,
 										fontFamily: f.family,
 									}}
 								>
 									{f.label}
 								</span>
 								{formData.font === f.value && (
-									<Check size={14} color={BRAND} strokeWidth={2} />
+									<Check size={14} color={c.brandText} strokeWidth={2} />
 								)}
 							</div>
 						))}
@@ -3753,7 +4176,7 @@ export default function ResumeBuilder() {
 										formData.textSize === size ? BRAND + '40' : c.border
 									}`,
 									fontSize: 12,
-									color: formData.textSize === size ? BRAND : c.text,
+									color: formData.textSize === size ? c.brandText : c.text,
 									fontWeight: 500,
 									textTransform: 'capitalize' as const,
 								}}
@@ -3944,30 +4367,35 @@ export default function ResumeBuilder() {
 								.map((ch, i) => {
 									const hasFlaggedBullets =
 										ch.flaggedBullets && ch.flaggedBullets.length > 0
-									const targetSec =
-										ch.text.toLowerCase().includes('experience') ||
-										ch.text.toLowerCase().includes('bullet') ||
-										ch.text.toLowerCase().includes('achievement')
-											? 'experience'
-											: ch.text.toLowerCase().includes('skill') ||
-											  ch.text.toLowerCase().includes('keyword')
-											? 'skills'
-											: ch.text.toLowerCase().includes('summary') ||
-											  ch.text.toLowerCase().includes('about')
-											? 'summary'
-											: ch.text.toLowerCase().includes('education')
-											? 'education'
-											: 'experience'
+									const slideActionHint = hasFlaggedBullets
+										? `Fix with AI (${ch.flaggedBullets!.length} bullet${ch.flaggedBullets!.length !== 1 ? 's' : ''})`
+										: ch.fixType === 'auto-reorder' ? 'Click to reorder'
+										: ch.fixType === 'skills-add' ? 'Click to add keywords'
+										: ch.fixType === 'keyword-popover' ? 'Click to add keywords'
+										: ch.fixType === 'summary-shorten' ? 'Click to shorten'
+										: ch.fixType === 'generate-bullets' ? 'Click to generate'
+										: ch.fixType === 'ai-modal' ? 'Fix with AI'
+										: ch.fixType === 'summary-add' ? 'Click to edit'
+										: 'Fix this'
 									return (
 										<div
 											key={ch.id || i}
+											onClick={(e) => {
+												setShowScoreDetail(false)
+												handleChecklistAction(ch, (e.currentTarget as HTMLElement).getBoundingClientRect())
+											}}
 											style={{
 												display: 'flex',
 												alignItems: 'flex-start',
 												gap: 8,
-												padding: '8px 0',
+												padding: '8px 4px',
 												borderBottom: `1px solid ${c.borderSub}`,
+												cursor: 'pointer',
+												borderRadius: 6,
+												transition: 'background 120ms',
 											}}
+											onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#c4956a14' }}
+											onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
 										>
 											<Circle
 												size={14}
@@ -3985,46 +4413,22 @@ export default function ResumeBuilder() {
 												>
 													{ch.text}
 												</span>
-												{hasFlaggedBullets ? (
-													<div
-														onClick={() => {
-															setShowScoreDetail(false)
-															handleChecklistFix(ch)
-														}}
-														style={{
-															fontSize: 11,
-															color: BRAND,
-															cursor: 'pointer',
-															marginTop: 4,
-															display: 'flex',
-															alignItems: 'center',
-															gap: 4,
-															fontWeight: 500,
-														}}
-													>
-														<Sparkles size={10} color={BRAND} strokeWidth={2} />
-														Fix with AI ({ch.flaggedBullets!.length} bullet
-														{ch.flaggedBullets!.length !== 1 ? 's' : ''})
-													</div>
-												) : (
-													<div
-														onClick={() => {
-															setShowScoreDetail(false)
-															scrollToSection(targetSec)
-														}}
-														style={{
-															fontSize: 11,
-															color: BRAND,
-															cursor: 'pointer',
-															marginTop: 4,
-															display: 'flex',
-															alignItems: 'center',
-															gap: 4,
-														}}
-													>
-														Fix this <ArrowRight size={10} />
-													</div>
-												)}
+												<div
+													style={{
+														fontSize: 11,
+														color: c.brandText,
+														marginTop: 4,
+														display: 'flex',
+														alignItems: 'center',
+														gap: 4,
+														fontWeight: 500,
+													}}
+												>
+													{(hasFlaggedBullets || ch.fixType === 'ai-modal') && (
+														<Sparkles size={10} color={c.brandText} strokeWidth={2} />
+													)}
+													{slideActionHint} {!hasFlaggedBullets && ch.fixType !== 'ai-modal' && <ArrowRight size={10} />}
+												</div>
 											</div>
 											<span
 												style={{
@@ -4034,7 +4438,7 @@ export default function ResumeBuilder() {
 													borderRadius: 4,
 													background:
 														ch.priority === 'high' ? `${WARN}18` : `${BRAND}18`,
-													color: ch.priority === 'high' ? WARN : BRAND,
+													color: ch.priority === 'high' ? WARN : c.brandText,
 													textTransform: 'uppercase',
 													flexShrink: 0,
 												}}
@@ -4078,7 +4482,7 @@ export default function ResumeBuilder() {
 								cursor: 'pointer',
 							}}
 						>
-							<Rocket size={20} color={BRAND} strokeWidth={1.75} />
+							<Rocket size={20} color={c.brandText} strokeWidth={1.75} />
 						</div>
 					) : (
 						<>
@@ -4091,7 +4495,7 @@ export default function ResumeBuilder() {
 								}}
 							>
 								<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-									<Rocket size={16} color={BRAND} strokeWidth={1.75} />
+									<Rocket size={16} color={c.brandText} strokeWidth={1.75} />
 									<span
 										style={{ fontSize: 13, fontWeight: 600, color: c.text }}
 									>

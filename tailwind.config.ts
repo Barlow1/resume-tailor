@@ -60,7 +60,12 @@ export default {
 					foreground: 'hsl(var(--card-foreground))',
 				},
 				brand: {
+					'50': '#F5F3FF',
+					'300': '#9B7FFF',
+					'400': '#8362FF',
 					'500': '#6B45FF',
+					'600': '#5E3AD6',
+					'700': '#5535C8',
 					'800': '#5430BB',
 				},
 			},

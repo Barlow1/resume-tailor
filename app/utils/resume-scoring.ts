@@ -116,14 +116,28 @@ export interface FlaggedBullet {
 	reason: string
 }
 
+export type FixType =
+	| 'ai-modal'           // open AI modal with flaggedBullets
+	| 'keyword-popover'    // open keyword popover with missing keywords
+	| 'summary-shorten'    // open summary fix modal
+	| 'summary-add'        // scroll to summary for manual add
+	| 'auto-reorder'       // auto-fix bullet order
+	| 'skills-add'         // open skills add popover
+	| 'generate-bullets'   // open AI modal in generate mode
+	| 'scroll'             // fallback — just scroll to section
+
 export interface ChecklistItem {
 	id: string
 	text: string
 	completed: boolean
 	explanation: string
 	priority: 'high' | 'medium' | 'low'
+	fixType: FixType
 	flaggedBullets?: FlaggedBullet[]
 	missingKeywords?: string[]
+	targetExperienceId?: string | null
+	strongestBulletIndex?: number
+	spreadKeyword?: string
 }
 
 /**
@@ -600,6 +614,7 @@ export function generateChecklist(
 				completed: false,
 				explanation: 'Please wait while AI analyzes the job description. This takes a few seconds.',
 				priority: 'high',
+				fixType: 'scroll',
 			})
 			return checklist
 		}
@@ -654,6 +669,7 @@ export function generateChecklist(
 				completed: false,
 				explanation: `These are the non-negotiable requirements from this job description. A recruiter would likely reject a resume that doesn't mention: ${missingPrimaryKws.join(', ')}. Add them to your experience bullets and skills section.`,
 				priority: 'high',
+				fixType: 'keyword-popover',
 				missingKeywords: missingPrimaryKws,
 			})
 		}
@@ -731,6 +747,7 @@ export function generateChecklist(
 				completed: false,
 				explanation: explanation.trim(),
 				priority: hasTiers ? 'medium' : (scores.keyword < 70 ? 'high' : 'medium'),
+				fixType: 'skills-add',
 				missingKeywords: hasTiers ? missingKws : allMissingKeywords,
 			})
 		} else if (scores.keyword >= 90) {
@@ -741,6 +758,7 @@ export function generateChecklist(
 				explanation:
 					'Your resume has excellent keyword alignment with the job description.',
 				priority: 'high',
+				fixType: 'scroll',
 			})
 		}
 
@@ -776,6 +794,9 @@ export function generateChecklist(
 					completed: false,
 					explanation: `"${pm.keyword}" was found in ${sectionName} but not elsewhere.${isPrimarySpread ? ' This is a must-have keyword — spreading it across sections significantly boosts your ATS score.' : ' Keywords that appear in multiple sections (Skills + Experience bullets) score higher in ATS screening.'}`,
 					priority: isPrimarySpread ? 'high' : 'medium',
+					fixType: 'ai-modal',
+					spreadKeyword: pm.keyword,
+					targetExperienceId: targetExp?.id,
 				})
 			}
 		}
@@ -818,6 +839,9 @@ export function generateChecklist(
 						completed: false,
 						explanation: `Your most recent experience at ${expLabel} doesn't mention these target keywords. Adding them to bullet points or a role-specific skills line helps ATS tools score your resume higher.`,
 						priority: 'medium',
+						fixType: 'keyword-popover',
+						missingKeywords: suggestedKws,
+						targetExperienceId: mostRecent.id,
 					})
 				}
 			}
@@ -855,6 +879,9 @@ export function generateChecklist(
 					completed: false,
 					explanation: `Your bullet #${maxIndex + 1} at ${expLabel} has the most keyword matches (${maxCount}). Moving it to the top position increases visibility.`,
 					priority: 'low',
+					fixType: 'auto-reorder',
+					targetExperienceId: exp.id,
+					strongestBulletIndex: maxIndex,
 				})
 			}
 		}
@@ -872,6 +899,7 @@ export function generateChecklist(
 			completed: false,
 			explanation: 'Start by adding work experience with measurable achievements (numbers, %, $).',
 			priority: 'high',
+			fixType: 'scroll',
 		})
 	} else {
 		const bulletsWithMetrics = Math.round((scores.metrics / 100) * bulletCount)
@@ -890,6 +918,7 @@ export function generateChecklist(
 				completed: true,
 				explanation: `Good! You have quantifiable achievements in your resume.${improvementText}`,
 				priority: 'high',
+				fixType: 'ai-modal',
 				flaggedBullets: bulletsWithoutMetrics,
 			})
 		} else {
@@ -903,6 +932,7 @@ export function generateChecklist(
 					completed: true,
 					explanation: `Good! Adding numbers to ${metricsNeededForPerfect} more bullets will boost your score from ${scores.metrics} to 100.`,
 					priority: 'high',
+					fixType: 'ai-modal',
 					flaggedBullets: bulletsWithoutMetrics,
 				})
 			} else {
@@ -912,6 +942,7 @@ export function generateChecklist(
 					completed: false,
 					explanation: `Currently ${currentPercent}% of your bullets have metrics (target 30%+). Even ranges like "20-30%" work. Numbers make achievements concrete and 40% more likely to get interviews.`,
 					priority: 'high',
+					fixType: 'ai-modal',
 					flaggedBullets: bulletsWithoutMetrics,
 				})
 			}
@@ -938,6 +969,7 @@ export function generateChecklist(
 				completed: true,
 				explanation: `Good! Most of your bullets start with strong action verbs.${improvementText}`,
 				priority: 'medium',
+				fixType: 'ai-modal',
 				flaggedBullets: bulletsWithoutActionVerbs,
 			})
 		} else {
@@ -951,6 +983,7 @@ export function generateChecklist(
 					completed: true,
 					explanation: `Good! Leading ${actionVerbsNeededForPerfect} more bullets with strong verbs will boost your score from ${scores.actionVerbs} to 100.`,
 					priority: 'medium',
+					fixType: 'ai-modal',
 					flaggedBullets: bulletsWithoutActionVerbs,
 				})
 			} else {
@@ -960,6 +993,7 @@ export function generateChecklist(
 					completed: false,
 					explanation: `Currently ${currentPercent}% of your bullets start with action verbs (target 50%+). Avoid weak starts like "responsible for" or "helped with."`,
 					priority: 'medium',
+					fixType: 'ai-modal',
 					flaggedBullets: bulletsWithoutActionVerbs,
 				})
 			}
@@ -968,6 +1002,14 @@ export function generateChecklist(
 
 	// Content length optimization
 	if (scores.length < 60) {
+		// Find experience with fewest bullets for generate target
+		const allExps = resumeData.experiences?.filter(
+			(exp: any) => (exp.role || exp.company)
+		) || []
+		const expWithFewest = allExps.length > 0
+			? allExps.reduce((a: any, b: any) => (a.descriptions?.length || 0) <= (b.descriptions?.length || 0) ? a : b)
+			: null
+
 		if (bulletCount < 10) {
 			checklist.push({
 				id: 'content-length',
@@ -975,6 +1017,8 @@ export function generateChecklist(
 				completed: false,
 				explanation: 'Aim for 10-20 total bullets across all experiences to properly showcase your qualifications.',
 				priority: 'medium',
+				fixType: 'generate-bullets',
+				targetExperienceId: expWithFewest?.id,
 			})
 		} else if (bulletCount > 25) {
 			checklist.push({
@@ -983,6 +1027,7 @@ export function generateChecklist(
 				completed: false,
 				explanation: 'Resumes with 10-20 bullets are easier to scan. Remove less relevant bullets.',
 				priority: 'low',
+				fixType: 'scroll',
 			})
 		}
 	}
@@ -996,6 +1041,7 @@ export function generateChecklist(
 			completed: false,
 			explanation: 'A strong summary (100-250 characters) helps recruiters quickly understand your value proposition. Focus on your top skills and what you bring to this specific role.',
 			priority: 'medium',
+			fixType: 'summary-add',
 		})
 	} else if (summaryLength > 350) {
 		checklist.push({
@@ -1004,6 +1050,7 @@ export function generateChecklist(
 			completed: false,
 			explanation: 'Keep your summary concise - recruiters spend 7 seconds on initial review.',
 			priority: 'low',
+			fixType: 'summary-shorten',
 		})
 	}
 

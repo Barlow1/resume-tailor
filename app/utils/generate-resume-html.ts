@@ -90,7 +90,7 @@ function generateSummarySection(formData: ResumeData, accentColor: string, fontF
 	if (!formData.about && !options.editable) return ''
 	const header = formData.headers?.aboutHeader || 'Summary'
 	return `
-		<div style="margin-bottom: 20px;" ${options.editable ? 'data-section-id="about"' : ''}>
+		<div style="margin-bottom: 20px;" data-section-id="about">
 			${sectionHeader(header, accentColor, fontFamily, ts, options, 'headers.aboutHeader', 'Summary')}
 			<div style="font-size: ${ts(12.5)}px; line-height: 1.6; color: #333; font-family: ${fontFamily};" ${editableAttrs(options, 'about', 'Write a professional summary...', { multiline: true })}>${escapeHtml(formData.about || '')}</div>
 		</div>`
@@ -102,7 +102,7 @@ function generateExperienceSection(formData: ResumeData, accentColor: string, fo
 	if (experiences.length === 0) return ''
 	const header = formData.headers?.experienceHeader || 'Experience'
 	return `
-		<div style="margin-bottom: 20px;" ${options.editable ? 'data-section-id="experience"' : ''}>
+		<div style="margin-bottom: 20px;" data-section-id="experience">
 			${sectionHeader(header, accentColor, fontFamily, ts, options, 'headers.experienceHeader', 'Experience')}
 			${experiences.map((exp, i) => {
 				const allBullets = exp.descriptions || []
@@ -132,7 +132,7 @@ function generateEducationSection(formData: ResumeData, accentColor: string, fon
 	if (education.length === 0) return ''
 	const header = formData.headers?.educationHeader || 'Education'
 	return `
-		<div style="margin-bottom: 20px;" ${options.editable ? 'data-section-id="education"' : ''}>
+		<div style="margin-bottom: 20px;" data-section-id="education">
 			${sectionHeader(header, accentColor, fontFamily, ts, options, 'headers.educationHeader', 'Education')}
 			${education.map((edu, i) => {
 				const dates = [edu.startDate, edu.endDate].filter(Boolean).join(' \u2013 ')
@@ -154,7 +154,7 @@ function generateSkillsSection(formData: ResumeData, accentColor: string, fontFa
 	if (skills.length === 0) return ''
 	const header = formData.headers?.skillsHeader || 'Skills'
 	return `
-		<div style="margin-bottom: 20px;" ${options.editable ? 'data-section-id="skills"' : ''}>
+		<div style="margin-bottom: 20px;" data-section-id="skills">
 			${sectionHeader(header, accentColor, fontFamily, ts, options, 'headers.skillsHeader', 'Skills')}
 			${skills.map((s, i) => `<div style="font-size: ${ts(12)}px; color: #333; line-height: 1.6; font-family: ${fontFamily};" ${options.editable ? `data-skill-id="${s.id}"` : ''} ${editableAttrs(options, `skills.${i}.name`, 'Skill')}>${escapeHtml(s.name || '')}</div>`).join('\n\t\t\t')}
 		</div>`
@@ -166,7 +166,7 @@ function generateHobbiesSection(formData: ResumeData, accentColor: string, fontF
 	if (hobbies.length === 0) return ''
 	const header = formData.headers?.hobbiesHeader || 'Interests & Activities'
 	return `
-		<div style="margin-bottom: 20px;" ${options.editable ? 'data-section-id="hobbies"' : ''}>
+		<div style="margin-bottom: 20px;" data-section-id="hobbies">
 			${sectionHeader(header, accentColor, fontFamily, ts, options, 'headers.hobbiesHeader', 'Interests')}
 			${hobbies.map((h, i) => `<div style="font-size: ${ts(12)}px; color: #333; line-height: 1.6; font-family: ${fontFamily};" ${options.editable ? `data-hobby-id="${h.id}"` : ''} ${editableAttrs(options, `hobbies.${i}.name`, 'Interest')}>${escapeHtml(h.name || '')}</div>`).join('\n\t\t\t')}
 		</div>`
@@ -257,9 +257,6 @@ export function generateResumeHtml(
 		}
 		.resume {
 			padding: 48px 48px;
-		}
-		.resume > div {
-			break-inside: avoid;
 		}
 		[data-experience-id],
 		[data-education-id] {

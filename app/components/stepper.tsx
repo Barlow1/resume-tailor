@@ -32,9 +32,9 @@ export default function Stepper({ steps }: { steps: Step[] }) {
 								className="flex items-center px-6 py-4 text-sm font-medium"
 							>
 								<span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border-2 border-brand-500">
-									<span className="text-brand-500">{step.id}</span>
+									<span className="text-brand-500 dark:text-brand-300">{step.id}</span>
 								</span>
-								<span className="ml-4 text-sm font-medium text-brand-500">
+								<span className="ml-4 text-sm font-medium text-brand-500 dark:text-brand-300">
 									{step.name}
 								</span>
 							</span>

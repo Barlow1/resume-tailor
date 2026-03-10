@@ -1,0 +1,35 @@
+app = "n8n-resumetailor"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[mounts]
+  source = "n8n_data"
+  destination = "/home/node/.n8n"
+
+[env]
+  N8N_PORT = "8080"
+  N8N_PROTOCOL = "https"
+  WEBHOOK_URL = "https://n8n-resumetailor.fly.dev"
+  N8N_BASIC_AUTH_ACTIVE = "true"
+  # Execution settings
+  EXECUTIONS_DATA_PRUNE = "true"
+  EXECUTIONS_DATA_MAX_AGE = "168"  # 7 days
+  GENERIC_TIMEZONE = "America/New_York"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [http_service.concurrency]
+    type = "requests"
+    hard_limit = 50
+    soft_limit = 25
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

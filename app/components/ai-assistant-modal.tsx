@@ -196,6 +196,7 @@ export function AIAssistantModal({
 	const logActionFetcher = useFetcher()
 	const completionStartTime = useRef<number | null>(null)
 	const wasOpenRef = useRef(false)
+	const processedFetcherData = useRef<unknown>(null)
 
 	useEffect(() => {
 		if (isOpen) {
@@ -210,6 +211,9 @@ export function AIAssistantModal({
 			}
 		} else {
 			wasOpenRef.current = false
+			processedFetcherData.current = null
+			setRawContent('')
+			setTailorLogId(null)
 			setSelectedItems([])
 			setExpandedOption(null)
 			setShowDiff({})
@@ -299,7 +303,8 @@ export function AIAssistantModal({
 	}
 
 	useEffect(() => {
-		if (builderCompletionsFetcher.state === 'idle' && builderCompletionsFetcher.data) {
+		if (builderCompletionsFetcher.state === 'idle' && builderCompletionsFetcher.data && builderCompletionsFetcher.data !== processedFetcherData.current) {
+			processedFetcherData.current = builderCompletionsFetcher.data
 			const responseContent = builderCompletionsFetcher.data?.choices[0].message.content ?? '{}'
 			setRawContent(responseContent)
 			const logId = (builderCompletionsFetcher.data as any)?.tailorLogId
@@ -368,6 +373,7 @@ export function AIAssistantModal({
 	}
 
 	const handleAccept = (index: number) => {
+		if (acceptedOption !== null) return // Prevent double-fire
 		const bullet = editValues[index] ?? displayOptions[index]
 		if (!bullet) return
 
@@ -395,7 +401,7 @@ export function AIAssistantModal({
 		setTimeout(() => {
 			resetState()
 			onClose()
-		}, 600)
+		}, 300)
 	}
 
 	const handleSave = () => {
@@ -462,19 +468,19 @@ export function AIAssistantModal({
 
 	// Shared button base style
 	const btnOutline: React.CSSProperties = {
-		display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px',
-		borderRadius: 5, border: `1px solid ${c.border}`, background: 'transparent',
-		color: c.muted, fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap',
+		display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px',
+		borderRadius: 6, border: `1px solid ${c.border}`, background: 'transparent',
+		color: c.muted, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap',
 	}
 	const btnPrimary: React.CSSProperties = {
-		display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px',
-		borderRadius: 5, border: 'none', background: BRAND, color: '#fff',
-		fontSize: 12, fontWeight: 500, cursor: 'pointer',
+		display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px',
+		borderRadius: 6, border: 'none', background: BRAND, color: '#fff',
+		fontSize: 13, fontWeight: 500, cursor: 'pointer',
 	}
 
 	return (
 		<div style={{
-			position: 'fixed', top: 48, right: 0, bottom: 0, width: 380, zIndex: 200,
+			position: 'fixed', top: 48, right: 0, bottom: 0, width: 440, zIndex: 200,
 			background: c.bgEl, borderLeft: `1px solid ${c.border}`,
 			boxShadow: '-4px 0 24px rgba(0,0,0,0.15)',
 			display: 'flex', flexDirection: 'column', overflow: 'hidden',
@@ -552,40 +558,52 @@ export function AIAssistantModal({
 								)}
 							</div>
 							{showBulletPicker && activeTab === 'tailor' ? (
-								<div style={{ marginTop: 8, maxHeight: 220, overflow: 'auto', borderRadius: 6, border: `1px solid ${c.border}` }}>
-									{[...(resumeData?.experiences ?? [])].sort((a, b) => a.id === tailorExperience?.id ? -1 : b.id === tailorExperience?.id ? 1 : 0).filter(exp => (exp.descriptions ?? []).some(d => d.content?.trim())).map(exp => (
-										<div key={exp.id}>
-											<div style={{ padding: '5px 10px', fontSize: 11, fontWeight: 600, color: c.dim, textTransform: 'uppercase', letterSpacing: '0.04em', background: c.bgSurf, borderBottom: `1px solid ${c.border}` }}>
-												{exp.role}{exp.company ? ` · ${exp.company}` : ''}
+								<div style={{ marginTop: 8, maxHeight: 280, overflow: 'auto', borderRadius: 6, border: `1px solid ${c.border}` }}>
+									{(() => {
+										const hasKeywordContext = !!diagnosticContext?.missingKeywords?.length
+										const allExps = [...(resumeData?.experiences ?? [])].filter(exp => (exp.descriptions ?? []).some(d => d.content?.trim()))
+										const filteredExps = hasKeywordContext && experience?.id
+											? allExps.filter(exp => exp.id === experience.id)
+											: allExps.sort((a, b) => a.id === tailorExperience?.id ? -1 : b.id === tailorExperience?.id ? 1 : 0)
+										return filteredExps.map(exp => (
+											<div key={exp.id}>
+												<div style={{ padding: '5px 10px', fontSize: 11, fontWeight: 600, color: c.dim, textTransform: 'uppercase', letterSpacing: '0.04em', background: c.bgSurf, borderBottom: `1px solid ${c.border}` }}>
+													{exp.role}{exp.company ? ` · ${exp.company}` : ''}
+												</div>
+												{(exp.descriptions ?? []).filter(d => d.content?.trim()).map((desc, idx) => {
+													const isSelected = desc.content === tailorContent && exp.id === tailorExperience?.id
+													return (
+														<button
+															type="button"
+															key={desc.id ?? idx}
+															onClick={() => {
+																if (!desc.content) return
+																setTailorContent(desc.content)
+																setTailorExperience(exp)
+																setShowBulletPicker(false)
+																resetState()
+																onBulletChange?.(desc.content, exp, idx)
+															}}
+															style={{
+																display: 'block', width: '100%', textAlign: 'left',
+																padding: '8px 10px', fontSize: 12, lineHeight: 1.45, cursor: 'pointer',
+																color: isSelected ? BRAND : c.text,
+																background: isSelected ? `${BRAND}08` : 'transparent',
+																borderTop: 'none', borderLeft: 'none', borderRight: 'none',
+																borderBottom: `1px solid ${c.borderSub}`,
+																fontFamily: 'inherit',
+																transition: 'background 100ms',
+															}}
+															onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = c.bgSurf }}
+															onMouseLeave={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+														>
+															{desc.content}
+														</button>
+													)
+												})}
 											</div>
-											{(exp.descriptions ?? []).filter(d => d.content?.trim()).map((desc, idx) => {
-												const isSelected = desc.content === tailorContent && exp.id === tailorExperience?.id
-												return (
-													<div
-														key={desc.id ?? idx}
-														onClick={() => {
-															if (!desc.content) return
-															setTailorContent(desc.content)
-															setTailorExperience(exp)
-															setShowBulletPicker(false)
-															resetState()
-															onBulletChange?.(desc.content, exp, idx)
-														}}
-														style={{
-															padding: '7px 10px', fontSize: 12, lineHeight: 1.45, cursor: 'pointer',
-															color: isSelected ? BRAND : c.text,
-															background: isSelected ? `${BRAND}08` : 'transparent',
-															borderBottom: `1px solid ${c.borderSub}`,
-														}}
-														onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = c.bgSurf }}
-														onMouseLeave={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
-													>
-														{desc.content}
-													</div>
-												)
-											})}
-										</div>
-									))}
+										))
+									})()}
 								</div>
 							) : (
 								<div style={{
@@ -766,8 +784,8 @@ export function AIAssistantModal({
 															</div>
 														) : diff ? (
 															/* Diff view */
-															<div style={{ marginBottom: 10, padding: '8px 10px', borderRadius: 6, background: c.bg, border: `1px solid ${c.borderSub}` }}>
-																<p style={{ fontSize: 13, lineHeight: 1.55, margin: '0 0 6px' }}>
+															<div style={{ marginBottom: 10, padding: '10px 12px', borderRadius: 6, background: c.bg, border: `1px solid ${c.borderSub}` }}>
+																<p style={{ fontSize: 14, lineHeight: 1.55, margin: '0 0 6px' }}>
 																	{diff.filter(d => d.type !== 'removed').map((d, di) => (
 																		<span key={di} style={{
 																			marginRight: 4,
@@ -778,7 +796,7 @@ export function AIAssistantModal({
 																	))}
 																</p>
 																{diff.filter(d => d.type === 'removed').length > 0 && (
-																	<p style={{ fontSize: 12, lineHeight: 1.5, margin: 0 }}>
+																	<p style={{ fontSize: 13, lineHeight: 1.5, margin: 0 }}>
 																		{diff.filter(d => d.type === 'removed').map((d, di) => (
 																			<span key={di} style={{ marginRight: 4, color: ERROR, textDecoration: 'line-through' }}>
 																				{d.text}
@@ -789,7 +807,7 @@ export function AIAssistantModal({
 															</div>
 														) : (
 															/* Normal text */
-															<p style={{ fontSize: 13, lineHeight: 1.55, color: c.text, margin: '0 0 10px' }}>
+															<p style={{ fontSize: 14, lineHeight: 1.55, color: c.text, margin: '0 0 10px' }}>
 																{highlightMetrics(currentText)}
 															</p>
 														)}
@@ -804,8 +822,8 @@ export function AIAssistantModal({
 														{/* Action buttons */}
 														{!isEditing && (
 															<div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
-																<button onClick={() => handleAccept(index)} style={btnPrimary}>
-																	<Check size={13} strokeWidth={2} /> Accept
+																<button onClick={() => handleAccept(index)} disabled={acceptedOption !== null} style={{ ...btnPrimary, ...(acceptedOption !== null ? { opacity: 0.5, cursor: 'not-allowed' } : {}) }}>
+																	<Check size={13} strokeWidth={2} /> {acceptedOption === index ? 'Applied' : 'Accept'}
 																</button>
 																<button onClick={() => {
 																	if (!(index in editValues)) setEditValues(prev => ({ ...prev, [index]: option.bullet }))

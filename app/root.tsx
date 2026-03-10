@@ -351,6 +351,7 @@ function App() {
 	)
 	const shouldHideNav = Boolean(matches.find(m => hideNavPages.includes(m.id))) || isBlogRoute || isSeoRoute
 	const isBuilderRoute = Boolean(matches.find(m => m.id === 'routes/builder+/index'))
+	const isAgentRoute = Boolean(matches.find(m => m.id === 'routes/agent'))
 
 	const location = useLocation()
 	const path = location.pathname
@@ -485,7 +486,7 @@ function App() {
 	return (
 		<Document nonce={nonce} theme={theme} env={data.ENV}>
 			<RecaptchaProvider siteKey={recaptchaSiteKey}>
-				<div className="flex h-screen flex-col justify-between">
+				<div className={isAgentRoute ? '' : 'flex h-screen flex-col justify-between'}>
 					<>
 						<div>
 							{shouldHideNav ? null : (
@@ -714,8 +715,8 @@ function App() {
 									shouldHideNav ? '' : isCollapsed ? 'lg:pl-[100px]' : 'lg:pl-[350px]'
 								}`}
 							>
-								{isBuilderRoute ? (
-									/* Builder route: full-screen, no header or wrapper padding */
+								{isBuilderRoute || isAgentRoute ? (
+									/* Builder / Agent route: full-screen, no header or wrapper padding */
 									<Outlet />
 								) : isOnLandingPage ? (
 									/* Landing page: fixed glass nav + no wrapper padding */
