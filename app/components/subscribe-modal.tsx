@@ -9,9 +9,10 @@ interface SubscribeModalProps {
 	successUrl: string
 	cancelUrl: string
 	redirectTo?: string
+	trigger?: 'download_limit' | 'ai_limit' | 'analysis_limit' | 'outreach_limit'
 }
 
-export function SubscribeModal({ isOpen, onClose, successUrl, cancelUrl, redirectTo }: SubscribeModalProps) {
+export function SubscribeModal({ isOpen, onClose, successUrl, cancelUrl, redirectTo, trigger }: SubscribeModalProps) {
 	return (
 		<Transition appear show={isOpen} as={Fragment}>
 			<Dialog as="div" className="relative z-50" onClose={onClose}>
@@ -53,7 +54,7 @@ export function SubscribeModal({ isOpen, onClose, successUrl, cancelUrl, redirec
 									Upgrade to Continue
 								</Dialog.Title>
 								<div>
-									<Pricing successUrl={successUrl} cancelUrl={cancelUrl} redirectTo={redirectTo} />
+									<Pricing successUrl={successUrl} cancelUrl={cancelUrl} redirectTo={redirectTo} trigger={trigger} />
 								</div>
 							</Dialog.Panel>
 						</Transition.Child>
