@@ -211,7 +211,7 @@ export interface PaywallDismissedEvent {
 export interface CheckoutStartedEvent {
 	plan: 'weekly' | 'monthly'
 	is_trial: boolean
-	trigger: PaywallTrigger | 'direct'
+	trigger: PaywallTrigger | 'pricing_page' | 'direct'
 }
 
 export interface TrialStartedEvent {
@@ -220,6 +220,14 @@ export interface TrialStartedEvent {
 }
 
 export interface SubscriptionCreatedEvent {
+	plan: 'weekly' | 'monthly'
+	value: number
+	currency: string
+	user_id: string
+	is_first_payment: boolean
+}
+
+export interface TrialConvertedEvent {
 	plan: 'weekly' | 'monthly'
 	value: number
 	currency: string
@@ -393,6 +401,7 @@ export interface AnalyticsEventMap {
 	checkout_started: CheckoutStartedEvent
 	trial_started: TrialStartedEvent
 	subscription_created: SubscriptionCreatedEvent
+	trial_converted: TrialConvertedEvent
 	subscription_canceled: SubscriptionCanceledEvent
 
 	// Engagement

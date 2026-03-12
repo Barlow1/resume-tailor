@@ -10,6 +10,7 @@ import { useState } from 'react'
 import { Radio, RadioGroup } from '@headlessui/react'
 import { cn } from '~/utils/misc.ts'
 import { trackEvent } from '~/utils/analytics.ts'
+import { track } from '~/lib/analytics.client.ts'
 import type { loader as rootLoader } from '~/root.tsx'
 
 const frequencies = [
@@ -96,10 +97,12 @@ export function Pricing({
 	successUrl,
 	cancelUrl,
 	redirectTo,
+	trigger = 'pricing_page',
 }: {
 	successUrl: string
 	cancelUrl: string
 	redirectTo?: string | undefined
+	trigger?: 'pricing_page' | 'download_limit' | 'ai_limit' | 'analysis_limit' | 'outreach_limit' | 'direct'
 }) {
 	const [frequency, setFrequency] = useState(frequencies[0])
 	const rootData = useRouteLoaderData<typeof rootLoader>('root')
@@ -204,11 +207,11 @@ export function Pricing({
 													plan_tier: frequency.value,
 												})
 											}
-											// Track checkout_started event
-											trackEvent('checkout_started', {
+											// Track checkout_started event (PostHog)
+											track('checkout_started', {
 												plan: frequency.value,
 												is_trial: true,
-												trigger: 'pricing_page',
+												trigger,
 											})
 										}}
 										className={cn(
