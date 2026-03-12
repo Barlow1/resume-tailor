@@ -649,11 +649,7 @@ function PreviewView({
 
 			{/* Experience sections */}
 			{merged.experiences?.map((exp, expIdx) => {
-				const hasChanges = Array.from(annotations.keys()).some(
-					k => k.startsWith(`experiences[${expIdx}]`),
-				)
-				// Skip experiences with no changes for a cleaner view
-				// Actually, show all to give context
+				// Show all experiences to give context
 
 				return (
 					<PreviewSection
