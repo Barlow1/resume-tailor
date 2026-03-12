@@ -116,6 +116,32 @@ export const recruiterOutreachSchema = z.object({
 	followUp: z.object({ body: z.string() })
 })
 
+// Tailor suggestions schema — structured per-change suggestions with reasons
+const tailorSuggestionSchema = z.object({
+	id: z.string(),
+	sectionType: z.enum(['summary', 'experience', 'skills']),
+	experienceId: z.string().optional(),
+	bulletIndex: z.number().optional(),
+	skillIndex: z.number().optional(),
+	originalText: z.string(),
+	reason: z.string(),
+	suggestedText: z.string(),
+	isGap: z.boolean(),
+	gapRequirement: z.string().optional(),
+	targetExperienceId: z.string().optional(),
+})
+
+export const tailorSuggestionsSchema = z.object({
+	suggestions: z.array(tailorSuggestionSchema),
+})
+
+export type TailorSuggestion = z.infer<typeof tailorSuggestionSchema>
+
+const openaiTailorSuggestionsResponseFormat = zodResponseFormat(
+	tailorSuggestionsSchema,
+	'tailor_suggestions',
+)
+
 // v1 schema — kept for getBuilderGeneratedExperienceResponse (generation prompt)
 export const experienceSchema = z.object({
 	experiences: z.array(z.string()),
@@ -1080,5 +1106,105 @@ export const getRecruiterMessage = async ({
 		max_completion_tokens: 8192,
 		response_format: openaiRecruiterMessageResponseFormat,
 	})
+	return { response }
+}
+
+/**
+ * Build a text representation of the resume with ID markers for the tailor suggestions prompt.
+ * Reuses the same resume data structure as buildResumeContext but adds [experience:ID],
+ * [bullet:INDEX], and [skill:INDEX] markers so the LLM can reference specific items.
+ */
+function buildResumeContextWithIds(resume: ResumeData): string {
+	const sections: string[] = []
+
+	if (resume.about) {
+		sections.push(`SUMMARY:\n[summary]\n${resume.about}`)
+	}
+
+	if (resume.experiences && resume.experiences.length > 0) {
+		const expLines = resume.experiences.map(exp => {
+			const header = `[experience:${exp.id}] ${exp.role ?? 'Role'} at ${exp.company ?? 'Company'}${exp.startDate ? ` (${exp.startDate}–${exp.endDate ?? 'Present'})` : ''}`
+			const bullets = (exp.descriptions ?? [])
+				.map((d, idx) => d.content?.trim() ? `  [bullet:${idx}] ${d.content}` : null)
+				.filter(Boolean)
+				.join('\n')
+			return `${header}\n${bullets}`
+		}).join('\n\n')
+		sections.push(`EXPERIENCE:\n\n${expLines}`)
+	}
+
+	if (resume.skills && resume.skills.length > 0) {
+		const skillLines = resume.skills
+			.map((s, idx) => s.name?.trim() ? `[skill:${idx}] ${s.name}` : null)
+			.filter(Boolean)
+			.join('\n')
+		if (skillLines) {
+			sections.push(`SKILLS:\n${skillLines}`)
+		}
+	}
+
+	return sections.join('\n\n')
+}
+
+export const getTailorSuggestionsResponse = async ({
+	resume,
+	jobDescription,
+}: {
+	resume: ResumeData
+	jobDescription: string
+}) => {
+	const resumeText = buildResumeContextWithIds(resume)
+
+	const messages = [
+		{
+			role: 'system' as const,
+			content: `You are a resume tailoring expert. Your job is to help translate a user's real experience into the employer's language.
+
+A resume is a translation. The user has real experiences. The employer has needs. Your job is to show the connection and rewrite bullets in the employer's language while preserving the user's specifics (numbers, technologies, outcomes, voice).
+
+You will receive a resume and a job description. Return a JSON object with a "suggestions" array.
+
+For each suggestion, include:
+- "id": a unique string (use "s1", "s2", etc.)
+- "sectionType": "summary" | "experience" | "skills"
+- "experienceId": the experience ID if sectionType is "experience" (from the [experience:ID] markers)
+- "bulletIndex": the bullet index if modifying a bullet (from the [bullet:INDEX] markers)
+- "skillIndex": the skill line index if modifying skills (from the [skill:INDEX] markers)
+- "originalText": the user's current text being modified
+- "reason": ONE sentence explaining the connection to the JD. Start with what the JD asks for. Example: "JD asks for 'cloud infrastructure modernization' — your AWS migration maps directly to this"
+- "suggestedText": the rewritten text
+- "isGap": false for modifications, true for new bullets addressing unmet JD requirements
+- "gapRequirement": if isGap is true, the JD requirement text that isn't addressed
+- "targetExperienceId": if isGap is true, the experience ID where this bullet would fit best
+
+Rules:
+1. Only suggest changes where the mapping to a JD requirement is real and meaningful. Don't rewrite bullets that are already well-targeted.
+2. Keep the user's voice — their numbers, their technologies, their outcomes. Just reframe in the employer's language.
+3. Never fabricate metrics or experiences. If adding specificity, use the user's existing data.
+4. For gap suggestions (isGap: true), write realistic bullets but make them generic enough that the user MUST customize with their real experience. Don't invent specific numbers.
+5. Limit gap suggestions to the 2-3 most critical unaddressed requirements.
+6. SKILLS ARE CATEGORY GROUPS. Each skill line is a category with comma-separated items (e.g., "Product: A/B Testing, Cross-Functional Leadership, Funnel Optimization"). When suggesting skill changes:
+   - Set sectionType to "skills" and skillIndex to the [skill:INDEX] of the line being modified
+   - suggestedText must be the COMPLETE category line with the category prefix preserved (e.g., "Product: A/B Testing, Cross-Functional Leadership, Funnel Optimization, User Story Mapping")
+   - Add JD-relevant skills to the appropriate existing category, or suggest a new skill line if no category fits
+   - Do NOT split categories into individual skills
+   - originalText should be the full original skill line
+7. For summary modifications, rewrite the full summary.
+8. Keep bullet rewrites concise — one line, action-verb-led, with measurable impact where the user already has it.`,
+		},
+		{
+			role: 'user' as const,
+			content: `JOB DESCRIPTION:\n\n${jobDescription}\n\n---\n\nRESUME:\n\n${resumeText}`,
+		},
+	]
+
+	const response = await openai.chat.completions.create({
+		model: 'gpt-4o',
+		messages,
+		temperature: 0.4,
+		max_completion_tokens: 8192,
+		response_format: openaiTailorSuggestionsResponseFormat,
+	})
+
 	return { response }
 }

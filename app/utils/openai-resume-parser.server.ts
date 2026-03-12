@@ -7,6 +7,18 @@ const openai = new OpenAI({
 	timeout: 60000, // 60 second timeout
 })
 
+export class ResumeParseError extends Error {
+	public readonly userMessage: string
+	public readonly code: string
+
+	constructor(userMessage: string, code: string, internalDetail?: string) {
+		super(internalDetail ?? userMessage)
+		this.name = 'ResumeParseError'
+		this.userMessage = userMessage
+		this.code = code
+	}
+}
+
 export interface OpenAIResumeData {
 	personal_info: {
 		full_name: string
@@ -75,37 +87,80 @@ function getFileExtension(filename: string): string {
 	return ext
 }
 
+const MIN_RESUME_TEXT_LENGTH = 50
+
 async function extractTextFromFile(file: File): Promise<string> {
 	const buffer = Buffer.from(await file.arrayBuffer())
 	const ext = getFileExtension(file.name)
 
 	if (ext === 'pdf') {
-		const pdfData = await pdf(buffer)
-		return pdfData.text
+		let pdfData: { text: string }
+		try {
+			pdfData = await pdf(buffer)
+		} catch (e: any) {
+			throw new ResumeParseError(
+				'This PDF file appears to be corrupted or password-protected. Please try re-saving it from your PDF viewer and uploading again.',
+				'pdf_corrupt',
+				`PDF parse failed: ${e.message}`,
+			)
+		}
+		const text = pdfData.text
+		if (!text || text.trim().length < MIN_RESUME_TEXT_LENGTH) {
+			throw new ResumeParseError(
+				'This appears to be a scanned PDF. Please upload a text-based document, or re-save your resume from Word/Google Docs.',
+				'scanned_pdf',
+			)
+		}
+		return text
 	}
 
 	if (ext === 'docx' || ext === 'doc') {
-		const result = await mammoth.extractRawText({ buffer })
-		return result.value
+		let result: { value: string; messages: Array<{ type: string; message: string }> }
+		try {
+			result = await mammoth.extractRawText({ buffer })
+		} catch (e: any) {
+			throw new ResumeParseError(
+				'This document file appears to be corrupted. Please try re-saving it and uploading again.',
+				'docx_corrupt',
+				`DOCX parse failed: ${e.message}`,
+			)
+		}
+
+		// Check for mammoth warnings/errors
+		const errors = result.messages.filter(m => m.type === 'error')
+		if (errors.length > 0) {
+			throw new ResumeParseError(
+				`There was a problem reading your document: ${errors[0].message}. Please try re-saving it as a .docx file.`,
+				'docx_read_error',
+				`Mammoth errors: ${errors.map(e => e.message).join('; ')}`,
+			)
+		}
+
+		const text = result.value
+		if (!text || text.trim().length < MIN_RESUME_TEXT_LENGTH) {
+			throw new ResumeParseError(
+				'No text could be extracted from this document. Please make sure it contains text content and is not an image-only file.',
+				'empty_docx',
+			)
+		}
+
+		// Log warnings for debugging but don't block the user
+		const warnings = result.messages.filter(m => m.type === 'warning')
+		if (warnings.length > 0) {
+			console.warn('DOCX parsing warnings:', warnings.map(w => w.message).join('; '))
+		}
+
+		return text
 	}
 
-	throw new Error(
+	throw new ResumeParseError(
 		`Unsupported file type: .${ext}. Please upload a PDF or DOCX file.`,
+		'unsupported_type',
 	)
 }
 
-export async function parseResumeWithOpenAI(
-	file: File,
-): Promise<OpenAIResumeData> {
+async function callOpenAI(resumeText: string): Promise<string> {
 	try {
-		// Extract text from PDF or DOCX
-		const resumeText = await extractTextFromFile(file)
-
-		if (!resumeText || resumeText.trim().length === 0) {
-			throw new Error('No text content found in file')
-		}
-
-		// Call OpenAI API
 		const response = await openai.chat.completions.create({
 			model: 'gpt-4o',
 			messages: [
@@ -177,71 +232,122 @@ REMEMBER: Extract EVERY detail. Never summarize or condense bullet points. Prese
 
 		const content = response.choices[0]?.message?.content
 		if (!content) {
-			throw new Error('No content returned from OpenAI')
-		}
-
-		const result = JSON.parse(content) as OpenAIResumeData
-
-		// Ensure personal_info exists with safe defaults
-		if (!result.personal_info) {
-			result.personal_info = {
-				full_name: '',
-				first_name: '',
-				last_name: '',
-				email: '',
-				phone: '',
-				location: '',
-			}
-		}
-
-		// Coerce email to string (OpenAI sometimes returns an array when multiple emails exist)
-		if (Array.isArray(result.personal_info.email)) {
-			result.personal_info.email = result.personal_info.email[0] ?? ''
-		}
-
-		// Coerce full_name to string
-		result.personal_info.full_name = result.personal_info.full_name ?? ''
-		result.personal_info.first_name = result.personal_info.first_name ?? ''
-		result.personal_info.last_name = result.personal_info.last_name ?? ''
-
-		// Sanitize education fields that OpenAI may return as wrong types
-		if (result.education) {
-			result.education = result.education.map(ed => ({
-				...ed,
-				honors: Array.isArray(ed.honors)
-					? ed.honors
-					: ed.honors
-						? [String(ed.honors)]
-						: undefined,
-				relevant_coursework: Array.isArray(ed.relevant_coursework)
-					? ed.relevant_coursework
-					: ed.relevant_coursework
-						? [String(ed.relevant_coursework)]
-						: undefined,
-			}))
-		}
-
-		// Validation: ensure skills_extracted doesn't duplicate skills
-		if (result.skills && result.skills_extracted) {
-			const skillsLower = result.skills.map(s => s.toLowerCase())
-			result.skills_extracted = result.skills_extracted.filter(
-				skill => !skillsLower.includes(skill.toLowerCase()),
+			throw new ResumeParseError(
+				'Our AI service returned an empty response. Please try again.',
+				'openai_empty_response',
 			)
-
-			if (result.skills_extracted.length === 0) {
-				delete result.skills_extracted
-			}
 		}
-
-		// Ensure arrays exist (defaults)
-		result.experiences = result.experiences || []
-		result.education = result.education || []
-		result.skills = result.skills || []
-
-		return result
+		return content
 	} catch (error: any) {
-		throw new Error(
-			`Failed to parse resume: ${error.message || 'Unknown error'}`,
+		if (error instanceof ResumeParseError) throw error
+
+		if (error?.status === 429) {
+			throw new ResumeParseError(
+				'Our AI service is temporarily overloaded. Please wait a moment and try again.',
+				'openai_rate_limit',
+				`OpenAI 429: ${error.message}`,
+			)
+		}
+		if (error?.status === 401) {
+			throw new ResumeParseError(
+				'There is a configuration issue with our AI service. Please contact support.',
+				'openai_auth',
+				`OpenAI 401: ${error.message}`,
+			)
+		}
+		if (error?.code === 'ETIMEDOUT' || error?.code === 'ECONNRESET' || error?.type === 'request-timeout') {
+			throw new ResumeParseError(
+				'The AI service took too long to respond. Please try again.',
+				'openai_timeout',
+				`OpenAI timeout: ${error.message}`,
+			)
+		}
+		if (error?.status >= 500) {
+			throw new ResumeParseError(
+				'Our AI service is experiencing issues. Please try again in a few minutes.',
+				'openai_server_error',
+				`OpenAI ${error.status}: ${error.message}`,
+			)
+		}
+		throw error
+	}
+}
+
+export async function parseResumeWithOpenAI(
+	file: File,
+): Promise<OpenAIResumeData> {
+	// Extract text from PDF or DOCX (throws ResumeParseError with specific messages)
+	const resumeText = await extractTextFromFile(file)
+
+	// Call OpenAI to parse resume text
+	const content = await callOpenAI(resumeText)
+
+	let result: OpenAIResumeData
+	try {
+		result = JSON.parse(content) as OpenAIResumeData
+	} catch (e: any) {
+		throw new ResumeParseError(
+			'Our AI service returned an unexpected response. Please try again.',
+			'json_parse_error',
+			`JSON parse failed: ${e.message}. Content start: ${content.substring(0, 200)}`,
 		)
 	}
+
+	// Ensure personal_info exists with safe defaults
+	if (!result.personal_info) {
+		result.personal_info = {
+			full_name: '',
+			first_name: '',
+			last_name: '',
+			email: '',
+			phone: '',
+			location: '',
+		}
+	}
+
+	// Coerce email to string (OpenAI sometimes returns an array when multiple emails exist)
+	if (Array.isArray(result.personal_info.email)) {
+		result.personal_info.email = result.personal_info.email[0] ?? ''
+	}
+
+	// Coerce full_name to string
+	result.personal_info.full_name = result.personal_info.full_name ?? ''
+	result.personal_info.first_name = result.personal_info.first_name ?? ''
+	result.personal_info.last_name = result.personal_info.last_name ?? ''
+
+	// Sanitize education fields that OpenAI may return as wrong types
+	if (result.education) {
+		result.education = result.education.map(ed => ({
+			...ed,
+			honors: Array.isArray(ed.honors)
+				? ed.honors
+				: ed.honors
+					? [String(ed.honors)]
+					: undefined,
+			relevant_coursework: Array.isArray(ed.relevant_coursework)
+				? ed.relevant_coursework
+				: ed.relevant_coursework
+					? [String(ed.relevant_coursework)]
+					: undefined,
+		}))
+	}
+
+	// Validation: ensure skills_extracted doesn't duplicate skills
+	if (result.skills && result.skills_extracted) {
+		const skillsLower = result.skills.map(s => s.toLowerCase())
+		result.skills_extracted = result.skills_extracted.filter(
+			skill => !skillsLower.includes(skill.toLowerCase()),
+		)
+
+		if (result.skills_extracted.length === 0) {
+			delete result.skills_extracted
+		}
+	}
+
+	// Ensure arrays exist (defaults)
+	result.experiences = result.experiences || []
+	result.education = result.education || []
+	result.skills = result.skills || []
+
+	return result
 }

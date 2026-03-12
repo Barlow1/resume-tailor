@@ -66,6 +66,9 @@ export interface ResumeIframeHandle {
 
 const PAGE_HEIGHT = 1056
 const PAGE_PADDING = 48
+// Match pdf.server.ts: absorb margin-collapsing drift and sub-pixel rounding
+// so preview page breaks land at the same points as the PDF export.
+const SAFETY_BUFFER = 20
 
 function createPageGap(doc: Document, remainingOnPage: number): HTMLElement {
 	const gap = doc.createElement('div')
@@ -90,6 +93,52 @@ function totalHeight(el: HTMLElement): number {
 	return el.offsetHeight + (parseFloat(s.marginTop) || 0) + (parseFloat(s.marginBottom) || 0)
 }
 
+/**
+ * Try to split an entry (experience/education) at the bullet level.
+ * Returns null if the entry can't be meaningfully split (no UL, < 2
+ * bullets, or header alone fills the remaining space).
+ *
+ * When successful, returns the bullet index to split at and the height
+ * consumed by the header + fitting bullets.
+ */
+function trySplitEntry(entry: HTMLElement, remaining: number): { bulletSplitIndex: number; usedHeight: number } | null {
+	const ul = entry.querySelector('ul')
+	if (!ul) return null
+
+	const bullets = Array.from(ul.children) as HTMLElement[]
+	if (bullets.length < 2) return null
+
+	// Measure everything before the UL (job header div(s))
+	let headerHeight = 0
+	for (const ch of Array.from(entry.children) as HTMLElement[]) {
+		if (ch === ul) break
+		headerHeight += totalHeight(ch)
+	}
+
+	// Add UL's own margin-top (not included in bullet measurements)
+	const ulStyle = window.getComputedStyle(ul)
+	headerHeight += parseFloat(ulStyle.marginTop) || 0
+
+	if (headerHeight >= remaining) return null
+
+	// Scan bullets to find how many fit after the header
+	let usedInEntry = headerHeight
+	let bulletSplitIndex = -1
+	for (let i = 0; i < bullets.length; i++) {
+		const h = totalHeight(bullets[i])
+		if (usedInEntry + h > remaining) {
+			bulletSplitIndex = i
+			break
+		}
+		usedInEntry += h
+	}
+
+	// Need at least 1 bullet to fit (don't orphan a job header without bullets)
+	if (bulletSplitIndex < 1) return null
+
+	return { bulletSplitIndex, usedHeight: usedInEntry }
+}
+
 function calculatePageBreaks(doc: Document) {
 	const resume = doc.querySelector('.resume') as HTMLElement
 	if (!resume) return
@@ -101,12 +150,30 @@ function calculatePageBreaks(doc: Document) {
 		const originalId = el.getAttribute('data-section-split')
 		const original = resume.querySelector(`[data-section-id="${originalId}"]`)
 		if (original) {
-			while (el.firstChild) original.appendChild(el.firstChild)
+			while (el.firstChild) {
+				const child = el.firstChild as HTMLElement
+				// If this is a bullet continuation (no header, just UL), merge bullets
+				// back into the original entry's UL
+				if (child.hasAttribute?.('data-bullet-continuation')) {
+					const origEntryId = child.getAttribute('data-bullet-continuation')
+					const origEntry = original.querySelector(
+						`[data-experience-id="${origEntryId}"], [data-education-id="${origEntryId}"]`
+					)
+					const origUl = origEntry?.querySelector('ul')
+					const contUl = child.querySelector('ul')
+					if (origUl && contUl) {
+						while (contUl.firstChild) origUl.appendChild(contUl.firstChild)
+						child.remove()
+						continue
+					}
+				}
+				original.appendChild(child)
+			}
 		}
 		el.remove()
 	})
 
-	const CONTENT_HEIGHT = PAGE_HEIGHT - 2 * PAGE_PADDING // 960px
+	const CONTENT_HEIGHT = PAGE_HEIGHT - 2 * PAGE_PADDING - SAFETY_BUFFER // 940px
 
 	let currentPageUsed = 0
 	const children = Array.from(resume.children) as HTMLElement[]
@@ -135,24 +202,85 @@ function calculatePageBreaks(doc: Document) {
 				usedInSection += itemHeight
 			}
 
-			if (splitIndex > 0) {
+			// Try bullet-level split within the overflow entry
+			let bulletSplit: { bulletSplitIndex: number; usedHeight: number } | null = null
+			if (splitIndex >= 1 && splitIndex < sectionChildren.length) {
+				const spaceForEntry = remainingOnPage - usedInSection
+				bulletSplit = trySplitEntry(sectionChildren[splitIndex], spaceForEntry)
+			}
+
+			// Determine what we can keep on the current page:
+			// - Full entries before the split point (splitIndex > 1)
+			// - Partial overflow entry via bullet split
+			const hasFullEntries = splitIndex > 1
+			const hasPartialEntry = bulletSplit !== null
+
+			if (hasFullEntries || hasPartialEntry) {
 				// Create a continuation section for items that go to the next page
 				const continuation = child.cloneNode(false) as HTMLElement
 				const sectionId = child.getAttribute('data-section-id') || ''
 				continuation.removeAttribute('data-section-id')
 				continuation.setAttribute('data-section-split', sectionId)
 
-				// Move overflow items into the continuation
+				if (hasPartialEntry) {
+					// Split the overflow entry's UL at the bullet boundary
+					const overflowEntry = sectionChildren[splitIndex]
+					const ul = overflowEntry.querySelector('ul')!
+					const allBullets = Array.from(ul.children) as HTMLElement[]
+
+					// Create continuation UL with overflow bullets
+					const contUl = ul.cloneNode(false) as HTMLElement
+					for (let i = bulletSplit!.bulletSplitIndex; i < allBullets.length; i++) {
+						contUl.appendChild(allBullets[i])
+					}
+
+					// Wrap continuation bullets in an entry-like div (no job header repeated)
+					const contEntry = overflowEntry.cloneNode(false) as HTMLElement
+					// Mark as bullet continuation so cleanup can merge bullets back
+					const entryId = overflowEntry.getAttribute('data-experience-id')
+						|| overflowEntry.getAttribute('data-education-id') || ''
+					contEntry.setAttribute('data-bullet-continuation', entryId)
+					contEntry.appendChild(contUl)
+					continuation.appendChild(contEntry)
+
+					// Move all entries AFTER the split one into the continuation
+					for (let i = splitIndex + 1; i < sectionChildren.length; i++) {
+						continuation.appendChild(sectionChildren[i])
+					}
+
+					// Gap height = remaining space after header + fitting bullets
+					const gap = createPageGap(doc, remainingOnPage - usedInSection - bulletSplit!.usedHeight)
+					resume.insertBefore(gap, child.nextSibling)
+					resume.insertBefore(continuation, gap.nextSibling)
+				} else {
+					// No bullet split — move full entries from splitIndex onward
+					for (let i = splitIndex; i < sectionChildren.length; i++) {
+						continuation.appendChild(sectionChildren[i])
+					}
+
+					// Insert page gap + continuation after the original section
+					const gap = createPageGap(doc, remainingOnPage - usedInSection)
+					resume.insertBefore(gap, child.nextSibling)
+					resume.insertBefore(continuation, gap.nextSibling)
+				}
+
+				// Track page usage: continuation starts a new page
+				currentPageUsed = totalHeight(continuation)
+			} else if (splitIndex > 0) {
+				// Some full entries fit but no bullet split possible
+				const continuation = child.cloneNode(false) as HTMLElement
+				const sectionId = child.getAttribute('data-section-id') || ''
+				continuation.removeAttribute('data-section-id')
+				continuation.setAttribute('data-section-split', sectionId)
+
 				for (let i = splitIndex; i < sectionChildren.length; i++) {
 					continuation.appendChild(sectionChildren[i])
 				}
 
-				// Insert page gap + continuation after the original section
 				const gap = createPageGap(doc, remainingOnPage - usedInSection)
 				resume.insertBefore(gap, child.nextSibling)
 				resume.insertBefore(continuation, gap.nextSibling)
 
-				// Track page usage: continuation starts a new page
 				currentPageUsed = totalHeight(continuation)
 			} else {
 				// Nothing fits on current page — push whole section to next page

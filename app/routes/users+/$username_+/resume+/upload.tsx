@@ -22,8 +22,9 @@ import { Button } from '~/components/ui/button.tsx'
 import * as deleteFileRoute from '~/routes/resources+/delete-file.tsx'
 import { authenticator, requireUserId } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
-import { parseResumeWithOpenAI } from '~/utils/openai-resume-parser.server.ts'
+import { parseResumeWithOpenAI, ResumeParseError } from '~/utils/openai-resume-parser.server.ts'
 import { bytesToMB, invariant } from '~/utils/misc.ts'
+import { trackError } from '~/lib/analytics.server.ts'
 
 const MAX_SIZE = 1024 * 1024 * 10 // 10MB
 
@@ -253,11 +254,24 @@ export async function action({ request }: DataFunctionArgs) {
 		return redirect('../edit')
 	} catch (error: any) {
 		console.error('Resume parsing error:', error)
+
+		const userMessage = error instanceof ResumeParseError
+			? error.userMessage
+			: 'Failed to parse resume. Please try again or contact support.'
+
+		trackError(
+			error.message,
+			'resume_upload',
+			userId,
+			error.stack,
+			request,
+		)
+
 		return json(
 			{
 				status: 'error',
 				submission,
-				error: error.message || 'Failed to parse resume. Please try again.',
+				error: userMessage,
 			} as const,
 			{ status: 500 },
 		)

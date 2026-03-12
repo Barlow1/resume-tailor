@@ -55,7 +55,10 @@ function editableAttrs(
 }
 
 function sectionHeader(title: string, accentColor: string, fontFamily: string, ts: (n: number) => number, options: TemplateOptions, headerField: string, placeholder: string): string {
-	return `<div style="font-size: ${ts(12)}px; font-weight: 700; color: ${accentColor}; text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 2px solid ${accentColor}; padding-bottom: 4px; margin-bottom: 10px; font-family: ${fontFamily};" ${editableAttrs(options, headerField, placeholder)}>${escapeHtml(title)}</div>`
+	const gripDots = options.editable
+		? `<span class="section-grip" contenteditable="false" style="display: inline-flex; flex-direction: column; gap: 2px; margin-right: 6px; vertical-align: middle; cursor: grab; opacity: 0; transition: opacity 150ms;" aria-hidden="true"><svg width="8" height="14" viewBox="0 0 8 14" fill="${accentColor}" opacity="0.4"><circle cx="2" cy="2" r="1.2"/><circle cx="6" cy="2" r="1.2"/><circle cx="2" cy="7" r="1.2"/><circle cx="6" cy="7" r="1.2"/><circle cx="2" cy="12" r="1.2"/><circle cx="6" cy="12" r="1.2"/></svg></span>`
+		: ''
+	return `<div style="font-size: ${ts(12)}px; font-weight: 700; color: ${accentColor}; text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 2px solid ${accentColor}; padding-bottom: 4px; margin-bottom: 10px; font-family: ${fontFamily}; display: flex; align-items: center;" ${editableAttrs(options, headerField, placeholder)}>${gripDots}<span style="flex: 1;">${escapeHtml(title)}</span></div>`
 }
 
 function generateContactLine(formData: ResumeData, fontFamily: string, ts: (n: number) => number, options: TemplateOptions): string {
@@ -220,6 +223,16 @@ function getEditableCss(): string {
 		.contact-sep {
 			pointer-events: none;
 			user-select: none;
+		}
+		[data-section-id]:hover .section-grip {
+			opacity: 1 !important;
+		}
+		[data-section-id] {
+			transition: background 150ms;
+		}
+		[data-section-id]:hover {
+			background: rgba(107, 69, 255, 0.02);
+			border-radius: 4px;
 		}`
 }
 
