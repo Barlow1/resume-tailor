@@ -625,28 +625,6 @@ export function trackSubscriptionCreated(
 }
 
 /**
- * @deprecated Use trackSubscriptionCanceledWithContext for full churn analysis
- */
-export function trackSubscriptionCanceled(
-	userId: string,
-	plan: 'weekly' | 'monthly',
-	daysActive: number,
-	reason?: string,
-): void {
-	// Forward to the new function with default values
-	trackSubscriptionCanceledWithContext(
-		userId,
-		plan,
-		daysActive,
-		0, // lifetimeAiOps - unknown in legacy calls
-		0, // lifetimeDownloads - unknown in legacy calls
-		false, // cancelAtPeriodEnd - unknown in legacy calls
-		reason,
-		undefined, // feedback
-	)
-}
-
-/**
  * Track onboarding path selected event
  */
 export function trackOnboardingPathSelected(
@@ -727,73 +705,6 @@ export function trackOutreachGenerated(
 		},
 		{ userId, request },
 	)
-}
-
-// ============================================================================
-// RETENTION EVENT HELPERS (PMF-critical)
-// ============================================================================
-
-/**
- * Track when user edits AI-generated content after accepting it
- * Quality signal: high edit % = AI didn't help much
- */
-export function trackAiOutputEdited(
-	userId: string,
-	experienceId: string,
-	editType: 'tailor' | 'generate',
-	timeSinceAcceptMs: number,
-	originalContent: string,
-	editedContent: string,
-	resumeId?: string,
-	request?: Request,
-): void {
-	// Calculate change percentage using simple diff
-	const originalLength = originalContent.length
-	const editedLength = editedContent.length
-	const changedPercentage = calculateChangePercentage(originalContent, editedContent)
-
-	trackServerEvent(
-		'ai_output_edited',
-		{
-			experience_id: experienceId,
-			edit_type: editType,
-			time_since_accept_ms: timeSinceAcceptMs,
-			original_length: originalLength,
-			edited_length: editedLength,
-			changed_percentage: changedPercentage,
-			resume_id: resumeId,
-		},
-		{ userId, request },
-	)
-}
-
-/**
- * Calculate percentage of content that changed
- * Uses simple length-based heuristic + character diff
- */
-function calculateChangePercentage(original: string, edited: string): number {
-	if (original === edited) return 0
-	if (original.length === 0) return 100
-
-	// Simple approach: compare character-by-character matches
-	const maxLen = Math.max(original.length, edited.length)
-	let matches = 0
-
-	const originalLower = original.toLowerCase()
-	const editedLower = edited.toLowerCase()
-
-	// Count matching characters at same positions
-	const minLen = Math.min(original.length, edited.length)
-	for (let i = 0; i < minLen; i++) {
-		if (originalLower[i] === editedLower[i]) {
-			matches++
-		}
-	}
-
-	const similarity = matches / maxLen
-	const changePercentage = Math.round((1 - similarity) * 100)
-
-	return Math.min(100, Math.max(0, changePercentage))
 }
 
 /**
