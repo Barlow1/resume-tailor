@@ -207,6 +207,12 @@ export function Pricing({
 													plan_tier: frequency.value,
 												})
 											}
+											// Track checkout_started event (GA4)
+											trackEvent('checkout_started', {
+												plan: frequency.value,
+												is_trial: true,
+												trigger,
+											})
 											// Track checkout_started event (PostHog)
 											track('checkout_started', {
 												plan: frequency.value,

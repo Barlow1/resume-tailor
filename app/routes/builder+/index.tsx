@@ -47,6 +47,8 @@ import {
 	LogOut,
 	User as UserIcon,
 	CreditCard,
+	Trash2,
+	Undo2,
 } from 'lucide-react'
 import { SubscribeModal } from '~/components/subscribe-modal.tsx'
 import { getStripeSubscription, getUserId } from '~/utils/auth.server.ts'
@@ -90,6 +92,7 @@ import { track } from '~/lib/analytics.client.ts'
 import { toast } from '~/components/ui/use-toast.ts'
 import { useOnboardingFlow } from '~/hooks/use-onboarding-flow.ts'
 import { JobPasteModal } from '~/components/job-paste-modal.tsx'
+import { TailorPanel } from '~/components/tailor-panel.tsx'
 
 function base64ToUint8Array(base64: string): Uint8Array {
 	return Uint8Array.from(atob(base64), c => c.charCodeAt(0))
@@ -779,7 +782,13 @@ export default function ResumeBuilder() {
 	const [cmdSelected, setCmdSelected] = useState(0)
 	const [onboardingDismissed, setOnboardingDismissed] = useState(false)
 	const [onboardingCollapsed, setOnboardingCollapsed] = useState(false)
+	const [coachStep, setCoachStep] = useState<number | null>(null)
+	const customizeBtnRef = useRef<HTMLButtonElement>(null)
+	const tailorBtnRef = useRef<HTMLButtonElement>(null)
 	const [editingResumeId, setEditingResumeId] = useState<string | null>(null)
+	const [tailorPanelOpen, setTailorPanelOpen] = useState(false)
+	const [hasTailorSnapshot, setHasTailorSnapshot] = useState(false)
+	const tailorSnapshotFetcher = useFetcher<{ success?: boolean; snapshot?: string; hasSnapshot?: boolean; error?: string }>()
 	const [hoveredElement, setHoveredElement] =
 		useState<HoveredElementInfo | null>(null)
 	const iframeComponentRef = useRef<ResumeIframeHandle>(null)
@@ -879,6 +888,79 @@ export default function ResumeBuilder() {
 		}
 	}, [fetcher.state, fetcher.data])
 
+	/* ═══ TAILOR PANEL ═══ */
+	// Check for existing snapshot on load
+	useEffect(() => {
+		if (!formData.id || !userId) return
+		const fd = new FormData()
+		fd.append('intent', 'check')
+		fd.append('resumeId', formData.id)
+		tailorSnapshotFetcher.submit(fd, {
+			method: 'POST',
+			action: '/resources/tailor-snapshot',
+		})
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [formData.id, userId])
+
+	// Track snapshot check/undo response
+	useEffect(() => {
+		if (tailorSnapshotFetcher.state !== 'idle' || !tailorSnapshotFetcher.data) return
+		if ('hasSnapshot' in tailorSnapshotFetcher.data) {
+			setHasTailorSnapshot(!!tailorSnapshotFetcher.data.hasSnapshot)
+		}
+		if (tailorSnapshotFetcher.data.snapshot) {
+			// Undo was performed — restore formData
+			try {
+				const restored = JSON.parse(tailorSnapshotFetcher.data.snapshot) as typeof formData
+				setFormData(restored)
+				debouncedSave(restored as ResumeData)
+				iframeComponentRef.current?.forceRerender()
+				setHasTailorSnapshot(false)
+			} catch {
+				console.error('Failed to parse tailor snapshot')
+			}
+		}
+	}, [tailorSnapshotFetcher.state, tailorSnapshotFetcher.data])
+
+	const handleTailorApply = useCallback(
+		(mergedData: ResumeData) => {
+			if (!formData.id) return
+
+			// 1. Save snapshot of current state
+			const snapshotFd = new FormData()
+			snapshotFd.append('intent', 'save')
+			snapshotFd.append('resumeId', formData.id)
+			snapshotFd.append('snapshotData', JSON.stringify(formData))
+			tailorSnapshotFetcher.submit(snapshotFd, {
+				method: 'POST',
+				action: '/resources/tailor-snapshot',
+			})
+
+			// 2. Apply merged data
+			setFormData(mergedData as typeof formData)
+			debouncedSave(mergedData)
+			iframeComponentRef.current?.forceRerender()
+
+			// 3. Close panel, mark snapshot exists
+			setTailorPanelOpen(false)
+			setHasTailorSnapshot(true)
+		},
+		[formData, debouncedSave, tailorSnapshotFetcher],
+	)
+
+	const handleTailorUndo = useCallback(() => {
+		if (!formData.id) return
+		if (!confirm('Undo all tailoring changes? This will revert to your pre-tailoring resume. Any manual edits since tailoring will also be reverted.')) return
+
+		const fd = new FormData()
+		fd.append('intent', 'undo')
+		fd.append('resumeId', formData.id)
+		tailorSnapshotFetcher.submit(fd, {
+			method: 'POST',
+			action: '/resources/tailor-snapshot',
+		})
+	}, [formData.id, tailorSnapshotFetcher])
+
 	/* ═══ RESUME SWITCHING ═══ */
 	const resumeSwitchFetcher = useFetcher()
 	const handleResumeSwitch = useCallback(
@@ -891,6 +973,22 @@ export default function ResumeBuilder() {
 			)
 		},
 		[formData.id, resumeSwitchFetcher, debouncedSave],
+	)
+
+	const deleteFetcher = useFetcher()
+	const handleDeleteResume = useCallback(
+		(e: React.MouseEvent, resumeId: string) => {
+			e.stopPropagation()
+			if (resumeId === formData.id) return
+			if (!confirm('Are you sure? This cannot be undone.')) return
+			const fd = new FormData()
+			fd.append('resumeId', resumeId)
+			deleteFetcher.submit(fd, {
+				method: 'POST',
+				action: '/resources/delete-resume',
+			})
+		},
+		[formData.id, deleteFetcher],
 	)
 
 	useEffect(() => {
@@ -1605,6 +1703,53 @@ export default function ResumeBuilder() {
 		onJobSelect: handleJobChange as (job: Jsonify<Job>) => void,
 	})
 
+	/* ═══ COACH MARKS (first-visit feature discovery) ═══ */
+	useEffect(() => {
+		if (typeof window === 'undefined') return
+		const key = 'builder_coach_dismissed'
+		if (localStorage.getItem(key)) return
+		// Delay slightly so layout settles
+		const t = setTimeout(() => setCoachStep(0), 800)
+		return () => clearTimeout(t)
+	}, [])
+
+	const coachSteps = useMemo(
+		() => [
+			{
+				title: 'Reorder sections',
+				body: 'Drag the grip dots on section headers to rearrange your resume layout, or hover for more options.',
+				anchor: 'iframe' as const,
+			},
+			{
+				title: 'Customize appearance',
+				body: 'Change fonts, colors, text size, and layout templates from the Customize panel.',
+				anchor: 'customize' as const,
+			},
+			{
+				title: 'AI-powered tailoring',
+				body: 'Match your resume to a specific job description with one click.',
+				anchor: 'tailor' as const,
+			},
+		],
+		[],
+	)
+
+	const dismissCoach = useCallback(() => {
+		setCoachStep(null)
+		localStorage.setItem('builder_coach_dismissed', '1')
+	}, [])
+
+	const advanceCoach = useCallback(() => {
+		setCoachStep(prev => {
+			if (prev === null) return null
+			if (prev >= coachSteps.length - 1) {
+				localStorage.setItem('builder_coach_dismissed', '1')
+				return null
+			}
+			return prev + 1
+		})
+	}, [coachSteps.length])
+
 	/* ═══ PDF DOWNLOAD ═══ */
 	const handlePDFDownloadRequested = useCallback(
 		({
@@ -2059,11 +2204,20 @@ export default function ResumeBuilder() {
 			{/* MODALS */}
 			<SubscribeModal
 				isOpen={showSubscribeModal}
-				onClose={() => setShowSubscribeModal(false)}
+				onClose={() => {
+					setShowSubscribeModal(false)
+				}}
 				successUrl="/builder"
 				redirectTo="/builder"
 				cancelUrl="/builder"
 				trigger={subscribeModalTrigger}
+			/>
+			<TailorPanel
+				open={tailorPanelOpen}
+				onClose={() => setTailorPanelOpen(false)}
+				formData={formData}
+				onApply={handleTailorApply}
+				theme={c}
 			/>
 			<AIAssistantModal
 				isOpen={showAIModal}
@@ -2565,21 +2719,23 @@ export default function ResumeBuilder() {
 							: ''}
 					</span>
 					<button
+						ref={customizeBtnRef}
 						onClick={() => setShowTemplateGallery(true)}
 						style={{
 							display: 'flex',
 							alignItems: 'center',
 							gap: 6,
-							padding: '5px 10px',
+							padding: '6px 14px',
 							borderRadius: 5,
-							border: `1px solid ${c.border}`,
-							background: 'transparent',
-							color: c.muted,
-							fontSize: 12,
+							border: `1px solid ${BRAND}40`,
+							background: `${BRAND}08`,
+							color: c.brandText,
+							fontSize: 13,
+							fontWeight: 500,
 							cursor: 'pointer',
 						}}
 					>
-						<Palette size={14} color={c.dim} strokeWidth={1.75} />
+						<Palette size={14} strokeWidth={2} />
 						Customize
 					</button>
 					<button
@@ -2633,6 +2789,46 @@ export default function ResumeBuilder() {
 						>
 							{scores.overall}
 						</span>
+					</button>
+					{hasTailorSnapshot && (
+						<button
+							onClick={handleTailorUndo}
+							style={{
+								display: 'flex',
+								alignItems: 'center',
+								gap: 5,
+								padding: '5px 10px',
+								borderRadius: 5,
+								border: `1px solid ${c.border}`,
+								background: 'transparent',
+								color: c.muted,
+								fontSize: 12,
+								cursor: 'pointer',
+							}}
+						>
+							<Undo2 size={13} strokeWidth={1.75} />
+							Undo tailoring
+						</button>
+					)}
+					<button
+						ref={tailorBtnRef}
+						onClick={() => setTailorPanelOpen(true)}
+						style={{
+							display: 'flex',
+							alignItems: 'center',
+							gap: 6,
+							padding: '6px 14px',
+							borderRadius: 5,
+							border: `1px solid ${BRAND}40`,
+							background: `${BRAND}10`,
+							color: c.brandText,
+							fontSize: 13,
+							fontWeight: 500,
+							cursor: 'pointer',
+						}}
+					>
+						<Sparkles size={14} strokeWidth={2} />
+						Tailor
 					</button>
 					<button
 						onClick={handleClickDownloadPDF}
@@ -2903,6 +3099,7 @@ export default function ResumeBuilder() {
 								<div
 									key={r.id}
 									onClick={() => handleResumeSwitch(r.id!)}
+									className="group/resume"
 									style={{
 										display: 'flex',
 										alignItems: 'center',
@@ -2916,6 +3113,7 @@ export default function ResumeBuilder() {
 												? `2px solid ${BRAND}`
 												: '2px solid transparent',
 										transition: 'all 150ms',
+										position: 'relative',
 									}}
 									onMouseEnter={e => {
 										if (formData.id !== r.id)
@@ -3020,6 +3218,33 @@ export default function ResumeBuilder() {
 											</div>
 										)}
 									</div>
+									{formData.id !== r.id && (
+										<button
+											type="button"
+											onClick={e => handleDeleteResume(e, r.id!)}
+											aria-label="Delete resume"
+											className="opacity-0 group-hover/resume:opacity-100"
+											style={{
+												flexShrink: 0,
+												width: 26,
+												height: 26,
+												borderRadius: 5,
+												border: 'none',
+												background: 'transparent',
+												cursor: 'pointer',
+												display: 'flex',
+												alignItems: 'center',
+												justifyContent: 'center',
+												color: c.dim,
+												transition: 'opacity 150ms, color 150ms, background 150ms',
+												padding: 0,
+											}}
+											onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ef4444'; (e.currentTarget as HTMLElement).style.background = '#fef2f210' }}
+											onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = c.dim; (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+										>
+											<Trash2 size={13} strokeWidth={2} />
+										</button>
+									)}
 								</div>
 							))}
 							{resumes.length > 3 && (
@@ -4458,6 +4683,94 @@ export default function ResumeBuilder() {
 					</div>
 				)}
 			</SlideOver>
+
+			{/* ═══ COACH MARKS ═══ */}
+			{coachStep !== null && (() => {
+				const step = coachSteps[coachStep]
+				if (!step) return null
+				let anchorRect: { top: number; left: number; width: number; height: number } | null = null
+				if (step.anchor === 'customize' && customizeBtnRef.current) {
+					anchorRect = customizeBtnRef.current.getBoundingClientRect()
+				} else if (step.anchor === 'tailor' && tailorBtnRef.current) {
+					anchorRect = tailorBtnRef.current.getBoundingClientRect()
+				} else if (step.anchor === 'iframe') {
+					// Point at the resume area (upper-left of main content)
+					anchorRect = { top: 120, left: window.innerWidth / 2 - 100, width: 200, height: 0 }
+				}
+				if (!anchorRect) return null
+				const tooltipTop = anchorRect.top + anchorRect.height + 12
+				const tooltipLeft = Math.max(16, Math.min(anchorRect.left + anchorRect.width / 2 - 140, window.innerWidth - 296))
+				return (
+					<>
+						<div
+							onClick={dismissCoach}
+							style={{
+								position: 'fixed',
+								inset: 0,
+								zIndex: 9998,
+								background: 'rgba(0,0,0,0.18)',
+							}}
+						/>
+						<div
+							style={{
+								position: 'fixed',
+								top: tooltipTop,
+								left: tooltipLeft,
+								zIndex: 9999,
+								width: 280,
+								background: c.bgEl,
+								borderRadius: 10,
+								border: `1px solid ${BRAND}40`,
+								boxShadow: `0 8px 32px rgba(0,0,0,0.2), 0 0 0 1px ${BRAND}20`,
+								padding: '16px 18px 14px',
+							}}
+						>
+							<div style={{ fontSize: 13, fontWeight: 600, color: c.brandText, marginBottom: 6 }}>
+								{step.title}
+							</div>
+							<div style={{ fontSize: 12, color: c.text, lineHeight: 1.5, marginBottom: 14 }}>
+								{step.body}
+							</div>
+							<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+								<span style={{ fontSize: 11, color: c.dim }}>
+									{coachStep + 1} of {coachSteps.length}
+								</span>
+								<div style={{ display: 'flex', gap: 8 }}>
+									<button
+										onClick={dismissCoach}
+										style={{
+											padding: '4px 10px',
+											borderRadius: 4,
+											border: `1px solid ${c.border}`,
+											background: 'transparent',
+											color: c.muted,
+											fontSize: 12,
+											cursor: 'pointer',
+										}}
+									>
+										Skip
+									</button>
+									<button
+										onClick={advanceCoach}
+										style={{
+											padding: '4px 12px',
+											borderRadius: 4,
+											border: 'none',
+											background: BRAND,
+											color: '#fff',
+											fontSize: 12,
+											fontWeight: 500,
+											cursor: 'pointer',
+										}}
+									>
+										{coachStep < coachSteps.length - 1 ? 'Next' : 'Got it'}
+									</button>
+								</div>
+							</div>
+						</div>
+					</>
+				)
+			})()}
 
 			{/* ═══ ONBOARDING WIDGET ═══ */}
 			{!onboarding.isComplete && !onboardingDismissed && (
