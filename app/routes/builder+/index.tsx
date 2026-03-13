@@ -736,7 +736,7 @@ export default function ResumeBuilder() {
 	const [scorePanel, setScorePanel] = useState(true)
 	const [activeSection, setActiveSection] = useState('experience')
 	const [showSubscribeModal, setShowSubscribeModal] = useState(false)
-	const [paywallTrigger, setPaywallTrigger] = useState<'ai_limit' | 'download_limit' | undefined>(undefined)
+	const [subscribeModalTrigger, setSubscribeModalTrigger] = useState<'download_limit' | 'ai_limit'>('download_limit')
 	const [showCreateJob, setShowCreateJob] = useState(false)
 	const [showCreationModal, setShowCreationModal] = useState(!formData.id)
 	const [showAIModal, setShowAIModal] = useState(false)
@@ -1777,7 +1777,7 @@ export default function ResumeBuilder() {
 			!subscription?.active &&
 			(gettingStartedProgress?.downloadCount ?? 0) >= MAX_FREE_DOWNLOADS
 		) {
-			setPaywallTrigger('download_limit')
+			setSubscribeModalTrigger('download_limit')
 			setShowSubscribeModal(true)
 			track('paywall_shown', {
 				trigger: 'download_limit',
@@ -2206,12 +2206,11 @@ export default function ResumeBuilder() {
 				isOpen={showSubscribeModal}
 				onClose={() => {
 					setShowSubscribeModal(false)
-					setPaywallTrigger(undefined)
 				}}
 				successUrl="/builder"
 				redirectTo="/builder"
 				cancelUrl="/builder"
-				trigger={paywallTrigger}
+				trigger={subscribeModalTrigger}
 			/>
 			<TailorPanel
 				open={tailorPanelOpen}
@@ -2238,7 +2237,7 @@ export default function ResumeBuilder() {
 				subscription={subscription}
 				gettingStartedProgress={gettingStartedProgress}
 				setShowSubscribeModal={(show: boolean) => {
-					if (show) setPaywallTrigger('ai_limit')
+					if (show) setSubscribeModalTrigger('ai_limit')
 					setShowSubscribeModal(show)
 				}}
 				onTailorClick={onboarding.handleTailorComplete}

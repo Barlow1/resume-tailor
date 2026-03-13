@@ -3,7 +3,6 @@ import { Fragment } from 'react'
 import { Pricing } from '../routes/resources+/pricing.tsx'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { trackPaywallDismissed } from '~/lib/analytics.client.ts'
-import type { PaywallTrigger } from '~/lib/analytics.types.ts'
 
 interface SubscribeModalProps {
 	isOpen: boolean
@@ -11,7 +10,7 @@ interface SubscribeModalProps {
 	successUrl: string
 	cancelUrl: string
 	redirectTo?: string
-	trigger?: PaywallTrigger
+	trigger?: 'download_limit' | 'ai_limit' | 'analysis_limit' | 'outreach_limit'
 }
 
 export function SubscribeModal({ isOpen, onClose, successUrl, cancelUrl, redirectTo, trigger }: SubscribeModalProps) {

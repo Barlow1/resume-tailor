@@ -210,6 +210,15 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
 		const planTier = isWeekly ? 'weekly' : 'monthly'
 		const priceUsd = isWeekly ? 4.99 : 15.0
 
+		// Check if this is the first payment (trial conversion) or a renewal
+		const existingPayments = await prisma.conversionEvent.count({
+			where: {
+				userId: subscription.ownerId,
+				eventType: 'purchase_completed',
+			},
+		})
+		const isFirstPayment = existingPayments === 0
+
 		// Create conversion event (tracked: false by default)
 		await prisma.conversionEvent.create({
 			data: {
@@ -228,9 +237,10 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
 			planTier as 'weekly' | 'monthly',
 			priceUsd,
 			'USD',
+			isFirstPayment,
 		)
 
-		console.log(`Created conversion event for user ${subscription.ownerId}`)
+		console.log(`Created ${isFirstPayment ? 'first payment (trial conversion)' : 'renewal'} event for user ${subscription.ownerId}`)
 	} catch (e) {
 		console.error('Error handling invoice.payment_succeeded', e)
 		throw e

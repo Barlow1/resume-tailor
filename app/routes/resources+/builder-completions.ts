@@ -226,6 +226,7 @@ export async function action({ request }: DataFunctionArgs) {
 					resumeData: parsedResumeForBullet,
 					user,
 					extractedKeywords: parsedKeywords,
+					diagnosticContext: parsedDiagnostic,
 				}),
 				await prisma.gettingStartedProgress.upsert({
 					where: { ownerId: userId },

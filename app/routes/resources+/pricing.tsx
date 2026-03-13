@@ -97,12 +97,12 @@ export function Pricing({
 	successUrl,
 	cancelUrl,
 	redirectTo,
-	trigger,
+	trigger = 'pricing_page',
 }: {
 	successUrl: string
 	cancelUrl: string
 	redirectTo?: string | undefined
-	trigger?: 'ai_limit' | 'download_limit' | 'analysis_limit' | 'outreach_limit' | 'direct'
+	trigger?: 'pricing_page' | 'download_limit' | 'ai_limit' | 'analysis_limit' | 'outreach_limit' | 'direct'
 }) {
 	const [frequency, setFrequency] = useState(frequencies[0])
 	const rootData = useRouteLoaderData<typeof rootLoader>('root')
@@ -211,13 +211,13 @@ export function Pricing({
 											trackEvent('checkout_started', {
 												plan: frequency.value,
 												is_trial: true,
-												trigger: trigger || 'direct',
+												trigger,
 											})
 											// Track checkout_started event (PostHog)
 											track('checkout_started', {
 												plan: frequency.value,
 												is_trial: true,
-												trigger: trigger || 'direct',
+												trigger,
 											})
 										}}
 										className={cn(

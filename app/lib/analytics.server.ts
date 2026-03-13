@@ -589,6 +589,7 @@ export function trackSubscriptionCreated(
 	plan: 'weekly' | 'monthly',
 	value: number,
 	currency: string = 'USD',
+	isFirstPayment: boolean = false,
 ): void {
 	trackServerEvent(
 		'subscription_created',
@@ -597,9 +598,24 @@ export function trackSubscriptionCreated(
 			value,
 			currency,
 			user_id: userId,
+			is_first_payment: isFirstPayment,
 		},
 		{ userId },
 	)
+
+	// Fire a dedicated event for trial-to-paid conversion (first payment only)
+	if (isFirstPayment) {
+		trackServerEvent(
+			'trial_converted',
+			{
+				plan,
+				value,
+				currency,
+				user_id: userId,
+			},
+			{ userId },
+		)
+	}
 
 	// Update user properties
 	identifyUser(userId, {
