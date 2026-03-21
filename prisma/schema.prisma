@@ -75,6 +75,7 @@ model User {
   builderResumes         BuilderResume[]
   tailoredResumes        TailoredResume[]
   bulletTailorLogs       BulletTailorLog[]
+  applications           Application[]
 }
 
 model Password {
@@ -129,10 +130,12 @@ model Job {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  builderResumes BuilderResume[]
-  scores         ResumeScore[]
-  owner          User?           @relation(fields: [ownerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  ownerId        String?
+  builderResumes       BuilderResume[]
+  scores               ResumeScore[]
+  owner                User?           @relation(fields: [ownerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  ownerId              String?
+  applications         Application[]
+  experienceMatchCache ExperienceMatchCache[]
 }
 
 model Experience {
@@ -271,8 +274,11 @@ model BuilderResume {
   education       BuilderEducation[]
   skills          BuilderSkill[]
   hobbies         BuilderHobby[]
-  headers         BuilderHeaders?
-  scores          ResumeScore[]
+  headers              BuilderHeaders?
+  scores               ResumeScore[]
+  coverLetterDrafts    String?
+  applications         Application[]
+  experienceMatchCache ExperienceMatchCache[]
 
   @@index([userId])
 }
@@ -439,4 +445,44 @@ model BulletTailorLog {
 
   @@index([userId])
   @@index([createdAt])
+}
+
+model Application {
+  id              String    @id @default(cuid())
+  userId          String
+  resumeId        String
+  jobId           String
+  matchLevel      String
+  matchSummary    String?
+  status          String    @default("applied")
+  coverLetter     String?
+  appliedAt       DateTime  @default(now())
+  statusUpdatedAt DateTime  @default(now())
+  nextCheckIn     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resume BuilderResume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  job    Job           @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, status])
+  @@index([nextCheckIn])
+}
+
+model ExperienceMatchCache {
+  id         String   @id @default(cuid())
+  resumeId   String
+  jobId      String
+  resumeHash String
+  jobHash    String
+  resultJson String
+  createdAt  DateTime @default(now())
+
+  resume BuilderResume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  job    Job           @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([resumeId, jobId])
+  @@index([resumeId])
 }
