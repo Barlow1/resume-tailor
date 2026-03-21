@@ -82,6 +82,7 @@ import { JobPasteModal } from '~/components/job-paste-modal.tsx'
 import { BuilderNav } from '~/components/builder-nav.tsx'
 import { OnboardingWidget } from '~/components/onboarding-widget.tsx'
 import { TruthPanel } from '~/components/truth-panel.tsx'
+import { CoverLetterPanel } from '~/components/cover-letter-panel.tsx'
 
 function base64ToUint8Array(base64: string): Uint8Array {
 	return Uint8Array.from(atob(base64), c => c.charCodeAt(0))
@@ -613,6 +614,7 @@ export default function ResumeBuilder() {
 	const [sectionOrder, setSectionOrder] = useState(DEFAULT_SECTION_ORDER)
 	const [coverLetterOpen, setCoverLetterOpen] = useState(false)
 	const [coverLetterText, setCoverLetterText] = useState('')
+	const [isGeneratingCoverLetter, setIsGeneratingCoverLetter] = useState(false)
 	const [showTemplateGallery, setShowTemplateGallery] = useState(false)
 	const [showCommandPalette, setShowCommandPalette] = useState(false)
 	const [showAllResumes, setShowAllResumes] = useState(false)
@@ -673,6 +675,52 @@ export default function ResumeBuilder() {
 		document.addEventListener('mousedown', handleClickOutside)
 		return () => document.removeEventListener('mousedown', handleClickOutside)
 	}, [profileOpen])
+
+	/* ═══ COVER LETTER ═══ */
+	const coverLetterFetcher = useFetcher<{ coverLetter: string }>()
+
+	const handleGenerateCoverLetter = useCallback(() => {
+		if (!formData.id || !selectedJob?.id) return
+		setIsGeneratingCoverLetter(true)
+		setCoverLetterOpen(true)
+		coverLetterFetcher.submit(
+			JSON.stringify({ resumeId: formData.id, jobId: selectedJob.id }),
+			{ method: 'POST', action: '/resources/generate-cover-letter', encType: 'application/json' },
+		)
+	}, [formData.id, selectedJob?.id, coverLetterFetcher])
+
+	useEffect(() => {
+		if (coverLetterFetcher.data?.coverLetter) {
+			setCoverLetterText(coverLetterFetcher.data.coverLetter)
+			setIsGeneratingCoverLetter(false)
+		}
+	}, [coverLetterFetcher.data])
+
+	// Load existing draft when opening cover letter panel
+	useEffect(() => {
+		if (coverLetterOpen && selectedJob?.id && !coverLetterText) {
+			if (formData.coverLetterDrafts) {
+				try {
+					const drafts = JSON.parse(formData.coverLetterDrafts) as Record<string, string>
+					if (drafts[selectedJob.id]) {
+						setCoverLetterText(drafts[selectedJob.id])
+					}
+				} catch {
+					// ignore parse errors
+				}
+			}
+		}
+	}, [coverLetterOpen, selectedJob?.id])
+
+	const handleCoverLetterTextChange = useCallback((text: string) => {
+		setCoverLetterText(text)
+		if (selectedJob?.id) {
+			const drafts = formData.coverLetterDrafts ? JSON.parse(formData.coverLetterDrafts) as Record<string, string> : {}
+			drafts[selectedJob.id] = text
+			const newFormData = { ...formData, coverLetterDrafts: JSON.stringify(drafts) }
+			setFormData(newFormData)
+		}
+	}, [selectedJob?.id, formData])
 
 	/* ═══ SAVE ═══ */
 	const fetcher = useFetcher<{ success: boolean; error?: string }>()
@@ -2243,6 +2291,7 @@ export default function ResumeBuilder() {
 							flexDirection: 'column',
 							flexShrink: 0,
 							overflow: 'auto',
+							position: 'relative',
 						}}
 					>
 						<div
@@ -2277,11 +2326,24 @@ export default function ResumeBuilder() {
 							formData={formData}
 							selectedJob={selectedJob ?? null}
 							theme={c}
-							onGenerateCoverLetter={() => setCoverLetterOpen(true)}
+							onGenerateCoverLetter={handleGenerateCoverLetter}
 							onScrollToSection={(section) => setActiveSection(section)}
 							hasCoverLetter={!!coverLetterText}
 							hasTailored={(gettingStartedProgress?.tailorCount ?? 0) > 0}
 						/>
+						{coverLetterOpen && (
+							<CoverLetterPanel
+								open={coverLetterOpen}
+								onClose={() => setCoverLetterOpen(false)}
+								formData={formData}
+								selectedJob={selectedJob ?? null}
+								theme={c}
+								coverLetterText={coverLetterText}
+								onTextChange={handleCoverLetterTextChange}
+								onRegenerate={handleGenerateCoverLetter}
+								isGenerating={isGeneratingCoverLetter}
+							/>
+						)}
 					</div>
 				)}
 			</div>
