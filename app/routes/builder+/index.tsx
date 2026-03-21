@@ -91,6 +91,7 @@ import { toast } from '~/components/ui/use-toast.ts'
 import { useOnboardingFlow } from '~/hooks/use-onboarding-flow.ts'
 import { JobPasteModal } from '~/components/job-paste-modal.tsx'
 import { BuilderNav } from '~/components/builder-nav.tsx'
+import { OnboardingWidget } from '~/components/onboarding-widget.tsx'
 
 function base64ToUint8Array(base64: string): Uint8Array {
 	return Uint8Array.from(atob(base64), c => c.charCodeAt(0))
@@ -4121,187 +4122,25 @@ export default function ResumeBuilder() {
 			</SlideOver>
 
 			{/* ═══ ONBOARDING WIDGET ═══ */}
-			{!onboarding.isComplete && !onboardingDismissed && (
-				<div
-					style={{
-						position: 'fixed',
-						bottom: 20,
-						right: 20,
-						zIndex: 150,
-						width: onboardingCollapsed ? 48 : 280,
-						background: c.bgEl,
-						borderRadius: 12,
-						border: `1px solid ${c.border}`,
-						boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
-						overflow: 'hidden',
-						transition: 'width 200ms',
-					}}
-				>
-					{onboardingCollapsed ? (
-						<div
-							onClick={() => setOnboardingCollapsed(false)}
-							style={{
-								width: 48,
-								height: 48,
-								display: 'flex',
-								alignItems: 'center',
-								justifyContent: 'center',
-								cursor: 'pointer',
-							}}
-						>
-							<Rocket size={20} color={c.brandText} strokeWidth={1.75} />
-						</div>
-					) : (
-						<>
-							<div
-								style={{
-									padding: '12px 16px 8px',
-									display: 'flex',
-									alignItems: 'center',
-									justifyContent: 'space-between',
-								}}
-							>
-								<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-									<Rocket size={16} color={c.brandText} strokeWidth={1.75} />
-									<span
-										style={{ fontSize: 13, fontWeight: 600, color: c.text }}
-									>
-										Getting Started
-									</span>
-								</div>
-								<div style={{ display: 'flex', gap: 2 }}>
-									<button
-										onClick={() => setOnboardingCollapsed(true)}
-										style={{
-											width: 24,
-											height: 24,
-											borderRadius: 4,
-											border: 'none',
-											background: 'transparent',
-											cursor: 'pointer',
-											display: 'flex',
-											alignItems: 'center',
-											justifyContent: 'center',
-										}}
-									>
-										<ChevronDown size={14} color={c.dim} />
-									</button>
-									<button
-										onClick={() => setOnboardingDismissed(true)}
-										style={{
-											width: 24,
-											height: 24,
-											borderRadius: 4,
-											border: 'none',
-											background: 'transparent',
-											cursor: 'pointer',
-											display: 'flex',
-											alignItems: 'center',
-											justifyContent: 'center',
-										}}
-									>
-										<X size={14} color={c.dim} />
-									</button>
-								</div>
-							</div>
-							<div style={{ padding: '4px 16px 16px' }}>
-								{[
-									{
-										id: 'resume',
-										label: 'Create a resume',
-										done: !!(formData.name || formData.role),
-										action: () => scrollToSection('summary'),
-									},
-									{
-										id: 'job',
-										label: 'Add a target job',
-										done: !!selectedJob,
-										action: () => setShowCreateJob(true),
-									},
-									{
-										id: 'tailor',
-										label: 'Tailor with AI',
-										done: (gettingStartedProgress?.tailorCount ?? 0) > 0,
-										action: () => {
-											const firstExp = formData.experiences?.[0]
-											const firstBullet = firstExp?.descriptions?.[0]
-											if (firstExp?.id && firstBullet)
-												handleAIClick(firstExp.id, 0, firstBullet.content || '')
-										},
-									},
-								].map(step => (
-									<div
-										key={step.id}
-										onClick={!step.done ? step.action : undefined}
-										style={{
-											display: 'flex',
-											alignItems: 'center',
-											gap: 10,
-											padding: '8px 0',
-											cursor: step.done ? 'default' : 'pointer',
-											opacity: step.done ? 0.6 : 1,
-										}}
-									>
-										{step.done ? (
-											<CheckCircle2
-												size={16}
-												color={SUCCESS}
-												strokeWidth={1.75}
-											/>
-										) : (
-											<Circle size={16} color={c.dim} strokeWidth={1.75} />
-										)}
-										<span
-											style={{
-												fontSize: 13,
-												color: step.done ? c.dim : c.text,
-												textDecoration: step.done ? 'line-through' : 'none',
-											}}
-										>
-											{step.label}
-										</span>
-										{!step.done && (
-											<ChevronRight
-												size={12}
-												color={c.dim}
-												style={{ marginLeft: 'auto' }}
-											/>
-										)}
-									</div>
-								))}
-								{/* Progress bar */}
-								<div
-									style={{
-										marginTop: 8,
-										height: 3,
-										borderRadius: 2,
-										background: c.border,
-										overflow: 'hidden',
-									}}
-								>
-									<div
-										style={{
-											height: '100%',
-											borderRadius: 2,
-											background: BRAND,
-											transition: 'width 300ms',
-											width: `${
-												([
-													!!(formData.name || formData.role),
-													!!selectedJob,
-													(gettingStartedProgress?.tailorCount ?? 0) > 0,
-												].filter(Boolean).length /
-													3) *
-												100
-											}%`,
-										}}
-									/>
-								</div>
-							</div>
-						</>
-					)}
-				</div>
-			)}
+			<OnboardingWidget
+				isComplete={onboarding.isComplete}
+				dismissed={onboardingDismissed}
+				collapsed={onboardingCollapsed}
+				setDismissed={setOnboardingDismissed}
+				setCollapsed={setOnboardingCollapsed}
+				hasResume={!!(formData.name || formData.role)}
+				hasJob={!!selectedJob}
+				hasTailored={(gettingStartedProgress?.tailorCount ?? 0) > 0}
+				onResumeClick={() => scrollToSection('summary')}
+				onJobClick={() => setShowCreateJob(true)}
+				onTailorClick={() => {
+					const firstExp = formData.experiences?.[0]
+					const firstBullet = firstExp?.descriptions?.[0]
+					if (firstExp?.id && firstBullet)
+						handleAIClick(firstExp.id, 0, firstBullet.content || '')
+				}}
+				c={c}
+			/>
 		</div>
 	)
 }
