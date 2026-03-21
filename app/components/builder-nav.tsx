@@ -44,8 +44,6 @@ export interface BuilderNavProps {
 	saveStatus: 'idle' | 'saving' | 'saved' | 'error'
 	toggleDarkMode: () => void
 	handleClickDownloadPDF: () => void
-	scoresOverall: number
-	getTier: (s: number) => { min: number; max: number; color: string; label: string }
 	user: BuilderNavUser | null | undefined
 	profileOpen: boolean
 	setProfileOpen: (v: boolean) => void
@@ -72,8 +70,6 @@ export function BuilderNav({
 	saveStatus,
 	toggleDarkMode,
 	handleClickDownloadPDF,
-	scoresOverall,
-	getTier,
 	user,
 	profileOpen,
 	setProfileOpen,
@@ -242,9 +238,9 @@ export function BuilderNav({
 				>
 					<Target size={14} color={c.dim} strokeWidth={1.75} />
 					<span
-						style={{ color: getTier(scoresOverall).color, fontWeight: 600 }}
+						style={{ color: BRAND, fontWeight: 600 }}
 					>
-						{scoresOverall}
+						Match
 					</span>
 				</button>
 				<button
