@@ -48,6 +48,7 @@ export type BuilderHeaders = {
 export type BuilderJob = {
 	id?: string | null
 	title?: string | null
+	company?: string | null
 	content?: string | null
 	extractedKeywords?: string | null
 }
@@ -76,6 +77,7 @@ export type ResumeData = {
 	font?: string | null
 	layout?: string | null
 	textSize?: string | null
+	coverLetterDrafts?: string | null
 }
 
 export type VisibleSections = {
@@ -311,6 +313,7 @@ export async function getBuilderResume(id: string) {
 				select: {
 					id: true,
 					title: true,
+					company: true,
 					content: true,
 					extractedKeywords: true,
 				},
@@ -391,6 +394,7 @@ export async function getUserBuilderResumes(
 				select: {
 					id: true,
 					title: true,
+					company: true,
 					content: true,
 					extractedKeywords: true,
 				},
