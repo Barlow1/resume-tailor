@@ -622,6 +622,8 @@ export default function ResumeBuilder() {
 	const [cmdSelected, setCmdSelected] = useState(0)
 	const [onboardingDismissed, setOnboardingDismissed] = useState(false)
 	const [onboardingCollapsed, setOnboardingCollapsed] = useState(false)
+	const [hasReviewedMatch, setHasReviewedMatch] = useState(false)
+	const [hasTakenAction, setHasTakenAction] = useState(false)
 	const [editingResumeId, setEditingResumeId] = useState<string | null>(null)
 	const [hoveredElement, setHoveredElement] =
 		useState<HoveredElementInfo | null>(null)
@@ -1234,7 +1236,8 @@ export default function ResumeBuilder() {
 		serverProgress: gettingStartedProgress,
 		hasResume: !!(formData.name || formData.role),
 		selectedJob: selectedJob as Jsonify<Job> | null | undefined,
-		hasTailored: (gettingStartedProgress?.tailorCount ?? 0) > 0,
+		hasReviewedMatch,
+		hasTakenAction,
 		onJobSelect: handleJobChange as (job: Jsonify<Job>) => void,
 	})
 
@@ -2346,7 +2349,11 @@ export default function ResumeBuilder() {
 							formData={formData}
 							selectedJob={selectedJob ?? null}
 							theme={c}
-							onGenerateCoverLetter={handleGenerateCoverLetter}
+							onGenerateCoverLetter={() => {
+								setHasTakenAction(true)
+								handleGenerateCoverLetter()
+							}}
+							onMatchLoaded={() => setHasReviewedMatch(true)}
 							onScrollToSection={(section) => setActiveSection(section)}
 							hasCoverLetter={!!coverLetterText}
 							hasTailored={(gettingStartedProgress?.tailorCount ?? 0) > 0}
@@ -2667,15 +2674,10 @@ export default function ResumeBuilder() {
 				setCollapsed={setOnboardingCollapsed}
 				hasResume={!!(formData.name || formData.role)}
 				hasJob={!!selectedJob}
-				hasTailored={(gettingStartedProgress?.tailorCount ?? 0) > 0}
+				hasReviewedMatch={hasReviewedMatch}
+				hasTakenAction={hasTakenAction}
 				onResumeClick={() => scrollToSection('summary')}
 				onJobClick={() => setShowCreateJob(true)}
-				onTailorClick={() => {
-					const firstExp = formData.experiences?.[0]
-					const firstBullet = firstExp?.descriptions?.[0]
-					if (firstExp?.id && firstBullet)
-						handleAIClick(firstExp.id, 0, firstBullet.content || '')
-				}}
 				c={c}
 			/>
 		</div>

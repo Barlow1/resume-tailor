@@ -18,10 +18,10 @@ export interface OnboardingWidgetProps {
 	setCollapsed: (v: boolean) => void
 	hasResume: boolean
 	hasJob: boolean
-	hasTailored: boolean
+	hasReviewedMatch: boolean
+	hasTakenAction: boolean
 	onResumeClick: () => void
 	onJobClick: () => void
-	onTailorClick: () => void
 	c: {
 		bgEl: string
 		border: string
@@ -39,10 +39,10 @@ export function OnboardingWidget({
 	setCollapsed,
 	hasResume,
 	hasJob,
-	hasTailored,
+	hasReviewedMatch,
+	hasTakenAction,
 	onResumeClick,
 	onJobClick,
-	onTailorClick,
 	c,
 }: OnboardingWidgetProps) {
 	if (isComplete || dismissed) return null
@@ -51,20 +51,26 @@ export function OnboardingWidget({
 		{
 			id: 'resume',
 			label: 'Create a resume',
-			done: hasResume,
+			done: !!(hasResume),
 			action: onResumeClick,
 		},
 		{
 			id: 'job',
 			label: 'Add a target job',
-			done: hasJob,
+			done: !!hasJob,
 			action: onJobClick,
 		},
 		{
-			id: 'tailor',
-			label: 'Tailor with AI',
-			done: hasTailored,
-			action: onTailorClick,
+			id: 'match',
+			label: 'Review your match',
+			done: hasReviewedMatch,
+			action: undefined,
+		},
+		{
+			id: 'action',
+			label: 'Take your first action',
+			done: hasTakenAction,
+			action: undefined,
 		},
 	]
 
@@ -209,7 +215,7 @@ export function OnboardingWidget({
 									background: BRAND,
 									transition: 'width 300ms',
 									width: `${
-										(steps.filter(s => s.done).length / 3) * 100
+										(steps.filter(s => s.done).length / steps.length) * 100
 									}%`,
 								}}
 							/>

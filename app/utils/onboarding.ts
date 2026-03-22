@@ -11,8 +11,8 @@ import type { Jsonify } from '@remix-run/server-runtime/dist/jsonify.js'
 export type OnboardingStage =
 	| 'needs_resume'
 	| 'needs_job'
-	| 'needs_bullet_tailor'
-	| 'needs_tailor_click'
+	| 'needs_match_review'
+	| 'needs_first_action'
 	| 'complete'
 
 export interface OnboardingState {
@@ -25,21 +25,20 @@ export interface OnboardingState {
  *
  * Flow:
  * 1. needs_resume - User hasn't created/uploaded a resume yet
- * 2. needs_job - Has resume, needs to paste a job description
- * 3. needs_bullet_tailor - Has both, should click sparkle to open AI modal
- * 4. needs_tailor_click - Modal open, should click "Tailor Achievement" button
- * 5. complete - User clicked "Tailor Achievement", free to explore
- *
- * Note: needs_tailor_click is set manually when modal opens, not computed here.
+ * 2. needs_job - Has resume, needs to add a target job
+ * 3. needs_match_review - Has both, needs to review match analysis in Truth Panel
+ * 4. needs_first_action - Has reviewed match, needs to take a first action (e.g. generate cover letter)
+ * 5. complete - User has taken a first action, free to explore
  */
 export function getOnboardingStage(
 	progress: Jsonify<GettingStartedProgress> | null,
 	hasResume: boolean,
 	hasJob: boolean,
-	hasTailored: boolean,
+	hasReviewedMatch: boolean,
+	hasTakenAction: boolean,
 ): OnboardingState {
-	// If user has clicked Tailor Achievement, onboarding is complete
-	if (hasTailored) {
+	// If user has taken a first action, onboarding is complete
+	if (hasTakenAction) {
 		return { stage: 'complete', isComplete: true }
 	}
 
@@ -58,34 +57,27 @@ export function getOnboardingStage(
 		return { stage: 'needs_job', isComplete: false }
 	}
 
-	// Step 3: Need to click sparkle to open AI modal
-	return { stage: 'needs_bullet_tailor', isComplete: false }
+	// Step 3: Need to review match in Truth Panel
+	if (!hasReviewedMatch) {
+		return { stage: 'needs_match_review', isComplete: false }
+	}
+
+	// Step 4: Need to take a first action
+	return { stage: 'needs_first_action', isComplete: false }
 }
 
 /**
- * Get the spotlight target selector for the current stage
+ * Get the spotlight target selector for the current stage.
+ * The new Truth Panel flow does not use spotlight overlays.
  */
-export function getSpotlightTarget(stage: OnboardingStage): string | null {
-	switch (stage) {
-		case 'needs_bullet_tailor':
-			return '[data-first-bullet-ai]'
-		case 'needs_tailor_click':
-			return '[data-tailor-achievement-button]'
-		default:
-			return null
-	}
+export function getSpotlightTarget(_stage: OnboardingStage): string | null {
+	return null
 }
 
 /**
- * Get the hint text for the current spotlight
+ * Get the hint text for the current spotlight.
+ * The new Truth Panel flow does not use spotlight hints.
  */
-export function getSpotlightHint(stage: OnboardingStage): string | null {
-	switch (stage) {
-		case 'needs_bullet_tailor':
-			return 'Click to improve this achievement with AI (~5 seconds)'
-		case 'needs_tailor_click':
-			return 'Click to generate improved versions of this achievement'
-		default:
-			return null
-	}
+export function getSpotlightHint(_stage: OnboardingStage): string | null {
+	return null
 }

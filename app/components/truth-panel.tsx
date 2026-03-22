@@ -26,6 +26,7 @@ interface TruthPanelProps {
 		brandText: string
 	}
 	onGenerateCoverLetter: () => void
+	onMatchLoaded?: () => void
 	onScrollToSection?: (section: string) => void
 	hasCoverLetter?: boolean
 	hasTailored?: boolean
@@ -89,17 +90,20 @@ export function TruthPanel({
 	selectedJob,
 	theme: c,
 	onGenerateCoverLetter,
+	onMatchLoaded,
 	onScrollToSection,
 	hasCoverLetter,
 	hasTailored,
 }: TruthPanelProps) {
 	const fetcher = useFetcher<ExperienceMatch>()
 	const prevJobIdRef = useRef<string | null>(null)
+	const matchLoadedCalledRef = useRef(false)
 
 	useEffect(() => {
 		if (!selectedJob?.id || !formData.id) return
 		if (prevJobIdRef.current === selectedJob.id && fetcher.data) return
 		prevJobIdRef.current = selectedJob.id
+		matchLoadedCalledRef.current = false
 
 		fetcher.submit(
 			JSON.stringify({ resumeId: formData.id, jobId: selectedJob.id }),
@@ -111,6 +115,14 @@ export function TruthPanel({
 		)
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [selectedJob?.id, formData.id])
+
+	// Notify parent when match data has successfully loaded
+	useEffect(() => {
+		if (fetcher.data && !matchLoadedCalledRef.current) {
+			matchLoadedCalledRef.current = true
+			onMatchLoaded?.()
+		}
+	}, [fetcher.data, onMatchLoaded])
 
 	const isLoading = fetcher.state !== 'idle'
 	const isError = !isLoading && fetcher.data === undefined && fetcher.state === 'idle' && prevJobIdRef.current !== null && selectedJob !== null
