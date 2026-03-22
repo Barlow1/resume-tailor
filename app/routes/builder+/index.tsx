@@ -725,6 +725,7 @@ export default function ResumeBuilder() {
 	/* ═══ SAVE ═══ */
 	const fetcher = useFetcher<{ success: boolean; error?: string }>()
 	const pdfFetcher = useFetcher<{ fileData: string; fileType: string }>()
+	const applicationFetcher = useFetcher()
 	const [saveStatus, setSaveStatus] = useState<
 		'idle' | 'saving' | 'saved' | 'error'
 	>('idle')
@@ -1326,7 +1327,26 @@ export default function ResumeBuilder() {
 		a.href = url
 		a.download = `${formData.name || 'resume'}.pdf`
 		a.click()
-	}, [formData.name, pdfFetcher.data, pdfFetcher.state])
+
+		// After PDF generation succeeds, create application if job selected
+		if (selectedJob?.id && formData.id) {
+			applicationFetcher.submit(
+				JSON.stringify({
+					intent: 'create',
+					resumeId: formData.id,
+					jobId: selectedJob.id,
+					matchLevel: 'moderate', // TODO: get from truth panel data
+					matchSummary: null,
+				}),
+				{ method: 'POST', action: '/resources/applications', encType: 'application/json' },
+			)
+
+			toast({
+				title: 'Application tracked',
+				description: `We'll check in on your application in 7 days.`,
+			})
+		}
+	}, [formData.name, formData.id, selectedJob?.id, pdfFetcher.data, pdfFetcher.state])
 
 	const pricingFetcher = useFetcher()
 	useEffect(() => {

@@ -6,7 +6,6 @@ import {
 	Moon,
 	Download,
 	Check,
-	Target,
 	Palette,
 	LogOut,
 	User as UserIcon,
@@ -103,6 +102,12 @@ export function BuilderNav({
 						style={{ height: 28 }}
 						className="dark:brightness-0 dark:invert"
 					/>
+				</Link>
+				<Link to="/resumes" style={{ fontSize: 14, color: c.muted, textDecoration: 'none' }}>
+					Resumes
+				</Link>
+				<Link to="/tracker" style={{ fontSize: 14, color: c.muted, textDecoration: 'none' }}>
+					Tracker
 				</Link>
 			</div>
 			{/* ⌘K Quick Actions */}
@@ -220,30 +225,6 @@ export function BuilderNav({
 					}}
 				/>
 				<button
-					onClick={() => {
-						setScorePanel(!scorePanel)
-					}}
-					style={{
-						display: 'flex',
-						alignItems: 'center',
-						gap: 5,
-						padding: '5px 10px',
-						borderRadius: 5,
-						border: `1px solid ${c.border}`,
-						background: 'transparent',
-						color: c.muted,
-						fontSize: 12,
-						cursor: 'pointer',
-					}}
-				>
-					<Target size={14} color={c.dim} strokeWidth={1.75} />
-					<span
-						style={{ color: BRAND, fontWeight: 600 }}
-					>
-						Match
-					</span>
-				</button>
-				<button
 					onClick={handleClickDownloadPDF}
 					style={{
 						display: 'flex',
@@ -260,7 +241,7 @@ export function BuilderNav({
 					}}
 				>
 					<Download size={14} strokeWidth={2} />
-					Download Resume
+					Download & Track
 				</button>
 				{user ? (
 					<div ref={profileRef} style={{ position: 'relative' }}>
