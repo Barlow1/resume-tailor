@@ -220,6 +220,11 @@ export async function action({ request }: DataFunctionArgs) {
 			throw new Error('Resume not found')
 		}
 
+		// Ownership check: only allow cloning own resumes
+		if (resume.userId && resume.userId !== userId) {
+			throw new Response('Forbidden', { status: 403 })
+		}
+
 		const resumeCopy = { ...resume } as any
 		// Remove userId and id from resume
 		delete resumeCopy.userId
@@ -282,6 +287,87 @@ export async function action({ request }: DataFunctionArgs) {
 				}),
 			},
 		})
+	}
+
+	if (type === 'clone-for-job') {
+		const formData = await request.formData()
+		const existingResumeId = formData.get('existingResumeId') as string
+		const jobId = formData.get('jobId') as string
+		const name = formData.get('name') as string
+
+		if (!existingResumeId || !jobId) {
+			return json({ error: 'Missing required fields' }, { status: 400 })
+		}
+
+		if (!userId) {
+			return json({ error: 'Authentication required' }, { status: 401 })
+		}
+
+		// Idempotency: if a resume already exists for this user+job, return it
+		const existing = await prisma.builderResume.findFirst({
+			where: { userId, jobId },
+			select: { id: true },
+		})
+		if (existing) {
+			return json({ resumeId: existing.id })
+		}
+
+		const resume = await getBuilderResume(existingResumeId)
+		if (!resume) {
+			return json({ error: 'Resume not found' }, { status: 404 })
+		}
+
+		// Ownership check
+		if (resume.userId && resume.userId !== userId) {
+			return json({ error: 'Forbidden' }, { status: 403 })
+		}
+
+		// Strip IDs for cloning (same as existing clone logic)
+		const resumeCopy = { ...resume } as any
+		delete resumeCopy.userId
+		delete resumeCopy.id
+		delete resumeCopy.jobId
+		delete resumeCopy.job
+		delete resumeCopy.createdAt
+		delete resumeCopy.updatedAt
+		resumeCopy.experiences.forEach((exp: any) => {
+			delete exp.id
+			delete exp.resumeId
+			exp.descriptions.forEach((desc: any) => {
+				delete desc.id
+				delete desc.experienceId
+			})
+		})
+		resumeCopy.education.forEach((ed: any) => {
+			delete ed.id
+			delete ed.resumeId
+		})
+		resumeCopy.skills.forEach((skill: any) => {
+			delete skill.id
+			delete skill.resumeId
+		})
+		resumeCopy.hobbies.forEach((hobby: any) => {
+			delete hobby.id
+			delete hobby.resumeId
+		})
+		delete resumeCopy.headers.id
+		delete resumeCopy.headers.resumeId
+		delete resumeCopy.visibleSections.id
+		delete resumeCopy.visibleSections.resumeId
+
+		// Clear job-specific data and set clone name
+		resumeCopy.coverLetterDrafts = null
+		resumeCopy.name = name || resumeCopy.name
+		resumeCopy.jobId = jobId
+
+		const builderResume = await createBuilderResume(userId, resumeCopy)
+
+		// Analytics
+		const resumeCount = await prisma.builderResume.count({ where: { userId } })
+		trackResumeCreated(userId, 'clone_for_job', builderResume.id, request, resumeCount)
+		await trackUserActivity({ userId, trigger: 'resume_clone_for_job', request })
+
+		return json({ resumeId: builderResume.id })
 	}
 
 	throw new Error('Invalid creation type')
