@@ -18,7 +18,7 @@ interface ThemeColors {
 
 const defaultTheme: ThemeColors = {
 	bg: '#FAFAFA', bgEl: '#FFFFFF', bgSurf: '#F4F4F5', border: '#E0E0E6',
-	borderSub: '#EBEBEF', text: '#111113', muted: '#63636A', dim: '#9C9CA3',
+	borderSub: '#EBEBEF', text: '#111113', muted: '#46464C', dim: '#4A4A50',
 }
 
 interface ResumeCreationModalProps {

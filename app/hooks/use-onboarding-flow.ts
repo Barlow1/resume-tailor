@@ -73,7 +73,8 @@ export function useOnboardingFlow({
 	// Local state for session-level overrides
 	const [jobModalDismissed, setJobModalDismissed] = useState(false)
 	const [sessionTailorComplete, setSessionTailorComplete] = useState(false)
-	const [aiModalOpenDuringOnboarding, setAiModalOpenDuringOnboarding] = useState(false)
+	const [, setAiModalOpenDuringOnboarding] = useState(false)
+
 
 	// Compute current stage from all available data
 	const { stage, isComplete } = useMemo(() => {

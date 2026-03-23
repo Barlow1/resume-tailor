@@ -1,13 +1,23 @@
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useFetcher } from '@remix-run/react'
-import { CheckCircle2, Circle } from 'lucide-react'
+import { CheckCircle2, ChevronDown, Loader2 } from 'lucide-react'
 import type { ResumeData, BuilderJob } from '~/utils/builder-resume.server.ts'
 import type { ExperienceMatch, BestMove } from '~/utils/ai/experience-match.server.ts'
+import type { GeneratedBullet } from '~/utils/openai.server.ts'
 
 const BRAND = '#6B45FF'
 const SUCCESS = '#30A46C'
 const WARN = '#F76B15'
 const ERROR = '#E5484D'
+
+export interface BulletChange {
+	action: 'rewrite' | 'new'
+	experienceId: string
+	descriptionId: string
+	content: string
+	existingBulletId: string | null
+	originalText: string | null
+}
 
 interface TruthPanelProps {
 	formData: ResumeData
@@ -27,96 +37,327 @@ interface TruthPanelProps {
 	}
 	onGenerateCoverLetter: () => void
 	onMatchLoaded?: () => void
-	onScrollToSection?: (section: string) => void
+	onBulletsGenerated?: (changes: BulletChange[], gaps: string[], summary?: string | null) => void
+	onUndoBullets?: () => void
+	onSkipRole?: () => void
+	onDownload?: () => void
+	onNextJob?: () => void
 	hasCoverLetter?: boolean
-	hasTailored?: boolean
+	refetchKey?: number
 }
+
+type Layer = 'verdict' | 'conversation' | 'generating' | 'done' | 'analysis'
 
 function getLevelColor(level: ExperienceMatch['level']): string {
 	switch (level) {
-		case 'strong':
-			return SUCCESS
-		case 'moderate':
-			return BRAND
-		case 'weak':
-			return WARN
-		case 'mismatch':
-			return ERROR
+		case 'strong': return SUCCESS
+		case 'moderate': return BRAND
+		case 'weak': return WARN
+		case 'mismatch': return ERROR
 	}
 }
 
 function getLevelLabel(level: ExperienceMatch['level']): string {
 	switch (level) {
-		case 'strong':
-			return 'Strong match'
-		case 'moderate':
-			return 'Moderate match'
-		case 'weak':
-			return 'Weak match'
-		case 'mismatch':
-			return 'Mismatch'
+		case 'strong': return 'Strong match'
+		case 'moderate': return 'Moderate match'
+		case 'weak': return 'Weak match'
+		case 'mismatch': return 'Mismatch'
 	}
 }
 
 function getBorderColor(type: BestMove['type'], dim: string): string {
 	switch (type) {
-		case 'cover_letter':
-			return BRAND
-		case 'address_gap':
-			return WARN
-		case 'referral':
-			return dim
-		default:
-			return BRAND
+		case 'cover_letter': return BRAND
+		case 'address_gap': return WARN
+		case 'rewrite_bullets': return BRAND
+		case 'dont_apply': return ERROR
+		case 'referral': return dim
+		default: return BRAND
 	}
 }
 
 function SkeletonBlock({ width, height, c }: { width: string | number; height: number; c: TruthPanelProps['theme'] }) {
+	return <div style={{ width, height, borderRadius: 6, background: c.border, animation: 'pulse 1.5s ease-in-out infinite' }} />
+}
+
+/* ═══ Conversation ═══ */
+function ConversationLayer({
+	requirements,
+	experiences,
+	c,
+	onDone,
+	onBack,
+}: {
+	requirements: string[]
+	experiences: Array<{ id: string; label: string }>
+	c: TruthPanelProps['theme']
+	onDone: (yesItems: Array<{ requirement: string; experienceId: string }>, noItems: string[]) => void
+	onBack: () => void
+}) {
+	const [answers, setAnswers] = useState<Map<number, { yes: boolean; experienceId?: string }>>(new Map())
+	const [expandedIdx, setExpandedIdx] = useState<number | null>(null)
+
+	const markNo = (i: number) => {
+		setAnswers(prev => { const next = new Map(prev); next.set(i, { yes: false }); return next })
+		setExpandedIdx(null)
+	}
+
+	const markYes = (i: number, experienceId: string) => {
+		setAnswers(prev => { const next = new Map(prev); next.set(i, { yes: true, experienceId }); return next })
+		setExpandedIdx(null)
+	}
+
+	const clear = (i: number) => {
+		setAnswers(prev => { const next = new Map(prev); next.delete(i); return next })
+	}
+
+	const allAnswered = answers.size === requirements.length
+	const yesItems = requirements
+		.map((req, i) => ({ req, ans: answers.get(i) }))
+		.filter((x): x is { req: string; ans: { yes: true; experienceId: string } } => !!x.ans?.yes && !!x.ans.experienceId)
+		.map(x => ({ requirement: x.req, experienceId: x.ans.experienceId }))
+	const noItems = requirements.filter((_, i) => answers.get(i)?.yes === false)
+
 	return (
-		<div
-			style={{
-				width,
-				height,
-				borderRadius: 6,
-				background: c.border,
-				animation: 'pulse 1.5s ease-in-out infinite',
-			}}
-		/>
+		<div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+			{requirements.map((req, i) => {
+				const ans = answers.get(i)
+				const matchedExp = ans?.yes ? experiences.find(e => e.id === ans.experienceId) : null
+				return (
+					<div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+						<div style={{ fontSize: 14, color: c.text, lineHeight: 1.5 }}>
+							Do you have experience with <strong>{req}</strong>?
+						</div>
+						{!ans ? (
+							<div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+								{expandedIdx === i ? (
+									<>
+										<div style={{ fontSize: 12, color: c.dim, marginBottom: 2 }}>Which role?</div>
+										{experiences.map(exp => (
+											<button
+												key={exp.id}
+												onClick={() => markYes(i, exp.id)}
+												style={{
+													padding: '8px 12px',
+													borderRadius: 8,
+													border: `1px solid ${c.border}`,
+													background: c.bgSurf,
+													color: c.text,
+													fontSize: 13,
+													cursor: 'pointer',
+													textAlign: 'left',
+												}}
+											>
+												Yes, at {exp.label}
+											</button>
+										))}
+										<button
+											onClick={() => setExpandedIdx(null)}
+											style={{ background: 'none', border: 'none', color: c.dim, fontSize: 12, cursor: 'pointer', padding: 0 }}
+										>
+											Cancel
+										</button>
+									</>
+								) : (
+									<div style={{ display: 'flex', gap: 8 }}>
+										<button
+											onClick={() => {
+												if (experiences.length === 1) {
+													markYes(i, experiences[0].id)
+												} else {
+													setExpandedIdx(i)
+												}
+											}}
+											style={{
+												padding: '8px 16px',
+												borderRadius: 8,
+												border: `1px solid ${BRAND}`,
+												background: 'transparent',
+												color: BRAND,
+												fontSize: 13,
+												fontWeight: 600,
+												cursor: 'pointer',
+											}}
+										>
+											{experiences.length === 1 ? `Yes, at ${experiences[0].label}` : 'Yes'}
+										</button>
+										<button
+											onClick={() => markNo(i)}
+											style={{
+												padding: '8px 16px',
+												borderRadius: 8,
+												border: `1px solid ${c.border}`,
+												background: 'transparent',
+												color: c.dim,
+												fontSize: 13,
+												fontWeight: 600,
+												cursor: 'pointer',
+											}}
+										>
+											No
+										</button>
+									</div>
+								)}
+							</div>
+						) : (
+							<div style={{ fontSize: 13, fontWeight: 600, color: ans.yes ? SUCCESS : c.dim }}>
+								{ans.yes ? `✓ Yes, at ${matchedExp?.label ?? ''}` : '— No'}
+								<button
+									onClick={() => clear(i)}
+									style={{
+										marginLeft: 8,
+										background: 'none',
+										border: 'none',
+										color: c.dim,
+										fontSize: 11,
+										cursor: 'pointer',
+										textDecoration: 'underline',
+										padding: 0,
+									}}
+								>
+									change
+								</button>
+							</div>
+						)}
+						{i < requirements.length - 1 && (
+							<div style={{ borderBottom: `1px solid ${c.borderSub}`, marginTop: 4 }} />
+						)}
+					</div>
+				)
+			})}
+
+			{allAnswered && yesItems.length > 0 && (
+				<button
+					onClick={() => onDone(yesItems, noItems)}
+					style={{
+						marginTop: 8,
+						background: BRAND,
+						color: '#fff',
+						fontSize: 14,
+						fontWeight: 700,
+						padding: '12px 20px',
+						borderRadius: 10,
+						border: 'none',
+						cursor: 'pointer',
+						width: '100%',
+					}}
+				>
+					Add {yesItems.length} to my resume →
+				</button>
+			)}
+			{allAnswered && yesItems.length === 0 && (
+				<div style={{ fontSize: 13, color: c.dim, marginTop: 4 }}>
+					These appear to be genuine gaps in your background for this role.
+				</div>
+			)}
+			<button
+				onClick={onBack}
+				style={{ background: 'none', border: 'none', color: c.brandText, fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: 0, marginTop: 4 }}
+			>
+				← Back
+			</button>
+		</div>
 	)
 }
 
+/* ═══ Full analysis ═══ */
+function FullAnalysis({
+	match, c, onGenerateCoverLetter, hasCoverLetter,
+}: {
+	match: ExperienceMatch; c: TruthPanelProps['theme']; onGenerateCoverLetter: () => void; hasCoverLetter?: boolean
+}) {
+	return (
+		<div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+			<div style={{ fontSize: 14, color: c.muted, lineHeight: 1.6 }}>{match.summary}</div>
+			{match.requirementsTotal > 0 && (
+				<div style={{ fontSize: 13, color: c.dim }}>
+					{match.requirementsCovered} of {match.requirementsTotal} requirements covered
+				</div>
+			)}
+			<div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+				<div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: c.dim }}>
+					All Recommendations
+				</div>
+				{match.bestMoves.map((move) => (
+					<div key={move.id} style={{ padding: 16, background: c.bgEl, borderRadius: 10, borderLeft: `3px solid ${getBorderColor(move.type, c.dim)}` }}>
+						<div style={{ fontSize: 14, fontWeight: 700, color: c.text }}>{move.headline}</div>
+						<div style={{ fontSize: 13, color: c.muted, lineHeight: 1.5, marginTop: 4 }}>{move.explanation}</div>
+						{move.evidenceNote && <div style={{ fontSize: 12, color: c.dim, marginTop: 4, fontStyle: 'italic' }}>{move.evidenceNote}</div>}
+						{move.type === 'cover_letter' && !hasCoverLetter && (
+							<button onClick={onGenerateCoverLetter} style={{ marginTop: 10, background: BRAND, color: '#fff', fontSize: 13, fontWeight: 700, padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer' }}>
+								Generate with AI
+							</button>
+						)}
+						{move.type === 'cover_letter' && hasCoverLetter && (
+							<div style={{ marginTop: 6, fontSize: 13, color: SUCCESS, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+								<CheckCircle2 size={14} strokeWidth={2} /> Done
+							</div>
+						)}
+					</div>
+				))}
+			</div>
+		</div>
+	)
+}
+
+/* ═══ MAIN ═══ */
 export function TruthPanel({
 	formData,
 	selectedJob,
 	theme: c,
 	onGenerateCoverLetter,
 	onMatchLoaded,
-	onScrollToSection,
+	onBulletsGenerated,
+	onUndoBullets,
+	onSkipRole,
+	onDownload,
+	onNextJob,
 	hasCoverLetter,
-	hasTailored,
+	refetchKey,
 }: TruthPanelProps) {
 	const fetcher = useFetcher<ExperienceMatch>()
+	const bulletFetcher = useFetcher<{ bullets: GeneratedBullet[] }>()
 	const prevJobIdRef = useRef<string | null>(null)
 	const matchLoadedCalledRef = useRef(false)
+	const [layer, setLayer] = useState<Layer>('verdict')
+	const [lastGaps, setLastGaps] = useState<string[]>([])
+	const [lastAlreadyCovered, setLastAlreadyCovered] = useState<string[]>([])
+	const [lastAddedCount, setLastAddedCount] = useState(0)
+	const [lastWarnings, setLastWarnings] = useState<string[]>([])
+	const conversationNoItemsRef = useRef<string[]>([])
+
+	useEffect(() => {
+		setLayer('verdict')
+		setLastGaps([])
+		setLastAlreadyCovered([])
+		setLastAddedCount(0)
+		setLastWarnings([])
+	}, [selectedJob?.id])
 
 	useEffect(() => {
 		if (!selectedJob?.id || !formData.id) return
 		if (prevJobIdRef.current === selectedJob.id && fetcher.data) return
 		prevJobIdRef.current = selectedJob.id
 		matchLoadedCalledRef.current = false
-
 		fetcher.submit(
 			JSON.stringify({ resumeId: formData.id, jobId: selectedJob.id }),
-			{
-				method: 'POST',
-				action: '/resources/experience-match',
-				encType: 'application/json',
-			},
+			{ method: 'POST', action: '/resources/experience-match', encType: 'application/json' },
 		)
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [selectedJob?.id, formData.id])
 
-	// Notify parent when match data has successfully loaded
+	useEffect(() => {
+		if (!refetchKey || !selectedJob?.id || !formData.id) return
+		prevJobIdRef.current = null
+		matchLoadedCalledRef.current = false
+		fetcher.submit(
+			JSON.stringify({ resumeId: formData.id, jobId: selectedJob.id }),
+			{ method: 'POST', action: '/resources/experience-match', encType: 'application/json' },
+		)
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [refetchKey])
+
 	useEffect(() => {
 		if (fetcher.data && !matchLoadedCalledRef.current) {
 			matchLoadedCalledRef.current = true
@@ -124,31 +365,82 @@ export function TruthPanel({
 		}
 	}, [fetcher.data, onMatchLoaded])
 
-	const isLoading = fetcher.state !== 'idle'
-	const isError = !isLoading && fetcher.data === undefined && fetcher.state === 'idle' && prevJobIdRef.current !== null && selectedJob !== null
-	const match = fetcher.data as ExperienceMatch | undefined
+	// When bullets arrive, convert and call parent
+	const bulletDataProcessedRef = useRef<unknown>(null)
+	useEffect(() => {
+		if (bulletFetcher.state !== 'idle') return
+		const data = bulletFetcher.data as { bullets?: GeneratedBullet[]; summary?: string | null; warnings?: string[]; error?: string } | undefined
+		if (!data || data === bulletDataProcessedRef.current) return
+		bulletDataProcessedRef.current = data
 
+		if (data.error || !data.bullets) {
+			console.error('Bullet generation failed:', data.error ?? 'No bullets in response')
+			setLayer('verdict')
+			return
+		}
+
+		const changes: BulletChange[] = []
+		const alreadyCovered: string[] = []
+		const apiGaps: string[] = []
+		for (const b of data.bullets) {
+			if (b.action === 'already_covered' || b.action === 'not_a_bullet') {
+				alreadyCovered.push(b.requirement)
+			} else if (b.isGap || !b.experienceId || !b.bulletText) {
+				apiGaps.push(b.requirement)
+			} else {
+				changes.push({
+					action: b.action as 'rewrite' | 'new',
+					experienceId: b.experienceId,
+					descriptionId: b.action === 'rewrite' && b.existingBulletId ? b.existingBulletId : crypto.randomUUID(),
+					content: b.bulletText,
+					existingBulletId: b.existingBulletId ?? null,
+					originalText: b.originalText ?? null,
+				})
+			}
+		}
+		setLastAddedCount(changes.length)
+		setLastAlreadyCovered(alreadyCovered)
+		setLastWarnings(data.warnings ?? [])
+		// Merge user's "No" answers with any API-reported gaps
+		const allGaps = [...conversationNoItemsRef.current, ...apiGaps]
+		setLastGaps(allGaps)
+		onBulletsGenerated?.(changes, allGaps, data.summary)
+		setLayer('done')
+	}, [bulletFetcher.state, bulletFetcher.data]) // eslint-disable-line react-hooks/exhaustive-deps
+
+	const handleConversationDone = useCallback((
+		yesItems: Array<{ requirement: string; experienceId: string }>,
+		noItems: string[],
+	) => {
+		if (!formData.id || !selectedJob?.id) return
+		conversationNoItemsRef.current = noItems
+		bulletFetcher.submit(
+			JSON.stringify({
+				resumeId: formData.id,
+				jobId: selectedJob.id,
+				requirements: yesItems.map(y => y.requirement),
+				requirementExperienceMap: Object.fromEntries(yesItems.map(y => [y.requirement, y.experienceId])),
+			}),
+			{ method: 'POST', action: '/resources/generate-requirement-bullets', encType: 'application/json' },
+		)
+		setLayer('generating')
+	}, [formData.id, selectedJob?.id, bulletFetcher])
+
+	const isLoading = fetcher.state !== 'idle'
+	const rawData = fetcher.data as (ExperienceMatch & { error?: string }) | undefined
+	const isError = !isLoading && (!rawData || 'error' in rawData) && fetcher.state === 'idle' && prevJobIdRef.current !== null && selectedJob !== null
+	const match = rawData && !('error' in rawData) ? rawData as ExperienceMatch : undefined
+
+	/* ═══ Empty ═══ */
 	if (!selectedJob) {
 		return (
-			<div
-				style={{
-					padding: 32,
-					display: 'flex',
-					flexDirection: 'column',
-					alignItems: 'center',
-					justifyContent: 'center',
-					height: '100%',
-					textAlign: 'center',
-					gap: 8,
-				}}
-			>
-				<div style={{ fontSize: 15, fontWeight: 500, color: c.muted }}>
-					Select a job to see your match analysis
-				</div>
+			<div style={{ padding: 32, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center' }}>
+				<div style={{ fontSize: 16, fontWeight: 500, color: c.muted }}>Paste a job description to get started</div>
 			</div>
 		)
 	}
 
+	/* ═══ Loading ═══ */
 	if (isLoading) {
 		return (
 			<div style={{ padding: 32, display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -156,54 +448,25 @@ export function TruthPanel({
 				<SkeletonBlock width="40%" height={14} c={c} />
 				<SkeletonBlock width="70%" height={40} c={c} />
 				<SkeletonBlock width="100%" height={16} c={c} />
-				<SkeletonBlock width="90%" height={16} c={c} />
-				<div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 12 }}>
-					<SkeletonBlock width="100%" height={80} c={c} />
-					<SkeletonBlock width="100%" height={80} c={c} />
-				</div>
+				<div style={{ marginTop: 12 }}><SkeletonBlock width="80%" height={36} c={c} /></div>
 			</div>
 		)
 	}
 
+	/* ═══ Error ═══ */
 	if (isError || !match) {
 		return (
-			<div
-				style={{
-					padding: 32,
-					display: 'flex',
-					flexDirection: 'column',
-					alignItems: 'center',
-					justifyContent: 'center',
-					height: '100%',
-					textAlign: 'center',
-					gap: 12,
-				}}
-			>
-				<div style={{ fontSize: 14, color: c.muted }}>
-					Failed to load match analysis.
-				</div>
+			<div style={{ padding: 32, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center', gap: 12 }}>
+				<div style={{ fontSize: 15, color: c.muted }}>Failed to load match analysis.</div>
 				<button
 					onClick={() => {
 						if (!selectedJob?.id || !formData.id) return
 						fetcher.submit(
 							JSON.stringify({ resumeId: formData.id, jobId: selectedJob.id }),
-							{
-								method: 'POST',
-								action: '/resources/experience-match',
-								encType: 'application/json',
-							},
+							{ method: 'POST', action: '/resources/experience-match', encType: 'application/json' },
 						)
 					}}
-					style={{
-						padding: '8px 16px',
-						borderRadius: 8,
-						border: `1px solid ${c.border}`,
-						background: c.bgEl,
-						color: c.text,
-						fontSize: 13,
-						fontWeight: 600,
-						cursor: 'pointer',
-					}}
+					style={{ padding: '8px 16px', borderRadius: 8, border: `1px solid ${c.border}`, background: c.bgEl, color: c.text, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
 				>
 					Retry
 				</button>
@@ -212,250 +475,217 @@ export function TruthPanel({
 	}
 
 	const levelColor = getLevelColor(match.level)
-
-	// Build task status checklist
-	const tasks: { label: string; done: boolean }[] = [
-		{ label: 'Resume uploaded', done: !!(formData.name || formData.role) },
-		{ label: 'Target job selected', done: !!selectedJob },
-		{ label: 'Tailored with AI', done: !!hasTailored },
-		{ label: 'Cover letter', done: !!hasCoverLetter },
-	]
+	const coveredReqs = match.coveredRequirements ?? []
+	const missingReqs = match.missingRequirements ?? []
+	const experiences = (formData.experiences ?? [])
+		.filter((e): e is typeof e & { id: string } => !!e.id)
+		.map(e => ({ id: e.id, label: `${e.role} at ${e.company}` }))
+	const hasMissingReqs = missingReqs.length > 0
+	const isMismatch = match.level === 'mismatch'
 
 	return (
-		<div
-			style={{
-				display: 'flex',
-				flexDirection: 'column',
-				height: '100%',
-				padding: '32px 24px',
-				gap: 0,
-			}}
-		>
-			{/* Section 1: Experience Match */}
+		<div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '32px 28px', overflow: 'auto' }}>
+			{/* ═══ VERDICT ═══ */}
 			<div>
-				<div
-					style={{
-						fontSize: 11,
-						fontWeight: 600,
-						textTransform: 'uppercase',
-						letterSpacing: '0.06em',
-						color: c.dim,
-					}}
-				>
+				<div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: c.dim }}>
 					Experience Match
 				</div>
-				<div
-					style={{
-						fontSize: 36,
-						fontWeight: 800,
-						fontFamily: 'Manrope, sans-serif',
-						color: levelColor,
-						marginTop: 8,
-					}}
-				>
+				<div style={{ fontSize: 36, fontWeight: 800, fontFamily: 'Manrope, sans-serif', color: levelColor, marginTop: 8 }}>
 					{getLevelLabel(match.level)}
 				</div>
-				<div
-					style={{
-						fontSize: 14,
-						color: c.muted,
-						marginTop: 8,
-						lineHeight: 1.5,
-					}}
-				>
-					{match.summary}
+				<div style={{ fontSize: 15, color: c.muted, marginTop: 12, lineHeight: 1.6 }}>
+					{match.oneLineSummary || match.summary}
 				</div>
-				{match.requirementsTotal > 0 && (
-					<div
-						style={{
-							fontSize: 12,
-							color: c.dim,
-							marginTop: 6,
-						}}
-					>
-						{match.requirementsCovered} of {match.requirementsTotal} requirements covered
-					</div>
-				)}
 			</div>
 
-			{/* Section 2: Best Moves */}
-			<div style={{ marginTop: 28, display: 'flex', flexDirection: 'column', gap: 12 }}>
-				<div
-					style={{
-						fontSize: 11,
-						fontWeight: 600,
-						textTransform: 'uppercase',
-						letterSpacing: '0.06em',
-						color: c.dim,
-					}}
-				>
-					Best Moves
-				</div>
-				{match.bestMoves.map((move) => {
-					const borderColor = getBorderColor(move.type, c.dim)
-					return (
-						<div
-							key={move.id}
-							style={{
-								padding: 20,
-								background: c.bgEl,
-								borderRadius: 12,
-								borderLeft: `4px solid ${borderColor}`,
-							}}
-						>
-							<div style={{ fontSize: 14, fontWeight: 700, color: c.text }}>
-								{move.headline}
-							</div>
-							<div
-								style={{
-									fontSize: 12,
-									color: c.muted,
-									lineHeight: 1.5,
-									marginTop: 6,
-								}}
-							>
-								{move.explanation}
-							</div>
-							{move.evidenceNote && (
-								<div
-									style={{
-										fontSize: 11,
-										color: c.dim,
-										marginTop: 6,
-										fontStyle: 'italic',
-									}}
-								>
-									{move.evidenceNote}
-								</div>
-							)}
-							{move.type === 'cover_letter' && !hasCoverLetter && (
-								<button
-									onClick={onGenerateCoverLetter}
-									style={{
-										marginTop: 12,
-										background: BRAND,
-										color: '#fff',
-										fontSize: 12,
-										fontWeight: 700,
-										padding: '8px 16px',
-										borderRadius: 8,
-										border: 'none',
-										cursor: 'pointer',
-									}}
-								>
-									Generate with AI
-								</button>
-							)}
-							{move.type === 'cover_letter' && hasCoverLetter && (
-								<div
-									style={{
-										marginTop: 8,
-										fontSize: 12,
-										color: SUCCESS,
-										fontWeight: 600,
-										display: 'flex',
-										alignItems: 'center',
-										gap: 4,
-									}}
-								>
-									<CheckCircle2 size={14} strokeWidth={2} /> Done
-								</div>
-							)}
-							{move.type === 'referral' && (
-								<button
-									onClick={() => {
-										/* could show a tooltip or detail */
-									}}
-									style={{
-										marginTop: 8,
-										background: 'none',
-										border: 'none',
-										color: c.brandText,
-										fontSize: 12,
-										fontWeight: 600,
-										cursor: 'pointer',
-										padding: 0,
-										textDecoration: 'underline',
-									}}
-								>
-									Why?
-								</button>
-							)}
-							{move.type === 'rewrite_bullets' && onScrollToSection && (
-								<button
-									onClick={() => onScrollToSection('experience')}
-									style={{
-										marginTop: 8,
-										background: 'none',
-										border: 'none',
-										color: c.brandText,
-										fontSize: 12,
-										fontWeight: 600,
-										cursor: 'pointer',
-										padding: 0,
-										textDecoration: 'underline',
-									}}
-								>
-									Go to experience
-								</button>
-							)}
+			{/* ═══ VERDICT actions ═══ */}
+			{layer === 'verdict' && (
+				<div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 8 }}>
+					{coveredReqs.length > 0 && (
+						<div style={{ fontSize: 13, color: SUCCESS, lineHeight: 1.5, marginBottom: 4 }}>
+							Already on your resume: {coveredReqs.join(', ')}
 						</div>
-					)
-				})}
-			</div>
-
-			{/* Section 3: Task Status */}
-			<div
-				style={{
-					marginTop: 'auto',
-					borderTop: `1px solid ${c.border}`,
-					paddingTop: 32,
-					background: c.bgSurf,
-					marginLeft: -24,
-					marginRight: -24,
-					marginBottom: -32,
-					padding: '32px 24px',
-				}}
-			>
-				<div
-					style={{
-						fontSize: 11,
-						fontWeight: 600,
-						textTransform: 'uppercase',
-						letterSpacing: '0.06em',
-						color: c.dim,
-						marginBottom: 14,
-					}}
-				>
-					Task Status
-				</div>
-				{tasks.map((task) => (
-					<div
-						key={task.label}
-						style={{
-							display: 'flex',
-							alignItems: 'center',
-							gap: 10,
-							padding: '7px 0',
-						}}
+					)}
+					{hasMissingReqs && !isMismatch && (
+						<>
+							<div style={{ fontSize: 14, color: c.muted, marginBottom: 4 }}>
+								{missingReqs.length} thing{missingReqs.length > 1 ? 's' : ''} could strengthen this. Do you have experience with any of them?
+							</div>
+							<button
+								onClick={() => setLayer('conversation')}
+								style={{ background: BRAND, color: '#fff', fontSize: 14, fontWeight: 700, padding: '12px 20px', borderRadius: 10, border: 'none', cursor: 'pointer', width: '100%' }}
+							>
+								Let's find out →
+							</button>
+						</>
+					)}
+					{match.level === 'strong' && (
+						<button
+							onClick={onGenerateCoverLetter}
+							style={{ background: BRAND, color: '#fff', fontSize: 14, fontWeight: 700, padding: '12px 20px', borderRadius: 10, border: 'none', cursor: 'pointer', width: '100%' }}
+						>
+							{hasCoverLetter ? 'Regenerate cover letter' : 'Write a cover letter →'}
+						</button>
+					)}
+					<button
+						onClick={onSkipRole}
+						style={{ background: 'none', color: c.dim, fontSize: 14, fontWeight: 600, padding: '10px 20px', borderRadius: 10, border: `1px solid ${c.border}`, cursor: 'pointer', width: '100%' }}
 					>
-						{task.done ? (
-							<CheckCircle2 size={18} color={SUCCESS} strokeWidth={1.75} />
-						) : (
-							<Circle size={18} color={c.dim} strokeWidth={1.75} />
+						Skip this role
+					</button>
+					{match.skipSuggestion && isMismatch && (
+						<div style={{ fontSize: 13, color: c.dim, marginTop: 4, lineHeight: 1.5 }}>
+							{match.skipSuggestion}
+						</div>
+					)}
+					{onUndoBullets && (
+						<button
+							onClick={onUndoBullets}
+							style={{ background: 'none', border: 'none', color: c.dim, fontSize: 13, cursor: 'pointer', padding: 0, marginTop: 8, textDecoration: 'underline' }}
+						>
+							Undo last changes
+						</button>
+					)}
+				</div>
+			)}
+
+			{/* ═══ CONVERSATION ═══ */}
+			{layer === 'conversation' && (
+				<div style={{ marginTop: 24 }}>
+					<ConversationLayer
+						requirements={missingReqs}
+						experiences={experiences}
+						c={c}
+						onDone={handleConversationDone}
+						onBack={() => setLayer('verdict')}
+					/>
+				</div>
+			)}
+
+			{/* ═══ GENERATING ═══ */}
+			{layer === 'generating' && (
+				<div style={{ marginTop: 32, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: 24 }}>
+					<style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+					{bulletFetcher.state !== 'idle' ? (
+						<>
+							<Loader2 size={24} color={BRAND} style={{ animation: 'spin 1s linear infinite' }} />
+							<div style={{ fontSize: 15, color: c.muted, textAlign: 'center' }}>Updating your resume...</div>
+						</>
+					) : (
+						<>
+							<div style={{ fontSize: 15, color: ERROR, textAlign: 'center' }}>Something went wrong generating bullets.</div>
+							<button
+								onClick={() => setLayer('conversation')}
+								style={{ padding: '8px 16px', borderRadius: 8, border: `1px solid ${c.border}`, background: c.bgEl, color: c.text, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+							>
+								Try again
+							</button>
+						</>
+					)}
+				</div>
+			)}
+
+			{/* ═══ DONE — post-generation ═══ */}
+			{layer === 'done' && (
+				<div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
+					{lastAddedCount > 0 && (
+						<div style={{ fontSize: 15, color: c.muted, lineHeight: 1.6 }}>
+							Updated {lastAddedCount} bullet{lastAddedCount > 1 ? 's' : ''}. Check the highlights on your resume.
+						</div>
+					)}
+					{lastAlreadyCovered.length > 0 && (
+						<div style={{ fontSize: 13, color: SUCCESS, lineHeight: 1.5 }}>
+							Already on your resume: {lastAlreadyCovered.join(', ')}
+						</div>
+					)}
+					{lastGaps.length > 0 && (
+						<div style={{ fontSize: 13, color: c.dim, lineHeight: 1.5 }}>
+							Not added: {lastGaps.join(', ')} — {lastGaps.length > 1 ? 'genuine gaps' : 'a genuine gap'}.
+						</div>
+					)}
+					{lastWarnings.length > 0 && lastWarnings.map((w, i) => (
+						<div key={i} style={{ fontSize: 13, color: WARN, lineHeight: 1.5 }}>
+							{w}
+						</div>
+					))}
+
+					{/* Next steps */}
+					<div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+						{!hasCoverLetter && (
+							<button
+								onClick={onGenerateCoverLetter}
+								style={{ background: BRAND, color: '#fff', fontSize: 14, fontWeight: 700, padding: '12px 20px', borderRadius: 10, border: 'none', cursor: 'pointer', width: '100%' }}
+							>
+								Write a cover letter →
+							</button>
 						)}
-						<span
+						<button
+							onClick={onDownload}
 							style={{
+								background: hasCoverLetter ? BRAND : 'transparent',
+								color: hasCoverLetter ? '#fff' : c.text,
 								fontSize: 14,
-								color: task.done ? c.muted : c.text,
-								textDecoration: task.done ? 'line-through' : 'none',
+								fontWeight: 700,
+								padding: '12px 20px',
+								borderRadius: 10,
+								border: hasCoverLetter ? 'none' : `1px solid ${c.border}`,
+								cursor: 'pointer',
+								width: '100%',
 							}}
 						>
-							{task.label}
-						</span>
+							Download & apply
+						</button>
+						{!hasCoverLetter && (
+							<button
+								onClick={onDownload}
+								style={{ background: 'none', border: 'none', color: c.dim, fontSize: 13, cursor: 'pointer', padding: 0 }}
+							>
+								Skip cover letter, just download
+							</button>
+						)}
+						<button
+							onClick={onNextJob}
+							style={{ background: 'none', border: `1px solid ${c.border}`, color: c.muted, fontSize: 14, fontWeight: 600, padding: '10px 20px', borderRadius: 10, cursor: 'pointer', width: '100%', marginTop: 4 }}
+						>
+							Next job →
+						</button>
 					</div>
-				))}
-			</div>
+
+					{onUndoBullets && (
+						<button
+							onClick={onUndoBullets}
+							style={{ background: 'none', border: 'none', color: c.dim, fontSize: 13, cursor: 'pointer', padding: 0, textDecoration: 'underline', marginTop: 4 }}
+						>
+							Undo all changes
+						</button>
+					)}
+				</div>
+			)}
+
+			{/* ═══ FULL ANALYSIS ═══ */}
+			{layer === 'analysis' && (
+				<div style={{ marginTop: 24 }}>
+					<FullAnalysis match={match} c={c} onGenerateCoverLetter={onGenerateCoverLetter} hasCoverLetter={hasCoverLetter} />
+					<button
+						onClick={() => setLayer('verdict')}
+						style={{ background: 'none', border: 'none', color: c.brandText, fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: 0, marginTop: 16 }}
+					>
+						← Back
+					</button>
+				</div>
+			)}
+
+			{/* ═══ Footer ═══ */}
+			{layer !== 'analysis' && layer !== 'generating' && (
+				<div style={{ marginTop: 'auto', paddingTop: 24 }}>
+					<button
+						onClick={() => setLayer('analysis')}
+						style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: c.dim, fontSize: 13, cursor: 'pointer', padding: 0 }}
+					>
+						See full analysis <ChevronDown size={12} />
+					</button>
+				</div>
+			)}
 		</div>
 	)
 }

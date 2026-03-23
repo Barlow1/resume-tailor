@@ -2,7 +2,7 @@ import { json, type ActionFunctionArgs } from '@remix-run/node'
 import { createHash } from 'crypto'
 import { getUserId } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
-import { getExperienceMatch } from '~/utils/ai/experience-match.server.ts'
+import { getExperienceMatch } from '~/utils/openai.server.ts'
 import type { ResumeData } from '~/utils/builder-resume.server.ts'
 
 function hashContent(data: unknown): string {
@@ -75,7 +75,7 @@ export async function action({ request }: ActionFunctionArgs) {
 		return json(JSON.parse(cached.resultJson))
 	}
 
-	const result = await getExperienceMatch(resumeData, job.content)
+	const result = await getExperienceMatch({ resumeData, jobDescription: job.content })
 
 	await prisma.experienceMatchCache.upsert({
 		where: { resumeId_jobId: { resumeId, jobId } },
