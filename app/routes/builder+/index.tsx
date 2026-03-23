@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState, useMemo } from 'react'
 import {
 	json,
 	type LoaderFunctionArgs,
-	type ActionFunctionArgs,
 } from '@remix-run/node'
 import {
 	useLoaderData,
@@ -671,13 +670,15 @@ export default function ResumeBuilder() {
 
 	const handleCoverLetterTextChange = useCallback((text: string) => {
 		setCoverLetterText(text)
-		if (selectedJob?.id) {
-			const drafts = formData.coverLetterDrafts ? JSON.parse(formData.coverLetterDrafts) as Record<string, string> : {}
-			drafts[selectedJob.id] = text
-			const newFormData = { ...formData, coverLetterDrafts: JSON.stringify(drafts) }
-			setFormData(newFormData)
+		const jobId = selectedJob?.id
+		if (jobId) {
+			setFormData(prev => {
+				const drafts = prev.coverLetterDrafts ? JSON.parse(prev.coverLetterDrafts) as Record<string, string> : {}
+				drafts[jobId] = text
+				return { ...prev, coverLetterDrafts: JSON.stringify(drafts) }
+			})
 		}
-	}, [selectedJob?.id, formData])
+	}, [selectedJob?.id])
 
 	/* ═══ SAVE ═══ */
 	const fetcher = useFetcher<{ success: boolean; error?: string }>()
@@ -728,6 +729,8 @@ export default function ResumeBuilder() {
 
 	/* ═══ RESUME SWITCHING ═══ */
 	const resumeSwitchFetcher = useFetcher()
+	const cloneForJobFetcher = useFetcher<{ resumeId?: string; error?: string }>()
+	const isCloning = cloneForJobFetcher.state !== 'idle'
 	const handleResumeSwitch = useCallback(
 		(resumeId: string) => {
 			if (resumeId === formData.id) return
@@ -747,6 +750,20 @@ export default function ResumeBuilder() {
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [savedData.id])
+
+	// When clone-for-job completes, switch to the new resume
+	useEffect(() => {
+		if (cloneForJobFetcher.state === 'idle' && cloneForJobFetcher.data?.resumeId) {
+			const newResumeId = cloneForJobFetcher.data.resumeId
+			if (newResumeId !== formData.id) {
+				resumeSwitchFetcher.submit(
+					{ resumeId: newResumeId },
+					{ method: 'POST', action: '/resumes' },
+				)
+			}
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [cloneForJobFetcher.state, cloneForJobFetcher.data])
 
 	/* ═══ ANALYTICS ═══ */
 	// eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1071,32 +1088,104 @@ export default function ResumeBuilder() {
 		}
 	}, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+	const isResumeBlank = useCallback((data: typeof formData) => {
+		const hasName = !!data.name?.trim()
+		const hasRole = !!data.role?.trim()
+		const hasEmail = !!data.email?.trim()
+		const hasAbout = !!data.about?.trim()
+		const hasRealExperience = (data.experiences ?? []).some(
+			exp => exp.role?.trim() || exp.company?.trim(),
+		)
+		return !hasName && !hasRole && !hasEmail && !hasAbout && !hasRealExperience
+	}, [])
+
 	const handleJobChange = useCallback(
 		(job: any) => {
-			setSelectedJob(job)
-			if (job) setSidebar(false)
-			const newFormData = {
-				...formData,
-				jobId: job?.id ?? null,
-				job: job ?? null,
+			// Deselecting job — navigate to base (jobless) resume
+			if (!job) {
+				setSelectedJob(null)
+				const baseResume = resumes.find(r => !r.jobId)
+				if (baseResume && baseResume.id !== formData.id) {
+					handleResumeSwitch(baseResume.id!)
+				} else {
+					const newFormData = { ...formData, jobId: null, job: null }
+					setFormData(newFormData)
+					debouncedSave(newFormData)
+				}
+				return
 			}
-			setFormData(newFormData)
-			debouncedSave(newFormData)
+
+			// Check if a resume already exists for this job — switch to it
+			// Note: resumes is from loader data and may be stale for same-session clones;
+			// the server-side idempotency guard is the authoritative duplicate check.
+			const existingForJob = resumes.find(r => r.jobId === job.id)
+			if (existingForJob && existingForJob.id !== formData.id) {
+				handleResumeSwitch(existingForJob.id!)
+				setSelectedJob(job)
+				setSidebar(false)
+				trackLegacyEvent('job_selected', {
+					jobId: job.id,
+					hasJobDescription: !!(job?.content && job.content.trim().length > 0),
+					userId,
+					category: 'Resume Builder',
+				})
+				return
+			}
+
+			// Blank resume — just attach job directly, no clone needed
+			if (isResumeBlank(formData)) {
+				setSelectedJob(job)
+				setSidebar(false)
+				const newFormData = { ...formData, jobId: job.id, job }
+				setFormData(newFormData)
+				debouncedSave(newFormData)
+				trackLegacyEvent('job_selected', {
+					jobId: job.id,
+					hasJobDescription: !!(job?.content && job.content.trim().length > 0),
+					userId,
+					category: 'Resume Builder',
+				})
+				if (job.id && job.content?.trim() && !job.extractedKeywords) {
+					keywordExtractFetcher.submit(
+						{ jobId: job.id },
+						{ method: 'POST', action: '/resources/extract-keywords' },
+					)
+				}
+				return
+			}
+
+			// Clone the current resume for this job
+			const baseName = formData.name || 'Resume'
+			const jobLabel = job.company || job.title || 'Untitled Job'
+			const cloneName = `${baseName} — ${jobLabel}`
+
+			setSelectedJob(job)
+			setSidebar(false)
+
+			cloneForJobFetcher.submit(
+				{
+					existingResumeId: formData.id!,
+					jobId: job.id,
+					name: cloneName,
+				},
+				{ method: 'POST', action: '/resources/create-resume?type=clone-for-job' },
+			)
+
 			trackLegacyEvent('job_selected', {
-				jobId: job?.id,
+				jobId: job.id,
 				hasJobDescription: !!(job?.content && job.content.trim().length > 0),
 				userId,
 				category: 'Resume Builder',
 			})
-			// Auto-extract keywords if job has content but no extracted keywords
-			if (job?.id && job?.content?.trim() && !job.extractedKeywords) {
+
+			if (job.id && job.content?.trim() && !job.extractedKeywords) {
 				keywordExtractFetcher.submit(
 					{ jobId: job.id },
 					{ method: 'POST', action: '/resources/extract-keywords' },
 				)
 			}
 		},
-		[formData, debouncedSave, userId, keywordExtractFetcher],
+		[formData, resumes, debouncedSave, userId, keywordExtractFetcher, cloneForJobFetcher, isResumeBlank, handleResumeSwitch],
 	)
 
 	/* ═══ AI ═══ */
@@ -1186,7 +1275,7 @@ export default function ResumeBuilder() {
 										0,
 										selectedBullet.bulletIndex,
 									),
-									{ content: firstBullet },
+									{ id: crypto.randomUUID(), content: firstBullet },
 									...rest.map(b => ({ id: crypto.randomUUID(), content: b })),
 									...(exp.descriptions ?? []).slice(
 										selectedBullet.bulletIndex + 1,
@@ -1300,6 +1389,7 @@ export default function ResumeBuilder() {
 		a.href = url
 		a.download = `${formData.name || 'resume'}.pdf`
 		a.click()
+		setTimeout(() => URL.revokeObjectURL(url), 1000)
 
 		// After PDF generation succeeds, create application if job selected
 		if (selectedJob?.id && formData.id) {
@@ -1935,7 +2025,8 @@ export default function ResumeBuilder() {
 													const val = e.currentTarget.value.trim()
 													if (
 														val &&
-														val !== (r.name || r.job?.title || 'Untitled')
+														val !== (r.name || r.job?.title || 'Untitled') &&
+														r.id === formData.id
 													) {
 														const newFormData = { ...formData, name: val }
 														setFormData(newFormData)
@@ -2366,7 +2457,6 @@ export default function ResumeBuilder() {
 							}}
 							onMatchLoaded={() => setHasReviewedMatch(true)}
 							onBulletsGenerated={(changes, gaps, summary) => {
-								console.log('onBulletsGenerated:', { changes: changes.length, gaps: gaps.length, summary, changeDetails: changes })
 								setHasTakenAction(true)
 								const snapshot = structuredClone(formData)
 								const highlightIds: string[] = []
@@ -2954,10 +3044,4 @@ export default function ResumeBuilder() {
 			/>
 		</div>
 	)
-}
-
-export const action = async ({ request }: ActionFunctionArgs) => {
-	const formData = await request.formData()
-	console.log(formData)
-	return null
 }
