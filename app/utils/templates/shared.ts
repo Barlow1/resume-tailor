@@ -29,7 +29,7 @@ export function escapeHtml(str: string): string {
 }
 
 export function sanitizeColor(color: string, fallback: string): string {
-	return /^#[0-9a-fA-F]{3,8}$/.test(color) ? color : fallback
+	return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(color) ? color : fallback
 }
 
 export function editableAttrs(
@@ -55,10 +55,6 @@ export function getEditableCss(): string {
 			cursor: text;
 			min-width: 20px;
 			min-height: 1em;
-		}
-		[contenteditable]:hover {
-			box-shadow: inset 0 0 0 1px rgba(107, 69, 255, 0.25);
-			border-radius: 2px;
 		}
 		[contenteditable]:focus {
 			outline: none;

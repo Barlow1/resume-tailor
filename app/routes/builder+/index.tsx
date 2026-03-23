@@ -2050,7 +2050,7 @@ export default function ResumeBuilder() {
 													overflow: 'hidden',
 												}}
 											>
-												{r.jobId ? (r.job?.company || r.job?.title || r.name || 'Untitled') : (r.name || 'Untitled')}
+												{r.jobId ? ([r.job?.title, r.job?.company].filter(Boolean).join(' — ') || r.name || 'Untitled') : (r.name || 'Untitled')}
 											</div>
 										)}
 									</div>
@@ -2500,6 +2500,8 @@ export default function ResumeBuilder() {
 									next.experiences![expIdx] = exp
 								}
 
+								// Force iframe to accept the new HTML even if user is mid-edit
+								iframeComponentRef.current?.markStructuralUpdate()
 								setFormData(next)
 								debouncedSave(next)
 
