@@ -32,30 +32,34 @@ function stripResumeIds(resume: any) {
 	delete copy.job
 	delete copy.createdAt
 	delete copy.updatedAt
-	copy.experiences.forEach((exp: any) => {
+	copy.experiences?.forEach((exp: any) => {
 		delete exp.id
 		delete exp.resumeId
-		exp.descriptions.forEach((desc: any) => {
+		exp.descriptions?.forEach((desc: any) => {
 			delete desc.id
 			delete desc.experienceId
 		})
 	})
-	copy.education.forEach((ed: any) => {
+	copy.education?.forEach((ed: any) => {
 		delete ed.id
 		delete ed.resumeId
 	})
-	copy.skills.forEach((skill: any) => {
+	copy.skills?.forEach((skill: any) => {
 		delete skill.id
 		delete skill.resumeId
 	})
-	copy.hobbies.forEach((hobby: any) => {
+	copy.hobbies?.forEach((hobby: any) => {
 		delete hobby.id
 		delete hobby.resumeId
 	})
-	delete copy.headers.id
-	delete copy.headers.resumeId
-	delete copy.visibleSections.id
-	delete copy.visibleSections.resumeId
+	if (copy.headers) {
+		delete copy.headers.id
+		delete copy.headers.resumeId
+	}
+	if (copy.visibleSections) {
+		delete copy.visibleSections.id
+		delete copy.visibleSections.resumeId
+	}
 	return copy
 }
 
@@ -153,6 +157,10 @@ export async function action({ request }: DataFunctionArgs) {
 					personalDetails: true,
 					photo: false,
 				},
+
+				layout: 'slate',
+				font: 'inter',
+				textSize: 'medium',
 			}
 
 			// Save to database

@@ -183,8 +183,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 					personalDetails: resume.visibleSections?.personalDetails ?? true,
 					photo: resume.visibleSections?.photo ?? true,
 				},
-				font: resume.font || 'font-crimson',
-				layout: resume.layout || 'traditional',
+				font: resume.font || 'inter',
+				layout: resume.layout || 'slate',
 				textSize: resume.textSize || 'medium',
 			}
 		}
