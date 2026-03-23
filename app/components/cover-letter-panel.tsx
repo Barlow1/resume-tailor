@@ -246,10 +246,10 @@ export function CoverLetterPanel({
 						style={{
 							flex: 1,
 							fontFamily: 'Crimson Pro, Georgia, serif',
-							background: c.white,
+							background: c.bgSurf,
 							border: `1px solid ${c.border}`,
-							borderRadius: 4,
-							padding: 40,
+							borderRadius: 8,
+							padding: 24,
 							fontSize: 14,
 							lineHeight: 1.75,
 							resize: 'none',

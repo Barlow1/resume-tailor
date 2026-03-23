@@ -5,8 +5,8 @@ const bg = '#0C0C0E'
 const panel = '#111113'
 const surf = '#18181B'
 const brd = '#2B2B31'
-const dim = '#636366'
-const mut = '#8B8B8F'
+const dim = '#B4B4BA'
+const mut = '#B5B5BB'
 const txt = '#ECECEE'
 
 function arcPath(startDeg: number, endDeg: number, r: number) {

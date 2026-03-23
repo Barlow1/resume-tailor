@@ -119,7 +119,7 @@ function generateExperienceSection(formData: ResumeData, accentColor: string, fo
 				</div>
 				${bullets.length > 0 ? `
 				<ul style="margin: 0; padding-left: 16px; margin-top: 4px; list-style-type: disc;">
-					${bullets.map((b, j) => `<li style="font-size: ${ts(12)}px; line-height: 1.55; color: #333; margin-bottom: 3px; font-family: ${fontFamily};" ${options.editable ? `data-bullet-index="${j}"` : ''}><span ${editableAttrs(options, `experiences.${i}.descriptions.${j}.content`, 'Describe what you did...', { multiline: true })}>${escapeHtml(b.content || '')}</span></li>`).join('\n\t\t\t\t\t')}
+					${bullets.map((b, j) => `<li style="font-size: ${ts(12)}px; line-height: 1.55; color: #333; margin-bottom: 3px; font-family: ${fontFamily};" ${options.editable ? `data-bullet-index="${j}"` : ''} ${b.id ? `data-description-id="${b.id}"` : ''}><span ${editableAttrs(options, `experiences.${i}.descriptions.${j}.content`, 'Describe what you did...', { multiline: true })}>${escapeHtml(b.content || '')}</span></li>`).join('\n\t\t\t\t\t')}
 				</ul>` : ''}
 			</div>`
 			}).join('\n')}

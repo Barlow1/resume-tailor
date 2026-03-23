@@ -7,6 +7,7 @@ import {
 	Sparkles,
 	Eye,
 	EyeOff,
+	Undo2,
 	type LucideIcon,
 } from 'lucide-react'
 import type { HoveredElementInfo, StructuralAction } from './resume-iframe.tsx'
@@ -17,7 +18,7 @@ type ToolbarAction = {
 	label: string
 	icon: LucideIcon
 	disabled?: boolean
-	action: StructuralAction | { type: '__aiTailor' } | { type: '__toggleSection'; sectionId: string }
+	action: StructuralAction | { type: '__aiTailor' } | { type: '__toggleSection'; sectionId: string } | { type: '__revertBullet'; descriptionId: string }
 }
 
 interface FloatingToolbarProps {
@@ -25,6 +26,9 @@ interface FloatingToolbarProps {
 	onAction: (action: StructuralAction) => void
 	onAITailor?: (experienceId: string, bulletIndex: number) => void
 	onToggleSection?: (sectionId: string) => void
+	onRevertBullet?: (descriptionId: string) => void
+	/** Set of description IDs that have revert metadata */
+	revertableIds?: Set<string>
 	sectionOrder: string[]
 	formData: ResumeData
 }
@@ -41,6 +45,8 @@ export function FloatingToolbar({
 	onAction,
 	onAITailor,
 	onToggleSection,
+	onRevertBullet,
+	revertableIds,
 	sectionOrder,
 	formData,
 }: FloatingToolbarProps) {
@@ -90,6 +96,14 @@ export function FloatingToolbar({
 					icon: Sparkles,
 					action: { type: '__aiTailor' },
 				})
+				if (hovered.descriptionId && revertableIds?.has(hovered.descriptionId)) {
+					items.push({
+						key: 'revertBullet',
+						label: 'Revert change',
+						icon: Undo2,
+						action: { type: '__revertBullet', descriptionId: hovered.descriptionId },
+					})
+				}
 				return items
 			}
 
@@ -240,6 +254,10 @@ export function FloatingToolbar({
 		}
 		if ('type' in act && act.type === '__toggleSection') {
 			onToggleSection?.(act.sectionId)
+			return
+		}
+		if ('type' in act && act.type === '__revertBullet') {
+			onRevertBullet?.(act.descriptionId)
 			return
 		}
 		onAction(act as StructuralAction)

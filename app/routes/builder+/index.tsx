@@ -253,11 +253,11 @@ const lightTheme = {
 	border: '#E0E0E6',
 	borderSub: '#EBEBEF',
 	text: '#111113',
-	muted: '#63636A',
-	dim: '#9C9CA3',
+	muted: '#46464C',
+	dim: '#4A4A50',
 	canvas: '#E8E8EC',
 	white: '#FFFFFF',
-	brandText: BRAND,
+	brandText: '#4B30B3',
 }
 const darkTheme = {
 	bg: '#111113',
@@ -266,11 +266,11 @@ const darkTheme = {
 	border: '#2B2B31',
 	borderSub: '#222228',
 	text: '#ECECEE',
-	muted: '#8B8B8F',
-	dim: '#858589',
+	muted: '#B5B5BB',
+	dim: '#B4B4BA',
 	canvas: '#0C0C0E',
 	white: '#FFFFFF',
-	brandText: '#9B7FFF',
+	brandText: '#C0ABFF',
 }
 type Theme = typeof lightTheme
 
@@ -625,6 +625,10 @@ export default function ResumeBuilder() {
 	const [hasReviewedMatch, setHasReviewedMatch] = useState(false)
 	const [hasTakenAction, setHasTakenAction] = useState(false)
 	const [editingResumeId, setEditingResumeId] = useState<string | null>(null)
+	const [matchRefetchKey, setMatchRefetchKey] = useState(0)
+	const undoSnapshotRef = useRef<typeof formData | null>(null)
+	const bulletUndoMapRef = useRef<Map<string, { action: 'rewrite' | 'new'; experienceId: string; originalText: string | null }>>(new Map())
+	const [pendingHighlights, setPendingHighlights] = useState<string[]>([])
 	const [hoveredElement, setHoveredElement] =
 		useState<HoveredElementInfo | null>(null)
 	const iframeComponentRef = useRef<ResumeIframeHandle>(null)
@@ -637,6 +641,15 @@ export default function ResumeBuilder() {
 
 	const c = isDark ? darkTheme : lightTheme
 	const sW = sidebar ? 304 : 64
+	const rightPanelW = scorePanel ? 340 : 0
+	const [viewportWidth, setViewportWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1440)
+	useEffect(() => {
+		const handler = () => setViewportWidth(window.innerWidth)
+		window.addEventListener('resize', handler)
+		return () => window.removeEventListener('resize', handler)
+	}, [])
+	const canvasAvailable = viewportWidth - sW - rightPanelW - 80
+	const canvasScale = Math.min(Math.max(canvasAvailable / 816, 0.7), 1.25)
 
 	/* ═══ DARK MODE (synced with app theme) ═══ */
 	const themeFetcher = useFetcher()
@@ -813,6 +826,20 @@ export default function ResumeBuilder() {
 			})
 		}
 	}, [resumeUploadedTracking])
+
+	/* ═══ PENDING HIGHLIGHTS — apply after formData settles into iframe ═══ */
+	useEffect(() => {
+		if (pendingHighlights.length === 0) return
+		// Mark structural so iframe accepts the new HTML from the updated formData
+		iframeComponentRef.current?.markStructuralUpdate()
+		// Wait for iframe to re-render with new content, then highlight
+		const timer = setTimeout(() => {
+			iframeComponentRef.current?.highlightDescriptions(pendingHighlights)
+			setPendingHighlights([])
+		}, 800)
+		return () => clearTimeout(timer)
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [pendingHighlights])
 
 	/* ═══ EDIT HANDLERS ═══ */
 	const updateField = (field: string, val: string) => {
@@ -1105,6 +1132,7 @@ export default function ResumeBuilder() {
 	const handleJobChange = useCallback(
 		(job: any) => {
 			setSelectedJob(job)
+			if (job) setSidebar(false)
 			const newFormData = {
 				...formData,
 				jobId: job?.id ?? null,
@@ -2292,12 +2320,37 @@ export default function ResumeBuilder() {
 						onHoverElement={handleHoverElement}
 						onCommandK={() => setShowCommandPalette(true)}
 						canvasBackground={c.canvas}
+						canvasScale={canvasScale}
 					/>
 					<FloatingToolbar
 						hovered={hoveredElement}
 						onAction={handleStructuralAction}
 						onAITailor={handleToolbarAITailor}
 						onToggleSection={(sectionId) => handleStructuralAction({ type: 'toggleSection', sectionId })}
+						onRevertBullet={(descId) => {
+							const meta = bulletUndoMapRef.current.get(descId)
+							if (!meta) return
+							setFormData(prev => {
+								const next = { ...prev, experiences: [...(prev.experiences ?? [])] }
+								const expIdx = next.experiences!.findIndex(e => e.id === meta.experienceId)
+								if (expIdx === -1) return prev
+								const exp = { ...next.experiences![expIdx] }
+								if (meta.action === 'rewrite' && meta.originalText !== null) {
+									exp.descriptions = (exp.descriptions ?? []).map(d =>
+										d.id === descId ? { ...d, content: meta.originalText! } : d,
+									)
+								} else {
+									exp.descriptions = (exp.descriptions ?? []).filter(d => d.id !== descId)
+								}
+								next.experiences![expIdx] = exp
+								return next
+							})
+							bulletUndoMapRef.current.delete(descId)
+							requestAnimationFrame(() => {
+								iframeComponentRef.current?.markStructuralUpdate()
+							})
+						}}
+						revertableIds={new Set(bulletUndoMapRef.current.keys())}
 						sectionOrder={sectionOrder}
 						formData={formData}
 					/>
@@ -2307,7 +2360,7 @@ export default function ResumeBuilder() {
 				{scorePanel && (
 					<div
 						style={{
-							width: 390,
+							width: 340,
 							borderLeft: `1px solid ${c.border}`,
 							background: c.bgEl,
 							display: 'flex',
@@ -2349,14 +2402,93 @@ export default function ResumeBuilder() {
 							formData={formData}
 							selectedJob={selectedJob ?? null}
 							theme={c}
+							refetchKey={matchRefetchKey}
 							onGenerateCoverLetter={() => {
 								setHasTakenAction(true)
 								handleGenerateCoverLetter()
 							}}
 							onMatchLoaded={() => setHasReviewedMatch(true)}
-							onScrollToSection={(section) => setActiveSection(section)}
+							onBulletsGenerated={(changes, gaps, summary) => {
+								console.log('onBulletsGenerated:', { changes: changes.length, gaps: gaps.length, summary, changeDetails: changes })
+								setHasTakenAction(true)
+								const snapshot = structuredClone(formData)
+								const highlightIds: string[] = []
+
+								// Build per-bullet undo map
+								const undoMap = new Map(bulletUndoMapRef.current)
+								for (const change of changes) {
+									const undoId = change.action === 'rewrite' && change.existingBulletId
+										? change.existingBulletId
+										: change.descriptionId
+									undoMap.set(undoId, {
+										action: change.action,
+										experienceId: change.experienceId,
+										originalText: change.originalText,
+									})
+								}
+								bulletUndoMapRef.current = undoMap
+
+								// Build updated formData outside the setter so we can save it
+								const next = { ...formData, experiences: [...(formData.experiences ?? [])] }
+								if (summary) {
+									next.about = summary
+								}
+								for (const change of changes) {
+									const expIdx = next.experiences!.findIndex(e => e.id === change.experienceId)
+									if (expIdx === -1) {
+										console.warn('Bullet skipped — no experience with id:', change.experienceId, 'Available:', next.experiences!.map(e => e.id))
+										continue
+									}
+									const exp = { ...next.experiences![expIdx] }
+
+									if (change.action === 'rewrite' && change.existingBulletId) {
+										exp.descriptions = (exp.descriptions ?? []).map(d =>
+											d.id === change.existingBulletId
+												? { ...d, content: change.content }
+												: d,
+										)
+										highlightIds.push(change.existingBulletId)
+									} else {
+										exp.descriptions = [
+											...(exp.descriptions ?? []),
+											{ id: change.descriptionId, content: change.content },
+										]
+										highlightIds.push(change.descriptionId)
+									}
+									next.experiences![expIdx] = exp
+								}
+
+								setFormData(next)
+								debouncedSave(next)
+
+								// Queue highlights — the effect will apply them after formData settles
+								setPendingHighlights(highlightIds)
+
+								undoSnapshotRef.current = snapshot
+								toast({
+									title: `Updated ${changes.length} bullet${changes.length > 1 ? 's' : ''}${summary ? ' + summary' : ''}`,
+									description: 'See changes highlighted on your resume.',
+								})
+								setMatchRefetchKey(k => k + 1)
+							}}
+							onUndoBullets={undoSnapshotRef.current ? () => {
+								if (undoSnapshotRef.current) {
+									setFormData(undoSnapshotRef.current)
+									debouncedSave(undoSnapshotRef.current)
+									undoSnapshotRef.current = null
+									iframeComponentRef.current?.clearHighlights()
+									setMatchRefetchKey(k => k + 1)
+								}
+							} : undefined}
+							onSkipRole={() => {
+								setSelectedJob(null)
+							}}
+							onDownload={handleDownloadPDF}
+							onNextJob={() => {
+								setSelectedJob(null)
+								setShowCreateJob(true)
+							}}
 							hasCoverLetter={!!coverLetterText}
-							hasTailored={(gettingStartedProgress?.tailorCount ?? 0) > 0}
 						/>
 						{coverLetterOpen && (
 							<CoverLetterPanel

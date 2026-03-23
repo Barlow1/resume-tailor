@@ -1,13 +1,18 @@
 import { json, type ActionFunctionArgs } from '@remix-run/node'
 import { getUserId } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
-import { generateCoverLetter } from '~/utils/openai.server.ts'
+import { generateRequirementBullets } from '~/utils/openai.server.ts'
 
 export async function action({ request }: ActionFunctionArgs) {
 	const userId = await getUserId(request)
 	if (!userId) return json({ error: 'Unauthorized' }, { status: 401 })
 
-	const { resumeId, jobId } = (await request.json()) as { resumeId: string; jobId: string }
+	const { resumeId, jobId, requirements, requirementExperienceMap } = (await request.json()) as {
+		resumeId: string
+		jobId: string
+		requirements: string[]
+		requirementExperienceMap?: Record<string, string>
+	}
 
 	const [resume, job] = await Promise.all([
 		prisma.builderResume.findUnique({
@@ -45,12 +50,17 @@ export async function action({ request }: ActionFunctionArgs) {
 		visibleSections: null,
 	}
 
-	const text = await generateCoverLetter({
-		resumeData,
-		jobDescription: job.content,
-		jobTitle: job.title,
-		company: job.company ?? '',
-	})
+	try {
+		const result = await generateRequirementBullets({
+			resumeData,
+			jobDescription: job.content,
+			requirements,
+			requirementExperienceMap,
+		})
 
-	return json({ coverLetter: text })
+		return json({ bullets: result.bullets, summary: result.summary, warnings: result.warnings })
+	} catch (err) {
+		console.error('generate-requirement-bullets error:', err)
+		return json({ error: 'Failed to generate bullets', details: String(err) }, { status: 500 })
+	}
 }
