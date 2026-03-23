@@ -106,9 +106,11 @@ export function BuilderNav({
 				<Link to="/resumes" style={{ fontSize: 14, color: c.muted, textDecoration: 'none' }}>
 					Resumes
 				</Link>
+				{/* TODO: unhide once tracker is ironed out
 				<Link to="/tracker" style={{ fontSize: 14, color: c.muted, textDecoration: 'none' }}>
 					Tracker
 				</Link>
+				*/}
 			</div>
 			{/* ⌘K Quick Actions */}
 			<div

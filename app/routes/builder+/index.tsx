@@ -9,24 +9,19 @@ import {
 	useFetcher,
 	useNavigate,
 	useSubmit,
-	Form,
-	Link,
 } from '@remix-run/react'
 import { useOptionalUser } from '~/utils/user.ts'
-import { getUserImgSrc } from '~/utils/misc.ts'
 import { useTheme } from '~/routes/resources+/theme/index.tsx'
 import {
 	ChevronDown,
 	Search,
 	Sun,
 	Moon,
-	Sparkles,
 	Download,
 	LayoutTemplate,
 	Check,
 	X,
 	Plus,
-	Minus,
 	Briefcase,
 	GraduationCap,
 	Code2,
@@ -34,14 +29,8 @@ import {
 	Target,
 	PanelLeftClose,
 	PanelRightClose,
-	Palette,
 	Eye,
 	EyeOff,
-	ChevronRight,
-	Rocket,
-	LogOut,
-	User as UserIcon,
-	CreditCard,
 } from 'lucide-react'
 import { SubscribeModal } from '~/components/subscribe-modal.tsx'
 import { getStripeSubscription, getUserId } from '~/utils/auth.server.ts'
@@ -242,8 +231,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 /* ═══ DESIGN TOKENS ═══ */
 const BRAND = '#6B45FF'
 const SUCCESS = '#30A46C'
-const WARN = '#F76B15'
-const ERROR = '#E5484D'
 const AMBER = '#F5D90A'
 
 const lightTheme = {

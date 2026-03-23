@@ -9,10 +9,8 @@
 import 'dotenv/config'
 import { readFile } from 'fs/promises'
 import path from 'path'
-import pdf from 'pdf-parse-fork'
 import { parseResumeWithOpenAI, type OpenAIResumeData } from '../app/utils/openai-resume-parser.server.ts'
-import { getExperienceMatch } from '../app/utils/openai.server.ts'
-import { generateRequirementBullets } from '../app/utils/openai.server.ts'
+import { getExperienceMatch, generateRequirementBullets } from '../app/utils/openai.server.ts'
 import { buildResumeSummary, type ExperienceMatch } from '../app/utils/ai/experience-match.server.ts'
 import type { ResumeData } from '../app/utils/builder-resume.server.ts'
 
