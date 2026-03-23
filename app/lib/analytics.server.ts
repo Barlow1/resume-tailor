@@ -335,7 +335,7 @@ export function trackResumeParsed(
  */
 export function trackResumeCreated(
 	userId: string,
-	method: 'upload' | 'scratch' | 'clone',
+	method: 'upload' | 'scratch' | 'clone' | 'clone_for_job',
 	resumeId: string,
 	request?: Request,
 	resumeNumber?: number,
