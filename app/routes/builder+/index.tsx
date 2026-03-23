@@ -163,7 +163,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 				hobbies: resume.hobbies,
 				jobId: resume.jobId || null,
 				job: resume.job || null,
-				nameColor: resume.nameColor || '#6B45FF',
+				nameColor: resume.nameColor || '#1b3a5c',
 				headers: {
 					experienceHeader:
 						resume.headers?.experienceHeader || 'Work Experience',
