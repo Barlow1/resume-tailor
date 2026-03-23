@@ -80,7 +80,7 @@ function base64ToUint8Array(base64: string): Uint8Array {
 const getDefaultFormData = (): ResumeData => {
 	return {
 		name: '',
-		nameColor: '#6B45FF',
+		nameColor: '#1b3a5c',
 		role: '',
 		email: '',
 		phone: '',
@@ -130,8 +130,8 @@ const getDefaultFormData = (): ResumeData => {
 			personalDetails: true,
 			photo: true,
 		},
-		font: 'font-crimson',
-		layout: 'traditional',
+		font: 'inter',
+		layout: 'slate',
 		textSize: 'medium',
 	}
 }
@@ -262,54 +262,10 @@ const darkTheme = {
 type Theme = typeof lightTheme
 
 
-/* ═══ FONT / TEMPLATE OPTIONS ═══ */
-const FONT_OPTIONS = [
-	{
-		value: 'font-crimson',
-		label: 'Crimson Pro',
-		family: 'Crimson Pro, Georgia, serif',
-	},
-	{
-		value: 'font-sans',
-		label: 'Arial',
-		family: 'Arial, Helvetica, sans-serif',
-	},
-	{
-		value: 'font-serif',
-		label: 'Georgia',
-		family: 'Georgia, "Times New Roman", serif',
-	},
-	{
-		value: 'font-mono',
-		label: 'Courier',
-		family: '"Courier New", Courier, monospace',
-	},
-	{
-		value: 'font-garamond',
-		label: 'Garamond',
-		family: 'Garamond, "Times New Roman", serif',
-	},
-	{
-		value: 'font-trebuchet',
-		label: 'Trebuchet',
-		family: '"Trebuchet MS", Helvetica, sans-serif',
-	},
-	{
-		value: 'font-verdana',
-		label: 'Verdana',
-		family: 'Verdana, Geneva, sans-serif',
-	},
-]
-const ACCENT_COLORS = [
-	'#6B45FF',
-	'#2563EB',
-	'#059669',
-	'#E11D48',
-	'#F76B15',
-	'#7C3AED',
-	'#111113',
-	'#1E3A5F',
-]
+/* ═══ FONT / TEMPLATE OPTIONS (from registry) ═══ */
+import { TEMPLATE_META, FONT_PAIRINGS, COLOR_PALETTE } from '~/utils/templates/registry.ts'
+import type { TemplateMeta, FontPairing, ColorOption } from '~/utils/templates/registry.ts'
+const VISIBLE_PAIRINGS = FONT_PAIRINGS.filter(p => !p.legacy)
 const DEFAULT_SECTION_ORDER = [
 	'summary',
 	'experience',
@@ -1398,6 +1354,21 @@ export default function ResumeBuilder() {
 	}, [])
 
 	/* ═══ TEMPLATE APPLY ═══ */
+	const applyTemplate = (templateId: string) => {
+		if (templateId === formData.layout) return
+		const meta = TEMPLATE_META.find(t => t.id === templateId)
+		if (!meta) return
+		setFormData(prev => {
+			const next = {
+				...prev,
+				layout: templateId,
+				font: meta.defaultPairing,
+				nameColor: meta.defaultAccent,
+			}
+			debouncedSave(next)
+			return next
+		})
+	}
 	const applyFont = (fontValue: string) => {
 		setFormData(prev => {
 			const next = { ...prev, font: fontValue }
@@ -2630,6 +2601,192 @@ export default function ResumeBuilder() {
 				title="Customize"
 				c={c}
 			>
+				{/* Template Picker */}
+				<div style={{ marginBottom: 24 }}>
+					<span
+						style={{
+							fontSize: 11,
+							fontWeight: 600,
+							color: c.dim,
+							textTransform: 'uppercase',
+							letterSpacing: '0.04em',
+						}}
+					>
+						Template
+					</span>
+					<div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginTop: 10 }}>
+						{TEMPLATE_META.map(t => {
+							const isActive = formData.layout === t.id || (!formData.layout && t.id === 'simple') || (formData.layout === 'traditional' && t.id === 'simple')
+							const accent = t.defaultAccent
+							return (
+								<button
+									key={t.id}
+									onClick={() => applyTemplate(t.id)}
+									aria-label={`${t.name} template`}
+									aria-pressed={isActive}
+									style={{
+										padding: 0,
+										borderRadius: 8,
+										cursor: 'pointer',
+										background: isActive ? `${BRAND}08` : c.bg,
+										border: `2px solid ${isActive ? BRAND : c.border}`,
+										boxShadow: isActive ? `0 0 0 1px ${BRAND}30` : 'none',
+										transition: 'all 150ms',
+										overflow: 'hidden',
+									}}
+								>
+									{/* Mini preview SVG */}
+									<div style={{ padding: '10px 10px 6px', background: c.bg }}>
+										<svg viewBox="0 0 80 100" width="100%" style={{ display: 'block' }}>
+											{t.id === 'slate' && (
+												<>
+													{/* Bold name */}
+													<rect x="4" y="6" width="36" height="5" rx="1" fill={accent} />
+													{/* Pipe-separated headline bar */}
+													<line x1="4" y1="15" x2="76" y2="15" stroke="#ddd" strokeWidth="0.5" />
+													<rect x="4" y="17" width="14" height="2.5" rx="0.5" fill="#999" />
+													<text x="20" y="19.5" fontSize="3" fill="#ccc">|</text>
+													<rect x="23" y="17" width="18" height="2.5" rx="0.5" fill="#999" />
+													<text x="43" y="19.5" fontSize="3" fill="#ccc">|</text>
+													<rect x="46" y="17" width="12" height="2.5" rx="0.5" fill="#999" />
+													<line x1="4" y1="22" x2="76" y2="22" stroke="#ddd" strokeWidth="0.5" />
+													{/* Section header - thin rule */}
+													<rect x="4" y="28" width="22" height="2.5" rx="0.5" fill="#333" />
+													<line x1="4" y1="33" x2="76" y2="33" stroke="#e5e5e5" strokeWidth="0.5" />
+													{/* Disc bullets */}
+													<circle cx="8" cy="38" r="1.2" fill="#333" />
+													<rect x="12" y="36.5" width="50" height="2.5" rx="0.5" fill="#ddd" />
+													<circle cx="8" cy="44" r="1.2" fill="#333" />
+													<rect x="12" y="42.5" width="42" height="2.5" rx="0.5" fill="#ddd" />
+													{/* Skills grid */}
+													<rect x="4" y="54" width="22" height="2.5" rx="0.5" fill="#333" />
+													<line x1="4" y1="59" x2="76" y2="59" stroke="#e5e5e5" strokeWidth="0.5" />
+													<rect x="4" y="63" width="16" height="6" rx="1" fill="#f0f0f0" />
+													<rect x="23" y="63" width="20" height="6" rx="1" fill="#f0f0f0" />
+													<rect x="46" y="63" width="14" height="6" rx="1" fill="#f0f0f0" />
+													<rect x="4" y="72" width="18" height="6" rx="1" fill="#f0f0f0" />
+													<rect x="25" y="72" width="16" height="6" rx="1" fill="#f0f0f0" />
+												</>
+											)}
+											{t.id === 'warm' && (
+												<>
+													{/* Sand accent band */}
+													<rect x="0" y="0" width="80" height="28" fill="#f5f0eb" />
+													{/* Italic serif name */}
+													<rect x="4" y="6" width="40" height="6" rx="1" fill={accent} opacity="0.9" />
+													{/* Role + contact */}
+													<rect x="4" y="15" width="24" height="2.5" rx="0.5" fill="#888" />
+													<rect x="4" y="20" width="36" height="2" rx="0.5" fill="#aaa" />
+													{/* Section header - serif style */}
+													<rect x="4" y="34" width="26" height="3" rx="0.5" fill={accent} />
+													<line x1="4" y1="39.5" x2="50" y2="39.5" stroke={accent} strokeWidth="0.5" opacity="0.4" />
+													{/* Job anchor rule + triangle bullets */}
+													<rect x="4" y="44" width="30" height="2.5" rx="0.5" fill="#333" />
+													<rect x="50" y="44" width="18" height="2" rx="0.5" fill="#999" />
+													<text x="6" y="53" fontSize="4" fill={accent}>▸</text>
+													<rect x="12" y="50" width="52" height="2.5" rx="0.5" fill="#ddd" />
+													<text x="6" y="59" fontSize="4" fill={accent}>▸</text>
+													<rect x="12" y="56" width="44" height="2.5" rx="0.5" fill="#ddd" />
+													{/* Em-dash skills */}
+													<rect x="4" y="68" width="26" height="3" rx="0.5" fill={accent} />
+													<line x1="4" y1="73.5" x2="50" y2="73.5" stroke={accent} strokeWidth="0.5" opacity="0.4" />
+													<rect x="4" y="77" width="60" height="2.5" rx="0.5" fill="#ccc" />
+												</>
+											)}
+											{t.id === 'editorial' && (
+												<>
+													{/* Centered header */}
+													<rect x="18" y="6" width="44" height="6" rx="1" fill={accent} />
+													{/* Italic role - centered */}
+													<rect x="24" y="15" width="32" height="2.5" rx="0.5" fill="#888" />
+													{/* Centered contact */}
+													<rect x="20" y="20" width="40" height="2" rx="0.5" fill="#aaa" />
+													{/* Left vertical rule */}
+													<line x1="8" y1="30" x2="8" y2="95" stroke={accent} strokeWidth="1.5" opacity="0.15" />
+													{/* Section header - italic, no border */}
+													<rect x="14" y="32" width="24" height="2.5" rx="0.5" fill={accent} />
+													{/* Square bullets */}
+													<rect x="14" y="39" width="2" height="2" fill="#333" />
+													<rect x="19" y="39" width="48" height="2.5" rx="0.5" fill="#ddd" />
+													<rect x="14" y="45" width="2" height="2" fill="#333" />
+													<rect x="19" y="45" width="40" height="2.5" rx="0.5" fill="#ddd" />
+													{/* Job divider */}
+													<line x1="14" y1="53" x2="72" y2="53" stroke="#eee" strokeWidth="0.5" />
+													{/* Another entry */}
+													<rect x="14" y="57" width="28" height="2.5" rx="0.5" fill="#333" />
+													<rect x="14" y="63" width="2" height="2" fill="#333" />
+													<rect x="19" y="63" width="44" height="2.5" rx="0.5" fill="#ddd" />
+													<rect x="14" y="69" width="2" height="2" fill="#333" />
+													<rect x="19" y="69" width="36" height="2.5" rx="0.5" fill="#ddd" />
+												</>
+											)}
+											{t.id === 'modernist' && (
+												<>
+													{/* Bold name - stark */}
+													<rect x="12" y="6" width="38" height="5" rx="1" fill="#111" />
+													{/* Contact line */}
+													<rect x="12" y="14" width="50" height="2" rx="0.5" fill="#888" />
+													{/* Bold 3px rule */}
+													<rect x="12" y="20" width="56" height="2" fill={accent} />
+													{/* Outdented section label */}
+													<rect x="2" y="28" width="18" height="2" rx="0.5" fill={accent} />
+													{/* Content indented */}
+													<rect x="12" y="34" width="28" height="2.5" rx="0.5" fill="#333" />
+													<rect x="52" y="34" width="16" height="2" rx="0.5" fill="#999" style={{ fontStyle: 'italic' }} />
+													{/* Square bullets */}
+													<rect x="14" y="40" width="1.8" height="1.8" fill="#333" />
+													<rect x="19" y="40" width="46" height="2.5" rx="0.5" fill="#ddd" />
+													<rect x="14" y="46" width="1.8" height="1.8" fill="#333" />
+													<rect x="19" y="46" width="38" height="2.5" rx="0.5" fill="#ddd" />
+													{/* Another outdented label */}
+													<rect x="2" y="56" width="14" height="2" rx="0.5" fill={accent} />
+													<rect x="12" y="62" width="30" height="2.5" rx="0.5" fill="#333" />
+													<rect x="12" y="68" width="24" height="2" rx="0.5" fill="#999" />
+												</>
+											)}
+											{t.id === 'simple' && (
+												<>
+													{/* Bold name with accent */}
+													<rect x="4" y="6" width="34" height="5" rx="1" fill={accent || '#111'} />
+													{/* Role */}
+													<rect x="4" y="14" width="20" height="2.5" rx="0.5" fill="#666" />
+													{/* Contact dots */}
+													<rect x="4" y="19" width="40" height="2" rx="0.5" fill="#aaa" />
+													{/* Section header with accent underline */}
+													<rect x="4" y="28" width="24" height="2.5" rx="0.5" fill={accent || '#111'} />
+													<line x1="4" y1="33" x2="76" y2="33" stroke={accent || '#111'} strokeWidth="1" />
+													{/* Disc bullets */}
+													<circle cx="8" cy="39" r="1.2" fill="#333" />
+													<rect x="12" y="37.5" width="52" height="2.5" rx="0.5" fill="#ddd" />
+													<circle cx="8" cy="45" r="1.2" fill="#333" />
+													<rect x="12" y="43.5" width="44" height="2.5" rx="0.5" fill="#ddd" />
+													<circle cx="8" cy="51" r="1.2" fill="#333" />
+													<rect x="12" y="49.5" width="48" height="2.5" rx="0.5" fill="#ddd" />
+													{/* Education */}
+													<rect x="4" y="60" width="24" height="2.5" rx="0.5" fill={accent || '#111'} />
+													<line x1="4" y1="65" x2="76" y2="65" stroke={accent || '#111'} strokeWidth="1" />
+													<rect x="4" y="69" width="30" height="2.5" rx="0.5" fill="#333" />
+													<rect x="4" y="74" width="22" height="2" rx="0.5" fill="#888" />
+												</>
+											)}
+										</svg>
+									</div>
+									{/* Label */}
+									<div style={{
+										padding: '4px 8px 8px',
+										fontSize: 11,
+										fontWeight: isActive ? 600 : 500,
+										color: isActive ? c.brandText : c.text,
+										textAlign: 'center',
+									}}>
+										{t.name}
+									</div>
+								</button>
+							)
+						})}
+					</div>
+				</div>
+
 				{/* Accent Color */}
 				<div style={{ marginBottom: 20 }}>
 					<span
@@ -2646,32 +2803,35 @@ export default function ResumeBuilder() {
 					<div
 						style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}
 					>
-						{ACCENT_COLORS.map(color => (
-							<div
-								key={color}
-								onClick={() => applyAccentColor(color)}
+						{COLOR_PALETTE.map(color => (
+							<button
+								key={color.id}
+								onClick={() => applyAccentColor(color.hex)}
+								aria-label={color.name}
+								aria-pressed={formData.nameColor === color.hex}
 								style={{
 									width: 28,
 									height: 28,
 									borderRadius: '50%',
-									background: color,
+									background: color.hex,
 									cursor: 'pointer',
 									border:
-										formData.nameColor === color
+										formData.nameColor === color.hex
 											? `2px solid ${c.text}`
 											: '2px solid transparent',
 									boxShadow:
-										formData.nameColor === color
-											? `0 0 0 2px ${color}40`
+										formData.nameColor === color.hex
+											? `0 0 0 2px ${color.hex}40`
 											: 'none',
 									transition: 'all 150ms',
+									padding: 0,
 								}}
 							/>
 						))}
 					</div>
 				</div>
 
-				{/* Font Picker */}
+				{/* Font Pairing Picker */}
 				<div>
 					<span
 						style={{
@@ -2692,47 +2852,41 @@ export default function ResumeBuilder() {
 							marginTop: 10,
 						}}
 					>
-						{FONT_OPTIONS.map(f => (
-							<div
-								key={f.value}
-								onClick={() => applyFont(f.value)}
-								style={{
-									padding: '8px 12px',
-									borderRadius: 6,
-									cursor: 'pointer',
-									display: 'flex',
-									alignItems: 'center',
-									justifyContent: 'space-between',
-									background:
-										formData.font === f.value ? `${BRAND}12` : 'transparent',
-									border: `1px solid ${
-										formData.font === f.value ? BRAND + '40' : 'transparent'
-									}`,
-								}}
-								onMouseEnter={e => {
-									if (formData.font !== f.value)
-										(e.currentTarget as HTMLElement).style.background = c.bgSurf
-								}}
-								onMouseLeave={e => {
-									if (formData.font !== f.value)
-										(e.currentTarget as HTMLElement).style.background =
-											'transparent'
-								}}
-							>
-								<span
+						{VISIBLE_PAIRINGS.map(p => {
+							const isActive = formData.font === p.id
+							return (
+								<button
+									key={p.id}
+									onClick={() => applyFont(p.id)}
+									aria-label={`${p.label} font`}
+									aria-pressed={isActive}
 									style={{
-										fontSize: 13,
-										color: formData.font === f.value ? c.brandText : c.text,
-										fontFamily: f.family,
+										padding: '8px 12px',
+										borderRadius: 6,
+										cursor: 'pointer',
+										display: 'flex',
+										alignItems: 'center',
+										justifyContent: 'space-between',
+										background: isActive ? `${BRAND}12` : 'transparent',
+										border: `1px solid ${isActive ? BRAND + '40' : 'transparent'}`,
+										textAlign: 'left',
 									}}
 								>
-									{f.label}
-								</span>
-								{formData.font === f.value && (
-									<Check size={14} color={c.brandText} strokeWidth={2} />
-								)}
-							</div>
-						))}
+									<span
+										style={{
+											fontSize: 13,
+											color: isActive ? c.brandText : c.text,
+											fontFamily: p.headingFamily,
+										}}
+									>
+										{p.label}
+									</span>
+									{isActive && (
+										<Check size={14} color={c.brandText} strokeWidth={2} />
+									)}
+								</button>
+							)
+						})}
 					</div>
 				</div>
 
@@ -2751,7 +2905,7 @@ export default function ResumeBuilder() {
 					</span>
 					<div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
 						{(['small', 'medium', 'large'] as const).map(size => (
-							<div
+							<button
 								key={size}
 								onClick={() => {
 									setFormData(prev => {
@@ -2778,7 +2932,7 @@ export default function ResumeBuilder() {
 								}}
 							>
 								{size}
-							</div>
+							</button>
 						))}
 					</div>
 				</div>
