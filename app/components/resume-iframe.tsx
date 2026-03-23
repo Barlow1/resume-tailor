@@ -342,13 +342,16 @@ export const ResumeIframe = forwardRef<ResumeIframeHandle, ResumeIframeProps>(
 		const computeRect = useCallback((el: HTMLElement): HoveredElementInfo['rect'] => {
 			const elRect = el.getBoundingClientRect()
 			const iframeRect = iframeRef.current!.getBoundingClientRect()
+			// Inner-iframe coords are in unscaled space; multiply by canvasScale
+			// so they align with the scaled iframe position in the parent document.
+			const s = canvasScale ?? 1
 			return {
-				top: iframeRect.top + elRect.top,
-				left: iframeRect.left + elRect.left,
-				width: elRect.width,
-				height: elRect.height,
+				top: iframeRect.top + elRect.top * s,
+				left: iframeRect.left + elRect.left * s,
+				width: elRect.width * s,
+				height: elRect.height * s,
 			}
-		}, [])
+		}, [canvasScale])
 
 		// Resolve toolbar info from a DOM element inside the iframe
 		const resolveToolbarInfo = useCallback((target: HTMLElement): HoveredElementInfo | null => {
