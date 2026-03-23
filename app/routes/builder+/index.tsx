@@ -72,6 +72,7 @@ import { BuilderNav } from '~/components/builder-nav.tsx'
 import { OnboardingWidget } from '~/components/onboarding-widget.tsx'
 import { TruthPanel } from '~/components/truth-panel.tsx'
 import { CoverLetterPanel } from '~/components/cover-letter-panel.tsx'
+import { TEMPLATE_META, FONT_PAIRINGS, COLOR_PALETTE } from '~/utils/templates/registry.ts'
 
 function base64ToUint8Array(base64: string): Uint8Array {
 	return Uint8Array.from(atob(base64), c => c.charCodeAt(0))
@@ -263,9 +264,7 @@ type Theme = typeof lightTheme
 
 
 /* ═══ FONT / TEMPLATE OPTIONS (from registry) ═══ */
-import { TEMPLATE_META, FONT_PAIRINGS, COLOR_PALETTE } from '~/utils/templates/registry.ts'
-import type { TemplateMeta, FontPairing, ColorOption } from '~/utils/templates/registry.ts'
-const VISIBLE_PAIRINGS = FONT_PAIRINGS.filter(p => !p.legacy)
+const VISIBLE_PAIRINGS = FONT_PAIRINGS.filter((p: { legacy?: boolean }) => !p.legacy)
 const DEFAULT_SECTION_ORDER = [
 	'summary',
 	'experience',
