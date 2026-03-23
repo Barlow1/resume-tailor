@@ -1155,10 +1155,6 @@ export default function ResumeBuilder() {
 			}
 
 			// Clone the current resume for this job
-			const baseName = formData.name || 'Resume'
-			const jobLabel = job.company || job.title || 'Untitled Job'
-			const cloneName = `${baseName} — ${jobLabel}`
-
 			setSelectedJob(job)
 			setSidebar(false)
 
@@ -1166,7 +1162,6 @@ export default function ResumeBuilder() {
 				{
 					existingResumeId: formData.id!,
 					jobId: job.id,
-					name: cloneName,
 				},
 				{ method: 'POST', action: '/resources/create-resume?type=clone-for-job' },
 			)
@@ -2055,7 +2050,7 @@ export default function ResumeBuilder() {
 													overflow: 'hidden',
 												}}
 											>
-												{r.name || r.job?.title || 'Untitled'}
+												{r.jobId ? (r.job?.company || r.job?.title || r.name || 'Untitled') : (r.name || 'Untitled')}
 											</div>
 										)}
 									</div>

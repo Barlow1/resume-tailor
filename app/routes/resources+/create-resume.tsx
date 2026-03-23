@@ -323,9 +323,8 @@ export async function action({ request }: DataFunctionArgs) {
 
 		const resumeCopy = stripResumeIds(resume)
 
-		// Clear job-specific data and set clone name
+		// Clear job-specific data; keep person's name unchanged
 		resumeCopy.coverLetterDrafts = null
-		resumeCopy.name = name || resumeCopy.name
 		resumeCopy.jobId = jobId
 
 		const builderResume = await createBuilderResume(userId, resumeCopy)
