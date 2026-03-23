@@ -110,7 +110,7 @@ export interface ResumeParsedEvent {
 }
 
 export interface ResumeCreatedEvent {
-	method: 'upload' | 'scratch' | 'clone'
+	method: 'upload' | 'scratch' | 'clone' | 'clone_for_job'
 	resume_id: string
 	resume_number: number // 1st, 2nd, 3rd resume - identifies power users
 }

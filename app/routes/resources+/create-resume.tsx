@@ -300,7 +300,6 @@ export async function action({ request }: DataFunctionArgs) {
 		const formData = await request.formData()
 		const existingResumeId = formData.get('existingResumeId') as string
 		const jobId = formData.get('jobId') as string
-		const name = formData.get('name') as string
 
 		if (!existingResumeId || !jobId) {
 			return json({ error: 'Missing required fields' }, { status: 400 })

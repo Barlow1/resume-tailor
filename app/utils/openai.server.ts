@@ -1107,7 +1107,7 @@ export const getExperienceMatch = async ({
 			{ role: 'user', content: `Resume:\n${resumeSummary}\n\nJob Description:\n${jobDescription}` },
 		],
 		max_completion_tokens: 8192,
-		reasoning_effort: 'none',
+		reasoning_effort: 'low',
 		response_format: experienceMatchResponseFormat,
 	})
 

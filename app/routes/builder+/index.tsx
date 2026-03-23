@@ -730,7 +730,6 @@ export default function ResumeBuilder() {
 	/* ═══ RESUME SWITCHING ═══ */
 	const resumeSwitchFetcher = useFetcher()
 	const cloneForJobFetcher = useFetcher<{ resumeId?: string; error?: string }>()
-	const isCloning = cloneForJobFetcher.state !== 'idle'
 	const handleResumeSwitch = useCallback(
 		(resumeId: string) => {
 			if (resumeId === formData.id) return
