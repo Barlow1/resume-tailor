@@ -791,6 +791,7 @@ export default function ResumeBuilder() {
 	const tailorSnapshotFetcher = useFetcher<{ success?: boolean; snapshot?: string; hasSnapshot?: boolean; error?: string }>()
 	const [hoveredElement, setHoveredElement] =
 		useState<HoveredElementInfo | null>(null)
+	const toolbarHoveredRef = useRef(false)
 	const iframeComponentRef = useRef<ResumeIframeHandle>(null)
 	const user = useOptionalUser()
 	const submitForm = useSubmit()
@@ -1717,7 +1718,7 @@ export default function ResumeBuilder() {
 		() => [
 			{
 				title: 'Reorder sections',
-				body: 'Drag the grip dots on section headers to rearrange your resume layout, or hover for more options.',
+				body: 'Hover over section headers to reorder, add items, or toggle visibility.',
 				anchor: 'iframe' as const,
 			},
 			{
@@ -3553,6 +3554,7 @@ export default function ResumeBuilder() {
 						onStructuralAction={handleStructuralAction}
 						onHoverElement={handleHoverElement}
 						onCommandK={() => setShowCommandPalette(true)}
+						toolbarHoveredRef={toolbarHoveredRef}
 						canvasBackground={c.canvas}
 					/>
 					<FloatingToolbar
@@ -3560,6 +3562,8 @@ export default function ResumeBuilder() {
 						onAction={handleStructuralAction}
 						onAITailor={handleToolbarAITailor}
 						onToggleSection={(sectionId) => handleStructuralAction({ type: 'toggleSection', sectionId })}
+						onDismiss={() => setHoveredElement(null)}
+						toolbarHoveredRef={toolbarHoveredRef}
 						sectionOrder={sectionOrder}
 						formData={formData}
 					/>

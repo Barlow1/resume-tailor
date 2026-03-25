@@ -49,6 +49,7 @@ interface ResumeIframeProps {
 	onStructuralAction: (action: StructuralAction) => void
 	onHoverElement?: (info: HoveredElementInfo | null) => void
 	onCommandK?: () => void
+	toolbarHoveredRef?: React.RefObject<boolean>
 	className?: string
 	canvasBackground?: string
 }
@@ -303,7 +304,7 @@ function calculatePageBreaks(doc: Document) {
 }
 
 export const ResumeIframe = forwardRef<ResumeIframeHandle, ResumeIframeProps>(
-	function ResumeIframe({ formData, sectionOrder, onFieldChange, onStructuralAction, onHoverElement, onCommandK, className, canvasBackground }, ref) {
+	function ResumeIframe({ formData, sectionOrder, onFieldChange, onStructuralAction, onHoverElement, onCommandK, toolbarHoveredRef, className, canvasBackground }, ref) {
 		const iframeRef = useRef<HTMLIFrameElement>(null)
 		const editingFieldRef = useRef<string | null>(null)
 		const pendingFocusRef = useRef<string | null>(null)
@@ -485,10 +486,11 @@ export const ResumeIframe = forwardRef<ResumeIframeHandle, ResumeIframeProps>(
 				}
 			}
 			if (section) {
+				const headerEl = section.querySelector('[data-field*="Header"]') as HTMLElement
 				return {
 					type: 'section',
 					sectionId: section.dataset.sectionId!,
-					rect: computeRect(section),
+					rect: computeRect(headerEl || section),
 				}
 			}
 			return null
@@ -642,7 +644,7 @@ export const ResumeIframe = forwardRef<ResumeIframeHandle, ResumeIframeProps>(
 					onHoverElementRef.current?.({
 						type: 'section',
 						sectionId: section.dataset.sectionId!,
-						rect: computeRect(section),
+						rect: computeRect(sectionHeader),
 					})
 				}
 			}, true)
@@ -650,10 +652,10 @@ export const ResumeIframe = forwardRef<ResumeIframeHandle, ResumeIframeProps>(
 			doc.addEventListener('mouseleave', () => {
 				if (!editingFieldRef.current) {
 					setTimeout(() => {
-						if (!editingFieldRef.current) {
+						if (!editingFieldRef.current && !toolbarHoveredRef?.current) {
 							onHoverElementRef.current?.(null)
 						}
-					}, 150)
+					}, 200)
 				}
 			})
 
@@ -716,7 +718,7 @@ export const ResumeIframe = forwardRef<ResumeIframeHandle, ResumeIframeProps>(
 					}
 				})
 			}
-		}, [debouncedFieldUpdate, onFieldChange, resizeIframe, resolveToolbarInfo, computeRect])
+		}, [debouncedFieldUpdate, onFieldChange, resizeIframe, resolveToolbarInfo, computeRect, toolbarHoveredRef])
 
 		// Update toolbar position on scroll, or hide if not editing
 		useEffect(() => {
