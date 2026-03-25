@@ -25,6 +25,8 @@ interface FloatingToolbarProps {
 	onAction: (action: StructuralAction) => void
 	onAITailor?: (experienceId: string, bulletIndex: number) => void
 	onToggleSection?: (sectionId: string) => void
+	onDismiss?: () => void
+	toolbarHoveredRef?: React.RefObject<boolean>
 	sectionOrder: string[]
 	formData: ResumeData
 }
@@ -41,6 +43,8 @@ export function FloatingToolbar({
 	onAction,
 	onAITailor,
 	onToggleSection,
+	onDismiss,
+	toolbarHoveredRef,
 	sectionOrder,
 	formData,
 }: FloatingToolbarProps) {
@@ -249,6 +253,8 @@ export function FloatingToolbar({
 		<div
 			style={style}
 			onMouseDown={(e) => e.preventDefault()}
+			onMouseEnter={() => { if (toolbarHoveredRef) (toolbarHoveredRef as React.MutableRefObject<boolean>).current = true }}
+			onMouseLeave={() => { if (toolbarHoveredRef) { (toolbarHoveredRef as React.MutableRefObject<boolean>).current = false; onDismiss?.() } }}
 			role="toolbar"
 			aria-label="Element actions"
 		>

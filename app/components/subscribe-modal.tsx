@@ -2,6 +2,7 @@ import { Dialog, Transition } from '@headlessui/react'
 import { Fragment } from 'react'
 import { Pricing } from '../routes/resources+/pricing.tsx'
 import { XMarkIcon } from '@heroicons/react/24/outline'
+import { trackPaywallDismissed } from '~/lib/analytics.client.ts'
 
 interface SubscribeModalProps {
 	isOpen: boolean
@@ -13,9 +14,16 @@ interface SubscribeModalProps {
 }
 
 export function SubscribeModal({ isOpen, onClose, successUrl, cancelUrl, redirectTo, trigger }: SubscribeModalProps) {
+	const handleClose = () => {
+		if (trigger) {
+			trackPaywallDismissed(trigger)
+		}
+		onClose()
+	}
+
 	return (
 		<Transition appear show={isOpen} as={Fragment}>
-			<Dialog as="div" className="relative z-50" onClose={onClose}>
+			<Dialog as="div" className="relative z-50" onClose={handleClose}>
 				<Transition.Child
 					as={Fragment}
 					enter="ease-out duration-300"
@@ -42,7 +50,7 @@ export function SubscribeModal({ isOpen, onClose, successUrl, cancelUrl, redirec
 							<Dialog.Panel className="w-full max-w-4xl transform overflow-hidden rounded-2xl bg-background p-6 text-left align-middle shadow-xl transition-all">
 								<button
 									type="button"
-									onClick={onClose}
+									onClick={handleClose}
 									className="absolute right-4 top-4 rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
 								>
 									<XMarkIcon className="h-5 w-5" />

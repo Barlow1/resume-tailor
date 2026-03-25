@@ -273,6 +273,8 @@ model BuilderResume {
   hobbies         BuilderHobby[]
   headers         BuilderHeaders?
   scores          ResumeScore[]
+  tailorSnapshot     String?
+  tailorSnapshotDate DateTime?
 
   @@index([userId])
 }
