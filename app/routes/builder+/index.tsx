@@ -30,13 +30,7 @@ import {
 	PanelRightClose,
 	Eye,
 	EyeOff,
-	ChevronRight,
-	Rocket,
-	LogOut,
-	User as UserIcon,
-	CreditCard,
 	Trash2,
-	Undo2,
 } from 'lucide-react'
 import { SubscribeModal } from '~/components/subscribe-modal.tsx'
 import { getStripeSubscription, getUserId } from '~/utils/auth.server.ts'
@@ -59,7 +53,6 @@ import { prisma } from '~/utils/db.server.ts'
 import { ResumeCreationModal } from '~/components/resume-creation-modal.tsx'
 import { getUserBuilderResumes } from '~/utils/builder-resume.server.ts'
 import { type Jsonify } from '@remix-run/server-runtime/dist/jsonify.js'
-import { generateResumeHtml } from '~/utils/generate-resume-html.ts'
 import {
 	ResumeIframe,
 	type ResumeIframeHandle,
@@ -619,7 +612,8 @@ export default function ResumeBuilder() {
 	const customizeBtnRef = useRef<HTMLButtonElement>(null)
 	const tailorBtnRef = useRef<HTMLButtonElement>(null)
 	const [tailorPanelOpen, setTailorPanelOpen] = useState(false)
-	const [hasTailorSnapshot, setHasTailorSnapshot] = useState(false)
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	const [_hasTailorSnapshot, setHasTailorSnapshot] = useState(false)
 	const tailorSnapshotFetcher = useFetcher<{ success?: boolean; snapshot?: string; hasSnapshot?: boolean; error?: string }>()
 	const [hoveredElement, setHoveredElement] =
 		useState<HoveredElementInfo | null>(null)
@@ -842,19 +836,6 @@ export default function ResumeBuilder() {
 		},
 		[formData, debouncedSave, tailorSnapshotFetcher],
 	)
-
-	const handleTailorUndo = useCallback(() => {
-		if (!formData.id) return
-		if (!confirm('Undo all tailoring changes? This will revert to your pre-tailoring resume. Any manual edits since tailoring will also be reverted.')) return
-
-		const fd = new FormData()
-		fd.append('intent', 'undo')
-		fd.append('resumeId', formData.id)
-		tailorSnapshotFetcher.submit(fd, {
-			method: 'POST',
-			action: '/resources/tailor-snapshot',
-		})
-	}, [formData.id, tailorSnapshotFetcher])
 
 	/* ═══ RESUME SWITCHING ═══ */
 	const resumeSwitchFetcher = useFetcher()
