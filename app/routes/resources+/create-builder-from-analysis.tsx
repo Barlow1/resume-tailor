@@ -26,9 +26,9 @@ export async function action({ request }: ActionFunctionArgs) {
 		bulletExperienceMap?: Record<string, number>
 	}
 
-	// Get analysis with resume data and feedback
+	// Get analysis with resume data and feedback (verify ownership)
 	const analysis = await prisma.analysis.findFirst({
-		where: { id: analysisId },
+		where: { id: analysisId, userId },
 		select: {
 			id: true,
 			resumeData: true,

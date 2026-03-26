@@ -374,8 +374,11 @@ model Analysis {
   fitPct     Int?
   feedback   String?
   peopleJson String?
+  userId     String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model ResumeScore {
