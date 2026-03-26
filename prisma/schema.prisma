@@ -279,6 +279,8 @@ model BuilderResume {
   coverLetterDrafts    String?
   applications         Application[]
   experienceMatchCache ExperienceMatchCache[]
+  tailorSnapshot       String?
+  tailorSnapshotDate   DateTime?
 
   @@index([userId])
 }
