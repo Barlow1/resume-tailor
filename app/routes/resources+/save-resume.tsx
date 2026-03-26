@@ -54,6 +54,13 @@ export async function action({ request }: ActionFunctionArgs) {
 			const existingResume = await getBuilderResume(resumeData.id)
 
 			if (existingResume) {
+				// Block unauthenticated updates to resumes owned by other users
+				if (!userId && existingResume.userId) {
+					return json(
+						{ success: false, error: 'Unauthorized' },
+						{ status: 401 },
+					)
+				}
 				// Resume exists, update it
 				resume = await updateBuilderResume(userId, resumeData.id, resumeData)
 			} else {

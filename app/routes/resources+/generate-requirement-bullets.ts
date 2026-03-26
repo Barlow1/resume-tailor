@@ -7,38 +7,43 @@ export async function action({ request }: ActionFunctionArgs) {
 	const userId = await getUserId(request)
 	if (!userId) return json({ error: 'Unauthorized' }, { status: 401 })
 
-	const { resumeId, jobId, requirements, requirementExperienceMap } = (await request.json()) as {
+	const { resumeId, jobId, requirements, requirementExperienceMap, clientResume } = (await request.json()) as {
 		resumeId: string
 		jobId: string
 		requirements: string[]
 		requirementExperienceMap?: Record<string, string>
+		clientResume?: {
+			about?: string | null
+			experiences?: Array<{ id?: string | null; role?: string | null; company?: string | null; startDate?: string | null; endDate?: string | null; descriptions?: Array<{ id?: string | null; content?: string | null }> }>
+			education?: Array<{ id?: string | null; school?: string | null; degree?: string | null; startDate?: string | null; endDate?: string | null; description?: string | null }>
+			skills?: Array<{ id?: string | null; name?: string | null }>
+		}
 	}
 
+	// Verify ownership and get job description
 	const [resume, job] = await Promise.all([
 		prisma.builderResume.findUnique({
 			where: { id: resumeId, userId },
-			include: {
-				experiences: { include: { descriptions: true } },
-				education: true,
-				skills: true,
-			},
+			select: { id: true },
 		}),
-		prisma.job.findUnique({ where: { id: jobId } }),
+		prisma.job.findUnique({ where: { id: jobId, ownerId: userId } }),
 	])
 
 	if (!resume || !job) return json({ error: 'Not found' }, { status: 404 })
 
-	const resumeData = {
-		about: resume.about,
-		experiences: resume.experiences.map(e => ({
+	// Use client-supplied resume data (has correct in-memory IDs) instead of DB
+	// data (IDs regenerate on every save due to deleteMany/create pattern)
+	const resumeData = clientResume ? {
+		about: clientResume.about,
+		experiences: (clientResume.experiences ?? []).map(e => ({
 			id: e.id,
 			role: e.role,
 			company: e.company,
 			startDate: e.startDate,
 			endDate: e.endDate,
-			descriptions: e.descriptions.map(d => ({ id: d.id, content: d.content })),
+			descriptions: (e.descriptions ?? []).map(d => ({ id: d.id, content: d.content })),
 		})),
-		education: resume.education.map(e => ({
+		education: (clientResume.education ?? []).map(e => ({
 			id: e.id,
 			school: e.school,
 			degree: e.degree,
@@ -46,7 +51,13 @@ export async function action({ request }: ActionFunctionArgs) {
 			endDate: e.endDate,
 			description: e.description,
 		})),
-		skills: resume.skills.map(s => ({ id: s.id, name: s.name })),
+		skills: (clientResume.skills ?? []).map(s => ({ id: s.id, name: s.name })),
+		visibleSections: null,
+	} : {
+		about: null as string | null,
+		experiences: [] as Array<{ id?: string | null; role?: string | null; company?: string | null; startDate?: string | null; endDate?: string | null; descriptions: Array<{ id?: string | null; content?: string | null }> }>,
+		education: [] as Array<{ id?: string | null; school?: string | null; degree?: string | null; startDate?: string | null; endDate?: string | null; description?: string | null }>,
+		skills: [] as Array<{ id?: string | null; name?: string | null }>,
 		visibleSections: null,
 	}
 
@@ -61,6 +72,6 @@ export async function action({ request }: ActionFunctionArgs) {
 		return json({ bullets: result.bullets, summary: result.summary, warnings: result.warnings })
 	} catch (err) {
 		console.error('generate-requirement-bullets error:', err)
-		return json({ error: 'Failed to generate bullets', details: String(err) }, { status: 500 })
+		return json({ error: 'Failed to generate bullets' }, { status: 500 })
 	}
 }

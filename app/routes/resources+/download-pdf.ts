@@ -237,6 +237,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		throw new Response('Not found', { status: 404 });
 	}
 
+	// Verify ownership — don't let users download other users' resumes
+	if (record.userId && userId && record.userId !== userId) {
+		throw new Response('Not found', { status: 404 });
+	}
+
 	const originalResume = JSON.parse(record.originalResume) as OpenAIResumeData;
 	const tailored = JSON.parse(record.tailoredResume) as TailoredResume;
 

@@ -284,29 +284,56 @@ function moveArray<T>(arr: T[], from: number, to: number): T[] {
 
 /* ═══ EDITABLE TEXT ═══ */
 /* ═══ BACKDROP ═══ */
-const Backdrop = ({
+function Backdrop({
 	children,
 	onClick,
+	open,
 }: {
 	children: React.ReactNode
 	onClick: () => void
-}) => (
-	<div
-		onClick={onClick}
-		style={{
-			position: 'fixed',
-			inset: 0,
-			zIndex: 200,
-			display: 'flex',
-			alignItems: 'center',
-			justifyContent: 'center',
-			background: 'rgba(0,0,0,0.55)',
-			backdropFilter: 'blur(8px)',
-		}}
-	>
-		{children}
-	</div>
-)
+	open: boolean
+}) {
+	const [mounted, setMounted] = useState(false)
+	const [visible, setVisible] = useState(false)
+
+	useEffect(() => {
+		if (open) {
+			setMounted(true)
+			requestAnimationFrame(() => requestAnimationFrame(() => setVisible(true)))
+		} else {
+			setVisible(false)
+			const timer = setTimeout(() => setMounted(false), 200)
+			return () => clearTimeout(timer)
+		}
+	}, [open])
+
+	if (!mounted) return null
+	return (
+		<div
+			onClick={onClick}
+			style={{
+				position: 'fixed',
+				inset: 0,
+				zIndex: 200,
+				display: 'flex',
+				alignItems: 'center',
+				justifyContent: 'center',
+				background: 'rgba(0,0,0,0.55)',
+				backdropFilter: 'blur(8px)',
+				opacity: visible ? 1 : 0,
+				transition: 'opacity 180ms ease',
+			}}
+		>
+			<div style={{
+				transform: visible ? 'scale(1)' : 'scale(0.97)',
+				opacity: visible ? 1 : 0,
+				transition: 'transform 200ms cubic-bezier(0.32, 0.72, 0, 1), opacity 180ms ease',
+			}}>
+				{children}
+			</div>
+		</div>
+	)
+}
 
 /* ═══ JOB DROPDOWN ═══ */
 function JobDropdown({
@@ -398,15 +425,7 @@ function JobDropdown({
 										? `2px solid ${BRAND}`
 										: '2px solid transparent',
 							}}
-							onMouseEnter={e => {
-								if (current !== jb.id)
-									(e.currentTarget as HTMLElement).style.background = c.bgSurf
-							}}
-							onMouseLeave={e => {
-								if (current !== jb.id)
-									(e.currentTarget as HTMLElement).style.background =
-										'transparent'
-							}}
+							className={current !== jb.id ? 'hover-bg' : undefined}
 						>
 							<div style={{ fontSize: 16, color: c.text, fontWeight: 500 }}>
 								{jb.title}
@@ -438,7 +457,21 @@ function SlideOver({
 	children: React.ReactNode
 	c: Theme
 }) {
-	if (!open) return null
+	const [mounted, setMounted] = useState(false)
+	const [visible, setVisible] = useState(false)
+
+	useEffect(() => {
+		if (open) {
+			setMounted(true)
+			requestAnimationFrame(() => requestAnimationFrame(() => setVisible(true)))
+		} else {
+			setVisible(false)
+			const timer = setTimeout(() => setMounted(false), 250)
+			return () => clearTimeout(timer)
+		}
+	}, [open])
+
+	if (!mounted) return null
 	return (
 		<div
 			style={{
@@ -456,6 +489,8 @@ function SlideOver({
 					inset: 0,
 					background: 'rgba(0,0,0,0.4)',
 					backdropFilter: 'blur(4px)',
+					opacity: visible ? 1 : 0,
+					transition: 'opacity 200ms ease',
 				}}
 			/>
 			<div
@@ -469,6 +504,8 @@ function SlideOver({
 					flexDirection: 'column',
 					overflow: 'hidden',
 					boxShadow: '-8px 0 32px rgba(0,0,0,0.2)',
+					transform: visible ? 'translateX(0)' : 'translateX(100%)',
+					transition: 'transform 250ms cubic-bezier(0.32, 0.72, 0, 1)',
 				}}
 			>
 				<div
@@ -668,6 +705,7 @@ export default function ResumeBuilder() {
 		}
 	}, [coverLetterOpen, selectedJob?.id])
 
+	const debouncedSaveRef = useRef<((data: ResumeData) => void) | null>(null)
 	const handleCoverLetterTextChange = useCallback((text: string) => {
 		setCoverLetterText(text)
 		const jobId = selectedJob?.id
@@ -675,7 +713,9 @@ export default function ResumeBuilder() {
 			setFormData(prev => {
 				const drafts = prev.coverLetterDrafts ? JSON.parse(prev.coverLetterDrafts) as Record<string, string> : {}
 				drafts[jobId] = text
-				return { ...prev, coverLetterDrafts: JSON.stringify(drafts) }
+				const next = { ...prev, coverLetterDrafts: JSON.stringify(drafts) }
+				debouncedSaveRef.current?.(next)
+				return next
 			})
 		}
 	}, [selectedJob?.id])
@@ -700,6 +740,7 @@ export default function ResumeBuilder() {
 			action: '/resources/save-resume',
 		})
 	}, 1000)
+	debouncedSaveRef.current = debouncedSave
 
 	useEffect(() => {
 		if (fetcher.state === 'submitting') {
@@ -1316,7 +1357,7 @@ export default function ResumeBuilder() {
 	)
 
 	const handleDownloadPDF = useCallback(async () => {
-		const MAX_FREE_DOWNLOADS = 3
+		const MAX_FREE_DOWNLOADS = 6
 		if (
 			!subscription?.active &&
 			(gettingStartedProgress?.downloadCount ?? 0) >= MAX_FREE_DOWNLOADS
@@ -1335,9 +1376,8 @@ export default function ResumeBuilder() {
 			subscribe: false,
 		})
 		if (pdfFetcher.state !== 'idle') return
-		const html = generateResumeHtml(formData, sectionOrder)
 		pdfFetcher.submit(
-			{ html, resumeId: formData.id ?? '' },
+			{ resumeId: formData.id ?? '', sectionOrder: JSON.stringify(sectionOrder) },
 			{ method: 'post', action: '/resources/generate-pdf' },
 		)
 	}, [
@@ -1778,8 +1818,19 @@ export default function ResumeBuilder() {
 				flexDirection: 'column',
 				overflow: 'hidden',
 				letterSpacing: '-0.01em',
-			}}
+				'--c-bg-surf': c.bgSurf,
+				'--c-brand-text': c.brandText,
+				'--c-dim': c.dim,
+			} as React.CSSProperties}
 		>
+			<style>{`
+				.hover-bg { transition: background 150ms ease, color 150ms ease, opacity 150ms ease; }
+				.hover-bg:hover { background: var(--c-bg-surf) !important; }
+				.hover-brand { transition: color 150ms ease; color: var(--c-dim); }
+				.hover-brand:hover { color: var(--c-brand-text) !important; }
+				.hover-reveal { transition: opacity 150ms ease; }
+				.hover-reveal:hover { opacity: 1 !important; }
+			`}</style>
 			{/* MODALS */}
 			<SubscribeModal
 				isOpen={showSubscribeModal}
@@ -1949,16 +2000,7 @@ export default function ResumeBuilder() {
 												: '2px solid transparent',
 										transition: 'all 150ms',
 									}}
-									onMouseEnter={e => {
-										if (formData.id !== r.id)
-											(e.currentTarget as HTMLElement).style.background =
-												c.bgSurf
-									}}
-									onMouseLeave={e => {
-										if (formData.id !== r.id)
-											(e.currentTarget as HTMLElement).style.background =
-												'transparent'
-									}}
+									className={formData.id !== r.id ? 'hover-bg' : undefined}
 								>
 									<div
 										style={{
@@ -2087,12 +2129,7 @@ export default function ResumeBuilder() {
 									marginTop: 5,
 									color: c.dim,
 								}}
-								onMouseEnter={e => {
-									;(e.currentTarget as HTMLElement).style.color = c.brandText
-								}}
-								onMouseLeave={e => {
-									;(e.currentTarget as HTMLElement).style.color = c.dim
-								}}
+								className="hover-brand"
 							>
 								<Plus size={17} strokeWidth={2} />
 								<span style={{ fontSize: 16, fontWeight: 500 }}>
@@ -2133,12 +2170,7 @@ export default function ResumeBuilder() {
 										cursor: 'pointer',
 										color: c.dim,
 									}}
-									onMouseEnter={e => {
-										;(e.currentTarget as HTMLElement).style.color = c.brandText
-									}}
-									onMouseLeave={e => {
-										;(e.currentTarget as HTMLElement).style.color = c.dim
-									}}
+									className="hover-brand"
 								>
 									<Plus size={17} strokeWidth={2} />
 									<span style={{ fontSize: 16, fontWeight: 500 }}>Add Job</span>
@@ -2201,21 +2233,7 @@ export default function ResumeBuilder() {
 														transition: 'all 150ms',
 														opacity: isVisible ? 1 : 0.4,
 													}}
-													onMouseEnter={e => {
-														if (isVisible && activeSection !== s.id)
-															(
-																e.currentTarget as HTMLElement
-															).style.background = c.bgSurf
-													}}
-													onMouseLeave={e => {
-														if (isVisible && activeSection !== s.id)
-															(
-																e.currentTarget as HTMLElement
-															).style.background =
-																activeSection === s.id
-																	? `${BRAND}12`
-																	: 'transparent'
-													}}
+													className={isVisible && activeSection !== s.id ? 'hover-bg' : undefined}
 												>
 													<s.icon
 														size={20}
@@ -2255,14 +2273,7 @@ export default function ResumeBuilder() {
 														opacity: 0.5,
 														flexShrink: 0,
 													}}
-													onMouseEnter={e => {
-														;(e.currentTarget as HTMLElement).style.opacity =
-															'1'
-													}}
-													onMouseLeave={e => {
-														;(e.currentTarget as HTMLElement).style.opacity =
-															'0.5'
-													}}
+													className="hover-reveal"
 												>
 													{isVisible ? (
 														<Eye size={15} color={c.dim} strokeWidth={1.75} />
@@ -2551,8 +2562,7 @@ export default function ResumeBuilder() {
 			</div>
 
 			{/* ═══ COMMAND PALETTE ═══ */}
-			{showCommandPalette && (
-				<Backdrop onClick={() => setShowCommandPalette(false)}>
+			<Backdrop open={showCommandPalette} onClick={() => setShowCommandPalette(false)}>
 					<div
 						onClick={e => e.stopPropagation()}
 						style={{
@@ -2677,7 +2687,6 @@ export default function ResumeBuilder() {
 						</div>
 					</div>
 				</Backdrop>
-			)}
 
 			{/* ═══ TEMPLATE GALLERY SLIDE-OVER ═══ */}
 			<SlideOver

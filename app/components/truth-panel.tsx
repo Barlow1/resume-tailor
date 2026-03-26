@@ -163,6 +163,7 @@ function ConversationLayer({
 									<div style={{ display: 'flex', gap: 8 }}>
 										<button
 											onClick={() => {
+												if (experiences.length === 0) return
 												if (experiences.length === 1) {
 													markYes(i, experiences[0].id)
 												} else {
@@ -420,6 +421,26 @@ export function TruthPanel({
 				jobId: selectedJob.id,
 				requirements: yesItems.map(y => y.requirement),
 				requirementExperienceMap: Object.fromEntries(yesItems.map(y => [y.requirement, y.experienceId])),
+				clientResume: {
+					about: formData.about,
+					experiences: (formData.experiences ?? []).map(e => ({
+						id: e.id,
+						role: e.role,
+						company: e.company,
+						startDate: e.startDate,
+						endDate: e.endDate,
+						descriptions: (e.descriptions ?? []).map(d => ({ id: d.id, content: d.content })),
+					})),
+					education: (formData.education ?? []).map(e => ({
+						id: e.id,
+						school: e.school,
+						degree: e.degree,
+						startDate: e.startDate,
+						endDate: e.endDate,
+						description: e.description,
+					})),
+					skills: (formData.skills ?? []).map(s => ({ id: s.id, name: s.name })),
+				},
 			}),
 			{ method: 'POST', action: '/resources/generate-requirement-bullets', encType: 'application/json' },
 		)

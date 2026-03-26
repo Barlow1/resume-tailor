@@ -26,9 +26,9 @@ export async function action({ request }: ActionFunctionArgs) {
 		bulletExperienceMap?: Record<string, number>
 	}
 
-	// Get analysis with resume data and feedback
-	const analysis = await prisma.analysis.findUnique({
-		where: { id: analysisId },
+	// Get analysis with resume data and feedback (verify ownership)
+	const analysis = await prisma.analysis.findFirst({
+		where: { id: analysisId, userId },
 		select: {
 			id: true,
 			resumeData: true,
@@ -56,7 +56,6 @@ export async function action({ request }: ActionFunctionArgs) {
 	} : {}
 
 	console.log('=== CREATE BUILDER FROM ANALYSIS ===')
-	console.log('Resume Data:', JSON.stringify(resumeData, null, 2))
 	console.log('Number of experiences:', resumeData.experiences?.length)
 
 	// Get selected bullets from feedback
@@ -64,7 +63,7 @@ export async function action({ request }: ActionFunctionArgs) {
 		(b: any) => selectedBulletIds.includes(b.id)
 	) || []
 
-	console.log('Selected bullets:', selectedBullets)
+	console.log('Selected bullets count:', selectedBullets.length)
 
 	// Add selected bullets to their respective experiences
 	const updatedExperiences = (resumeData.experiences || []).map((exp: any, idx: number) => {
@@ -74,9 +73,7 @@ export async function action({ request }: ActionFunctionArgs) {
 			return targetExpIndex === idx
 		})
 
-		console.log(`Experience ${idx} (${exp.company}):`)
-		console.log('  Original descriptions:', exp.descriptions)
-		console.log('  New bullets:', bulletsForThisExp.map((b: any) => b.content))
+		console.log(`Experience ${idx}: ${bulletsForThisExp.length} new bullets`)
 
 		// Ensure descriptions is an array of {content, order} objects
 		const existingDescriptions = Array.isArray(exp.descriptions)
@@ -96,7 +93,6 @@ export async function action({ request }: ActionFunctionArgs) {
 		]
 
 		console.log('  Combined descriptions count:', formattedDescriptions.length)
-		console.log('  Formatted descriptions:', formattedDescriptions)
 
 		return {
 			role: exp.role,
@@ -123,7 +119,6 @@ export async function action({ request }: ActionFunctionArgs) {
 	}
 
 	console.log('=== SENDING TO CREATEBUILDERRESUME ===')
-	console.log('Builder Resume Data:', JSON.stringify(builderResumeData, null, 2))
 
 	const builderResume = await createBuilderResume(userId, builderResumeData)
 

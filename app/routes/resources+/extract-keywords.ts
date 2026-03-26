@@ -4,13 +4,13 @@ import { prisma } from '~/utils/db.server.ts'
 import { extractKeywordsFromJobDescription } from '~/utils/keyword-extraction.server.ts'
 
 export async function action({ request }: DataFunctionArgs) {
-	await requireUserId(request, { redirectTo: '/builder' })
+	const userId = await requireUserId(request, { redirectTo: '/builder' })
 
 	const formData = await request.formData()
 	const jobId = formData.get('jobId') as string
 	if (!jobId) return json({ error: 'Missing jobId' }, { status: 400 })
 
-	const job = await prisma.job.findUnique({ where: { id: jobId }, select: { id: true, title: true, content: true, extractedKeywords: true } })
+	const job = await prisma.job.findUnique({ where: { id: jobId, ownerId: userId }, select: { id: true, title: true, content: true, extractedKeywords: true } })
 	if (!job) return json({ error: 'Job not found' }, { status: 404 })
 
 	// Already has keywords — return them

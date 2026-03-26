@@ -18,7 +18,7 @@ export async function action({ request }: ActionFunctionArgs) {
 				skills: true,
 			},
 		}),
-		prisma.job.findUnique({ where: { id: jobId } }),
+		prisma.job.findUnique({ where: { id: jobId, ownerId: userId } }),
 	])
 
 	if (!resume || !job) return json({ error: 'Not found' }, { status: 404 })
