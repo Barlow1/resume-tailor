@@ -1,0 +1,235 @@
+{
+  "layout": "single-column",
+  "layoutConfig": {
+    "sidebarWidth": 0,
+    "columnGap": 0,
+    "columnSplit": 1
+  },
+  "regionStyles": {},
+  "globalTokens": {
+    "fontFamily": "sans-serif",
+    "fontSize": 12,
+    "fontWeight": 400,
+    "color": "#333333",
+    "paddingTop": 0,
+    "paddingBottom": 0,
+    "marginTop": 0,
+    "marginBottom": 0,
+    "textAlign": "left"
+  },
+  "blocks": [
+    {
+      "id": "header-1",
+      "type": "header",
+      "region": "main",
+      "order": 0,
+      "sectionHeaderTokens": {},
+      "content": {
+        "name": "Aparna Khatri",
+        "role": "Senior Graphic Designer",
+        "contact": [
+          {
+            "type": "phone",
+            "value": "(123) 456-7890"
+          },
+          {
+            "type": "email",
+            "value": "aparna.khatri@mail.com"
+          },
+          {
+            "type": "location",
+            "value": "47 W 13th St, New York, NY 10011"
+          }
+        ],
+        "contactSeparator": "•"
+      },
+      "tokens": {},
+      "decorations": [
+        {
+          "type": "horizontal-rule",
+          "position": "below",
+          "renderAs": "css",
+          "relativeTo": "block"
+        }
+      ]
+    },
+    {
+      "id": "summary-1",
+      "type": "summary",
+      "region": "main",
+      "order": 1,
+      "sectionHeaderTokens": {},
+      "content": {
+        "text": "Senior Graphic Design Specialist with 6+ years of experience managing design processes, from conceptualization to delivery. Skilled with Adobe Creative Suite (Illustrator, Photoshop, InDesign), Microsoft Office, and web design applications (Dreamweaver, HTML). Able to stretch the boundaries of web design and digital storytelling to help my client's brands stand out and grow."
+      },
+      "tokens": {
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#333333"
+      },
+      "decorations": []
+    },
+    {
+      "id": "experience-1",
+      "type": "experience",
+      "region": "main",
+      "order": 2,
+      "sectionHeader": "Professional Experience",
+      "sectionHeaderTokens": {
+        "fontSize": 14,
+        "fontWeight": 700,
+        "color": "#333333",
+        "textAlign": "center"
+      },
+      "content": {
+        "entries": [
+          {
+            "company": "Experion",
+            "title": "Senior Graphic Design Specialist",
+            "location": "New York, NY",
+            "dateStart": "JAN 'XX",
+            "dateEnd": "PRESENT",
+            "bullets": [
+              [
+                {
+                  "text": "Lead the design, development and implementation of graphic, layout, and production communication materials while helping clients cut costs by an average of 12%"
+                }
+              ],
+              [
+                {
+                  "text": "Delegate tasks to a 7-member design team and provide counsel on all aspects of the project"
+                }
+              ],
+              [
+                {
+                  "text": "Assess all graphic materials created in-house to ensure the quality and accuracy of their designs"
+                }
+              ]
+            ]
+          },
+          {
+            "company": "Stepping Stone Advertising",
+            "title": "Graphic Design Specialist",
+            "location": "New York, NY",
+            "dateStart": "JAN 'XX",
+            "dateEnd": "JAN 'XX",
+            "bullets": [
+              [
+                {
+                  "text": "Managed up to 5 projects or tasks at a given time and ensured our team met its weekly deadlines"
+                }
+              ],
+              [
+                {
+                  "text": "Consulted with clients on the most appropriate graphic design options based on their major marketing goals"
+                }
+              ],
+              [
+                {
+                  "text": "Created 4+ design presentations and proposals a month for clients and account managers"
+                }
+              ]
+            ]
+          },
+          {
+            "company": "Redfin Technologies",
+            "title": "Junior Graphic Designer",
+            "location": "New York, NY",
+            "dateStart": "JAN 'XX",
+            "dateEnd": "JAN 'XX",
+            "bullets": [
+              [
+                {
+                  "text": "Worked with senior designers to develop unique product branding"
+                }
+              ],
+              [
+                {
+                  "text": "Designed 30+ online advertisements to increase RedFin’s brand awareness"
+                }
+              ],
+              [
+                {
+                  "text": "Created 15 original illustrations for a website redesign using Adobe Illustrator and Photoshop"
+                }
+              ]
+            ]
+          }
+        ]
+      },
+      "tokens": {
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#333333"
+      },
+      "decorations": []
+    },
+    {
+      "id": "education-1",
+      "type": "education",
+      "region": "main",
+      "order": 3,
+      "sectionHeader": "Education",
+      "sectionHeaderTokens": {
+        "fontSize": 14,
+        "fontWeight": 700,
+        "color": "#333333",
+        "textAlign": "center"
+      },
+      "content": {
+        "entries": [
+          {
+            "school": "Resume Genius University",
+            "degree": "Bachelor of Fine Arts in Graphic Design",
+            "dates": "MAY 20XX"
+          }
+        ]
+      },
+      "tokens": {
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#333333"
+      },
+      "decorations": []
+    },
+    {
+      "id": "skills-1",
+      "type": "skills",
+      "region": "main",
+      "order": 4,
+      "sectionHeader": "Skills",
+      "sectionHeaderTokens": {
+        "fontSize": 14,
+        "fontWeight": 700,
+        "color": "#333333",
+        "textAlign": "center"
+      },
+      "content": {},
+      "tokens": {
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#333333"
+      },
+      "decorations": []
+    }
+  ],
+  "fonts": [
+    {
+      "originalFont": "sans-serif",
+      "matchedFont": "Sans-Serif",
+      "source": "google",
+      "url": "https://fonts.googleapis.com/css2?family=Sans-Serif:wght@400;500;700&display=swap",
+      "confidence": 0.6
+    }
+  ],
+  "pageSettings": {
+    "width": 867,
+    "height": 1121,
+    "margins": {
+      "top": 48,
+      "right": 48,
+      "bottom": 48,
+      "left": 48
+    }
+  }
+}

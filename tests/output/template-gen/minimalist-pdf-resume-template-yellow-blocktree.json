@@ -1,0 +1,26 @@
+{
+  "layout": "single-column",
+  "globalTokens": {
+    "fontFamily": "Inter",
+    "fontSize": 11,
+    "fontWeight": 400,
+    "color": "#333333",
+    "paddingTop": 0,
+    "paddingBottom": 0,
+    "marginTop": 0,
+    "marginBottom": 0,
+    "textAlign": "left"
+  },
+  "fonts": [],
+  "blocks": [],
+  "pageSettings": {
+    "width": 867,
+    "height": 1121,
+    "margins": {
+      "top": 48,
+      "right": 48,
+      "bottom": 48,
+      "left": 48
+    }
+  }
+}
