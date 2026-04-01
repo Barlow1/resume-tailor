@@ -197,6 +197,10 @@ export interface ResumeDownloadedEvent {
 
 export type PaywallTrigger = 'ai_limit' | 'download_limit' | 'analysis_limit' | 'outreach_limit'
 
+export interface PricingPageViewedEvent {
+	trigger: string
+}
+
 export interface PaywallShownEvent {
 	trigger: PaywallTrigger
 	usage_count: number
@@ -396,6 +400,7 @@ export interface AnalyticsEventMap {
 	resume_downloaded: ResumeDownloadedEvent
 
 	// Paywall / Conversion
+	pricing_page_viewed: PricingPageViewedEvent
 	paywall_shown: PaywallShownEvent
 	paywall_dismissed: PaywallDismissedEvent
 	checkout_started: CheckoutStartedEvent

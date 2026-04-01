@@ -59,6 +59,18 @@ export async function shutdownAnalytics(): Promise<void> {
 	}
 }
 
+/**
+ * Flush pending PostHog events immediately.
+ * Call after server-side tracking in webhook handlers where the
+ * response returns before the batch interval fires.
+ */
+export async function flushAnalytics(): Promise<void> {
+	const client = getPostHogClient()
+	if (client) {
+		await client.flush()
+	}
+}
+
 // ============================================================================
 // ANONYMOUS ID EXTRACTION
 // ============================================================================

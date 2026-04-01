@@ -1,4 +1,5 @@
 import { type DataFunctionArgs, json } from '@remix-run/node'
+import StripeLib from 'stripe'
 import type Stripe from 'stripe'
 import { invariant } from '~/utils/misc.ts'
 import {
@@ -6,18 +7,30 @@ import {
 	deactivateSubscription,
 } from '~/utils/subscription.server.ts'
 import { PrismaClient } from '@prisma/client'
-import { trackTrialStarted, trackSubscriptionCreated, trackSubscriptionCanceledWithContext } from '~/lib/analytics.server.ts'
-
-interface StripeEvent {
-	type: string
-	data: {
-		object: unknown;
-	}
-}
+import { trackTrialStarted, trackSubscriptionCreated, trackSubscriptionCanceledWithContext, flushAnalytics } from '~/lib/analytics.server.ts'
 
 export async function action(args: DataFunctionArgs) {
-	const event = (await args.request.json()) as StripeEvent
-	invariant(event, 'event is required for this endpoint')
+	const rawBody = await args.request.text()
+	const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+
+	let event: Stripe.Event
+
+	if (webhookSecret) {
+		const signature = args.request.headers.get('stripe-signature')
+		invariant(signature, 'Missing stripe-signature header')
+
+		const stripe = new StripeLib(process.env.STRIPE_SK!, { apiVersion: '2023-10-16' })
+		try {
+			event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret)
+		} catch (err: any) {
+			console.error('Stripe webhook signature verification failed:', err.message)
+			return json({ error: 'Invalid signature' }, { status: 400 })
+		}
+	} else {
+		// Fallback for development without webhook secret configured
+		console.warn('STRIPE_WEBHOOK_SECRET not set — skipping signature verification')
+		event = JSON.parse(rawBody) as Stripe.Event
+	}
 
 	switch (event.type) {
 		case 'checkout.session.completed': {
@@ -84,6 +97,7 @@ async function handleCheckoutSessionCompleted(
 
 		// Track trial started in PostHog
 		trackTrialStarted(subscription.ownerId, planTier as 'weekly' | 'monthly')
+		await flushAnalytics()
 
 		console.log(`Created subscription_started conversion event for user ${subscription.ownerId}`)
 	} catch (e) {
@@ -158,6 +172,8 @@ async function handleCanceledSubscription(deletedSubscription: Stripe.Subscripti
 				feedback,
 			)
 
+			await flushAnalytics()
+
 			console.log(`Tracked subscription cancellation for user ${subscription.ownerId}: ${reason || 'no reason'}`)
 		}
 	} catch (e) {
@@ -172,10 +188,10 @@ async function handleCanceledSubscription(deletedSubscription: Stripe.Subscripti
 }
 
 async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
-	// Only track subscription_cycle invoices (actual charges after trial)
-	// Skip subscription_create which is the initial $0 invoice
-	if (invoice.billing_reason !== 'subscription_cycle') {
-		console.log(`Skipping invoice with billing_reason: ${invoice.billing_reason}`)
+	// Skip the initial $0 invoice created at checkout (no real charge)
+	// Allow subscription_cycle (renewals) and subscription_update (trial→paid) through
+	if (invoice.billing_reason === 'subscription_create') {
+		console.log('Skipping initial $0 trial invoice')
 		return
 	}
 
@@ -239,6 +255,8 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
 			'USD',
 			isFirstPayment,
 		)
+
+		await flushAnalytics()
 
 		console.log(`Created ${isFirstPayment ? 'first payment (trial conversion)' : 'renewal'} event for user ${subscription.ownerId}`)
 	} catch (e) {
