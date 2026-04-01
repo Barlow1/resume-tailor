@@ -21,6 +21,7 @@ import {
 } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
 import { SubscribeModal } from '~/components/subscribe-modal.tsx'
+import { trackPaywallShown } from '~/lib/analytics.client.ts'
 
 const FREE_LIMIT = 2
 
@@ -364,8 +365,11 @@ export default function RecruiterOutreachPage() {
 		data && !data.ok && (data as ActionError)?.requireSubscribe
 
 	useEffect(() => {
-		if (showSubGate) setShowSubscribeModal(true)
-	}, [showSubGate])
+		if (showSubGate) {
+			setShowSubscribeModal(true)
+			trackPaywallShown('outreach_limit', FREE_LIMIT - (freeRemaining ?? 0), FREE_LIMIT)
+		}
+	}, [showSubGate, freeRemaining])
 
 	return (
 		<div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/30">
@@ -375,6 +379,7 @@ export default function RecruiterOutreachPage() {
 				successUrl={here}
 				redirectTo={here}
 				cancelUrl={here}
+				trigger="outreach_limit"
 			/>
 			{/* Hero */}
 			<section className="mx-auto max-w-5xl px-6 pt-12">

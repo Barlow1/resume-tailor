@@ -22,7 +22,7 @@ import {
 	RotateCcw,
 	X,
 } from 'lucide-react'
-import { track, trackAiModalOpened, markAiModalResult, trackAiModalClosed } from '~/lib/analytics.client.ts'
+import { track, trackAiModalOpened, markAiModalResult, trackAiModalClosed, trackPaywallShown } from '~/lib/analytics.client.ts'
 
 // v2: Type for the new structured tailor response
 interface TailorOption {
@@ -250,6 +250,7 @@ export function AIAssistantModal({
 				(gettingStartedProgress?.tailorCount ?? 0)
 			if (currentCount >= MAX_AI_TRIAL_COUNT) {
 				setShowSubscribeModal(true)
+				trackPaywallShown('ai_limit', currentCount, MAX_AI_TRIAL_COUNT)
 				return
 			}
 		}

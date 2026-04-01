@@ -33,3 +33,6 @@ Final_*
 docs/
 scripts/
 design-reference/
+.claude/skills/
+.gstack/
+.superpowers/

@@ -1,12 +1,10 @@
 import { useInputEvent } from '@conform-to/react'
-import React, { useCallback, useId, useRef } from 'react'
+import React, { useCallback, useEffect, useId, useLayoutEffect, useRef } from 'react'
 import { Input } from '~/components/ui/input.tsx'
 import { Label } from '~/components/ui/label.tsx'
 import { Checkbox, type CheckboxProps } from '~/components/ui/checkbox.tsx'
 import { Textarea } from '~/components/ui/textarea.tsx'
 import clsx from 'clsx'
-import useEventListener from '~/utils/useEventListener.ts'
-import useIsomorphicLayoutEffect from '~/utils/useIsomorphicLayoutEffect.tsx'
 
 export type ListOfErrors = Array<string | null | undefined> | null | undefined
 
@@ -183,8 +181,11 @@ export const useAutosizeTextArea = (
 			textAreaRef.style.height = scrollHeight + 'px'
 		}
 	}, [textAreaRef])
-	useEventListener('input', handleResize)
-	useIsomorphicLayoutEffect(() => {
+	useEffect(() => {
+		window.addEventListener('input', handleResize)
+		return () => window.removeEventListener('input', handleResize)
+	}, [handleResize])
+	useLayoutEffect(() => {
 		handleResize()
 	}, [textAreaRef, textAreaRef?.value, value])
 

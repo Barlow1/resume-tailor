@@ -277,6 +277,8 @@ model BuilderResume {
   headers              BuilderHeaders?
   scores               ResumeScore[]
   coverLetterDrafts    String?
+  tailorSnapshot       String?
+  tailorSnapshotDate   DateTime?
   applications         Application[]
   experienceMatchCache ExperienceMatchCache[]
 

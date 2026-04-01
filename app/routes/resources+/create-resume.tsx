@@ -1,6 +1,6 @@
 import { type DataFunctionArgs, redirectDocument, json } from '@remix-run/node'
 import { getUserId } from '~/utils/auth.server.ts'
-import { parseResumeWithOpenAI } from '~/utils/openai-resume-parser.server.ts'
+import { parseResumeWithOpenAI, ResumeParseError } from '~/utils/openai-resume-parser.server.ts'
 import {
 	createBuilderResume,
 	getBuilderResume,
@@ -185,6 +185,10 @@ export async function action({ request }: DataFunctionArgs) {
 		} catch (error: any) {
 			console.error('Resume parsing error:', error)
 
+			const userMessage = error instanceof ResumeParseError
+				? error.userMessage
+				: 'Failed to parse resume. Please try again or contact support.'
+
 			// Track error
 			if (userId) {
 				trackError(
@@ -197,11 +201,7 @@ export async function action({ request }: DataFunctionArgs) {
 			}
 
 			return json(
-				{
-					error:
-						error.message ||
-						'Failed to parse resume. Please try again or contact support.',
-				},
+				{ error: userMessage },
 				{ status: 500 },
 			)
 		}

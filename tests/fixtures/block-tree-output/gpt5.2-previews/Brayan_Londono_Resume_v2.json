@@ -1,0 +1,442 @@
+{
+  "layout": "single-column",
+  "globalTokens": {
+    "fontFamily": "Crimson Pro",
+    "fontSize": 11,
+    "fontWeight": 400,
+    "color": "#000000",
+    "paddingTop": 0,
+    "paddingBottom": 0,
+    "marginTop": 0,
+    "marginBottom": 0,
+    "textAlign": "left"
+  },
+  "blocks": [
+    {
+      "id": "header-1",
+      "type": "header",
+      "region": "main",
+      "order": 0,
+      "content": {
+        "name": "Brayan Londono",
+        "contact": [
+          {
+            "type": "location",
+            "value": "Tampa, FL"
+          },
+          {
+            "type": "phone",
+            "value": "(813) 407-0629"
+          },
+          {
+            "type": "email",
+            "value": "brayanlondono.pm@gmail.com"
+          },
+          {
+            "type": "linkedin",
+            "value": "linkedin.com/in/brayan-londono"
+          }
+        ],
+        "contactSeparator": "•",
+        "headerTokens": {
+          "name": {
+            "fontFamily": "Crimson Pro",
+            "fontSize": 22,
+            "fontWeight": 700,
+            "color": "#0E539E",
+            "textAlign": "center"
+          },
+          "contact": {
+            "fontFamily": "Crimson Pro",
+            "fontSize": 11,
+            "fontWeight": 400,
+            "color": "#000000",
+            "textAlign": "center",
+            "lineHeight": 1.2
+          }
+        }
+      },
+      "tokens": {
+        "fontFamily": "Crimson Pro",
+        "fontSize": 11,
+        "fontWeight": 400,
+        "color": "#000000",
+        "textAlign": "center"
+      },
+      "decorations": [
+        {
+          "type": "horizontal-rule",
+          "position": "below",
+          "renderAs": "css",
+          "css": {
+            "borderBottom": "2px solid #000000"
+          },
+          "relativeTo": "block"
+        }
+      ]
+    },
+    {
+      "id": "summary-1",
+      "type": "summary",
+      "region": "main",
+      "order": 1,
+      "content": {
+        "text": "Former crisis psych admissions coordinator turned product builder. Three years as the first person patients saw during involuntary holds, active detox, and acute psychiatric episodes. Now I build healthcare and AI products. Co-founded Claire Health, a digital healthcare navigation platform that hooks into EDI transmissions to steer employees to lower-cost care. Co-founded Resume Tailor, shipped to 20K users and $48K ARR."
+      },
+      "tokens": {
+        "fontFamily": "Crimson Pro",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#000000",
+        "textAlign": "left"
+      },
+      "decorations": []
+    },
+    {
+      "id": "experience-1",
+      "type": "experience",
+      "region": "main",
+      "order": 2,
+      "sectionHeader": "HEALTHCARE & PRODUCT EXPERIENCE",
+      "sectionHeaderTokens": {
+        "fontFamily": "Crimson Pro",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#0E539E",
+        "textAlign": "left",
+        "lineHeight": 1.15
+      },
+      "content": {
+        "entries": [
+          {
+            "company": "Claire Health (www.getclairehealth.com)",
+            "title": "Co-Founder (Project)",
+            "dateStart": "",
+            "dateEnd": "",
+            "bullets": [
+              [
+                {
+                  "text": "Platform monitors EDI 270/271 eligibility transmissions and 835/837 claims data to flag high-cost procedures in real time, then redirects care through the employer’s TPA or medical management team to lower-cost sites."
+                }
+              ],
+              [
+                {
+                  "text": "Built the pre-certification intercept workflow: Claire catches scheduled procedures before authorization completes and surfaces lower-cost alternatives via text to employees while they’re still deciding."
+                }
+              ],
+              [
+                {
+                  "text": "Ran a pilot with Meshoppen Stone (220 employees). $1K MRR."
+                }
+              ],
+              [
+                {
+                  "text": "Own product strategy, roadmap, and go-to-market. Work directly with engineering."
+                }
+              ]
+            ]
+          },
+          {
+            "company": "Resume Tailor",
+            "title": "Co-Founder & Product Manager",
+            "dateStart": "06/2023",
+            "dateEnd": "Present",
+            "bullets": [
+              [
+                {
+                  "text": "Ran 50+ user interviews. Key insight: users weren’t avoiding the product because it didn’t work. They were avoiding job searching because rejection hurts. Repositioned the product around that."
+                }
+              ],
+              [
+                {
+                  "text": "Built recruiter outreach after noticing users churned once their resume was done. 25% of actives now use it weekly."
+                }
+              ],
+              [
+                {
+                  "text": "Trial conversion was leaking at 60%. Rebuilt the flow so users could act on insights in one click. Leak dropped to 35%."
+                }
+              ],
+              [
+                {
+                  "text": "Killed mock interviews after 6 weeks. 90% tried it once, almost nobody came back. Moved the team to features that actually retained."
+                }
+              ]
+            ]
+          },
+          {
+            "company": "Acadia Healthcare",
+            "title": "Admissions Coordinator",
+            "dateStart": "01/2017",
+            "dateEnd": "02/2020",
+            "bullets": [
+              [
+                {
+                  "text": "Coordinated between patients, families, nurses, and physicians to translate clinical complexity (symptoms, acuity, diagnoses) into fast care placement decisions."
+                }
+              ],
+              [
+                {
+                  "text": "Rebuilt the insurance verification workflow end to end. Admission wait times dropped from 3–4 hours to 45 minutes. Claim approval rates increased."
+                }
+              ],
+              [
+                {
+                  "text": "Managed the full intake process: benefits verification, clinical screening, bed assignment, and family communication across multiple payer types and plan structures."
+                }
+              ]
+            ]
+          }
+        ]
+      },
+      "tokens": {
+        "fontFamily": "Crimson Pro",
+        "fontSize": 11,
+        "fontWeight": 400,
+        "color": "#000000",
+        "textAlign": "left",
+        "lineHeight": 1.15
+      },
+      "decorations": [
+        {
+          "type": "horizontal-rule",
+          "position": "below",
+          "renderAs": "css",
+          "css": {
+            "borderBottom": "2px solid #000000"
+          },
+          "relativeTo": "block"
+        }
+      ]
+    },
+    {
+      "id": "experience-2",
+      "type": "experience",
+      "region": "main",
+      "order": 3,
+      "sectionHeader": "VENTURE CAPITAL & ADVISORY",
+      "sectionHeaderTokens": {
+        "fontFamily": "Crimson Pro",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#0E539E",
+        "textAlign": "left"
+      },
+      "content": {
+        "entries": [
+          {
+            "company": "TampaBay.Ventures",
+            "title": "Venture Capital Analyst",
+            "dateStart": "10/2022",
+            "dateEnd": "06/2023",
+            "bullets": [
+              [
+                {
+                  "text": "Sourced and executed a $5M allocation toward Betr’s $35M Series A-2 (Jake Paul’s sports betting company). Took the company’s deck, financials, data room and rebuilt them into an investor-ready package. Built the presentation, structured the data room, and pitched LPs directly."
+                }
+              ],
+              [
+                {
+                  "text": "Spotted onboarding friction at a portfolio company by mapping their user flow. Reduced churn 10% and made it into their Series A-2 deck."
+                }
+              ]
+            ]
+          },
+          {
+            "company": "EY",
+            "title": "Venture Analyst",
+            "dateStart": "06/2022",
+            "dateEnd": "08/2022",
+            "bullets": [
+              [
+                {
+                  "text": "Ran product validation for CoachConvo, an AI soft-skills training platform. Interviewed banking staff about their actual daily conversations: what was hard, what they avoided, what made them anxious."
+                }
+              ],
+              [
+                {
+                  "text": "Turned those interviews into training scenarios the sales team used with Bank of America. Second meeting conversion increased 40%."
+                }
+              ]
+            ]
+          },
+          {
+            "company": "Ballast Point Ventures",
+            "title": "Intern",
+            "dateStart": "05/2021",
+            "dateEnd": "01/2022",
+            "bullets": [
+              [
+                {
+                  "text": "Identified a gap in PBM cost transparency that no existing product addressed. Built a working prototype and pitched the investment team on the opportunity."
+                }
+              ],
+              [
+                {
+                  "text": "Supported deal sourcing, financial modeling, and founder outreach."
+                }
+              ]
+            ]
+          }
+        ]
+      },
+      "tokens": {
+        "fontFamily": "Crimson Pro",
+        "fontSize": 11,
+        "fontWeight": 400,
+        "color": "#000000",
+        "textAlign": "left",
+        "lineHeight": 1.15
+      },
+      "decorations": [
+        {
+          "type": "horizontal-rule",
+          "position": "below",
+          "renderAs": "css",
+          "css": {
+            "borderBottom": "2px solid #000000"
+          },
+          "relativeTo": "block"
+        }
+      ]
+    },
+    {
+      "id": "education-1",
+      "type": "education",
+      "region": "main",
+      "order": 4,
+      "sectionHeader": "EDUCATION",
+      "sectionHeaderTokens": {
+        "fontFamily": "Crimson Pro",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#0E539E",
+        "textAlign": "left"
+      },
+      "content": {
+        "entries": [
+          {
+            "school": "University of South Florida",
+            "degree": "BS in Econometrics & Quantitative Economics",
+            "dates": ""
+          }
+        ]
+      },
+      "tokens": {
+        "fontFamily": "Crimson Pro",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#000000",
+        "textAlign": "left"
+      },
+      "decorations": [
+        {
+          "type": "horizontal-rule",
+          "position": "below",
+          "renderAs": "css",
+          "css": {
+            "borderBottom": "2px solid #000000"
+          },
+          "relativeTo": "block"
+        }
+      ]
+    },
+    {
+      "id": "skills-1",
+      "type": "skills",
+      "region": "main",
+      "order": 5,
+      "sectionHeader": "SKILLS",
+      "sectionHeaderTokens": {
+        "fontFamily": "Crimson Pro",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#0E539E",
+        "textAlign": "left"
+      },
+      "content": {
+        "format": "categories",
+        "categories": [
+          {
+            "name": "Product",
+            "skills": [
+              "A/B Testing",
+              "Cross-Functional Leadership",
+              "Funnel Optimization",
+              "PRDs & Specs",
+              "Product Roadmapping",
+              "Success Metrics Definition",
+              "Usability Testing",
+              "User Interviews",
+              "User Research"
+            ]
+          },
+          {
+            "name": "Healthcare",
+            "skills": [
+              "EDI 270/271 & 835/837",
+              "Pre-Certification Workflows",
+              "Insurance Verification",
+              "Benefits Administration",
+              "TPA Coordination",
+              "Medical Management",
+              "Payer Operations"
+            ]
+          },
+          {
+            "name": "Tools",
+            "skills": [
+              "Figma",
+              "GA4",
+              "JIRA",
+              "JS",
+              "Node",
+              "OpenAI",
+              "Python",
+              "React",
+              "TS"
+            ]
+          }
+        ]
+      },
+      "tokens": {
+        "fontFamily": "Crimson Pro",
+        "fontSize": 11,
+        "fontWeight": 400,
+        "color": "#000000",
+        "textAlign": "left",
+        "lineHeight": 1.15
+      },
+      "decorations": [
+        {
+          "type": "horizontal-rule",
+          "position": "below",
+          "renderAs": "css",
+          "css": {
+            "borderBottom": "2px solid #000000"
+          },
+          "relativeTo": "block"
+        }
+      ]
+    }
+  ],
+  "fonts": [
+    {
+      "originalFont": "Crimson Pro",
+      "matchedFont": "Crimson Pro",
+      "source": "google",
+      "url": "https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;700&display=swap",
+      "confidence": 0.95
+    }
+  ],
+  "pageSettings": {
+    "width": 816,
+    "height": 1056,
+    "margins": {
+      "top": 48,
+      "right": 72,
+      "bottom": 48,
+      "left": 72
+    }
+  }
+}

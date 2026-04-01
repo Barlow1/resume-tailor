@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        font-family: 'Nunito', serif;
+        font-size: 10pt;
+        color: #333333;
+        line-height: 1.4;
+        background: #e8e8e8;
+      }
+      .resume-page {
+        width: 816px;
+        min-height: 1056px;
+        margin: 20px auto;
+        padding: 0px 36px 36px 36px;
+        background: #ffffff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      }
+      .resume-page { padding: 0 !important; }
+      .resume-page { display: grid; grid-template-columns: 0.6fr 0.4fr; gap: 0 20px; grid-template-rows: auto 1fr; }
+        .region-banner { grid-column: 1 / -1; }
+        .region-column-left { grid-column: 1; }
+        .region-column-right { grid-column: 2; }
+      .region-banner { color: #ffffff; background-color: #1e3a5f; padding-top: 24px; padding-bottom: 24px; }
+      .region-banner { padding: 28px 36px 28px 36px; }
+      .region-column-left { padding: 12px 12px 36px 36px; }
+      .region-column-right { padding: 12px 36px 36px 12px; }
+
+      .entry-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+      }
+      .entry-dates { margin-left: auto; }
+      ul { padding-left: 18px; }
+    </style>
+</head>
+<body>
+  <div class="resume-page">
+    <div class="region-banner">
+    <div class="block block-header" style="color: #ffffff">
+      
+      <h1 style="font-size: 26pt; font-weight: 700; color: #ffffff">James O'Brien</h1>
+      <p class="role" style="font-size: 13pt; font-weight: 300; color: #a8c4e0">DevOps Engineer &amp; Cloud Architect</p>
+      <div class="contact" style="font-size: 9pt; color: #c8d8e8"><span class="contact-item">james@obrien.dev</span> <span class="contact-sep">|</span> <span class="contact-item">(555) 111-2233</span> <span class="contact-sep">|</span> <span class="contact-item">github.com/jobrien</span> <span class="contact-sep">|</span> <span class="contact-item">Seattle, WA</span></div>
+      
+    </div></div>
+    <div class="region-column-left">
+    <div class="block block-experience" style="margin-top: 16px; margin-bottom: 16px">
+      <h2 class="section-header" style="margin-top: 16px; margin-bottom: 16px">Experience</h2>
+      
+      <div class="entry">
+        <div class="entry-header">
+          <span class="entry-title"><strong>Senior DevOps Engineer</strong> — Microsoft Azure</span>
+          <span class="entry-location">Seattle, WA</span>
+          <span class="entry-dates">2021-06 – Present</span>
+        </div>
+        
+        <ul><li>Architected CI/CD platform serving 5,000+ developers across 200 services</li>
+<li>Reduced deployment failures by 78% through automated canary releases</li>
+<li>Built cost optimization system saving $3M/year in cloud spend</li></ul>
+      </div>
+
+      <div class="entry">
+        <div class="entry-header">
+          <span class="entry-title"><strong>Site Reliability Engineer</strong> — Datadog</span>
+          <span class="entry-location">New York, NY</span>
+          <span class="entry-dates">2018-09 – 2021-05</span>
+        </div>
+        
+        <ul><li>Maintained 99.99% uptime for monitoring platform processing 40T data points daily</li>
+<li>Designed disaster recovery procedures, reducing RTO from 4 hours to 15 minutes</li></ul>
+      </div>
+      
+    </div>
+
+    <div class="block block-projects" style="margin-bottom: 12px">
+      <h2 class="section-header" style="margin-bottom: 12px">Open Source</h2>
+      <p>kubewatch — Kubernetes event monitoring tool (4.2K stars)</p>
+<p>terraform-drift-detector — Automated IaC drift detection and alerting</p>
+      
+    </div></div>
+    <div class="region-column-right">
+    <div class="block block-education" style="margin-top: 16px; margin-bottom: 16px">
+      <h2 class="section-header" style="margin-top: 16px; margin-bottom: 16px">Education</h2>
+      
+    <div class="entry">
+      <div class="entry-header">
+        <span><strong>M.S., Computer Science (Systems)</strong> — Georgia Tech</span>
+        <span class="entry-dates">2016 – 2018</span>
+      </div>
+      
+      
+    </div>
+
+    <div class="entry">
+      <div class="entry-header">
+        <span><strong>B.S., Computer Engineering</strong> — Boston University</span>
+        <span class="entry-dates">2012 – 2016</span>
+      </div>
+      
+      
+    </div>
+      
+    </div>
+
+    <div class="block block-skills" style="margin-bottom: 16px">
+      <h2 class="section-header" style="margin-bottom: 16px">Technical Skills</h2>
+      <div class="skill-category"><strong>Cloud:</strong> AWS, Azure, GCP</div>
+<div class="skill-category"><strong>IaC:</strong> Terraform, Pulumi, CloudFormation</div>
+<div class="skill-category"><strong>Containers:</strong> Kubernetes, Docker, Helm, Istio</div>
+<div class="skill-category"><strong>CI/CD:</strong> GitHub Actions, ArgoCD, Jenkins</div>
+<div class="skill-category"><strong>Monitoring:</strong> Datadog, Prometheus, Grafana</div>
+      
+    </div>
+
+    <div class="block block-certifications" style="font-size: 9pt">
+      <h2 class="section-header" style="font-size: 9pt">Certifications</h2>
+      <p>AWS Solutions Architect — Professional</p>
+<p>CKA (Certified Kubernetes Administrator)</p>
+<p>Azure DevOps Engineer Expert</p>
+<p>HashiCorp Terraform Associate</p>
+      
+    </div></div>
+  </div>
+</body>
+</html>
