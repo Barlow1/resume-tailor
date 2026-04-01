@@ -103,15 +103,15 @@ jobs:
       - name: 📥 Install Playwright Browsers
         run: npm run test:e2e:install
 
-      - name: 🛠 Setup Database
-        run: npx prisma migrate deploy
-
       - name: 🏦 Cache Database
         id: db-cache
         uses: actions/cache@v3
         with:
           path: prisma/data.db
-          key: db-cache
+          key: db-cache-${{ hashFiles('prisma/schema.prisma', 'prisma/migrations/**/migration.sql') }}
+
+      - name: 🛠 Setup Database
+        run: npx prisma migrate deploy
 
       - name: 🏗 Build
         run: npm run build
