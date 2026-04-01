@@ -29,6 +29,8 @@ interface FloatingToolbarProps {
 	onRevertBullet?: (descriptionId: string) => void
 	/** Set of description IDs that have revert metadata */
 	revertableIds?: Set<string>
+	onDismiss?: () => void
+	toolbarHoveredRef?: React.RefObject<boolean>
 	sectionOrder: string[]
 	formData: ResumeData
 }
@@ -47,6 +49,8 @@ export function FloatingToolbar({
 	onToggleSection,
 	onRevertBullet,
 	revertableIds,
+	onDismiss,
+	toolbarHoveredRef,
 	sectionOrder,
 	formData,
 }: FloatingToolbarProps) {
@@ -267,6 +271,8 @@ export function FloatingToolbar({
 		<div
 			style={style}
 			onMouseDown={(e) => e.preventDefault()}
+			onMouseEnter={() => { if (toolbarHoveredRef) (toolbarHoveredRef as React.MutableRefObject<boolean>).current = true }}
+			onMouseLeave={() => { if (toolbarHoveredRef) { (toolbarHoveredRef as React.MutableRefObject<boolean>).current = false; onDismiss?.() } }}
 			role="toolbar"
 			aria-label="Element actions"
 		>

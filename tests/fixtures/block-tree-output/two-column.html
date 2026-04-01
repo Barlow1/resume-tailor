@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        font-family: 'EB Garamond', serif;
+        font-size: 10.5pt;
+        color: #2d2d2d;
+        line-height: 1.35;
+        background: #e8e8e8;
+      }
+      .resume-page {
+        width: 816px;
+        min-height: 1056px;
+        margin: 20px auto;
+        padding: 40px 40px 40px 40px;
+        background: #ffffff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      }
+      
+      .resume-page { display: grid; grid-template-columns: 0.58fr 0.42000000000000004fr; gap: 0 24px; grid-template-rows: auto 1fr; }
+        .region-banner { grid-column: 1 / -1; }
+        .region-column-left { grid-column: 1; }
+        .region-column-right { grid-column: 2; }
+      
+      .region-banner { padding: 16px 40px 8px 40px; }
+      .region-column-left { padding: 12px 12px 40px 40px; }
+      .region-column-right { padding: 12px 40px 40px 12px; }
+
+      .entry-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+      }
+      .entry-dates { margin-left: auto; }
+      ul { padding-left: 18px; }
+    </style>
+</head>
+<body>
+  <div class="resume-page">
+    <div class="region-banner">
+    <div class="block block-header" style="text-align: center; margin-bottom: 4px; padding-bottom: 4px">
+      
+      <h1 style="font-size: 26pt; font-weight: 700; text-align: center">Alexandra Rivera</h1>
+      <p class="role" style="font-size: 13pt; font-weight: 400; font-style: italic; color: #555555; text-align: center">Data Scientist &amp; ML Engineer</p>
+      <div class="contact" style="font-size: 9.5pt; text-align: center"><span class="contact-item">a.rivera@email.com</span> <span class="contact-sep">|</span> <span class="contact-item">(555) 789-0123</span> <span class="contact-sep">|</span> <span class="contact-item">github.com/arivera</span> <span class="contact-sep">|</span> <span class="contact-item">New York, NY</span></div>
+      <div class="decoration decoration-below" style="border-bottom: 1.5px solid #2d2d2d"></div>
+    </div></div>
+    <div class="region-column-left">
+    <div class="block block-experience" style="margin-bottom: 12px">
+      <h2 class="section-header" style="margin-bottom: 12px">Experience</h2>
+      
+      <div class="entry">
+        <div class="entry-header">
+          <span class="entry-title"><strong>Senior ML Engineer</strong> — Meta AI Research</span>
+          <span class="entry-location">New York, NY</span>
+          <span class="entry-dates">2021-04 – Present</span>
+        </div>
+        
+        <ul><li>Developed recommendation models serving 3B+ users, improving engagement by 12%</li>
+<li>Published 2 papers at NeurIPS on efficient transformer architectures</li>
+<li>Built MLOps pipeline reducing model deployment time from 2 weeks to 4 hours</li></ul>
+      </div>
+
+      <div class="entry">
+        <div class="entry-header">
+          <span class="entry-title"><strong>Quantitative Researcher</strong> — Two Sigma</span>
+          <span class="entry-location">New York, NY</span>
+          <span class="entry-dates">2018-08 – 2021-03</span>
+        </div>
+        
+        <ul><li>Built predictive models for equity trading strategies generating $40M+ annual alpha</li>
+<li>Designed real-time feature engineering pipeline processing 500K events/sec</li></ul>
+      </div>
+      
+    </div>
+
+    <div class="block block-projects" style="">
+      <h2 class="section-header" style="">Selected Projects</h2>
+      <p>FastTransformer — Open-source efficient attention library (2.1K GitHub stars)</p>
+<p>CityPredict — Urban mobility forecasting model, 1st place NYC Open Data Challenge 2020</p>
+      
+    </div></div>
+    <div class="region-column-right">
+    <div class="block block-education" style="margin-bottom: 12px">
+      <h2 class="section-header" style="margin-bottom: 12px">Education</h2>
+      
+    <div class="entry">
+      <div class="entry-header">
+        <span><strong>M.S., Computer Science (ML Focus)</strong> — Columbia University</span>
+        <span class="entry-dates">2016 – 2018</span>
+      </div>
+      <div class="entry-detail">GPA: 3.95</div>
+      
+    </div>
+
+    <div class="entry">
+      <div class="entry-header">
+        <span><strong>B.S., Statistics &amp; CS</strong> — UC Berkeley</span>
+        <span class="entry-dates">2012 – 2016</span>
+      </div>
+      
+      
+    </div>
+      
+    </div>
+
+    <div class="block block-skills" style="margin-bottom: 12px">
+      <h2 class="section-header" style="margin-bottom: 12px">Technical Skills</h2>
+      <div class="skill-category"><strong>ML/DL:</strong> PyTorch, TensorFlow, JAX, HuggingFace</div>
+<div class="skill-category"><strong>Languages:</strong> Python, C++, Scala, SQL</div>
+<div class="skill-category"><strong>Data:</strong> Spark, Airflow, dbt, BigQuery</div>
+      
+    </div>
+
+    <div class="block block-publications" style="font-size: 9pt">
+      <h2 class="section-header" style="font-size: 9pt">Publications</h2>
+      <p>Rivera, A. et al. &quot;Efficient Sparse Attention for Long-Context LLMs&quot; NeurIPS 2023</p>
+<p>Rivera, A., Park, J. &quot;Temporal Graph Networks for Urban Prediction&quot; ICML 2022</p>
+      
+    </div>
+
+    <div class="block block-certifications" style="font-size: 9pt">
+      <h2 class="section-header" style="font-size: 9pt">Certifications</h2>
+      <p>AWS Machine Learning Specialty (2023)</p>
+<p>Google Professional ML Engineer (2022)</p>
+      
+    </div></div>
+  </div>
+</body>
+</html>

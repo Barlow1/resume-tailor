@@ -1,0 +1,322 @@
+{
+  "layout": "sidebar-right",
+  "layoutConfig": {
+    "sidebarWidth": 209,
+    "columnSplit": 0.342
+  },
+  "regionStyles": {
+    "sidebar": {
+      "backgroundColor": "#000000"
+    }
+  },
+  "globalTokens": {
+    "fontFamily": "Calibri",
+    "fontSize": 10,
+    "fontWeight": 400,
+    "color": "#000000",
+    "paddingTop": 0,
+    "paddingBottom": 0,
+    "marginTop": 0,
+    "marginBottom": 0,
+    "textAlign": "left",
+    "lineHeight": 1.2,
+    "letterSpacing": 0
+  },
+  "blocks": [
+    {
+      "id": "header-1",
+      "type": "header",
+      "region": "column-right",
+      "order": 1,
+      "sectionHeader": "",
+      "sectionHeaderTokens": {},
+      "content": {
+        "name": "Aparna Khatri",
+        "role": "Senior Graphic Design Specialist",
+        "contact": [
+          {
+            "type": "phone",
+            "value": "(212) 256-1414"
+          },
+          {
+            "type": "email",
+            "value": "aparna.khatri@gmail.com"
+          },
+          {
+            "type": "website",
+            "value": "aparnakhatridesign.com",
+            "url": "http://aparnakhatridesign.com"
+          },
+          {
+            "type": "location",
+            "value": "47 W 13th St, New York, NY 10011"
+          }
+        ],
+        "contactSeparator": ", "
+      },
+      "tokens": {},
+      "decorations": [
+        {
+          "type": "accent-bar",
+          "position": "below",
+          "renderAs": "css",
+          "relativeTo": "block"
+        }
+      ]
+    },
+    {
+      "id": "about-2",
+      "type": "summary",
+      "region": "column-left",
+      "order": 2,
+      "sectionHeader": "About",
+      "sectionHeaderTokens": {
+        "fontFamily": "Abril Fatface",
+        "fontSize": 11,
+        "fontWeight": 400,
+        "color": "#000000",
+        "marginTop": 12,
+        "marginBottom": 6
+      },
+      "content": {
+        "text": "Senior Graphic Design Specialist with 6+ years of experience managing design processes, from conceptualization to delivery. Skilled with Adobe Creative Suite (Illustrator, Photoshop, InDesign), Microsoft Office, and web design applications (Dreamweaver, HTML). Able to stretch the boundaries of web design and digital storytelling to help my client’s brands stand out and grow."
+      },
+      "tokens": {
+        "fontFamily": "Calibri",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "color": "#000000",
+        "marginTop": 6,
+        "marginBottom": 12
+      },
+      "decorations": []
+    },
+    {
+      "id": "experience-3",
+      "type": "experience",
+      "region": "column-left",
+      "order": 3,
+      "sectionHeader": "Professional Experience",
+      "sectionHeaderTokens": {
+        "fontFamily": "Abril Fatface",
+        "fontSize": 11,
+        "fontWeight": 400,
+        "color": "#000000",
+        "marginTop": 8,
+        "marginBottom": 6
+      },
+      "content": {
+        "entries": [
+          {
+            "company": "Experion",
+            "title": "Senior Graphic Design Specialist",
+            "location": "New York, NY",
+            "dateStart": "May 2019",
+            "dateEnd": "Present",
+            "description": "",
+            "bullets": []
+          },
+          {
+            "company": "Stepping Stone Advertising",
+            "title": "Graphic Design Specialist",
+            "location": "New York, NY",
+            "dateStart": "Aug 2017",
+            "dateEnd": "Apr 2019",
+            "description": "",
+            "bullets": []
+          },
+          {
+            "company": "Redfin Technologies",
+            "title": "Junior Graphic Designer",
+            "location": "New Rochelle, NY",
+            "dateStart": "Jun 2015",
+            "dateEnd": "May 2019",
+            "description": "",
+            "bullets": []
+          }
+        ]
+      },
+      "tokens": {
+        "fontFamily": "Calibri",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "color": "#000000",
+        "marginTop": 6,
+        "marginBottom": 12
+      },
+      "decorations": []
+    },
+    {
+      "id": "education-4",
+      "type": "education",
+      "region": "column-right",
+      "order": 4,
+      "sectionHeader": "Education",
+      "sectionHeaderTokens": {
+        "fontFamily": "Abril Fatface",
+        "fontSize": 11,
+        "fontWeight": 400,
+        "color": "#000000",
+        "marginTop": 12,
+        "marginBottom": 6
+      },
+      "content": {
+        "entries": [
+          {
+            "school": "Rochester Institute of Technology",
+            "degree": "Bachelor of Fine Arts in Graphic Design",
+            "major": "",
+            "gpa": "",
+            "dates": "May 2019",
+            "description": "Rochester Institute of Technology, Rochester NY"
+          }
+        ]
+      },
+      "tokens": {
+        "fontFamily": "Calibri",
+        "fontSize": 10,
+        "fontWeight": 700,
+        "color": "#000000",
+        "marginTop": 6,
+        "marginBottom": 12
+      },
+      "decorations": []
+    },
+    {
+      "id": "softskills-5",
+      "type": "skills",
+      "region": "column-right",
+      "order": 5,
+      "sectionHeader": "Soft Skills",
+      "sectionHeaderTokens": {
+        "fontFamily": "Abril Fatface",
+        "fontSize": 11,
+        "fontWeight": 400,
+        "color": "#000000",
+        "marginTop": 12,
+        "marginBottom": 6
+      },
+      "content": {
+        "format": "rated",
+        "categories": [],
+        "skills": [],
+        "rated": [
+          {
+            "name": "Design",
+            "level": 100,
+            "maxLevel": 100
+          },
+          {
+            "name": "Meet with clients",
+            "level": 100,
+            "maxLevel": 100
+          },
+          {
+            "name": "Present & edit",
+            "level": 90,
+            "maxLevel": 100
+          },
+          {
+            "name": "Collaborate",
+            "level": 90,
+            "maxLevel": 100
+          },
+          {
+            "name": "Concept development",
+            "level": 70,
+            "maxLevel": 100
+          },
+          {
+            "name": "Research",
+            "level": 80,
+            "maxLevel": 100
+          }
+        ]
+      },
+      "tokens": {
+        "fontFamily": "Calibri",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "color": "#7F7F7F",
+        "marginTop": 6,
+        "marginBottom": 12
+      },
+      "decorations": [
+        {
+          "type": "vertical-line",
+          "position": "below",
+          "renderAs": "css",
+          "relativeTo": "block"
+        }
+      ]
+    },
+    {
+      "id": "techskills-6",
+      "type": "skills",
+      "region": "column-left",
+      "order": 6,
+      "sectionHeader": "Technical Skills",
+      "sectionHeaderTokens": {
+        "fontFamily": "Abril Fatface",
+        "fontSize": 11,
+        "fontWeight": 400,
+        "color": "#000000",
+        "marginTop": 12,
+        "marginBottom": 6
+      },
+      "content": {
+        "format": "list",
+        "skills": [
+          "Lr",
+          "Ps",
+          "Ai",
+          "Xd",
+          "Ae",
+          "Figma",
+          "Blender",
+          "Sketchbook",
+          "HTML",
+          "CSS"
+        ]
+      },
+      "tokens": {
+        "fontFamily": "Calibri",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "color": "#000000",
+        "marginTop": 6,
+        "marginBottom": 12
+      },
+      "decorations": [
+        {
+          "type": "horizontal-rule",
+          "position": "below",
+          "renderAs": "css",
+          "css": {
+            "borderBottom": "0.5pt solid #000000"
+          },
+          "relativeTo": "block"
+        }
+      ]
+    }
+  ],
+  "fonts": [
+    {
+      "originalFont": "Calibri",
+      "matchedFont": "Inter",
+      "source": "google",
+      "url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap",
+      "confidence": 0.95
+    }
+  ],
+  "pageSettings": {
+    "width": 816,
+    "height": 1056,
+    "margins": {
+      "top": 35,
+      "right": 33,
+      "bottom": 44,
+      "left": 25
+    }
+  }
+}

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        font-family: 'Arial', serif;
+        font-size: 10pt;
+        color: #1A202C;
+        line-height: 1.4;
+        background: #e8e8e8;
+      }
+      .resume-page {
+        width: 816px;
+        min-height: 1056px;
+        margin: 20px auto;
+        padding: 48px 60px 48px 60px;
+        background: #ffffff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      }
+      
+      .resume-page { display: block; }
+      
+
+      /* Region default padding — keeps text from touching edges */
+      .region-main { padding: 0; }
+
+      .block + .block { margin-top: 12px; }
+      .section-header {
+        margin-top: 14px;
+        margin-bottom: 6px;
+        padding-bottom: 2px;
+      }
+      .block:first-child .section-header { margin-top: 0; }
+      .entry { margin-bottom: 10px; }
+      .entry-header {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 12px;
+        align-items: baseline;
+      }
+      .entry-dates { margin-left: auto; font-style: italic; opacity: 0.7; }
+      .entry-detail { font-size: 0.9em; opacity: 0.8; }
+      ul { padding-left: 18px; margin-top: 4px; }
+      li { margin-bottom: 2px; }
+      .contact { margin-top: 6px; }
+      .contact-item { }
+      .contact-sep { opacity: 0.4; margin: 0 4px; }
+      .contact-row { margin-bottom: 4px; }
+      .header-image { margin-bottom: 12px; }
+      .header-image img { display: block; margin: 0 auto; }
+      .role { margin-top: 2px; }
+      .skill-rated { margin-bottom: 6px; }
+      .skill-name { display: inline-block; min-width: 80px; }
+      .skill-bar { width: 100%; }
+      .dot { font-size: 10px; margin-right: 2px; }
+      .skill-category { margin-bottom: 4px; }
+      .skill-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+      .decoration { }
+      .decoration-above { margin-bottom: 8px; }
+      .decoration-below { margin-top: 8px; }
+    </style>
+</head>
+<body>
+  <div class="resume-page">
+    <div class="region-main">
+    <div class="block block-header" style="font-family: 'Arial', sans-serif; text-align: left">
+      
+      <h1 style="font-family: 'Arial', sans-serif; font-size: 18pt; font-weight: 700; color: #1A202C">Brayan Londono</h1>
+      <p class="role" style="font-family: 'Arial', sans-serif; font-size: 11pt; font-weight: 400; color: #4A5568">Sr. Product Manager | Healthcare Workflows, AI, SaaS</p>
+      <div class="contact" style="font-family: 'Arial', sans-serif; font-size: 9.5pt; font-weight: 400; color: #718096"><span class="contact-item">Tampa, FL</span> <span class="contact-sep">•</span> <span class="contact-item">brayanlondono.pm@gmail.com</span> <span class="contact-sep">•</span> <span class="contact-item">(813) 407-0629</span></div>
+      <div class="decoration decoration-below" style="border-bottom: 0.75pt solid #2B6CB0"></div>
+    </div>
+
+    <div class="block block-summary" style="font-family: 'Arial', sans-serif; font-size: 10pt; font-weight: 400; color: #1A202C; text-align: left">
+      <h2 class="section-header" style="font-family: 'Arial', sans-serif; font-size: 11pt; font-weight: 700; color: #2B6CB0; text-transform: uppercase; letter-spacing: 3px; margin-top: 10px; margin-bottom: 2px">PROFILE SUMMARY</h2>
+      <p>Senior Product Manager with 5+ years of experience in healthcare technology, specializing in cross-system workflow design, adoption and utilization optimization, and engineering-partnered product execution. Track record of defining workflow requirements across multiple product surfaces, diagnosing underutilization through usage data, and driving measurable adoption improvements in live customer environments.</p>
+<p></p>
+<p>Deep domain expertise in healthcare transitions of care, pre-certification workflows, insurance verification, EDI interoperability (270/271, 835/837), and care coordination. Experience spans behavioral health intake operations, claims cost navigation, and AI-powered SaaS products scaled to 20K users. Venture capital background evaluating product-market fit and growth metrics for early-stage healthcare and technology investments.</p>
+      <div class="decoration decoration-below" style="border-bottom: 0.75pt solid #2B6CB0"></div>
+    </div>
+
+    <div class="block block-experience" style="font-family: 'Arial', sans-serif; font-size: 10pt; font-weight: 400; color: #1A202C; text-align: left">
+      <h2 class="section-header" style="font-family: 'Arial', sans-serif; font-size: 11pt; font-weight: 700; color: #2B6CB0; text-transform: uppercase; letter-spacing: 3px; margin-top: 10px; margin-bottom: 2px">WORK EXPERIENCE</h2>
+      
+      <div class="entry">
+        <div class="entry-header">
+          <span class="entry-title"><strong>Co-Founder &amp; Product Manager</strong> — Claire Health</span>
+          <span class="entry-location">Remote</span>
+          <span class="entry-dates">Oct 2025 – Present</span>
+        </div>
+        <ul><li>Own end-to-end workflow strategy for a healthcare cost navigation platform, defining cross-system workflows spanning claims ingestion, facility matching, pre-certification intercept, and employee notification—ensuring workflows are technically sound, operationally effective, and adopted by customers.</li>
+<li>Built integrated workflows across EDI 270/271/835/837 pipelines, CPT-based cost-ranking, geocoded facility deduplication, and real-time monitoring, partnering with engineering to ensure scalable architecture aligned with workflow requirements.</li>
+<li>Designed an event-driven pre-certification intercept workflow triggered by medical management notifications, performing real-time facility search and routing lower-cost options to employees before authorization completion—reducing workflow leakage at care transition points.</li>
+<li>Drove workflow adoption in a 220-employee pilot with Meshoppen Stone, defining PMPM savings and utilization metrics, diagnosing adoption barriers through HR and broker interviews, and achieving 40% redirect acceptance with $1K/employee annual savings.</li>
+<li>Created PRDs and workflow documentation with clear requirements and expected outcomes, partnering with engineering in 2-week sprints using GitHub Projects to evaluate build vs. buy decisions for claims parsing, SMS, geocoding, and cost-ranking components.</li>
+<li>Established a data-driven feedback loop tracking user and claims events in Airtable, measuring utilization by employer, and translating usage insights into product changes—validating demand through 20+ broker and HR interviews confirming willingness to pay.</li>
+<li>Led go-to-market through flat PEPM pricing with performance-based savings, ROI modeling decks, targeted outbound and LinkedIn outreach, broker partnership development, and TPA integration channels.</li></ul>
+      </div>
+
+      <div class="entry">
+        <div class="entry-header">
+          <span class="entry-title"><strong>Co-Founder &amp; Product Manager</strong> — Resume Tailor</span>
+          <span class="entry-location">Remote</span>
+          <span class="entry-dates">Jun 2023 – Present</span>
+        </div>
+        <ul><li>Scaled an AI job search product to 20,000 users and $48K ARR, owning product strategy, roadmap prioritization via RICE scoring, and engineering partnership through structured PRDs and Jira sprint planning.</li>
+<li>Diagnosed post-resume churn and underutilization using PostHog retention cohort analysis, session replay (LogRocket), and Sentry error tracking, translating usage data into targeted product changes that increased trial-to-paid conversion from 40% to 60%.</li>
+<li>Reduced trial leakage by implementing 40+ typed client and server events in PostHog, redesigning onboarding through feature-level tracking and usage gating, and removing underutilized features validated by 90% single-use retention curves.</li>
+<li>Conducted 50+ user interviews using Mom Test and JTBD frameworks, synthesizing insights via affinity mapping to identify adoption barriers, increasing weekly active users to 150.</li>
+<li>Built programmatic SEO, CRM (HubSpot), UTM tracking, and outbound automation (Apollo/Reply.io), optimizing acquisition funnels with PostHog and Search Console.</li></ul>
+      </div>
+
+      <div class="entry">
+        <div class="entry-header">
+          <span class="entry-title"><strong>Venture Capital Analyst</strong> — TampaBay.Ventures</span>
+          <span class="entry-location">Tampa, FL</span>
+          <span class="entry-dates">Oct 2022 – Jun 2023</span>
+        </div>
+        <ul><li>Sourced and closed a $5M allocation toward Betr's $35M Series A-2, underwriting risk using cohort-based LTV/CAC models and Monte Carlo simulation, and rebuilding investor materials including projections and data room structure.</li>
+<li>Identified onboarding friction at a portfolio company by reviewing Mixpanel funnel data and cohort metrics, isolating activation bottlenecks, and redesigning onboarding flows—reducing churn by 10% and reinforcing the growth narrative in the Series A-2 deck.</li></ul>
+      </div>
+
+      <div class="entry">
+        <div class="entry-header">
+          <span class="entry-title"><strong>Venture Analyst</strong> — EY</span>
+          <span class="entry-location">New York, NY</span>
+          <span class="entry-dates">Jun 2022 – Aug 2022</span>
+        </div>
+        <ul><li>Conducted product validation for CoachConvo by interviewing banking staff to identify workflow pain points, translating insights into AI-driven training scenarios adopted by Bank of America's sales team, increasing second-meeting conversion by 40%.</li></ul>
+      </div>
+
+      <div class="entry">
+        <div class="entry-header">
+          <span class="entry-title"><strong>Admissions Coordinator</strong> — Acadia Healthcare</span>
+          <span class="entry-location">Tampa, FL</span>
+          <span class="entry-dates">Jan 2017 – Feb 2020</span>
+        </div>
+        <ul><li>Managed psychiatric crisis intake across inpatient, detox, and military units, coordinating patients, families, nurses, and physicians through real-time triage and placement decisions—direct experience in healthcare transitions of care and care coordination.</li>
+<li>Rebuilt the end-to-end insurance verification and intake workflow including benefits checks, screening, bed assignment, and payer coordination, cutting admission wait times from 4 hours to 45 minutes through workflow optimization and operational process redesign.</li></ul>
+      </div>
+      <div class="decoration decoration-below" style="border-bottom: 0.75pt solid #2B6CB0"></div>
+    </div>
+
+    <div class="block block-education" style="font-family: 'Arial', sans-serif; font-size: 10pt; font-weight: 400; color: #1A202C; text-align: left">
+      <h2 class="section-header" style="font-family: 'Arial', sans-serif; font-size: 11pt; font-weight: 700; color: #2B6CB0; text-transform: uppercase; letter-spacing: 3px; margin-top: 10px; margin-bottom: 2px">EDUCATION</h2>
+      
+    <div class="entry">
+      <div class="entry-header">
+        <span><strong>B.S., Econometrics &amp; Quantitative Economics</strong> — University of South Florida</span>
+        <span class="entry-dates">Jan 2021 – Dec 2022</span>
+      </div>
+      
+      
+    </div>
+      <div class="decoration decoration-below" style="border-bottom: 0.75pt solid #2B6CB0"></div>
+    </div>
+
+    <div class="block block-skills" style="font-family: 'Arial', sans-serif; font-size: 10pt; font-weight: 400; color: #1A202C; text-align: left">
+      <h2 class="section-header" style="font-family: 'Arial', sans-serif; font-size: 11pt; font-weight: 700; color: #2B6CB0; text-transform: uppercase; letter-spacing: 3px; margin-top: 10px; margin-bottom: 2px">TECHNICAL SKILLS</h2>
+      <div class="skill-category"><strong>Product:</strong> Workflow Design &amp; Optimization, PRDs &amp; Requirements, Cross-Functional Leadership, Adoption &amp; Utilization Metrics, A/B Testing, Funnel Optimization, Product Roadmapping, Systems Thinking, Usability Testing, User Research</div>
+<div class="skill-category"><strong>Healthcare:</strong> EDI 270/271 &amp; 835/837, Pre-Certification Workflows, Care Coordination &amp; Transitions, Insurance Verification, Benefits Administration, TPA Coordination, Medical Management, Payer Operations</div>
+<div class="skill-category"><strong>Tools:</strong> Jira, PostHog, Mixpanel, Figma, Python, JavaScript/TypeScript, React, Node, OpenAI/ChatGPT, GitHub Projects, HubSpot CRM, Google Analytics</div>
+      
+    </div></div>
+  </div>
+</body>
+</html>

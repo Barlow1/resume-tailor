@@ -1,0 +1,1537 @@
+{
+  "pages": [
+    {
+      "pageNumber": 1,
+      "width": 612,
+      "height": 792,
+      "lines": [
+        {
+          "text": "(212) 256-1414 ",
+          "x": 40.2,
+          "y": 23.8,
+          "width": 77.9,
+          "height": 11,
+          "fontFamily": "Roboto",
+          "fontSize": 11,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "left"
+        },
+        {
+          "text": "Chicago, Illinois aparna.khatri@gmail.com aparnakhatri.com ",
+          "x": 167.1,
+          "y": 23.8,
+          "width": 404.3,
+          "height": 11,
+          "fontFamily": "Roboto",
+          "fontSize": 11,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "right"
+        },
+        {
+          "text": "PROFILE ",
+          "x": 218.1,
+          "y": 62.5,
+          "width": 52.8,
+          "height": 11,
+          "fontFamily": "Roboto",
+          "fontSize": 11,
+          "fontWeight": 700,
+          "fontStyle": "normal",
+          "color": "#1A6AA1",
+          "column": "right"
+        },
+        {
+          "text": "Aparna ",
+          "x": 25.2,
+          "y": 73.5,
+          "width": 104.5,
+          "height": 30,
+          "fontFamily": "Roboto",
+          "fontSize": 30,
+          "fontWeight": 700,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "left"
+        },
+        {
+          "text": "Senior Graphic Design Specialist with 6+ years of experience managing design ",
+          "x": 218.1,
+          "y": 89.2,
+          "width": 359.5,
+          "height": 10.6,
+          "fontFamily": "Roboto",
+          "fontSize": 10.6,
+          "fontWeight": 400,
+          "fontStyle": "italic",
+          "color": "#FFFFFF",
+          "column": "right"
+        },
+        {
+          "text": "processes, from conceptualization to delivery. Skilled with Adobe Creative Suite ",
+          "x": 218.1,
+          "y": 103.7,
+          "width": 364.9,
+          "height": 10.6,
+          "fontFamily": "Roboto",
+          "fontSize": 10.6,
+          "fontWeight": 400,
+          "fontStyle": "italic",
+          "color": "#FFFFFF",
+          "column": "right"
+        },
+        {
+          "text": "Khatri ",
+          "x": 25.2,
+          "y": 109.5,
+          "width": 88.5,
+          "height": 30,
+          "fontFamily": "Roboto",
+          "fontSize": 30,
+          "fontWeight": 700,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "left"
+        },
+        {
+          "text": "(Illustrator, Photoshop, InDesign), Microsoft Office, and web design applications ",
+          "x": 218.1,
+          "y": 118.1,
+          "width": 366.4,
+          "height": 10.6,
+          "fontFamily": "Roboto",
+          "fontSize": 10.6,
+          "fontWeight": 400,
+          "fontStyle": "italic",
+          "color": "#FFFFFF",
+          "column": "right"
+        },
+        {
+          "text": "(Dreamweaver, HTML). Able to stretch the boundaries of web design and digital ",
+          "x": 218.1,
+          "y": 132.6,
+          "width": 364.8,
+          "height": 10.6,
+          "fontFamily": "Roboto",
+          "fontSize": 10.6,
+          "fontWeight": 400,
+          "fontStyle": "italic",
+          "color": "#FFFFFF",
+          "column": "right"
+        },
+        {
+          "text": "Senior Graphic Design Specialist ",
+          "x": 25.2,
+          "y": 141.6,
+          "width": 161,
+          "height": 11,
+          "fontFamily": "Roboto",
+          "fontSize": 11,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "full"
+        },
+        {
+          "text": "storytelling to help my client’s brands stand out and grow. ",
+          "x": 218.1,
+          "y": 147.1,
+          "width": 266.3,
+          "height": 10.6,
+          "fontFamily": "Roboto",
+          "fontSize": 10.6,
+          "fontWeight": 400,
+          "fontStyle": "italic",
+          "color": "#FFFFFF",
+          "column": "right"
+        },
+        {
+          "text": " PROFESSIONAL EXPERIENCE ",
+          "x": 25,
+          "y": 199.1,
+          "width": 392.7,
+          "height": 11,
+          "fontFamily": "Roboto",
+          "fontSize": 11,
+          "fontWeight": 700,
+          "fontStyle": "normal",
+          "color": "#1A6AA1",
+          "column": "full"
+        },
+        {
+          "text": "Senior Graphic Design Specialist ",
+          "x": 245.7,
+          "y": 225.5,
+          "width": 164.2,
+          "height": 11,
+          "fontFamily": "Roboto",
+          "fontSize": 11,
+          "fontWeight": 700,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "right"
+        },
+        {
+          "text": "Experion, New York, NY ",
+          "x": 245.7,
+          "y": 242.1,
+          "width": 114,
+          "height": 11,
+          "fontFamily": "Roboto",
+          "fontSize": 11,
+          "fontWeight": 400,
+          "fontStyle": "italic",
+          "color": "#FFFFFF",
+          "column": "right"
+        },
+        {
+          "text": "Sep 2019 – Present ",
+          "x": 245.7,
+          "y": 258.5,
+          "width": 97.1,
+          "height": 11,
+          "fontFamily": "Roboto",
+          "fontSize": 11,
+          "fontWeight": 400,
+          "fontStyle": "italic",
+          "color": "#1A6AA1",
+          "column": "right"
+        },
+        {
+          "text": "• Lead the design, development and implementation of graphic, layout, ",
+          "x": 245.7,
+          "y": 288.2,
+          "width": 324.7,
+          "height": 10.4,
+          "fontFamily": "Roboto",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "right"
+        },
+        {
+          "text": "and production communication materials while helping clients cut costs ",
+          "x": 263.6,
+          "y": 300.6,
+          "width": 321,
+          "height": 10,
+          "fontFamily": "Roboto",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "right"
+        },
+        {
+          "text": "by an average of 12% ",
+          "x": 263.6,
+          "y": 312.6,
+          "width": 96.7,
+          "height": 10,
+          "fontFamily": "Roboto",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "right"
+        },
+        {
+          "text": "• Delegate tasks to a 7-member design team and provide counsel on all ",
+          "x": 245.7,
+          "y": 327.8,
+          "width": 328.8,
+          "height": 10.4,
+          "fontFamily": "Roboto",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "right"
+        },
+        {
+          "text": "aspects of the project ",
+          "x": 263.6,
+          "y": 340.2,
+          "width": 99.2,
+          "height": 10,
+          "fontFamily": "Roboto",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "right"
+        },
+        {
+          "text": "• Assess all graphic materials created in-house to ensure the quality and ",
+          "x": 245.7,
+          "y": 355.4,
+          "width": 333.2,
+          "height": 10.4,
+          "fontFamily": "Roboto",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "right"
+        },
+        {
+          "text": "accuracy of their designs ",
+          "x": 263.6,
+          "y": 367.8,
+          "width": 114,
+          "height": 10,
+          "fontFamily": "Roboto",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "right"
+        },
+        {
+          "text": "• Oversee design project budgets ranging from $2,000 – $25,000 ",
+          "x": 245.7,
+          "y": 383.1,
+          "width": 300.4,
+          "height": 11.5,
+          "fontFamily": "Roboto",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "right"
+        },
+        {
+          "text": "Graphic Design Specialist ",
+          "x": 245.7,
+          "y": 417.6,
+          "width": 129.4,
+          "height": 11,
+          "fontFamily": "Roboto",
+          "fontSize": 11,
+          "fontWeight": 700,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "right"
+        },
+        {
+          "text": "EDUCATION ",
+          "x": 25,
+          "y": 423,
+          "width": 72.4,
+          "height": 11,
+          "fontFamily": "Roboto",
+          "fontSize": 11,
+          "fontWeight": 700,
+          "fontStyle": "normal",
+          "color": "#1A6AA1",
+          "column": "left"
+        },
+        {
+          "text": "Stepping Stone Advertising, New York, NY ",
+          "x": 245.7,
+          "y": 434,
+          "width": 201.8,
+          "height": 11,
+          "fontFamily": "Roboto",
+          "fontSize": 11,
+          "fontWeight": 400,
+          "fontStyle": "italic",
+          "color": "#FFFFFF",
+          "column": "right"
+        },
+        {
+          "text": "Bachelor Of Fine Arts In          Jun 2017 – Aug 2019 ",
+          "x": 25,
+          "y": 449.4,
+          "width": 326.6,
+          "height": 12.2,
+          "fontFamily": "Roboto",
+          "fontSize": 11,
+          "fontWeight": 700,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "full"
+        },
+        {
+          "text": "Graphic Design  ",
+          "x": 25,
+          "y": 465.8,
+          "width": 223.5,
+          "height": 12.2,
+          "fontFamily": "Roboto",
+          "fontSize": 11,
+          "fontWeight": 700,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "full"
+        },
+        {
+          "text": "• Developed numerous marketing programs (logos, brochures, ",
+          "x": 245.7,
+          "y": 480.2,
+          "width": 288.5,
+          "height": 10.4,
+          "fontFamily": "Roboto",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "right"
+        },
+        {
+          "text": "May 2015 ",
+          "x": 25,
+          "y": 482.4,
+          "width": 50,
+          "height": 11,
+          "fontFamily": "Roboto",
+          "fontSize": 11,
+          "fontWeight": 400,
+          "fontStyle": "italic",
+          "color": "#1A6AA1",
+          "column": "left"
+        },
+        {
+          "text": "newsletters, infographics, presentations, and advertisements) and made ",
+          "x": 263.6,
+          "y": 492.6,
+          "width": 321.7,
+          "height": 10,
+          "fontFamily": "Roboto",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "right"
+        },
+        {
+          "text": "Rochester Technology, New York, NY ",
+          "x": 25,
+          "y": 498.8,
+          "width": 179.3,
+          "height": 11,
+          "fontFamily": "Roboto",
+          "fontSize": 11,
+          "fontWeight": 400,
+          "fontStyle": "italic",
+          "color": "#FFFFFF",
+          "column": "full"
+        },
+        {
+          "text": "sure they exceeded the expectations of our clients ",
+          "x": 263.6,
+          "y": 504.6,
+          "width": 225.1,
+          "height": 10,
+          "fontFamily": "Roboto",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "right"
+        },
+        {
+          "text": "GPA: 3.7/4.0 ",
+          "x": 25,
+          "y": 515.4,
+          "width": 63.6,
+          "height": 11,
+          "fontFamily": "Roboto",
+          "fontSize": 11,
+          "fontWeight": 400,
+          "fontStyle": "italic",
+          "color": "#FFFFFF",
+          "column": "left"
+        },
+        {
+          "text": "• Managed up to 5 projects or tasks at a given time and ensured our team ",
+          "x": 245.7,
+          "y": 519.8,
+          "width": 338.6,
+          "height": 10.4,
+          "fontFamily": "Roboto",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "right"
+        },
+        {
+          "text": " met its weekly deadlines ",
+          "x": 25,
+          "y": 532.2,
+          "width": 349.9,
+          "height": 15.4,
+          "fontFamily": "Roboto",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "full"
+        },
+        {
+          "text": "• Consulted with clients on the most appropriate graphic design options ",
+          "x": 245.7,
+          "y": 547.3,
+          "width": 330.8,
+          "height": 10.4,
+          "fontFamily": "Roboto",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "right"
+        },
+        {
+          "text": "KEY SKILLS ",
+          "x": 25,
+          "y": 549.8,
+          "width": 71.2,
+          "height": 11,
+          "fontFamily": "Roboto",
+          "fontSize": 11,
+          "fontWeight": 700,
+          "fontStyle": "normal",
+          "color": "#1A6AA1",
+          "column": "left"
+        },
+        {
+          "text": "based on their major marketing goals ",
+          "x": 263.6,
+          "y": 559.7,
+          "width": 168,
+          "height": 10,
+          "fontFamily": "Roboto",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "right"
+        },
+        {
+          "text": "• InDesign ",
+          "x": 25,
+          "y": 576.5,
+          "width": 63.4,
+          "height": 11.5,
+          "fontFamily": "Roboto",
+          "fontSize": 11,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "left"
+        },
+        {
+          "text": "• Created 4+ design presentations and proposals a month for clients and ",
+          "x": 245.7,
+          "y": 575,
+          "width": 335.1,
+          "height": 10.4,
+          "fontFamily": "Roboto",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "right"
+        },
+        {
+          "text": "account managers ",
+          "x": 263.6,
+          "y": 587.4,
+          "width": 85.5,
+          "height": 10,
+          "fontFamily": "Roboto",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "right"
+        },
+        {
+          "text": "• Illustrator  ",
+          "x": 25,
+          "y": 603.4,
+          "width": 224.4,
+          "height": 15,
+          "fontFamily": "Roboto",
+          "fontSize": 11,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "full"
+        },
+        {
+          "text": "Junior Graphic Designer ",
+          "x": 245.7,
+          "y": 620.5,
+          "width": 122.3,
+          "height": 11,
+          "fontFamily": "Roboto",
+          "fontSize": 11,
+          "fontWeight": 700,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "right"
+        },
+        {
+          "text": "• Photoshop ",
+          "x": 25,
+          "y": 630.5,
+          "width": 73.9,
+          "height": 11.5,
+          "fontFamily": "Roboto",
+          "fontSize": 11,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "left"
+        },
+        {
+          "text": "Redfin Technologies, New Rochelle, NY ",
+          "x": 245.7,
+          "y": 636.9,
+          "width": 189.7,
+          "height": 11,
+          "fontFamily": "Roboto",
+          "fontSize": 11,
+          "fontWeight": 400,
+          "fontStyle": "italic",
+          "color": "#FFFFFF",
+          "column": "right"
+        },
+        {
+          "text": "Jun 2015 - May 2019 ",
+          "x": 245.7,
+          "y": 653.5,
+          "width": 103.1,
+          "height": 11,
+          "fontFamily": "Roboto",
+          "fontSize": 11,
+          "fontWeight": 400,
+          "fontStyle": "italic",
+          "color": "#1A6AA1",
+          "column": "right"
+        },
+        {
+          "text": "• Figma ",
+          "x": 25,
+          "y": 657.5,
+          "width": 51.2,
+          "height": 11.5,
+          "fontFamily": "Roboto",
+          "fontSize": 11,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "left"
+        },
+        {
+          "text": "• Blender ",
+          "x": 25,
+          "y": 684.5,
+          "width": 57.8,
+          "height": 11.5,
+          "fontFamily": "Roboto",
+          "fontSize": 11,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "left"
+        },
+        {
+          "text": "• Worked with senior designers to develop unique product branding ",
+          "x": 245.7,
+          "y": 683.2,
+          "width": 311.2,
+          "height": 10.4,
+          "fontFamily": "Roboto",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "right"
+        },
+        {
+          "text": "• Designed 30+ online advertisements to increase RedFin’s brand ",
+          "x": 245.7,
+          "y": 698.8,
+          "width": 301.7,
+          "height": 10.4,
+          "fontFamily": "Roboto",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "right"
+        },
+        {
+          "text": "• Sketchbook ",
+          "x": 25,
+          "y": 711.5,
+          "width": 78.2,
+          "height": 11.5,
+          "fontFamily": "Roboto",
+          "fontSize": 11,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "left"
+        },
+        {
+          "text": "awareness ",
+          "x": 263.6,
+          "y": 711.2,
+          "width": 50.7,
+          "height": 10,
+          "fontFamily": "Roboto",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "right"
+        },
+        {
+          "text": "• Created 15 original illustrations for a website redesign using Adobe ",
+          "x": 245.7,
+          "y": 726.5,
+          "width": 317.3,
+          "height": 11.2,
+          "fontFamily": "Roboto",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "right"
+        },
+        {
+          "text": "Illustrator and Photoshop ",
+          "x": 263.6,
+          "y": 738.9,
+          "width": 115.4,
+          "height": 11,
+          "fontFamily": "Roboto",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#FFFFFF",
+          "column": "right"
+        }
+      ],
+      "rectangles": [
+        {
+          "x": 0,
+          "y": 0,
+          "width": 612.1,
+          "height": 792.1,
+          "color": "#252A41",
+          "classification": "sidebar-bg"
+        },
+        {
+          "x": 14.2,
+          "y": 14.2,
+          "width": 127.5,
+          "height": 28,
+          "color": "#1A6AA1",
+          "classification": "background"
+        },
+        {
+          "x": 19.6,
+          "y": 21.6,
+          "width": 116.7,
+          "height": 13.2,
+          "color": "#1A6AA1",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 141.6,
+          "y": 14.2,
+          "width": 127.6,
+          "height": 28,
+          "color": "#1A6AA1",
+          "classification": "background"
+        },
+        {
+          "x": 147,
+          "y": 21.6,
+          "width": 116.7,
+          "height": 13.2,
+          "color": "#1A6AA1",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 269.1,
+          "y": 14.2,
+          "width": 184.6,
+          "height": 28,
+          "color": "#1A6AA1",
+          "classification": "background"
+        },
+        {
+          "x": 274.5,
+          "y": 21.6,
+          "width": 173.8,
+          "height": 13.2,
+          "color": "#1A6AA1",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 453.7,
+          "y": 14.2,
+          "width": 144,
+          "height": 28,
+          "color": "#1A6AA1",
+          "classification": "background"
+        },
+        {
+          "x": 459.1,
+          "y": 21.6,
+          "width": 133.2,
+          "height": 13.2,
+          "color": "#1A6AA1",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 14.2,
+          "y": 177.9,
+          "width": 212.1,
+          "height": 0.7,
+          "color": "#1A6AA1",
+          "classification": "divider"
+        },
+        {
+          "x": 226.2,
+          "y": 177.9,
+          "width": 0.7,
+          "height": 0.7,
+          "color": "#1A6AA1",
+          "classification": "background"
+        },
+        {
+          "x": 227,
+          "y": 177.9,
+          "width": 370.6,
+          "height": 0.7,
+          "color": "#1A6AA1",
+          "classification": "divider"
+        },
+        {
+          "x": 226.2,
+          "y": 178.6,
+          "width": 0.7,
+          "height": 18.4,
+          "color": "#1A6AA1",
+          "classification": "background"
+        },
+        {
+          "x": 226.2,
+          "y": 196.9,
+          "width": 0.7,
+          "height": 572.6,
+          "color": "#1A6AA1",
+          "classification": "vertical-line"
+        },
+        {
+          "x": 14.2,
+          "y": 769.6,
+          "width": 583.6,
+          "height": 3.7,
+          "color": "#1A6AA1",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 19.6,
+          "y": 769.6,
+          "width": 572.8,
+          "height": 3.7,
+          "color": "#1A6AA1",
+          "classification": "accent-bar"
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Roboto",
+          "weight": 400,
+          "style": "italic"
+        },
+        {
+          "family": "Roboto",
+          "weight": 400,
+          "style": "normal"
+        },
+        {
+          "family": "Roboto",
+          "weight": 700,
+          "style": "normal"
+        }
+      ]
+    },
+    {
+      "pageNumber": 2,
+      "width": 612,
+      "height": 792,
+      "lines": [
+        {
+          "text": "Dear Job Seeker, ",
+          "x": 70.9,
+          "y": 143.6,
+          "width": 175.6,
+          "height": 20,
+          "fontFamily": "Poppins",
+          "fontSize": 20,
+          "fontWeight": 700,
+          "fontStyle": "normal",
+          "color": "#000000",
+          "column": "full"
+        },
+        {
+          "text": "Want to make a lasting impression on employers? Our sleek new resume ",
+          "x": 106,
+          "y": 185.2,
+          "width": 372.8,
+          "height": 10,
+          "fontFamily": "Poppins",
+          "fontSize": 10,
+          "fontWeight": 700,
+          "fontStyle": "normal",
+          "color": "#000000",
+          "column": "full"
+        },
+        {
+          "text": "templates feature a space for your profile photo, ensuring that hiring managers ",
+          "x": 106,
+          "y": 200.2,
+          "width": 399.8,
+          "height": 10,
+          "fontFamily": "Poppins",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#000000",
+          "column": "full"
+        },
+        {
+          "text": "remember your application.",
+          "x": 106,
+          "y": 215.2,
+          "width": 139.9,
+          "height": 10,
+          "fontFamily": "Poppins",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#000000",
+          "column": "full"
+        },
+        {
+          "text": "Our resume templates with photos are ideal if you’re applying for a job that ",
+          "x": 106,
+          "y": 245.2,
+          "width": 377.5,
+          "height": 10,
+          "fontFamily": "Poppins",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#000000",
+          "column": "full"
+        },
+        {
+          "text": "requires a headshot, like a position as an actor, model, or theatre performer.",
+          "x": 106,
+          "y": 260.2,
+          "width": 379,
+          "height": 10,
+          "fontFamily": "Poppins",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#000000",
+          "column": "full"
+        },
+        {
+          "text": "However, if you’re applying for work in the US or UK, you should avoid using a ",
+          "x": 106,
+          "y": 289,
+          "width": 383,
+          "height": 10,
+          "fontFamily": "Poppins",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#000000",
+          "column": "full"
+        },
+        {
+          "text": "resume with a picture on it because companies consider it an HR risk.",
+          "x": 106,
+          "y": 304,
+          "width": 345.8,
+          "height": 10,
+          "fontFamily": "Poppins",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#000000",
+          "column": "full"
+        },
+        {
+          "text": "If you’re struggling to write your resume, here are some free resources to help ",
+          "x": 106,
+          "y": 334,
+          "width": 388.2,
+          "height": 10,
+          "fontFamily": "Poppins",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#000000",
+          "column": "full"
+        },
+        {
+          "text": "you put together a resume that shows employers you’re the right person ",
+          "x": 106,
+          "y": 349,
+          "width": 364.4,
+          "height": 10,
+          "fontFamily": "Poppins",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#000000",
+          "column": "full"
+        },
+        {
+          "text": "for the job:",
+          "x": 106,
+          "y": 364,
+          "width": 52.6,
+          "height": 10,
+          "fontFamily": "Poppins",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#000000",
+          "column": "full"
+        },
+        {
+          "text": "·     Free Resume Builder",
+          "x": 106,
+          "y": 379,
+          "width": 116.3,
+          "height": 10,
+          "fontFamily": "Poppins",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#EF7855",
+          "column": "full"
+        },
+        {
+          "text": "·     How to Write a Resume",
+          "x": 106,
+          "y": 394,
+          "width": 130.6,
+          "height": 10,
+          "fontFamily": "Poppins",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#EF7855",
+          "column": "full"
+        },
+        {
+          "text": "·     Resume Samples by Industry",
+          "x": 106,
+          "y": 409,
+          "width": 159.9,
+          "height": 10,
+          "fontFamily": "Poppins",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#EF7855",
+          "column": "full"
+        },
+        {
+          "text": "Once you have a great resume, pair it with a convincing cover letter using our ",
+          "x": 106,
+          "y": 439,
+          "width": 389.6,
+          "height": 10,
+          "fontFamily": "Poppins",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#000000",
+          "column": "full"
+        },
+        {
+          "text": "matching cover letter templates. Here are a few resources to help you write a ",
+          "x": 106,
+          "y": 454,
+          "width": 387.4,
+          "height": 10,
+          "fontFamily": "Poppins",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#000000",
+          "column": "full"
+        },
+        {
+          "text": "cover letter that gives your application the boost it needs to land ",
+          "x": 106,
+          "y": 469,
+          "width": 325.7,
+          "height": 10,
+          "fontFamily": "Poppins",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#000000",
+          "column": "full"
+        },
+        {
+          "text": "you an interview:",
+          "x": 106,
+          "y": 484,
+          "width": 83.8,
+          "height": 10,
+          "fontFamily": "Poppins",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#000000",
+          "column": "full"
+        },
+        {
+          "text": "·     Cover Letter Builder",
+          "x": 106,
+          "y": 499,
+          "width": 112.1,
+          "height": 10,
+          "fontFamily": "Poppins",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#EF7855",
+          "column": "full"
+        },
+        {
+          "text": "·     How to Write a Cover Letter",
+          "x": 106,
+          "y": 514,
+          "width": 150.2,
+          "height": 10,
+          "fontFamily": "Poppins",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#EF7855",
+          "column": "full"
+        },
+        {
+          "text": "·     Cover Letter Examples by Industry",
+          "x": 106,
+          "y": 529,
+          "width": 183.6,
+          "height": 10,
+          "fontFamily": "Poppins",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#EF7855",
+          "column": "full"
+        },
+        {
+          "text": "Best regards,  ",
+          "x": 106.6,
+          "y": 574,
+          "width": 70.3,
+          "height": 10,
+          "fontFamily": "Poppins",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#000000",
+          "column": "full"
+        },
+        {
+          "text": "IMPORTANT: To delete the second page, right-click on the page and click “Delete Rows”",
+          "x": 70.9,
+          "y": 675,
+          "width": 348.6,
+          "height": 8,
+          "fontFamily": "Poppins",
+          "fontSize": 8,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "color": "#939DA5",
+          "column": "full"
+        }
+      ],
+      "rectangles": [
+        {
+          "x": 0,
+          "y": 0,
+          "width": 612.1,
+          "height": 792.1,
+          "color": "#252A41",
+          "classification": "sidebar-bg"
+        },
+        {
+          "x": 14.2,
+          "y": 14.2,
+          "width": 583.6,
+          "height": 759,
+          "color": "#000000",
+          "classification": "sidebar-bg"
+        },
+        {
+          "x": 70.9,
+          "y": 70.9,
+          "width": 470,
+          "height": 32.7,
+          "color": "#000000",
+          "classification": "background"
+        },
+        {
+          "x": 70.9,
+          "y": 103.6,
+          "width": 470,
+          "height": 30,
+          "color": "#000000",
+          "classification": "background"
+        },
+        {
+          "x": 70.9,
+          "y": 133.6,
+          "width": 470,
+          "height": 30,
+          "color": "#000000",
+          "classification": "background"
+        },
+        {
+          "x": 70.9,
+          "y": 163.6,
+          "width": 470,
+          "height": 16.6,
+          "color": "#000000",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 70.9,
+          "y": 180.1,
+          "width": 470,
+          "height": 15,
+          "color": "#000000",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 70.9,
+          "y": 195.1,
+          "width": 470,
+          "height": 15,
+          "color": "#000000",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 70.9,
+          "y": 210.1,
+          "width": 470,
+          "height": 15,
+          "color": "#000000",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 70.9,
+          "y": 225.1,
+          "width": 470,
+          "height": 15,
+          "color": "#000000",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 70.9,
+          "y": 240.1,
+          "width": 470,
+          "height": 15,
+          "color": "#000000",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 70.9,
+          "y": 255.2,
+          "width": 470,
+          "height": 15,
+          "color": "#000000",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 70.9,
+          "y": 270.2,
+          "width": 470,
+          "height": 13.8,
+          "color": "#000000",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 70.9,
+          "y": 284,
+          "width": 470,
+          "height": 15,
+          "color": "#000000",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 70.9,
+          "y": 299,
+          "width": 470,
+          "height": 15,
+          "color": "#000000",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 70.9,
+          "y": 314,
+          "width": 470,
+          "height": 15,
+          "color": "#000000",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 70.9,
+          "y": 329,
+          "width": 470,
+          "height": 15,
+          "color": "#000000",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 70.9,
+          "y": 344,
+          "width": 470,
+          "height": 15,
+          "color": "#000000",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 70.9,
+          "y": 359,
+          "width": 470,
+          "height": 15,
+          "color": "#000000",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 70.9,
+          "y": 374,
+          "width": 470,
+          "height": 15,
+          "color": "#000000",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 70.9,
+          "y": 389,
+          "width": 470,
+          "height": 15,
+          "color": "#000000",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 70.9,
+          "y": 404,
+          "width": 470,
+          "height": 15,
+          "color": "#000000",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 70.9,
+          "y": 419,
+          "width": 470,
+          "height": 15,
+          "color": "#000000",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 70.9,
+          "y": 434,
+          "width": 470,
+          "height": 15,
+          "color": "#000000",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 70.9,
+          "y": 449,
+          "width": 470,
+          "height": 15,
+          "color": "#000000",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 70.9,
+          "y": 464,
+          "width": 470,
+          "height": 15,
+          "color": "#000000",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 70.9,
+          "y": 479,
+          "width": 470,
+          "height": 15,
+          "color": "#000000",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 70.9,
+          "y": 494,
+          "width": 470,
+          "height": 15,
+          "color": "#000000",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 70.9,
+          "y": 509,
+          "width": 470,
+          "height": 15,
+          "color": "#000000",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 70.9,
+          "y": 524,
+          "width": 470,
+          "height": 15,
+          "color": "#000000",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 70.9,
+          "y": 539,
+          "width": 470,
+          "height": 15,
+          "color": "#000000",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 70.9,
+          "y": 554,
+          "width": 470,
+          "height": 15,
+          "color": "#000000",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 70.9,
+          "y": 569,
+          "width": 470,
+          "height": 15,
+          "color": "#000000",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 70.9,
+          "y": 584,
+          "width": 470,
+          "height": 15,
+          "color": "#000000",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 70.9,
+          "y": 599,
+          "width": 470,
+          "height": 36,
+          "color": "#000000",
+          "classification": "background"
+        },
+        {
+          "x": 70.9,
+          "y": 635,
+          "width": 470,
+          "height": 12,
+          "color": "#000000",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 70.9,
+          "y": 647,
+          "width": 470,
+          "height": 12,
+          "color": "#000000",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 70.9,
+          "y": 659,
+          "width": 470,
+          "height": 12,
+          "color": "#000000",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 70.9,
+          "y": 671,
+          "width": 470,
+          "height": 12,
+          "color": "#000000",
+          "classification": "accent-bar"
+        },
+        {
+          "x": 14.2,
+          "y": 14.2,
+          "width": 583.4,
+          "height": 56.8,
+          "color": "#000000",
+          "classification": "background"
+        },
+        {
+          "x": 14.2,
+          "y": 744.9,
+          "width": 583.4,
+          "height": 28.3,
+          "color": "#000000",
+          "classification": "background"
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Poppins",
+          "weight": 400,
+          "style": "normal"
+        },
+        {
+          "family": "Poppins",
+          "weight": 700,
+          "style": "normal"
+        }
+      ]
+    }
+  ],
+  "pageSettings": {
+    "width": 816,
+    "height": 1056,
+    "margins": {
+      "top": 32,
+      "right": 36,
+      "bottom": 56,
+      "left": 33
+    }
+  },
+  "detectedColumns": {
+    "count": 2,
+    "splitX": 149.5,
+    "leftWidth": 0.244,
+    "rightWidth": 0.756
+  }
+}

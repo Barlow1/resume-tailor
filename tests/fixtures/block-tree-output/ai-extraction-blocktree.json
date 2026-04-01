@@ -1,0 +1,310 @@
+{
+  "layout": "single-column",
+  "globalTokens": {
+    "fontFamily": "Garamond",
+    "fontSize": 11,
+    "fontWeight": 400,
+    "fontStyle": "normal",
+    "color": "#000000",
+    "paddingTop": 0,
+    "paddingBottom": 0,
+    "marginTop": 0,
+    "marginBottom": 0,
+    "textAlign": "left",
+    "lineHeight": 1.15
+  },
+  "blocks": [
+    {
+      "id": "header-1",
+      "type": "header",
+      "region": "main",
+      "order": 0,
+      "content": {
+        "name": "Brayan Londono",
+        "contact": [
+          {
+            "type": "location",
+            "value": "Tampa, FL"
+          },
+          {
+            "type": "phone",
+            "value": "(813) 407 - 0629"
+          },
+          {
+            "type": "email",
+            "value": "brayanlondono.pm@gmail.com",
+            "url": "mailto:brayanlondono.pm@gmail.com"
+          },
+          {
+            "type": "linkedin",
+            "value": "LinkedIn",
+            "url": "https://linkedin.com"
+          }
+        ],
+        "headerTokens": {
+          "name": {
+            "fontSize": 20,
+            "fontWeight": 700,
+            "textTransform": "smallCaps",
+            "textAlign": "center"
+          },
+          "contact": {
+            "fontSize": 10,
+            "textAlign": "center"
+          }
+        }
+      },
+      "tokens": {},
+      "decorations": []
+    },
+    {
+      "id": "summary-1",
+      "type": "summary",
+      "region": "main",
+      "order": 1,
+      "sectionHeader": "PRODUCT LEADERSHIP SUMMARY",
+      "content": {
+        "text": "ROI-driven product manager with 5+ years of experience across GenAI, SaaS, and venture capital. Scaled 0→1 AI products to 115K+ users, drove $240K ARR, and advised startups on $35M+ in funding. Combines PM execution with strategy and deep market insight from VC experience."
+      },
+      "tokens": {
+        "fontFamily": "Cardo"
+      },
+      "decorations": [
+        {
+          "type": "horizontal-rule",
+          "position": "below",
+          "renderAs": "css",
+          "css": {
+            "borderBottom": "1px solid #000000"
+          },
+          "relativeTo": "block"
+        }
+      ]
+    },
+    {
+      "id": "experience-1",
+      "type": "experience",
+      "region": "main",
+      "order": 2,
+      "sectionHeader": "PROFESSIONAL EXPERIENCE",
+      "content": {
+        "entries": [
+          {
+            "company": "Resume Tailor AI",
+            "title": "Senior Product Manager | Founder",
+            "dateStart": "Jun 2023",
+            "dateEnd": "Present",
+            "bullets": [
+              [
+                {
+                  "text": "Scaled subscription funnel from 0 to 2K paid users ("
+                },
+                {
+                  "text": "115K+ total signups",
+                  "bold": true
+                },
+                {
+                  "text": "), growing ARR to "
+                },
+                {
+                  "text": "$240K",
+                  "bold": true
+                },
+                {
+                  "text": " with 10% MRR growth."
+                }
+              ],
+              [
+                {
+                  "text": "Led a team of 5 to launch \"Live Edit & Compare,\" an AI feature that let users toggle between original and AI-edited resumes, boosting retention by 50% and growing to 10K+ MAU."
+                }
+              ],
+              [
+                {
+                  "text": "Owned growth funnel end-to-end: 15% signup conversion, 8% free-to-paid, 12% churn; improved retention 50% via personalized onboarding and trial experiments."
+                }
+              ],
+              [
+                {
+                  "text": "Conducted 100+ customer interviews and 12 A/B tests on onboarding, pricing and UX, lifting feature engagement 30%."
+                }
+              ]
+            ]
+          },
+          {
+            "company": "TampaBay.Ventures",
+            "title": "Venture Capital Analyst",
+            "dateStart": "Oct 2022",
+            "dateEnd": "Jun 2023",
+            "bullets": [
+              [
+                {
+                  "text": "Advised 10+ startups on data-driven product strategy, supporting a $35M Series A-2 raise and expansion into 12 states."
+                }
+              ],
+              [
+                {
+                  "text": "Partnered with C-suite at 10+ startups to define North-Star metrics and GTM plans, accelerating Series A raises ($35M) and cutting time-to-funding 50%."
+                }
+              ]
+            ]
+          },
+          {
+            "company": "EY (Ernst & Young)",
+            "title": "Venture Analyst",
+            "dateStart": "Jun 2022",
+            "dateEnd": "Aug 2022",
+            "bullets": [
+              [
+                {
+                  "text": "Led product validation for AI-powered enterprise tools, using rapid experimentation and iterative feedback loops to support a $20M Series A raise."
+                }
+              ],
+              [
+                {
+                  "text": "Collaborated with design to run usability tests and refine key flows for CoachConvo, an enterprise AI soft-skills training platform, improving UX, increasing engagement by 25%."
+                }
+              ]
+            ]
+          },
+          {
+            "company": "Apollo Medical",
+            "title": "Founding Product Manager",
+            "dateStart": "Jan 2020",
+            "dateEnd": "Jan 2022",
+            "bullets": [
+              [
+                {
+                  "text": "Launched a digital health platform from scratch, scaling to 5,000 users and increasing engagement by 20% through iterative onboarding, user feedback loops, and MVP optimization."
+                }
+              ]
+            ]
+          },
+          {
+            "company": "Acadia Healthcare",
+            "title": "Admissions Coordinator",
+            "dateStart": "Jan 2017",
+            "dateEnd": "Feb 2020",
+            "bullets": [
+              [
+                {
+                  "text": "Streamlined patient intake workflow by identifying manual bottlenecks and implementing automation, reducing processing time by 20% and improving staff efficiency."
+                }
+              ]
+            ]
+          }
+        ]
+      },
+      "tokens": {},
+      "decorations": [
+        {
+          "type": "horizontal-rule",
+          "position": "below",
+          "renderAs": "css",
+          "css": {
+            "borderBottom": "1px solid #000000"
+          },
+          "relativeTo": "block"
+        }
+      ]
+    },
+    {
+      "id": "education-1",
+      "type": "education",
+      "region": "main",
+      "order": 3,
+      "sectionHeader": "EDUCATION",
+      "content": {
+        "entries": [
+          {
+            "school": "University of South Florida",
+            "degree": "BS, Econometrics & Quantitative Economics",
+            "dates": ""
+          }
+        ]
+      },
+      "tokens": {},
+      "decorations": [
+        {
+          "type": "horizontal-rule",
+          "position": "below",
+          "renderAs": "css",
+          "css": {
+            "borderBottom": "1px solid #000000"
+          },
+          "relativeTo": "block"
+        }
+      ]
+    },
+    {
+      "id": "skills-1",
+      "type": "skills",
+      "region": "main",
+      "order": 4,
+      "sectionHeader": "SKILLS",
+      "content": {
+        "format": "list",
+        "skills": [
+          "Generative AI",
+          "Product Development",
+          "NLP",
+          "Predictive Analysis",
+          "Python",
+          "SQL",
+          "0-to-1 Product Launches",
+          "SDLC",
+          "GTM Strategy",
+          "Monetization",
+          "A/B Testing",
+          "Prioritization",
+          "Competitive Analysis",
+          "Market Research",
+          "User Interviews",
+          "Cross-Functional Team Leadership",
+          "Analytical Thinking",
+          "Figma",
+          "JIRA",
+          "Backlog Management"
+        ]
+      },
+      "tokens": {},
+      "decorations": [
+        {
+          "type": "horizontal-rule",
+          "position": "below",
+          "renderAs": "css",
+          "css": {
+            "borderBottom": "1px solid #000000"
+          },
+          "relativeTo": "block"
+        }
+      ]
+    }
+  ],
+  "fonts": [
+    {
+      "originalFont": "Garamond",
+      "matchedFont": "EB Garamond",
+      "source": "google",
+      "url": "https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;700&display=swap",
+      "confidence": 0.95
+    },
+    {
+      "originalFont": "Cardo",
+      "matchedFont": "Inter",
+      "source": "google",
+      "url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap",
+      "confidence": 0.2
+    }
+  ],
+  "pageSettings": {
+    "width": 816,
+    "height": 1056,
+    "margins": {
+      "top": 48,
+      "right": 48,
+      "bottom": 48,
+      "left": 48
+    }
+  }
+}
