@@ -30,13 +30,7 @@ import {
 	PanelRightClose,
 	Eye,
 	EyeOff,
-	ChevronRight,
-	Rocket,
-	LogOut,
-	User as UserIcon,
-	CreditCard,
 	Trash2,
-	Undo2,
 } from 'lucide-react'
 import { SubscribeModal } from '~/components/subscribe-modal.tsx'
 import { getStripeSubscription, getUserId } from '~/utils/auth.server.ts'
@@ -842,6 +836,20 @@ export default function ResumeBuilder() {
 		},
 		[formData, debouncedSave, tailorSnapshotFetcher],
 	)
+
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	const handleTailorUndo = useCallback(() => {
+		if (!formData.id) return
+		if (!confirm('Undo all tailoring changes? This will revert to your pre-tailoring resume. Any manual edits since tailoring will also be reverted.')) return
+
+		const fd = new FormData()
+		fd.append('intent', 'undo')
+		fd.append('resumeId', formData.id)
+		tailorSnapshotFetcher.submit(fd, {
+			method: 'POST',
+			action: '/resources/tailor-snapshot',
+		})
+	}, [formData.id, tailorSnapshotFetcher])
 
 	/* ═══ RESUME SWITCHING ═══ */
 	const resumeSwitchFetcher = useFetcher()
