@@ -1,0 +1,792 @@
+{
+  "layout": "single-column",
+  "globalTokens": {
+    "fontFamily": "Crimson Pro",
+    "fontSize": 11,
+    "fontWeight": 400,
+    "color": "#333333",
+    "paddingTop": 0,
+    "paddingBottom": 0,
+    "marginTop": 0,
+    "marginBottom": 0,
+    "textAlign": "left",
+    "lineHeight": 1.15
+  },
+  "fonts": [
+    {
+      "originalFont": "Crimson Pro",
+      "matchedFont": "Crimson Pro",
+      "source": "google",
+      "url": "https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;700&display=swap",
+      "confidence": 0.95
+    },
+    {
+      "originalFont": "Calibri",
+      "matchedFont": "Inter",
+      "source": "google",
+      "url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap",
+      "confidence": 0.95
+    }
+  ],
+  "blocks": [
+    {
+      "id": "para-0",
+      "type": "custom",
+      "region": "main",
+      "order": 0,
+      "content": {
+        "text": "Brayan Londono"
+      },
+      "tokens": {
+        "fontSize": 12,
+        "fontWeight": 700,
+        "color": "#0E539E",
+        "fontFamily": "Crimson Pro",
+        "textAlign": "center",
+        "marginBottom": 3
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-1",
+      "type": "custom",
+      "region": "main",
+      "order": 1,
+      "content": {
+        "text": "Tampa, FL • (813) 407-0629 • brayanlondono.pm@gmail.com • linkedin.com/in/brayan-londono"
+      },
+      "tokens": {
+        "fontSize": 14,
+        "fontWeight": 700,
+        "fontFamily": "Crimson Pro",
+        "textAlign": "center",
+        "borderBottom": "1px solid #000000",
+        "lineHeight": 1.5,
+        "marginTop": 19,
+        "marginBottom": 5
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-2",
+      "type": "custom",
+      "region": "main",
+      "order": 2,
+      "content": {
+        "text": "Former crisis psych admissions coordinator turned product builder. Three years as the first person patients saw during involuntary holds, active detox, and acute psychiatric episodes. Now I build healthcare and AI products. Co-founded Claire Health, a digital healthcare navigation platform that hooks into EDI transmissions to steer employees to lower-cost care. Co-founded Resume Tailor, shipped to 20K users and $48K ARR."
+      },
+      "tokens": {
+        "fontSize": 12,
+        "fontFamily": "Crimson Pro",
+        "marginTop": 16,
+        "marginBottom": 3
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-3",
+      "type": "custom",
+      "region": "main",
+      "order": 3,
+      "content": {
+        "text": "HEALTHCARE &amp; PRODUCT EXPERIENCE"
+      },
+      "tokens": {
+        "fontSize": 11,
+        "color": "#0E539E",
+        "fontFamily": "Crimson Pro",
+        "borderBottom": "1px solid #000000",
+        "lineHeight": 1.15,
+        "marginTop": 19,
+        "marginBottom": 5
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-4",
+      "type": "custom",
+      "region": "main",
+      "order": 4,
+      "content": {
+        "text": "Claire Health (www.getclairehealth.com)"
+      },
+      "tokens": {
+        "fontSize": 11,
+        "fontWeight": 700,
+        "fontFamily": "Crimson Pro"
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-5",
+      "type": "custom",
+      "region": "main",
+      "order": 5,
+      "content": {
+        "text": "Co-Founder (Project)"
+      },
+      "tokens": {
+        "fontSize": 11,
+        "fontWeight": 700,
+        "fontFamily": "Crimson Pro",
+        "marginTop": 1,
+        "marginBottom": 4
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-6",
+      "type": "custom",
+      "region": "main",
+      "order": 6,
+      "content": {
+        "text": "Built a real-time healthcare navigation platform for self-funded employers that reduces claims costs by steering employees to lower-cost, in-network care."
+      },
+      "tokens": {
+        "fontSize": 11,
+        "fontFamily": "Crimson Pro",
+        "marginTop": 1,
+        "marginBottom": 4
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-7",
+      "type": "custom",
+      "region": "main",
+      "order": 7,
+      "content": {
+        "text": "Platform monitors EDI 270/271 eligibility transmissions and 835/837 claims data to flag high-cost procedures in real time, then redirects care through the employer’s TPA or medical management team to lower-cost sites."
+      },
+      "tokens": {
+        "fontSize": 11,
+        "fontFamily": "Crimson Pro",
+        "lineHeight": 1.15,
+        "marginTop": 2,
+        "marginBottom": 2
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-8",
+      "type": "custom",
+      "region": "main",
+      "order": 8,
+      "content": {
+        "text": "Built the pre-certification intercept workflow: Claire catches scheduled procedures before authorization completes and surfaces lower-cost alternatives via text to employees while they’re still deciding."
+      },
+      "tokens": {
+        "fontSize": 11,
+        "fontFamily": "Crimson Pro",
+        "lineHeight": 1.15,
+        "marginTop": 2,
+        "marginBottom": 2
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-9",
+      "type": "custom",
+      "region": "main",
+      "order": 9,
+      "content": {
+        "text": "Ran a pilot with Meshoppen Stone (220 employees). $1K MRR."
+      },
+      "tokens": {
+        "fontSize": 11,
+        "fontFamily": "Crimson Pro",
+        "lineHeight": 1.15,
+        "marginTop": 2,
+        "marginBottom": 2
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-10",
+      "type": "custom",
+      "region": "main",
+      "order": 10,
+      "content": {
+        "text": "Own product strategy, roadmap, and go-to-market. Work directly with engineering."
+      },
+      "tokens": {
+        "fontSize": 11,
+        "fontFamily": "Crimson Pro",
+        "lineHeight": 1.15,
+        "marginTop": 2,
+        "marginBottom": 2
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-11",
+      "type": "custom",
+      "region": "main",
+      "order": 11,
+      "content": {
+        "text": "Resume Tailor06/2023 - Present"
+      },
+      "tokens": {
+        "fontSize": 11,
+        "fontWeight": 700,
+        "fontFamily": "Crimson Pro",
+        "marginTop": 13
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-12",
+      "type": "custom",
+      "region": "main",
+      "order": 12,
+      "content": {
+        "text": "Co-Founder &amp; Product Manager"
+      },
+      "tokens": {
+        "fontSize": 11,
+        "fontWeight": 700,
+        "fontFamily": "Crimson Pro",
+        "marginTop": 1,
+        "marginBottom": 4
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-13",
+      "type": "custom",
+      "region": "main",
+      "order": 13,
+      "content": {
+        "text": "Built an AI job search product from zero to 20K users and $48K ARR. Own product, roadmap, and work directly with engineering."
+      },
+      "tokens": {
+        "fontSize": 11,
+        "fontFamily": "Crimson Pro",
+        "marginTop": 1,
+        "marginBottom": 4
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-14",
+      "type": "custom",
+      "region": "main",
+      "order": 14,
+      "content": {
+        "text": "Ran 50+ user interviews. Key insight: users weren’t avoiding the product because it didn’t work. They were avoiding job searching because rejection hurts. Repositioned the product around that."
+      },
+      "tokens": {
+        "fontSize": 11,
+        "fontFamily": "Crimson Pro",
+        "lineHeight": 1.15,
+        "marginTop": 2,
+        "marginBottom": 2
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-15",
+      "type": "custom",
+      "region": "main",
+      "order": 15,
+      "content": {
+        "text": "Built recruiter outreach after noticing users churned once their resume was done. 25% of actives now use it weekly."
+      },
+      "tokens": {
+        "fontSize": 11,
+        "fontFamily": "Crimson Pro",
+        "lineHeight": 1.15,
+        "marginTop": 2,
+        "marginBottom": 2
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-16",
+      "type": "custom",
+      "region": "main",
+      "order": 16,
+      "content": {
+        "text": "Trial conversion was leaking at 60%. Rebuilt the flow so users could act on insights in one click. Leak dropped to 35%."
+      },
+      "tokens": {
+        "fontSize": 11,
+        "fontFamily": "Crimson Pro",
+        "lineHeight": 1.15,
+        "marginTop": 2,
+        "marginBottom": 2
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-17",
+      "type": "custom",
+      "region": "main",
+      "order": 17,
+      "content": {
+        "text": "Killed mock interviews after 6 weeks. 90% tried it once, almost nobody came back. Moved the team to features that actually retained."
+      },
+      "tokens": {
+        "fontSize": 11,
+        "fontFamily": "Crimson Pro",
+        "lineHeight": 1.15,
+        "marginTop": 2,
+        "marginBottom": 2
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-18",
+      "type": "custom",
+      "region": "main",
+      "order": 18,
+      "content": {
+        "text": "Acadia Healthcare01/2017 - 02/2020"
+      },
+      "tokens": {
+        "fontSize": 11,
+        "fontWeight": 700,
+        "fontFamily": "Crimson Pro",
+        "marginTop": 13
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-19",
+      "type": "custom",
+      "region": "main",
+      "order": 19,
+      "content": {
+        "text": "Admissions Coordinator"
+      },
+      "tokens": {
+        "fontSize": 11,
+        "fontWeight": 700,
+        "fontFamily": "Crimson Pro",
+        "marginTop": 1,
+        "marginBottom": 4
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-20",
+      "type": "custom",
+      "region": "main",
+      "order": 20,
+      "content": {
+        "text": "First point of contact for patients in psychiatric crisis, like involuntary holds, active detox, and acute behavioral episodes. Worked across inpatient psych, detox, and military units."
+      },
+      "tokens": {
+        "fontSize": 11,
+        "fontFamily": "Crimson Pro",
+        "marginTop": 1,
+        "marginBottom": 4
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-21",
+      "type": "custom",
+      "region": "main",
+      "order": 21,
+      "content": {
+        "text": "Coordinated between patients, families, nurses, and physicians to translate clinical complexity (symptoms, acuity, diagnoses) into fast care placement decisions."
+      },
+      "tokens": {
+        "fontSize": 11,
+        "fontFamily": "Crimson Pro",
+        "lineHeight": 1.15,
+        "marginTop": 2,
+        "marginBottom": 2
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-22",
+      "type": "custom",
+      "region": "main",
+      "order": 22,
+      "content": {
+        "text": "Rebuilt the insurance verification workflow end to end. Admission wait times dropped from 3–4 hours to 45 minutes. Claim approval rates increased."
+      },
+      "tokens": {
+        "fontSize": 11,
+        "fontFamily": "Crimson Pro",
+        "lineHeight": 1.15,
+        "marginTop": 2,
+        "marginBottom": 2
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-23",
+      "type": "custom",
+      "region": "main",
+      "order": 23,
+      "content": {
+        "text": "Managed the full intake process: benefits verification, clinical screening, bed assignment, and family communication across multiple payer types and plan structures."
+      },
+      "tokens": {
+        "fontSize": 11,
+        "fontFamily": "Crimson Pro",
+        "lineHeight": 1.15,
+        "marginTop": 2,
+        "marginBottom": 2
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-24",
+      "type": "custom",
+      "region": "main",
+      "order": 24,
+      "content": {
+        "text": "VENTURE CAPITAL &amp; ADVISORY"
+      },
+      "tokens": {
+        "fontSize": 11,
+        "color": "#0E539E",
+        "fontFamily": "Crimson Pro",
+        "borderBottom": "1px solid #000000",
+        "marginTop": 19,
+        "marginBottom": 5
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-25",
+      "type": "custom",
+      "region": "main",
+      "order": 25,
+      "content": {
+        "text": "TampaBay.Ventures10/2022 - 06/2023"
+      },
+      "tokens": {
+        "fontSize": 11,
+        "fontWeight": 700,
+        "fontFamily": "Crimson Pro"
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-26",
+      "type": "custom",
+      "region": "main",
+      "order": 26,
+      "content": {
+        "text": "Venture Capital Analyst"
+      },
+      "tokens": {
+        "fontSize": 11,
+        "fontWeight": 700,
+        "fontFamily": "Crimson Pro",
+        "marginTop": 1,
+        "marginBottom": 4
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-27",
+      "type": "custom",
+      "region": "main",
+      "order": 27,
+      "content": {
+        "text": "Sourced and executed a $5M allocation toward Betr’s $35M Series A-2 (Jake Paul’s sports betting company). Took the company’s deck, financials, data room and rebuilt them into an investor-ready package. Built the presentation, structured the data room, and pitched LPs directly."
+      },
+      "tokens": {
+        "fontSize": 11,
+        "fontFamily": "Crimson Pro",
+        "lineHeight": 1.15,
+        "marginTop": 2,
+        "marginBottom": 2
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-28",
+      "type": "custom",
+      "region": "main",
+      "order": 28,
+      "content": {
+        "text": "Spotted onboarding friction at a portfolio company by mapping their user flow. Reduced churn 10% and made it into their Series A-2 deck."
+      },
+      "tokens": {
+        "fontSize": 11,
+        "fontFamily": "Crimson Pro",
+        "lineHeight": 1.15,
+        "marginTop": 2,
+        "marginBottom": 2
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-29",
+      "type": "custom",
+      "region": "main",
+      "order": 29,
+      "content": {
+        "text": "EY06/2022 - 08/2022"
+      },
+      "tokens": {
+        "fontSize": 11,
+        "fontWeight": 700,
+        "fontFamily": "Crimson Pro",
+        "marginTop": 13
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-30",
+      "type": "custom",
+      "region": "main",
+      "order": 30,
+      "content": {
+        "text": "Venture Analyst"
+      },
+      "tokens": {
+        "fontSize": 11,
+        "fontWeight": 700,
+        "fontFamily": "Crimson Pro",
+        "marginTop": 1,
+        "marginBottom": 4
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-31",
+      "type": "custom",
+      "region": "main",
+      "order": 31,
+      "content": {
+        "text": "Ran product validation for CoachConvo, an AI soft-skills training platform. Interviewed banking staff about their actual daily conversations: what was hard, what they avoided, what made them anxious."
+      },
+      "tokens": {
+        "fontSize": 11,
+        "fontFamily": "Crimson Pro",
+        "lineHeight": 1.15,
+        "marginTop": 2,
+        "marginBottom": 2
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-32",
+      "type": "custom",
+      "region": "main",
+      "order": 32,
+      "content": {
+        "text": "Turned those interviews into training scenarios the sales team used with Bank of America. Second meeting conversion increased 40%."
+      },
+      "tokens": {
+        "fontSize": 11,
+        "fontFamily": "Crimson Pro",
+        "lineHeight": 1.15,
+        "marginTop": 2,
+        "marginBottom": 2
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-33",
+      "type": "custom",
+      "region": "main",
+      "order": 33,
+      "content": {
+        "text": "Ballast Point Ventures05/2021 - 01/2022"
+      },
+      "tokens": {
+        "fontSize": 11,
+        "fontWeight": 700,
+        "fontFamily": "Crimson Pro",
+        "marginTop": 13
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-34",
+      "type": "custom",
+      "region": "main",
+      "order": 34,
+      "content": {
+        "text": "Intern"
+      },
+      "tokens": {
+        "fontSize": 11,
+        "fontWeight": 700,
+        "fontFamily": "Crimson Pro",
+        "marginTop": 1,
+        "marginBottom": 4
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-35",
+      "type": "custom",
+      "region": "main",
+      "order": 35,
+      "content": {
+        "text": "Identified a gap in PBM cost transparency that no existing product addressed. Built a working prototype and pitched the investment team on the opportunity."
+      },
+      "tokens": {
+        "fontSize": 11,
+        "fontFamily": "Crimson Pro",
+        "lineHeight": 1.15,
+        "marginTop": 2,
+        "marginBottom": 2
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-36",
+      "type": "custom",
+      "region": "main",
+      "order": 36,
+      "content": {
+        "text": "Supported deal sourcing, financial modeling, and founder outreach."
+      },
+      "tokens": {
+        "fontSize": 11,
+        "fontFamily": "Crimson Pro",
+        "lineHeight": 1.15,
+        "marginTop": 2,
+        "marginBottom": 2
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-37",
+      "type": "custom",
+      "region": "main",
+      "order": 37,
+      "content": {
+        "text": "EDUCATION"
+      },
+      "tokens": {
+        "fontSize": 11,
+        "color": "#0E539E",
+        "fontFamily": "Crimson Pro",
+        "borderBottom": "1px solid #000000",
+        "lineHeight": 1.15,
+        "marginTop": 19,
+        "marginBottom": 5
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-38",
+      "type": "custom",
+      "region": "main",
+      "order": 38,
+      "content": {
+        "text": "BS in Econometrics &amp; Quantitative Economics"
+      },
+      "tokens": {
+        "fontSize": 12,
+        "fontWeight": 700,
+        "fontFamily": "Crimson Pro",
+        "marginTop": 5,
+        "marginBottom": 1
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-39",
+      "type": "custom",
+      "region": "main",
+      "order": 39,
+      "content": {
+        "text": "University of South Florida"
+      },
+      "tokens": {
+        "fontSize": 12,
+        "fontFamily": "Crimson Pro",
+        "marginTop": 5,
+        "marginBottom": 1
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-40",
+      "type": "custom",
+      "region": "main",
+      "order": 40,
+      "content": {
+        "text": "SKILLS"
+      },
+      "tokens": {
+        "fontSize": 11,
+        "color": "#0E539E",
+        "fontFamily": "Crimson Pro",
+        "borderBottom": "1px solid #000000",
+        "lineHeight": 1.15,
+        "marginTop": 19,
+        "marginBottom": 5
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-41",
+      "type": "custom",
+      "region": "main",
+      "order": 41,
+      "content": {
+        "text": "Product: A/B Testing, Cross-Functional Leadership, Funnel Optimization, PRDs &amp; Specs, Product Roadmapping, Success Metrics Definition, Usability Testing, User Interviews, User Research"
+      },
+      "tokens": {
+        "fontSize": 11,
+        "fontWeight": 700,
+        "fontFamily": "Crimson Pro",
+        "lineHeight": 1.15,
+        "marginTop": 5,
+        "marginBottom": 2
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-42",
+      "type": "custom",
+      "region": "main",
+      "order": 42,
+      "content": {
+        "text": "Healthcare: EDI 270/271 &amp; 835/837, Pre-Certification Workflows, Insurance Verification, Benefits Administration, TPA Coordination, Medical Management, Payer Operations"
+      },
+      "tokens": {
+        "fontSize": 11,
+        "fontWeight": 700,
+        "fontFamily": "Crimson Pro",
+        "lineHeight": 1.15,
+        "marginTop": 5,
+        "marginBottom": 2
+      },
+      "decorations": []
+    },
+    {
+      "id": "para-43",
+      "type": "custom",
+      "region": "main",
+      "order": 43,
+      "content": {
+        "text": "Tools: Figma, GA4, JIRA, JS, Node, OpenAI, Python, React, TS"
+      },
+      "tokens": {
+        "fontSize": 11,
+        "fontWeight": 700,
+        "fontFamily": "Crimson Pro",
+        "lineHeight": 1.15,
+        "marginTop": 5,
+        "marginBottom": 2
+      },
+      "decorations": []
+    }
+  ],
+  "pageSettings": {
+    "width": 816,
+    "height": 1056,
+    "margins": {
+      "top": 48,
+      "right": 72,
+      "bottom": 48,
+      "left": 72
+    }
+  }
+}

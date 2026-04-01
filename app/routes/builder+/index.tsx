@@ -30,7 +30,13 @@ import {
 	PanelRightClose,
 	Eye,
 	EyeOff,
+	ChevronRight,
+	Rocket,
+	LogOut,
+	User as UserIcon,
+	CreditCard,
 	Trash2,
+	Undo2,
 } from 'lucide-react'
 import { SubscribeModal } from '~/components/subscribe-modal.tsx'
 import { getStripeSubscription, getUserId } from '~/utils/auth.server.ts'

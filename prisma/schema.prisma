@@ -277,10 +277,10 @@ model BuilderResume {
   headers              BuilderHeaders?
   scores               ResumeScore[]
   coverLetterDrafts    String?
-  applications         Application[]
-  experienceMatchCache ExperienceMatchCache[]
   tailorSnapshot       String?
   tailorSnapshotDate   DateTime?
+  applications         Application[]
+  experienceMatchCache ExperienceMatchCache[]
 
   @@index([userId])
 }

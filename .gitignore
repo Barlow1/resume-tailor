@@ -33,6 +33,9 @@ Final_*
 docs/
 scripts/
 design-reference/
-
-# gstack skills (local tooling, not committed)
-.claude/skills/gstack/
+.claude/skills/
+.gstack/
+.superpowers/
+tests/output/
+CODEBASE_AUDIT.md
+*.csv
