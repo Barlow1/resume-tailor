@@ -1,11 +1,5 @@
 {
   "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": [
-    "node_modules",
-    "app/utils/block-tree",
-    "app/components/block-editor",
-    "scripts"
-  ],
   "compilerOptions": {
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
     "isolatedModules": true,
