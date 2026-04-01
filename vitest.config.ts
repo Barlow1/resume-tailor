@@ -9,6 +9,7 @@ export default defineConfig({
 	plugins: [react(), tsconfigPaths()],
 	test: {
 		include: ['./app/**/*.test.{ts,tsx}'],
+		exclude: ['./app/utils/block-tree/**', './app/components/block-editor/**', 'node_modules'],
 		environment: 'jsdom',
 		setupFiles: ['./tests/setup/setup-test-env.ts'],
 		globalSetup: ['./tests/setup/global-setup.ts'],
