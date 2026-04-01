@@ -36,3 +36,6 @@ design-reference/
 .claude/skills/
 .gstack/
 .superpowers/
+tests/output/
+CODEBASE_AUDIT.md
+*.csv
