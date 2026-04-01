@@ -4,6 +4,11 @@ const appFiles = ['app/**']
 
 /** @type {import('@types/eslint').Linter.BaseConfig} */
 module.exports = {
+	ignorePatterns: [
+		'app/utils/block-tree/**',
+		'app/components/block-editor/**',
+		'scripts/**',
+	],
 	extends: [
 		'@remix-run/eslint-config',
 		'@remix-run/eslint-config/node',
