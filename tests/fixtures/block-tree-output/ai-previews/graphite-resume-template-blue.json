@@ -1,0 +1,365 @@
+{
+  "layout": "two-column",
+  "layoutConfig": {
+    "sidebarWidth": 0.3563,
+    "columnGap": 0,
+    "columnSplit": 0.6437
+  },
+  "globalTokens": {
+    "fontFamily": "Inter 18pt 18pt",
+    "fontSize": 10,
+    "fontWeight": 400,
+    "color": "#3B3E45",
+    "paddingTop": 0,
+    "paddingBottom": 0,
+    "marginTop": 0,
+    "marginBottom": 0,
+    "textAlign": "left",
+    "lineHeight": 1.15
+  },
+  "blocks": [
+    {
+      "id": "header-1",
+      "type": "header",
+      "region": "banner",
+      "order": 0,
+      "content": {
+        "name": "DAVID PÉREZ",
+        "role": "Administrative Assistant",
+        "contact": [
+          {
+            "type": "phone",
+            "value": "(212) 204-5342"
+          },
+          {
+            "type": "location",
+            "value": "Chicago, IL 60622"
+          },
+          {
+            "type": "email",
+            "value": "davidperez@gmail.com"
+          },
+          {
+            "type": "linkedin",
+            "value": "linkedin.com/in/davidperez"
+          }
+        ],
+        "headerTokens": {
+          "name": {
+            "fontFamily": "Titillium Web",
+            "fontSize": 28,
+            "fontWeight": 700,
+            "color": "#3B3E45",
+            "textAlign": "left",
+            "lineHeight": 1.15,
+            "letterSpacing": 0.5
+          },
+          "role": {
+            "fontFamily": "Inter 18pt 18pt",
+            "fontSize": 13,
+            "fontWeight": 700,
+            "color": "#5A84AF"
+          },
+          "contact": {
+            "fontFamily": "Inter 18pt 18pt",
+            "fontSize": 10,
+            "fontWeight": 400,
+            "color": "#5A84AF",
+            "lineHeight": 1.7
+          }
+        }
+      },
+      "tokens": {
+        "fontFamily": "Inter 18pt 18pt",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "color": "#3B3E45",
+        "textAlign": "left",
+        "lineHeight": 1.15
+      },
+      "decorations": []
+    },
+    {
+      "id": "summary-1",
+      "type": "summary",
+      "region": "column-left",
+      "order": 0,
+      "sectionHeader": "PROFILE",
+      "sectionHeaderTokens": {
+        "fontFamily": "Titillium Web",
+        "fontSize": 12,
+        "fontWeight": 700,
+        "color": "#24272E",
+        "textAlign": "left",
+        "letterSpacing": 1
+      },
+      "content": {
+        "text": "Administrative Assistant with 6+ years of experience preparing flawless presentations, assembling facility reports, and maintaining the utmost confidentiality. Possesses a B.A. in History and expertise in Microsoft Excel. Looking to leverage my knowledge and experience into a role as Project Manager."
+      },
+      "tokens": {
+        "fontFamily": "Inter 18pt 18pt",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "color": "#3B3E45",
+        "textAlign": "left",
+        "lineHeight": 1.15
+      },
+      "decorations": []
+    },
+    {
+      "id": "experience-1",
+      "type": "experience",
+      "region": "column-left",
+      "order": 1,
+      "sectionHeader": "PROFESSIONAL EXPERIENCE",
+      "sectionHeaderTokens": {
+        "fontFamily": "Titillium Web",
+        "fontSize": 12,
+        "fontWeight": 700,
+        "color": "#24272E",
+        "textAlign": "left",
+        "letterSpacing": 1
+      },
+      "content": {
+        "entries": [
+          {
+            "company": "Redford & Sons, Chicago, IL",
+            "title": "Administrative Assistant",
+            "dateStart": "September 20XX",
+            "dateEnd": "Present",
+            "bullets": [
+              [
+                {
+                  "text": "Schedule and coordinate meetings, appointments, and travel arrangements for supervisors and managers"
+                }
+              ],
+              [
+                {
+                  "text": "Trained 2 administrative assistants during a period of company expansion to ensure adherence to company policies"
+                }
+              ],
+              [
+                {
+                  "text": "Developed new filing and organizational practices, saving the company $3,000 per year in contracted labor expenses"
+                }
+              ],
+              [
+                {
+                  "text": "Maintain utmost discretion when dealing with sensitive topics"
+                }
+              ]
+            ]
+          },
+          {
+            "company": "Bright Spot Ltd, Boston, MA",
+            "title": "Secretary",
+            "dateStart": "June 20XX",
+            "dateEnd": "August 20XX",
+            "bullets": [
+              [
+                {
+                  "text": "Typed documents such as correspondence, drafts, memos, and emails, and prepared 3 reports weekly for management"
+                }
+              ],
+              [
+                {
+                  "text": "Opened, sorted, and distributed incoming messages and correspondence in a timely manner"
+                }
+              ],
+              [
+                {
+                  "text": "Purchased and maintained office supply inventories, and always carefully adhered to budgeting practices"
+                }
+              ],
+              [
+                {
+                  "text": "Greeted visitors and helped them either find the appropriate person or schedule an appointment"
+                }
+              ]
+            ]
+          },
+          {
+            "company": "Redford & Sons, Chicago, IL",
+            "title": "Secretary",
+            "dateStart": "Dec 20XX",
+            "dateEnd": "May 20XX",
+            "bullets": [
+              [
+                {
+                  "text": "Recorded, transcribed and distributed weekly meetings"
+                }
+              ],
+              [
+                {
+                  "text": "Answered upwards of 20 phone calls daily, taking detailed messages and resolving caller issues"
+                }
+              ],
+              [
+                {
+                  "text": "Arranged appointments and ensured executives arrived to meetings with clients on time"
+                }
+              ]
+            ]
+          }
+        ]
+      },
+      "tokens": {
+        "fontFamily": "Inter 18pt 18pt",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "color": "#3B3E45",
+        "textAlign": "left",
+        "lineHeight": 1.15
+      },
+      "decorations": []
+    },
+    {
+      "id": "education-1",
+      "type": "education",
+      "region": "column-left",
+      "order": 2,
+      "sectionHeader": "EDUCATION",
+      "sectionHeaderTokens": {
+        "fontFamily": "Titillium Web",
+        "fontSize": 12,
+        "fontWeight": 700,
+        "color": "#24272E",
+        "textAlign": "left",
+        "letterSpacing": 1
+      },
+      "content": {
+        "entries": [
+          {
+            "school": "River Brook University, Chicago, IL",
+            "degree": "Bachelor of Arts in History",
+            "dates": "May 20XX",
+            "description": "Graduated Magna Cum Laude"
+          }
+        ]
+      },
+      "tokens": {
+        "fontFamily": "Inter 18pt 18pt",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "color": "#3B3E45",
+        "textAlign": "left",
+        "lineHeight": 1.15
+      },
+      "decorations": []
+    },
+    {
+      "id": "skills-1",
+      "type": "skills",
+      "region": "column-left",
+      "order": 3,
+      "sectionHeader": "KEY SKILLS",
+      "sectionHeaderTokens": {
+        "fontFamily": "Titillium Web",
+        "fontSize": 12,
+        "fontWeight": 700,
+        "color": "#24272E",
+        "textAlign": "left",
+        "letterSpacing": 1
+      },
+      "content": {
+        "format": "tags",
+        "skills": [
+          "Microsoft Office",
+          "HubSpot",
+          "MailChimp",
+          "Google Workspace",
+          "QuickBooks",
+          "Microsoft Teams"
+        ]
+      },
+      "tokens": {
+        "fontFamily": "Inter 18pt 18pt Light",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "color": "#3B3E45",
+        "textAlign": "left",
+        "lineHeight": 1.15
+      },
+      "decorations": [
+        {
+          "type": "bullet-icon",
+          "position": "inline",
+          "renderAs": "css",
+          "css": {
+            "border": "0.75pt solid #5A84AF",
+            "borderRadius": "999px",
+            "padding": "2.7pt 3.6pt"
+          },
+          "relativeTo": "block"
+        }
+      ]
+    },
+    {
+      "id": "skills-2",
+      "type": "skills",
+      "region": "column-left",
+      "order": 4,
+      "sectionHeader": "ADDITIONAL SKILLS",
+      "sectionHeaderTokens": {
+        "fontFamily": "Titillium Web",
+        "fontSize": 12,
+        "fontWeight": 700,
+        "color": "#24272E",
+        "textAlign": "left",
+        "letterSpacing": 1
+      },
+      "content": {
+        "format": "list",
+        "skills": [
+          "Spanish (Native)",
+          "Typing speed of 70 WPM",
+          "Bookkeeping",
+          "Calendar Management",
+          "Meeting Coordination"
+        ]
+      },
+      "tokens": {
+        "fontFamily": "Inter 18pt 18pt",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "color": "#3B3E45",
+        "textAlign": "left",
+        "lineHeight": 1.15
+      },
+      "decorations": []
+    }
+  ],
+  "fonts": [
+    {
+      "originalFont": "Inter 18pt 18pt",
+      "matchedFont": "Inter",
+      "source": "google",
+      "url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap",
+      "confidence": 0.7
+    },
+    {
+      "originalFont": "Titillium Web",
+      "matchedFont": "Inter",
+      "source": "google",
+      "url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap",
+      "confidence": 0.2
+    },
+    {
+      "originalFont": "Inter 18pt 18pt Light",
+      "matchedFont": "Inter",
+      "source": "google",
+      "url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap",
+      "confidence": 0.7
+    }
+  ],
+  "pageSettings": {
+    "width": 816,
+    "height": 1056,
+    "margins": {
+      "top": 19,
+      "right": 19,
+      "bottom": 0,
+      "left": 19
+    }
+  }
+}

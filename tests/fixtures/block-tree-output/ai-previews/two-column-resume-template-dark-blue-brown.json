@@ -1,0 +1,347 @@
+{
+  "layout": "single-column",
+  "globalTokens": {
+    "fontFamily": "Inter",
+    "fontSize": 10,
+    "fontWeight": 400,
+    "color": "#333333",
+    "paddingTop": 0,
+    "paddingBottom": 0,
+    "marginTop": 0,
+    "marginBottom": 0,
+    "textAlign": "left",
+    "lineHeight": 1.15
+  },
+  "fonts": [
+    {
+      "originalFont": "PT Sans",
+      "matchedFont": "Inter",
+      "source": "google",
+      "url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap",
+      "confidence": 0.2
+    },
+    {
+      "originalFont": "Raleway SemiBold",
+      "matchedFont": "Raleway",
+      "source": "google",
+      "url": "https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;700&display=swap",
+      "confidence": 0.7
+    },
+    {
+      "originalFont": "Ubuntu",
+      "matchedFont": "Inter",
+      "source": "google",
+      "url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap",
+      "confidence": 0.2
+    },
+    {
+      "originalFont": "Lexend",
+      "matchedFont": "Inter",
+      "source": "google",
+      "url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap",
+      "confidence": 0.2
+    },
+    {
+      "originalFont": "Lexend SemiBold",
+      "matchedFont": "Inter",
+      "source": "google",
+      "url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap",
+      "confidence": 0.2
+    },
+    {
+      "originalFont": "Inter Medium",
+      "matchedFont": "Inter",
+      "source": "google",
+      "url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap",
+      "confidence": 0.7
+    },
+    {
+      "originalFont": "Inter 18pt 18pt",
+      "matchedFont": "Inter",
+      "source": "google",
+      "url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap",
+      "confidence": 0.7
+    },
+    {
+      "originalFont": "Inter",
+      "matchedFont": "Inter",
+      "source": "google",
+      "url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap",
+      "confidence": 0.95
+    }
+  ],
+  "blocks": [
+    {
+      "id": "header-f0caa9d0",
+      "type": "header",
+      "region": "main",
+      "order": 0,
+      "content": {
+        "name": "DENICE HARRIS",
+        "contact": [
+          {
+            "type": "other",
+            "value": "Administrative Assistant"
+          }
+        ],
+        "headerTokens": {
+          "name": {
+            "fontSize": 28,
+            "color": "#11274D",
+            "fontFamily": "Raleway",
+            "lineHeight": 1.15
+          }
+        }
+      },
+      "tokens": {
+        "fontSize": 28,
+        "color": "#11274D",
+        "fontFamily": "Raleway",
+        "lineHeight": 1.15
+      },
+      "decorations": []
+    },
+    {
+      "id": "header-0ac47c91",
+      "type": "header",
+      "region": "main",
+      "order": 1,
+      "content": {
+        "name": "CONTACT",
+        "contact": [
+          {
+            "type": "email",
+            "value": "(123) 456-7895 denice.harris@gmail.com 1938 W Augusta Blvd"
+          },
+          {
+            "type": "other",
+            "value": "Chicago"
+          },
+          {
+            "type": "linkedin",
+            "value": "IL 60622 linkedin.com/in/denice.harris"
+          }
+        ],
+        "headerTokens": {
+          "name": {
+            "color": "#3DA8BF",
+            "fontFamily": "Raleway"
+          }
+        }
+      },
+      "tokens": {
+        "color": "#3DA8BF",
+        "fontFamily": "Raleway"
+      },
+      "decorations": []
+    },
+    {
+      "id": "summary-c6a1d22f",
+      "type": "summary",
+      "region": "main",
+      "order": 2,
+      "sectionHeader": "PROFILE",
+      "content": {
+        "text": "Administrative Assistant with 6+ years of experience organizing presentations, preparing facility reports, and maintaining the utmost confidentiality. Possess a B.A. in History and expertise in Microsoft Excel. Looking to leverage my knowledge and experience into a role as Project Manager."
+      },
+      "tokens": {
+        "fontSize": 10,
+        "color": "#536BBF",
+        "fontFamily": "Inter",
+        "lineHeight": 1.15
+      },
+      "decorations": []
+    },
+    {
+      "id": "experience-93f902a9",
+      "type": "experience",
+      "region": "main",
+      "order": 3,
+      "sectionHeader": "PROFESSIONAL EXPERIENCE",
+      "content": {
+        "entries": [
+          {
+            "title": "Administrative Assistant",
+            "company": "",
+            "dateStart": "",
+            "bullets": [
+              [
+                {
+                  "text": "Administrative Assistant"
+                }
+              ],
+              [
+                {
+                  "text": "Redford &amp; Sons, Chicago, IL | Sep 2019 – Present"
+                }
+              ],
+              [
+                {
+                  "text": "Schedule and coordinate meetings, appointments, and travel arrangements for supervisors and managers"
+                }
+              ],
+              [
+                {
+                  "text": "Trained 2 administrative assistants during a period of company expansion to ensure attention to detail and adherence to company"
+                }
+              ],
+              [
+                {
+                  "text": "Developed new filing and organizational practices, saving the company $3,000 per year in contracted labor expenses"
+                }
+              ],
+              [
+                {
+                  "text": "Secretary"
+                }
+              ],
+              [
+                {
+                  "text": "Secretary"
+                }
+              ],
+              [
+                {
+                  "text": "Bright Spot Ltd – Boston, Ma | June 2017 – August 2019"
+                }
+              ],
+              [
+                {
+                  "text": "Type documents such as correspondence, drafts, memos, and emails, and prepared 3 reports weekly for management"
+                }
+              ],
+              [
+                {
+                  "text": "Purchased and maintained office suppled inventories, and always carefully adhered to budgeting practices"
+                }
+              ],
+              [
+                {
+                  "text": "Secretary"
+                }
+              ],
+              [
+                {
+                  "text": "Secretary"
+                }
+              ],
+              [
+                {
+                  "text": "Suntrust Financial – Chicago, Il | June 2015 – August 2017"
+                }
+              ],
+              [
+                {
+                  "text": "Recorded, transcribed and distributed weekly meetings"
+                }
+              ],
+              [
+                {
+                  "text": "Answered upwards of 20 phone calls daily, taking detailed messages"
+                }
+              ]
+            ]
+          }
+        ]
+      },
+      "tokens": {
+        "fontSize": 10,
+        "color": "#353535",
+        "fontFamily": "Inter",
+        "textAlign": "center"
+      },
+      "decorations": []
+    },
+    {
+      "id": "education-ed946484",
+      "type": "education",
+      "region": "main",
+      "order": 4,
+      "sectionHeader": "EDUCATION",
+      "content": {
+        "entries": [
+          {
+            "school": "Bachelor Of Arts in English",
+            "degree": "Bachelor Of Arts in English",
+            "dates": "Bachelor Of Arts in English"
+          },
+          {
+            "school": "Bachelor Of Arts in English",
+            "degree": "Bachelor Of Arts in English",
+            "dates": "Bachelor Of Arts in English"
+          },
+          {
+            "school": "May 2015 ",
+            "degree": "River Brook University, Chicago, IL",
+            "dates": "May 2015 "
+          },
+          {
+            "school": "Graduated Magna Cum Laude",
+            "degree": "Graduated Magna Cum Laude",
+            "dates": "Graduated Magna Cum Laude"
+          }
+        ]
+      },
+      "tokens": {
+        "fontSize": 10,
+        "fontWeight": 700,
+        "color": "#536BBF",
+        "fontFamily": "Inter",
+        "textAlign": "center"
+      },
+      "decorations": []
+    },
+    {
+      "id": "skills-85ecdcfd",
+      "type": "skills",
+      "region": "main",
+      "order": 5,
+      "sectionHeader": "KEY SKILLS",
+      "content": {
+        "format": "inline",
+        "skills": [
+          "ADDITIONAL SKILLS",
+          "Microsoft Office",
+          "Spanish (Intermediate)",
+          "HubSpot",
+          "Typing speed of 70 WPM",
+          "MailChimp",
+          "Problem Solving"
+        ]
+      },
+      "tokens": {
+        "fontSize": 10,
+        "color": "#11274D",
+        "fontFamily": "Raleway"
+      },
+      "decorations": []
+    },
+    {
+      "id": "custom-ee131367",
+      "type": "custom",
+      "region": "main",
+      "order": 6,
+      "content": {
+        "text": "Dear Job Seeker,\nReady to land your next job offer?\nIn addition to this Word template, we provide a whole host of expert resume and cover letter writing resources and tools that'll help you boost your job search and increase your chances of securing work.\nResume Builder →\nHow to Write a Resume →\nCover Letter Generator →\nHow to Write a Cover Letter →\nAre you in a rush? \nSpeed up the application process by using a pre-formatted template:\nResume Templates →\nCover Letter Templates →\nCV Templates →\nLastly, explore our job-specific resume and cover letter examples to ensure your finished application gives you the best chance of getting more interviews.\nResume Samples by Industry &amp; Experience Level →\nCover Letter Examples by Industry &amp; Experience Level →\nGood luck on the job hunt.  \nBest regards,\nFonts\nThis template uses free fonts that are compatible with PC and Mac. You MUST download and install these fonts on your computer, before opening the file, in order for it to work properly.\nLexend ↗︎\nInter ↗︎\nFont Installation\nAfter downloading the fonts, simply open the zip folders and install each font file on your system. \n      Windows Users\nRight click the font file, select \"Install\". We recommend fully restarting your computer after the font installation.\n     Mac Users\nDouble click the font files, click \"Install\", and then restart MS Word."
+      },
+      "tokens": {
+        "fontSize": 20,
+        "fontWeight": 700,
+        "color": "#262626",
+        "fontFamily": "Inter",
+        "lineHeight": 1.15
+      },
+      "decorations": []
+    }
+  ],
+  "pageSettings": {
+    "width": 816,
+    "height": 1056,
+    "margins": {
+      "top": 19,
+      "right": 19,
+      "bottom": 0,
+      "left": 19
+    }
+  }
+}

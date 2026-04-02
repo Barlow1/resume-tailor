@@ -32,6 +32,7 @@ export type HoveredElementInfo = {
 	experienceId?: string
 	educationId?: string
 	bulletIndex?: number
+	descriptionId?: string
 	skillId?: string
 	hobbyId?: string
 	rect: {
@@ -52,6 +53,7 @@ interface ResumeIframeProps {
 	toolbarHoveredRef?: React.RefObject<boolean>
 	className?: string
 	canvasBackground?: string
+	canvasScale?: number
 }
 
 export interface ResumeIframeHandle {
@@ -63,6 +65,10 @@ export interface ResumeIframeHandle {
 	scrollToSection: (sectionId: string) => void
 	/** Scroll to a specific bullet and flash-highlight it */
 	highlightBullet: (experienceId: string, bulletIndex: number) => void
+	/** Highlight multiple bullets by description ID with persistent background */
+	highlightDescriptions: (descriptionIds: string[]) => void
+	/** Clear all persistent description highlights */
+	clearHighlights: () => void
 }
 
 const PAGE_HEIGHT = 1056
@@ -304,7 +310,7 @@ function calculatePageBreaks(doc: Document) {
 }
 
 export const ResumeIframe = forwardRef<ResumeIframeHandle, ResumeIframeProps>(
-	function ResumeIframe({ formData, sectionOrder, onFieldChange, onStructuralAction, onHoverElement, onCommandK, toolbarHoveredRef, className, canvasBackground }, ref) {
+	function ResumeIframe({ formData, sectionOrder, onFieldChange, onStructuralAction, onHoverElement, onCommandK, toolbarHoveredRef, className, canvasBackground, canvasScale }, ref) {
 		const iframeRef = useRef<HTMLIFrameElement>(null)
 		const editingFieldRef = useRef<string | null>(null)
 		const pendingFocusRef = useRef<string | null>(null)
@@ -385,13 +391,51 @@ export const ResumeIframe = forwardRef<ResumeIframeHandle, ResumeIframeProps>(
 			}, 1500)
 		}, [])
 
+		const highlightDescriptions = useCallback((descriptionIds: string[]) => {
+			const doc = iframeRef.current?.contentDocument
+			if (!doc) return
+			// Clear existing highlights
+			doc.querySelectorAll('[data-description-id]').forEach((el) => {
+				;(el as HTMLElement).style.background = ''
+			})
+			// Apply highlights
+			for (const id of descriptionIds) {
+				const el = doc.querySelector(`[data-description-id="${id}"]`) as HTMLElement
+				if (!el) continue
+				el.style.background = 'rgba(107, 69, 255, 0.08)'
+				el.style.borderRadius = '4px'
+				el.style.transition = 'background 300ms'
+			}
+			// Scroll to first
+			if (descriptionIds.length > 0) {
+				const first = doc.querySelector(`[data-description-id="${descriptionIds[0]}"]`) as HTMLElement
+				if (first) {
+					const scrollContainer = iframeRef.current?.parentElement?.parentElement
+					if (scrollContainer) {
+						scrollContainer.scrollTo({ top: Math.max(0, first.offsetTop - 80), behavior: 'smooth' })
+					}
+				}
+			}
+		}, [])
+
+		const clearHighlights = useCallback(() => {
+			const doc = iframeRef.current?.contentDocument
+			if (!doc) return
+			doc.querySelectorAll('[data-description-id]').forEach((el) => {
+				;(el as HTMLElement).style.background = ''
+				;(el as HTMLElement).style.borderRadius = ''
+			})
+		}, [])
+
 		useImperativeHandle(ref, () => ({
 			flushPendingEdits,
 			forceRerender,
 			markStructuralUpdate,
 			scrollToSection,
 			highlightBullet,
-		}), [flushPendingEdits, forceRerender, markStructuralUpdate, scrollToSection, highlightBullet])
+			highlightDescriptions,
+			clearHighlights,
+		}), [flushPendingEdits, forceRerender, markStructuralUpdate, scrollToSection, highlightBullet, highlightDescriptions, clearHighlights])
 
 		// Generate HTML
 		const html = useMemo(
@@ -427,13 +471,16 @@ export const ResumeIframe = forwardRef<ResumeIframeHandle, ResumeIframeProps>(
 		const computeRect = useCallback((el: HTMLElement): HoveredElementInfo['rect'] => {
 			const elRect = el.getBoundingClientRect()
 			const iframeRect = iframeRef.current!.getBoundingClientRect()
+			// Inner-iframe coords are in unscaled space; multiply by canvasScale
+			// so they align with the scaled iframe position in the parent document.
+			const s = canvasScale ?? 1
 			return {
-				top: iframeRect.top + elRect.top,
-				left: iframeRect.left + elRect.left,
-				width: elRect.width,
-				height: elRect.height,
+				top: iframeRect.top + elRect.top * s,
+				left: iframeRect.left + elRect.left * s,
+				width: elRect.width * s,
+				height: elRect.height * s,
 			}
-		}, [])
+		}, [canvasScale])
 
 		// Resolve toolbar info from a DOM element inside the iframe
 		const resolveToolbarInfo = useCallback((target: HTMLElement): HoveredElementInfo | null => {
@@ -450,6 +497,7 @@ export const ResumeIframe = forwardRef<ResumeIframeHandle, ResumeIframeProps>(
 					experienceId: expEntry.dataset.experienceId!,
 					sectionId: 'experience',
 					bulletIndex: parseInt(bulletLi.dataset.bulletIndex!),
+					descriptionId: bulletLi.dataset.descriptionId || undefined,
 					rect: computeRect(bulletLi),
 				}
 			}
@@ -773,6 +821,7 @@ export const ResumeIframe = forwardRef<ResumeIframeHandle, ResumeIframeProps>(
 					background: '#FFFFFF',
 					borderRadius: 2,
 					boxShadow: '0 2px 16px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.06)',
+					...(canvasScale && canvasScale !== 1 ? { transform: `scale(${canvasScale})`, transformOrigin: 'top center' } : {}),
 				}}>
 					<iframe
 						ref={iframeRef}

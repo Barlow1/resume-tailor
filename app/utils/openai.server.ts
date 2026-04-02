@@ -6,6 +6,17 @@ import { z } from 'zod'
 import { type ResumeData } from './builder-resume.server.ts'
 import { type  Metric } from './outreach-helpers.server.ts'
 import type { JobFit } from './ai-helpers.server.ts'
+import {
+	ExperienceMatchSchema,
+	EXPERIENCE_MATCH_SYSTEM_PROMPT,
+	postProcessExperienceMatch,
+	buildResumeSummary,
+	type ExperienceMatch,
+} from './ai/experience-match.server.ts'
+import {
+	COVER_LETTER_SYSTEM_PROMPT,
+	buildCoverLetterResumeSummary,
+} from './ai/cover-letter.server.ts'
 
 const openai = new OpenAI({
 	apiKey: process.env.OPENAI_API_KEY ?? 'test-key',
@@ -320,7 +331,7 @@ Return the complete resume JSON.`,
 	invariant(messages, 'Must provide jobTitle and jobDescription')
 
 	const response = await openai.chat.completions.create({
-		model: 'gpt-5.2',
+		model: 'gpt-5.4',
 		messages,
 		temperature: 0.5,
 		max_completion_tokens: 8192,
@@ -462,7 +473,7 @@ Return ONLY valid JSON matching the required schema.`,
 	invariant(messages, 'Must provide jobTitle and jobDescription')
 
 	const response = await openai.chat.completions.create({
-		model: 'gpt-5.2',
+		model: 'gpt-5.4',
 		messages,
 		temperature: 0.5,
 		max_completion_tokens: 4096,
@@ -701,7 +712,7 @@ No markdown, no extra text, just the JSON.`,
 	invariant(messages, 'Must provide jobTitle and jobDescription')
 
 	const response = await openai.chat.completions.create({
-		model: 'gpt-5.2',
+		model: 'gpt-5.4',
 		messages,
 		temperature: 0.5,
 		max_completion_tokens: 4096,
@@ -764,7 +775,7 @@ Return only the rewritten bullets, one per line. Same number of bullets as input
 	invariant(messages, 'Must provide jobTitle and jobDescription')
 
 	const response = await openai.chat.completions.create({
-		model: 'gpt-5.2',
+		model: 'gpt-5.4',
 		messages,
 		temperature: 0.4,
 		max_completion_tokens: 2048,
@@ -812,7 +823,7 @@ export const getGeneratedExperienceResponse = async ({
 	invariant(messages, 'Must provide jobTitle and jobDescription')
 
 	const response = await openai.chat.completions.create({
-		model: 'gpt-5.2',
+		model: 'gpt-5.4',
 		messages,
 		temperature: 0.4,
 		max_completion_tokens: 2048,
@@ -851,9 +862,8 @@ export const getParsedJobDescription = async ({
 	invariant(messages, 'Must provide jobTitle and jobDescription')
 
 	const response = await openai.chat.completions.create({
-		model: 'gpt-5-mini',
+		model: 'gpt-5.4-mini',
 		messages,
-		temperature: 1, //gpt-5 only supports default temp 1
 		max_completion_tokens: 1024,
 		response_format: openaiJDResponseFormat,
 	})
@@ -923,9 +933,8 @@ export const getAnalyzedResume = async ({
 	invariant(messages, 'Must provide resume')
 
 	const response = await openai.chat.completions.create({
-		model: 'gpt-5-mini',
+		model: 'gpt-5.4-mini',
 		messages,
-		temperature: 1, //gpt-5 only supports default temp 1
 		max_completion_tokens: 4096,
 		response_format: openaiResumeAnalysisFormat,
 	})
@@ -1045,9 +1054,8 @@ export const getJobFit = async ({
 	invariant(messages, 'Must provide jobTitle, jobDescription, and resume')
 
 	const response = await openai.chat.completions.create({
-		model: 'gpt-5-mini',
+		model: 'gpt-5.4-mini',
 		messages,
-		temperature: 1, //gpt-5 only supports default temp 1
 		max_completion_tokens: 16384,
 		response_format: openaiJobFitResponseFormat,
 	})
@@ -1100,13 +1108,252 @@ export const getRecruiterMessage = async ({
 	invariant(messages, 'Must provide jobTitle')
 
 	const response = await openai.chat.completions.create({
-		model: 'gpt-5-mini',
+		model: 'gpt-5.4-mini',
 		messages,
-		temperature: 1, //gpt-5 only supports default temp 1
 		max_completion_tokens: 8192,
 		response_format: openaiRecruiterMessageResponseFormat,
 	})
 	return { response }
+}
+
+export const getExperienceMatch = async ({
+	resumeData,
+	jobDescription,
+}: {
+	resumeData: ResumeData
+	jobDescription: string
+}): Promise<ExperienceMatch> => {
+	const resumeSummary = buildResumeSummary(resumeData)
+	const experienceMatchResponseFormat = zodResponseFormat(ExperienceMatchSchema, 'experience_match')
+
+	const response = await openai.chat.completions.create({
+		model: 'gpt-5.4',
+		messages: [
+			{ role: 'system', content: EXPERIENCE_MATCH_SYSTEM_PROMPT },
+			{ role: 'user', content: `Resume:\n${resumeSummary}\n\nJob Description:\n${jobDescription}` },
+		],
+		max_completion_tokens: 8192,
+		reasoning_effort: 'low',
+		response_format: experienceMatchResponseFormat,
+	})
+
+	const content = response.choices[0]?.message?.content
+	if (!content) throw new Error('Failed to get experience match response')
+	const result = ExperienceMatchSchema.parse(JSON.parse(content))
+
+	return postProcessExperienceMatch(result)
+}
+
+export const generateCoverLetter = async ({
+	resumeData,
+	jobDescription,
+	jobTitle,
+	company,
+}: {
+	resumeData: ResumeData
+	jobDescription: string
+	jobTitle: string
+	company: string
+}): Promise<string> => {
+	const resumeSummary = buildCoverLetterResumeSummary(resumeData)
+
+	const response = await openai.chat.completions.create({
+		model: 'gpt-5.4',
+		max_completion_tokens: 4096,
+		messages: [
+			{ role: 'system', content: COVER_LETTER_SYSTEM_PROMPT },
+			{
+				role: 'user',
+				content: `Resume:\n${resumeSummary}\n\nJob Title: ${jobTitle}\nCompany: ${company}\nJob Description:\n${jobDescription}`,
+			},
+		],
+	})
+
+	return response.choices[0]?.message?.content ?? ''
+}
+
+const GeneratedBulletSchema = z.object({
+	requirement: z.string(),
+	action: z.enum(['rewrite', 'new', 'already_covered', 'not_a_bullet']),
+	experienceId: z.string().nullable(),
+	experienceName: z.string().nullable(),
+	existingBulletId: z.string().nullable(),
+	originalText: z.string().nullable(),
+	bulletText: z.string().nullable(),
+	isGap: z.boolean(),
+	explanation: z.string().nullable().optional(),
+})
+
+const RequirementBulletsResponseSchema = z.object({
+	bullets: z.array(GeneratedBulletSchema),
+	summary: z.string().nullable(),
+	warnings: z.array(z.string()).optional(),
+})
+
+export type GeneratedBullet = z.infer<typeof GeneratedBulletSchema>
+
+export const generateRequirementBullets = async ({
+	resumeData,
+	jobDescription,
+	requirements,
+	requirementExperienceMap,
+}: {
+	resumeData: ResumeData
+	jobDescription: string
+	requirements: string[]
+	requirementExperienceMap?: Record<string, string>
+}): Promise<{ bullets: GeneratedBullet[]; summary: string | null; warnings?: string[] }> => {
+	const experiences = (resumeData.experiences ?? []).map(e => ({
+		id: e.id,
+		role: e.role,
+		company: e.company,
+		dates: [e.startDate, e.endDate].filter(Boolean).join(' – ') || 'dates not specified',
+		label: `${e.role} at ${e.company}`,
+		bullets: (e.descriptions ?? []).map(d => ({ id: d.id, text: d.content })),
+	}))
+
+	const responseFormat = zodResponseFormat(RequirementBulletsResponseSchema, 'requirement_bullets')
+
+	const response = await openai.chat.completions.create({
+		model: 'gpt-5.4',
+		max_completion_tokens: 8192,
+		messages: [
+			{
+				role: 'system',
+				content: `You improve resumes to demonstrate specific job requirements. For each requirement the user confirms they have experience with, you either REWRITE an existing bullet or CREATE a new one.
+
+DECISION: NOT_A_BULLET vs ALREADY_COVERED vs REWRITE vs NEW
+
+FIRST CHECK — is this requirement about tenure, years of experience, or seniority level?
+NEVER generate bullets that describe tenure or experience level. "Bring 5+ years of...", "Leverage extensive background in...", "Apply N years of experience across..." are summary statements, not accomplishments. Every bullet must describe something the person DID — an action with context and ideally a result. If a requirement is about years of experience (e.g., "4+ years healthcare PM", "5+ years B2B SaaS", "8+ years engineering"), it cannot be addressed by a new bullet. It's addressed by the resume's dates, job titles, and the headline. Return action: "not_a_bullet" with explanation: "Years of experience requirements are shown through your timeline, not through a bullet." Set all other fields to null, isGap false.
+
+SECOND CHECK — does an existing bullet ALREADY demonstrate this requirement in substance, even without using the exact JD vocabulary? If yes, return action "already_covered" with the existingBulletId and originalText, bulletText set to null, isGap false. Do NOT rewrite bullets that already cover the requirement — the user's authentic voice is more valuable than JD-mirrored phrasing.
+
+"Collaborated daily with design and engineering to turn user research into shipped product changes" ALREADY demonstrates cross-functional Agile collaboration. It doesn't need "Served as Product Owner for an embedded engineering pod" layered on top.
+
+If the requirement is NOT already covered, scan ALL existing bullets across all experiences. If an existing bullet partially covers the requirement — mentions the domain, a related task, or adjacent work — REWRITE that bullet to make the coverage explicit and specific. If no existing bullet has any overlap with the requirement, CREATE a new bullet under the most plausible experience.
+
+REWRITE is preferred. It makes the resume tighter. Only CREATE when nothing existing can be adapted.
+
+When NOT_A_BULLET:
+- Set action to "not_a_bullet"
+- Set explanation to a short reason (e.g. "Years of experience requirements are shown through your timeline, not through a bullet.")
+- Set all other fields (experienceId, experienceName, existingBulletId, originalText, bulletText) to null
+- Set isGap to false
+
+When ALREADY_COVERED:
+- Set action to "already_covered"
+- Set existingBulletId to the ID of the bullet that already covers it
+- Set originalText to the current text of that bullet
+- Set bulletText to null
+- Set isGap to false
+
+When REWRITING:
+- Set action to "rewrite"
+- Set existingBulletId to the ID of the bullet being rewritten
+- Set originalText to the current text of that bullet (exactly as provided)
+- Set bulletText to the improved version
+
+When CREATING:
+- Set action to "new"
+- Set existingBulletId to null, originalText to null
+- Set bulletText to the new bullet
+
+EXPERIENCE MAPPING (for both rewrite and new):
+- Industry overlap (healthcare role → healthcare requirement)
+- Seniority match (leadership requirement → most senior role)
+- Recency (prefer recent roles over older ones)
+- Scope match (company-wide initiative → role with broadest scope)
+
+If NO role plausibly involved this requirement, set isGap to true and all text fields to null.
+
+═══ THE CARDINAL RULE — ACCOMPLISHMENTS STAY PRIMARY ═══
+
+When rewriting an existing bullet, the ACCOMPLISHMENT stays primary. The requirement-relevant framing is ADDED as supporting context, not substituted for the story.
+
+WRONG — burying the accomplishment under JD ceremony language:
+Original: "Trial conversion was leaking at 60%. Rebuilt the flow so users could act on insights in one click. Leak dropped to 35%."
+Rewrite: "Owned backlog prioritization, sprint planning, and Agile delivery rituals to rebuild the flow and internal product handoff process so users could act on insights in one click; leak dropped to 35%."
+
+RIGHT — adding context without losing what made it specific:
+Rewrite: "Trial conversion was leaking at 60%. Led sprint planning and backlog prioritization to rebuild the flow so users could act on insights in one click. Leak dropped to 35%."
+
+The difference: in the RIGHT version, the story is still "conversion was broken → I fixed it → here's the result." The Agile context is a detail supporting the story, not replacing it.
+
+RULES:
+- The metric or outcome must remain the most prominent part of the bullet
+- Never start a bullet with ceremony/process language ("Owned backlog prioritization...", "Served as Product Owner...", "Led Agile delivery rituals...")
+- Start with the WHAT or the WHY, then weave in the HOW
+- If a bullet already has a strong result, add requirement context as a subordinate clause, not the lead
+- Never invent framing ("Served as Product Owner for an embedded pod") that overstates the actual role structure
+- If the original bullet is already strong and the requirement can be demonstrated by adding 3-5 words of context, do that. Don't rewrite the whole bullet.
+- Test: read the rewrite aloud. If it sounds like a LinkedIn parody of corporate speak, it's wrong.
+
+BULLET WRITING RULES:
+- READ the existing bullets for the target experience carefully. Your new/rewritten bullet must fit naturally alongside them — same tense, same specificity level, same format.
+- Each bullet: specific action + context + outcome/metric. Ground it in the ROLE (what this person's title and company suggest they did), the EXISTING BULLETS (what level of detail and domain they demonstrate), and the JD REQUIREMENT (what specific skill or competency the hiring manager is screening for).
+- If metrics aren't known, use placeholders: "[X]%", "[N] clients"
+- Sound like something this person actually did in THAT specific role at THAT company. Reference the industry, company type, and scope evident from other bullets.
+- experienceId must match a provided experience ID, or null for gaps
+- experienceName is "Role at Company" for display
+- If the user indicated which role this experience was at, USE that role. Do not override their selection.
+
+CRITICAL — NO DISCLAIMERS ON THE RESUME:
+- Never generate bullets that contain caveats, disclaimers, or phrases like "but does not represent," "however this is not," "although not directly," "while not equivalent to," or any hedging language.
+- Every bullet must be a positive statement of what the person DID. Period.
+- If the user's experience is adjacent but not a perfect match for the requirement, write what they actually did — the real accomplishment — and let the hiring manager draw the connection.
+- Gaps and honest framing belong in the cover letter, not on the resume. The cover letter handles honesty. The resume handles evidence.
+- Example of WRONG: "Worked closely with insurance and billing processes, but does not represent 3+ years in accounting or audit"
+- Example of RIGHT: "Managed insurance verification and billing reconciliation across [X] payer systems, processing [Y] claims monthly"
+
+ROLE OVERCROWDING:
+- Prefer spreading bullets across roles rather than stacking them all under one experience
+- If the user assigned multiple requirements to the same role, respect that — but if a role would exceed 6 total bullets (existing + new), note a warning in the warnings array: e.g. "Claire Health now has 8 bullets — most roles show 3-5. Consider keeping the strongest."
+- When a requirement could plausibly go under multiple roles, prefer the one with fewer existing bullets
+
+═══ SUMMARY REWRITE ═══
+
+After generating bullets, rewrite the resume headline (the "about" field) as a single-line scanline optimized for a recruiter's F-shaped eye scan in 6 seconds. This is a HEADLINE, not a summary — it sits between the contact info and the first experience section, styled as a single line with pipe separators.
+
+Format: pipe-separated fragments. No sentences. No paragraphs. No verbs. Under 20 words total.
+
+Structure (pick 3-4 fragments that create the strongest signal):
+Title Match | Notable Company/Brand Signal | Key Number or Scope | Domain Relevance
+
+NOTABLE COMPANIES: If the candidate worked at a recognizable company (Fortune 500, well-known startup, Big 4, FAANG, major healthcare system, etc.), include it as a signal. Company names are instant credibility markers — "EY" or "Acadia Healthcare" signals more than "5+ years experience." Place it right after the title for maximum impact.
+
+YEARS OF EXPERIENCE: If years matter for the role, express it as part of the title fragment (e.g., "Senior Product Manager, 5+ Years") NOT as a standalone fragment. Never write "5+ Years" by itself — it's meaningless without the title.
+
+Examples:
+"Senior Product Manager | EY & Acadia Healthcare | 20K Users, $48K ARR | Claims, EDI, AI Delivery"
+"Senior Product Designer | Meta & Airbnb | 200M+ Users | Design Systems, Cross-Platform"
+"Product Manager | B2B SaaS | $0→$12M ARR | Certified Scrum Master"
+"Staff Engineer | Stripe | 99.99% Uptime, 2B+ Transactions/Day"
+"Product Manager, 5+ Years | Healthcare & AI | 20K Users | EDI, Claims Workflows"
+
+What NOT to write:
+- Sentences ("Built healthcare and AI products including...")
+- Adjectives ("innovative", "passionate", "results-driven")
+- Filler words ("including", "background in", "experience with")
+- Standalone years fragments ("5+ Years" without a title)
+- Anything over one line — if it wraps, it's too long`,
+			},
+			{
+				role: 'user',
+				content: `═══ CURRENT SUMMARY ═══\n${resumeData.about || '(no summary)'}\n\n═══ RESUME EXPERIENCES (with IDs and existing bullets) ═══\n${JSON.stringify(experiences, null, 2)}\n\n═══ JOB DESCRIPTION ═══\n${jobDescription}\n\n═══ REQUIREMENTS TO ADDRESS ═══\nThe user confirmed they have experience with these. For each one, generate or rewrite a bullet that demonstrates this requirement using context from BOTH the JD and the experience's existing bullets:\n${requirements.map((r, i) => {
+					const assignedExpId = requirementExperienceMap?.[r]
+					const assignedExp = assignedExpId ? experiences.find(e => e.id === assignedExpId) : null
+					return `${i + 1}. "${r}"${assignedExp ? ` → Place under: ${assignedExp.label} (id: ${assignedExp.id})` : ''}`
+				}).join('\n')}`,
+			},
+		],
+		response_format: responseFormat,
+	})
+
+	const content = response.choices[0]?.message?.content
+	if (!content) throw new Error('Failed to generate requirement bullets')
+	const result = RequirementBulletsResponseSchema.parse(JSON.parse(content))
+	return result
 }
 
 /**

@@ -27,8 +27,10 @@ interface UseOnboardingFlowOptions {
 	hasResume: boolean
 	/** The currently selected job (if any) */
 	selectedJob: Jsonify<Job> | null | undefined
-	/** Whether the tailor operation has completed this session */
-	hasTailored: boolean
+	/** Whether the user has reviewed match analysis in the Truth Panel this session */
+	hasReviewedMatch: boolean
+	/** Whether the user has taken a first action (e.g. generated cover letter) this session */
+	hasTakenAction: boolean
 	/** Callback to set the selected job */
 	onJobSelect: (job: Jsonify<Job>) => void
 }
@@ -62,42 +64,37 @@ export function useOnboardingFlow({
 	serverProgress,
 	hasResume,
 	selectedJob,
-	hasTailored,
+	hasReviewedMatch,
+	hasTakenAction,
 	onJobSelect,
 }: UseOnboardingFlowOptions): UseOnboardingFlowReturn {
 	const onboardingStartTime = useRef<number>(Date.now())
 
 	// Local state for session-level overrides
-	// These handle the case where server data is stale (action completed but loader hasn't refreshed)
 	const [jobModalDismissed, setJobModalDismissed] = useState(false)
 	const [sessionTailorComplete, setSessionTailorComplete] = useState(false)
-	const [aiModalOpenDuringOnboarding, setAiModalOpenDuringOnboarding] = useState(false)
+	const [, setAiModalOpenDuringOnboarding] = useState(false)
+
 
 	// Compute current stage from all available data
 	const { stage, isComplete } = useMemo(() => {
 		// Session overrides take precedence for recently completed actions
-		const effectiveHasTailored = hasTailored || sessionTailorComplete
+		const effectiveHasTakenAction = hasTakenAction || sessionTailorComplete
 
-		const baseStage = getOnboardingStage(
+		return getOnboardingStage(
 			serverProgress,
 			hasResume,
 			!!selectedJob,
-			effectiveHasTailored,
+			hasReviewedMatch,
+			effectiveHasTakenAction,
 		)
-
-		// If we're at the bullet tailor stage and the AI modal is open, show the tailor click stage
-		if (baseStage.stage === 'needs_bullet_tailor' && aiModalOpenDuringOnboarding) {
-			return { stage: 'needs_tailor_click' as OnboardingStage, isComplete: false }
-		}
-
-		return baseStage
 	}, [
 		serverProgress,
 		hasResume,
 		selectedJob,
-		hasTailored,
+		hasReviewedMatch,
+		hasTakenAction,
 		sessionTailorComplete,
-		aiModalOpenDuringOnboarding,
 	])
 
 	// Show job modal only when:

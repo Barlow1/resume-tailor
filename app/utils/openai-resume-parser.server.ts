@@ -162,7 +162,7 @@ async function extractTextFromFile(file: File): Promise<string> {
 async function callOpenAI(resumeText: string): Promise<string> {
 	try {
 		const response = await openai.chat.completions.create({
-			model: 'gpt-4o',
+			model: 'gpt-5.4-mini',
 			messages: [
 				{
 					role: 'system',
@@ -227,7 +227,7 @@ REMEMBER: Extract EVERY detail. Never summarize or condense bullet points. Prese
 			],
 			response_format: { type: 'json_object' },
 			temperature: 0.1,
-			max_tokens: 16384,
+			max_completion_tokens: 16384,
 		})
 
 		const content = response.choices[0]?.message?.content

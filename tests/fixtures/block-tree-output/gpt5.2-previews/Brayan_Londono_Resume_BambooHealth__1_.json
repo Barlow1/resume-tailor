@@ -1,0 +1,408 @@
+{
+  "layout": "single-column",
+  "globalTokens": {
+    "fontFamily": "Arial",
+    "fontSize": 10,
+    "fontWeight": 400,
+    "color": "#1A202C",
+    "paddingTop": 0,
+    "paddingBottom": 0,
+    "marginTop": 0,
+    "marginBottom": 0,
+    "textAlign": "left"
+  },
+  "blocks": [
+    {
+      "id": "header-1",
+      "type": "header",
+      "region": "main",
+      "order": 0,
+      "content": {
+        "name": "Brayan Londono",
+        "role": "Sr. Product Manager | Healthcare Workflows, AI, SaaS",
+        "contact": [
+          {
+            "type": "location",
+            "value": "Tampa, FL"
+          },
+          {
+            "type": "email",
+            "value": "brayanlondono.pm@gmail.com"
+          },
+          {
+            "type": "phone",
+            "value": "(813) 407-0629"
+          }
+        ],
+        "contactSeparator": "•",
+        "headerTokens": {
+          "name": {
+            "fontFamily": "Arial",
+            "fontSize": 18,
+            "fontWeight": 700,
+            "color": "#1A202C"
+          },
+          "role": {
+            "fontFamily": "Arial",
+            "fontSize": 11,
+            "fontWeight": 400,
+            "color": "#4A5568"
+          },
+          "contact": {
+            "fontFamily": "Arial",
+            "fontSize": 9.5,
+            "fontWeight": 400,
+            "color": "#718096"
+          }
+        }
+      },
+      "tokens": {
+        "textAlign": "left"
+      },
+      "decorations": [
+        {
+          "type": "horizontal-rule",
+          "position": "below",
+          "renderAs": "css",
+          "css": {
+            "borderBottom": "0.75pt solid #2B6CB0"
+          },
+          "relativeTo": "block"
+        }
+      ]
+    },
+    {
+      "id": "summary-1",
+      "type": "summary",
+      "region": "main",
+      "order": 1,
+      "sectionHeader": "PROFESSIONAL SUMMARY",
+      "sectionHeaderTokens": {
+        "fontFamily": "Arial",
+        "fontSize": 11,
+        "fontWeight": 700,
+        "color": "#2B6CB0",
+        "letterSpacing": 3
+      },
+      "content": {
+        "text": "I rebuild broken healthcare workflows and make sure people actually use them. At Acadia Healthcare, I redesigned the end-to-end psychiatric intake workflow and cut admission wait times from 4 hours to 45 minutes. Since then, I’ve spent 5+ years as a Product Manager in healthcare technology building and optimizing cross-system workflows—from EDI claims pipelines and pre-certification intercepts to care coordination and cost navigation—partnering directly with engineering to write clear requirements, ship scalable solutions, and drive adoption in live customer environments. I’ve diagnosed underutilization through PostHog and Mixpanel cohort data, improved trial-to-paid conversion from 40% to 60%, and scaled an AI-powered product to 20,000 users. I bring deep domain knowledge in healthcare transitions of care, insurance verification, payer operations, and value-based care, combined with a data-driven obsession for closing the gap between what’s built and what’s actually adopted."
+      },
+      "tokens": {
+        "fontFamily": "Arial",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "color": "#1A202C",
+        "textAlign": "left"
+      },
+      "decorations": [
+        {
+          "type": "horizontal-rule",
+          "position": "below",
+          "renderAs": "css",
+          "css": {
+            "borderBottom": "0.75pt solid #2B6CB0"
+          },
+          "relativeTo": "block"
+        }
+      ]
+    },
+    {
+      "id": "experience-1",
+      "type": "experience",
+      "region": "main",
+      "order": 2,
+      "sectionHeader": "WORK EXPERIENCE",
+      "sectionHeaderTokens": {
+        "fontFamily": "Arial",
+        "fontSize": 11,
+        "fontWeight": 700,
+        "color": "#2B6CB0",
+        "letterSpacing": 3
+      },
+      "content": {
+        "entries": [
+          {
+            "company": "Claire Health",
+            "title": "Co-Founder & Product Manager",
+            "location": "Remote",
+            "dateStart": "Oct 2025",
+            "dateEnd": "Present",
+            "bullets": [
+              [
+                {
+                  "text": "Own end-to-end workflow strategy for a healthcare cost navigation platform, defining cross-system workflows spanning claims ingestion, facility matching, pre-certification intercept, and employee notification—ensuring workflows are technically sound, operationally effective, and adopted by customers."
+                }
+              ],
+              [
+                {
+                  "text": "Built integrated workflows across EDI 270/271/835/837 pipelines, CPT-based cost-ranking, geocoded facility deduplication, and real-time monitoring, partnering with engineering to ensure scalable architecture aligned with workflow requirements."
+                }
+              ],
+              [
+                {
+                  "text": "Designed an event-driven pre-certification intercept workflow triggered by medical management notifications, performing real-time facility search and routing lower-cost options to employees before authorization completion—reducing workflow leakage at care transition points."
+                }
+              ],
+              [
+                {
+                  "text": "Drove workflow adoption in a 220-employee pilot with Meshoppen Stone, defining PMPM savings and utilization metrics, diagnosing adoption barriers through HR and broker interviews, and achieving 40% redirect acceptance with $1K/employee annual savings."
+                }
+              ],
+              [
+                {
+                  "text": "Created PRDs and workflow documentation with clear requirements and expected outcomes, partnering with engineering in 2-week sprints using GitHub Projects to evaluate build vs. buy decisions for claims parsing, SMS, geocoding, and cost-ranking components."
+                }
+              ],
+              [
+                {
+                  "text": "Established a data-driven feedback loop tracking user and claims events in Airtable, measuring utilization by employer, and translating usage insights into product changes—validating demand through 20+ broker and HR interviews confirming willingness to pay."
+                }
+              ],
+              [
+                {
+                  "text": "Led go-to-market through flat PEPM pricing with performance-based savings, ROI modeling decks, targeted outbound and LinkedIn outreach, broker partnership development, and TPA integration channels."
+                }
+              ]
+            ]
+          },
+          {
+            "company": "Resume Tailor",
+            "title": "Co-Founder & Product Manager",
+            "location": "Remote",
+            "dateStart": "Jun 2023",
+            "dateEnd": "Present",
+            "bullets": [
+              [
+                {
+                  "text": "Scaled an AI job search product to 20,000 users and $48K ARR, owning product strategy, roadmap prioritization via RICE scoring, and engineering partnership through structured PRDs and Jira sprint planning."
+                }
+              ],
+              [
+                {
+                  "text": "Diagnosed post-resume churn and underutilization using PostHog retention cohort analysis, session replay (LogRocket), and Sentry error tracking, translating usage data into targeted product changes that increased trial-to-paid conversion from 40% to 60%."
+                }
+              ],
+              [
+                {
+                  "text": "Reduced trial leakage by implementing 40+ typed client and server events in PostHog, redesigning onboarding through feature-level tracking and usage gating, and removing underutilized features validated by 90% single-use retention curves."
+                }
+              ],
+              [
+                {
+                  "text": "Conducted 50+ user interviews using Mom Test and JTBD frameworks, synthesizing insights via affinity mapping to identify adoption barriers, increasing weekly active users to 150."
+                }
+              ],
+              [
+                {
+                  "text": "Built programmatic SEO, CRM (HubSpot), UTM tracking, and outbound automation (Apollo/Reply.io), optimizing acquisition funnels with PostHog and Search Console."
+                }
+              ]
+            ]
+          },
+          {
+            "company": "TampaBay.Ventures",
+            "title": "Venture Capital Analyst",
+            "location": "Tampa, FL",
+            "dateStart": "Oct 2022",
+            "dateEnd": "Jun 2023",
+            "bullets": [
+              [
+                {
+                  "text": "Sourced and closed a $5M allocation toward Betr’s $35M Series A-2, underwriting risk using cohort-based LTV/CAC models and Monte Carlo simulation, and rebuilding investor materials including projections and data room structure."
+                }
+              ],
+              [
+                {
+                  "text": "Identified onboarding friction at a portfolio company by reviewing Mixpanel funnel data and cohort metrics, isolating activation bottlenecks, and redesigning onboarding flows—reducing churn by 10% and reinforcing the growth narrative in the Series A-2 deck."
+                }
+              ]
+            ]
+          },
+          {
+            "company": "EY",
+            "title": "Venture Analyst",
+            "location": "New York, NY",
+            "dateStart": "Jun 2022",
+            "dateEnd": "Aug 2022",
+            "bullets": [
+              [
+                {
+                  "text": "Conducted product validation for CoachConvo by interviewing banking staff to identify workflow pain points, translating insights into AI-driven training scenarios adopted by Bank of America’s sales team, increasing second-meeting conversion by 40%."
+                }
+              ]
+            ]
+          },
+          {
+            "company": "Acadia Healthcare",
+            "title": "Admissions Coordinator",
+            "location": "Tampa, FL",
+            "dateStart": "Jan 2017",
+            "dateEnd": "Feb 2020",
+            "bullets": [
+              [
+                {
+                  "text": "Managed psychiatric crisis intake across inpatient, detox, and military units, coordinating patients, families, nurses, and physicians through real-time triage and placement decisions—direct experience in healthcare transitions of care and care coordination."
+                }
+              ],
+              [
+                {
+                  "text": "Rebuilt the end-to-end insurance verification and intake workflow including benefits checks, screening, bed assignment, and payer coordination, cutting admission wait times from 4 hours to 45 minutes through workflow optimization and operational process redesign."
+                }
+              ]
+            ]
+          }
+        ]
+      },
+      "tokens": {
+        "fontFamily": "Arial",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "color": "#1A202C",
+        "textAlign": "left"
+      },
+      "decorations": [
+        {
+          "type": "horizontal-rule",
+          "position": "below",
+          "renderAs": "css",
+          "css": {
+            "borderBottom": "0.75pt solid #2B6CB0"
+          },
+          "relativeTo": "block"
+        }
+      ]
+    },
+    {
+      "id": "education-1",
+      "type": "education",
+      "region": "main",
+      "order": 3,
+      "sectionHeader": "EDUCATION",
+      "sectionHeaderTokens": {
+        "fontFamily": "Arial",
+        "fontSize": 11,
+        "fontWeight": 700,
+        "color": "#2B6CB0",
+        "letterSpacing": 3
+      },
+      "content": {
+        "entries": [
+          {
+            "school": "University of South Florida",
+            "degree": "B.S. in Econometrics & Quantitative Economics",
+            "dates": "Jan 2021 – Dec 2022"
+          }
+        ]
+      },
+      "tokens": {
+        "fontFamily": "Arial",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "color": "#1A202C",
+        "textAlign": "left"
+      },
+      "decorations": [
+        {
+          "type": "horizontal-rule",
+          "position": "below",
+          "renderAs": "css",
+          "css": {
+            "borderBottom": "0.75pt solid #2B6CB0"
+          },
+          "relativeTo": "block"
+        }
+      ]
+    },
+    {
+      "id": "skills-1",
+      "type": "skills",
+      "region": "main",
+      "order": 4,
+      "sectionHeader": "TECHNICAL SKILLS",
+      "sectionHeaderTokens": {
+        "fontFamily": "Arial",
+        "fontSize": 11,
+        "fontWeight": 700,
+        "color": "#2B6CB0",
+        "letterSpacing": 3
+      },
+      "content": {
+        "format": "categories",
+        "categories": [
+          {
+            "name": "Product",
+            "skills": [
+              "Workflow Design & Optimization",
+              "PRDs & Requirements",
+              "Cross-Functional Leadership",
+              "Adoption & Utilization Metrics",
+              "A/B Testing",
+              "Funnel Optimization",
+              "Product Roadmapping",
+              "Systems Thinking",
+              "Usability Testing",
+              "User Research"
+            ]
+          },
+          {
+            "name": "Healthcare",
+            "skills": [
+              "EDI 270/271 & 835/837",
+              "Pre-Certification Workflows",
+              "Care Coordination & Transitions",
+              "Insurance Verification",
+              "Benefits Administration",
+              "TPA Coordination",
+              "Medical Management",
+              "Payer Operations"
+            ]
+          },
+          {
+            "name": "Tools",
+            "skills": [
+              "Jira",
+              "PostHog",
+              "Mixpanel",
+              "Figma",
+              "Python",
+              "JavaScript/TypeScript",
+              "React",
+              "Node",
+              "OpenAI/ChatGPT",
+              "GitHub Projects",
+              "HubSpot CRM",
+              "Google Analytics"
+            ]
+          }
+        ]
+      },
+      "tokens": {
+        "fontFamily": "Arial",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "color": "#1A202C",
+        "textAlign": "left"
+      },
+      "decorations": []
+    }
+  ],
+  "fonts": [
+    {
+      "originalFont": "Arial",
+      "matchedFont": "Inter",
+      "source": "google",
+      "url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap",
+      "confidence": 0.95
+    }
+  ],
+  "pageSettings": {
+    "width": 816,
+    "height": 1056,
+    "margins": {
+      "top": 48,
+      "right": 60,
+      "bottom": 48,
+      "left": 60
+    }
+  }
+}

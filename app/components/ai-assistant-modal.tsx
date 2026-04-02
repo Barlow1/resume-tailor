@@ -266,13 +266,7 @@ export function AIAssistantModal({
 		}
 
 		completionStartTime.current = Date.now()
-		track('ai_tailor_started', {
-			experience_id: experience?.id ?? '',
-			has_job_context: !!job?.content,
-			is_free_tier: !subscription,
-			resume_id: resumeData?.id ?? undefined,
-			job_id: job?.id ?? undefined,
-		})
+		// ai_tailor_started tracked server-side in builder-completions.ts
 
 		const endpoint = type === 'tailor' ? 'experience' : 'generated-experience'
 		const activeExp = type === 'tailor' ? tailorExperience : experience
@@ -312,14 +306,7 @@ export function AIAssistantModal({
 			if (logId) {
 				setTailorLogId(logId)
 			}
-			const duration = completionStartTime.current ? Date.now() - completionStartTime.current : 0
-			track('ai_tailor_completed', {
-				experience_id: experience?.id ?? '',
-				duration_ms: duration,
-				success: !!responseContent && responseContent !== '{}',
-				resume_id: resumeData?.id ?? undefined,
-				job_id: job?.id ?? undefined,
-			})
+			// ai_tailor_completed tracked server-side in builder-completions.ts
 			markAiModalResult()
 			completionStartTime.current = null
 		}

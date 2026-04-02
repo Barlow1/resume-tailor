@@ -1,8 +1,8 @@
 import { Dialog, Transition } from '@headlessui/react'
-import { Fragment } from 'react'
+import { Fragment, useEffect } from 'react'
 import { Pricing } from '../routes/resources+/pricing.tsx'
 import { XMarkIcon } from '@heroicons/react/24/outline'
-import { trackPaywallDismissed } from '~/lib/analytics.client.ts'
+import { track, trackPaywallDismissed } from '~/lib/analytics.client.ts'
 
 interface SubscribeModalProps {
 	isOpen: boolean
@@ -14,6 +14,14 @@ interface SubscribeModalProps {
 }
 
 export function SubscribeModal({ isOpen, onClose, successUrl, cancelUrl, redirectTo, trigger }: SubscribeModalProps) {
+	useEffect(() => {
+		if (isOpen) {
+			track('pricing_page_viewed', {
+				trigger: trigger ?? 'direct',
+			})
+		}
+	}, [isOpen, trigger])
+
 	const handleClose = () => {
 		if (trigger) {
 			trackPaywallDismissed(trigger)

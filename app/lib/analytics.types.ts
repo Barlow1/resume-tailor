@@ -110,7 +110,7 @@ export interface ResumeParsedEvent {
 }
 
 export interface ResumeCreatedEvent {
-	method: 'upload' | 'scratch' | 'clone'
+	method: 'upload' | 'scratch' | 'clone' | 'clone_for_job'
 	resume_id: string
 	resume_number: number // 1st, 2nd, 3rd resume - identifies power users
 }
@@ -196,6 +196,10 @@ export interface ResumeDownloadedEvent {
 // ============================================================================
 
 export type PaywallTrigger = 'ai_limit' | 'download_limit' | 'analysis_limit' | 'outreach_limit'
+
+export interface PricingPageViewedEvent {
+	trigger: string
+}
 
 export interface PaywallShownEvent {
 	trigger: PaywallTrigger
@@ -396,6 +400,7 @@ export interface AnalyticsEventMap {
 	resume_downloaded: ResumeDownloadedEvent
 
 	// Paywall / Conversion
+	pricing_page_viewed: PricingPageViewedEvent
 	paywall_shown: PaywallShownEvent
 	paywall_dismissed: PaywallDismissedEvent
 	checkout_started: CheckoutStartedEvent

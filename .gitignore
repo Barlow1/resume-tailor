@@ -28,3 +28,14 @@ debug-logs/
 # Personal resume files and Word HTML exports
 *.htm
 Final_*
+
+# Local docs, scripts, and design references
+docs/
+scripts/
+design-reference/
+.claude/skills/
+.gstack/
+.superpowers/
+tests/output/
+CODEBASE_AUDIT.md
+*.csv

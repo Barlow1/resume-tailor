@@ -1,0 +1,279 @@
+{
+  "layout": "single-column",
+  "globalTokens": {
+    "fontFamily": "Arimo",
+    "fontSize": 10,
+    "fontWeight": 400,
+    "color": "#000000",
+    "paddingTop": 0,
+    "paddingBottom": 0,
+    "marginTop": 0,
+    "marginBottom": 0,
+    "textAlign": "left",
+    "lineHeight": 1.15
+  },
+  "blocks": [
+    {
+      "id": "header-1",
+      "type": "header",
+      "region": "main",
+      "order": 0,
+      "content": {
+        "name": "RICHARD WILLIAMS",
+        "contact": [
+          {
+            "type": "location",
+            "value": "3665 Margaret Street, Houston, TX 47587"
+          },
+          {
+            "type": "email",
+            "value": "RichardWilliams@gmail.com"
+          },
+          {
+            "type": "phone",
+            "value": "(770) 625-9669"
+          }
+        ],
+        "contactSeparator": "|",
+        "headerTokens": {
+          "name": {
+            "fontFamily": "Arimo",
+            "fontSize": 18,
+            "fontWeight": 700,
+            "color": "#FFFFFF",
+            "textAlign": "left"
+          },
+          "contact": {
+            "fontFamily": "Arimo",
+            "fontSize": 10,
+            "fontWeight": 400,
+            "color": "#3B3838",
+            "textAlign": "right",
+            "lineHeight": 1.15,
+            "letterSpacing": 0.5
+          }
+        }
+      },
+      "tokens": {
+        "fontFamily": "Arimo",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "color": "#000000",
+        "lineHeight": 1.15
+      },
+      "decorations": [
+        {
+          "type": "background-shape",
+          "position": "background",
+          "renderAs": "css",
+          "css": {
+            "backgroundColor": "#648C90"
+          },
+          "relativeTo": "block"
+        }
+      ]
+    },
+    {
+      "id": "summary-1",
+      "type": "summary",
+      "region": "main",
+      "order": 1,
+      "sectionHeader": "SUMMARY",
+      "sectionHeaderTokens": {
+        "fontFamily": "Arimo",
+        "fontSize": 10,
+        "fontWeight": 700,
+        "color": "#648C90",
+        "textAlign": "left"
+      },
+      "content": {
+        "text": "Financial Advisor with 7+ years of experience delivering financial/investment advisory services to high value clients. Proven success in managing multi-million dollar portfolios, driving profitability, and increasing ROI through skillful strategic planning, consulting, and financial advisory services."
+      },
+      "tokens": {
+        "fontFamily": "Arimo",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "color": "#000000",
+        "lineHeight": 1.15
+      },
+      "decorations": []
+    },
+    {
+      "id": "experience-1",
+      "type": "experience",
+      "region": "main",
+      "order": 2,
+      "sectionHeader": "PROFESSIONAL EXPERIENCE",
+      "sectionHeaderTokens": {
+        "fontFamily": "Arimo",
+        "fontSize": 10,
+        "fontWeight": 700,
+        "color": "#648C90",
+        "textAlign": "left"
+      },
+      "content": {
+        "entries": [
+          {
+            "company": "Wells Fargo Advisors, Houston, TX",
+            "title": "Senior Financial Advisor",
+            "dateStart": "August 2020",
+            "dateEnd": "Present",
+            "bullets": [
+              [
+                {
+                  "text": "Deliver financial advice to clients, proposing strategies to achieve short- and long-term objectives for investments, insurance, business and estate planning with minimal risk"
+                }
+              ],
+              [
+                {
+                  "text": "Develop, review, and optimize investment portfolios for 300+ high value clients with over $190M AUM (Assets Under Management)"
+                }
+              ],
+              [
+                {
+                  "text": "Ensure maximum client satisfaction by providing exceptional and personalized service, enhancing client satisfaction ratings from 88% to 99.9% in less than 6 months"
+                }
+              ],
+              [
+                {
+                  "text": "Work closely with specialists from multiple branches, managing investment portfolios for over 800 clients with over $25M in assets under care"
+                }
+              ]
+            ]
+          },
+          {
+            "company": "Suntrust Investment Services, Inc., New Orleans, LA",
+            "title": "Financial Advisor",
+            "dateStart": "July 2017",
+            "dateEnd": "August 2020",
+            "bullets": [
+              [
+                {
+                  "text": "Served as knowledgeable financial advisor to clients, managing an over $20.75M investment portfolio of 90+ individual and corporate clients"
+                }
+              ],
+              [
+                {
+                  "text": "Devised and applied a new training and accountability program that increased productivity from #10 to #3 in the region in less than 2 year period"
+                }
+              ],
+              [
+                {
+                  "text": "Partnered with cross-functional teams in consulting with clients to provide asset management risk strategy and mitigation, which increased AUM by 50%"
+                }
+              ]
+            ]
+          },
+          {
+            "company": "Maverick Capital Management, New Orleans, LA",
+            "title": "Financial Advisor",
+            "dateStart": "July 2014",
+            "dateEnd": "August 2017",
+            "bullets": [
+              [
+                {
+                  "text": "Served as the primary point of contact for over 15 clients"
+                }
+              ],
+              [
+                {
+                  "text": "Managed the portfolios of several major clients with over $8.5M in total assets"
+                }
+              ]
+            ]
+          }
+        ]
+      },
+      "tokens": {
+        "fontFamily": "Arimo",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "color": "#000000",
+        "lineHeight": 1.15
+      },
+      "decorations": []
+    },
+    {
+      "id": "education-1",
+      "type": "education",
+      "region": "main",
+      "order": 3,
+      "sectionHeader": "EDUCATION",
+      "sectionHeaderTokens": {
+        "fontFamily": "Arimo",
+        "fontSize": 10,
+        "fontWeight": 700,
+        "color": "#648C90",
+        "textAlign": "left"
+      },
+      "content": {
+        "entries": [
+          {
+            "school": "Louisiana State University, Baton Rouge, LA",
+            "degree": "Bachelor of Science in Business Administration (concentration: finance)",
+            "major": "finance",
+            "gpa": "3.7/4.0",
+            "dates": "May 2014",
+            "description": "Honors: cum laude (GPA: 3.7/4.0)"
+          }
+        ]
+      },
+      "tokens": {
+        "fontFamily": "Arimo",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "color": "#000000",
+        "lineHeight": 1.15
+      },
+      "decorations": []
+    },
+    {
+      "id": "skills-1",
+      "type": "skills",
+      "region": "main",
+      "order": 4,
+      "sectionHeader": "ADDITIONAL SKILLS",
+      "sectionHeaderTokens": {
+        "fontFamily": "Arimo",
+        "fontSize": 10,
+        "fontWeight": 700,
+        "color": "#648C90",
+        "textAlign": "left"
+      },
+      "content": {
+        "format": "list",
+        "skills": [
+          "Proficient in MS Office (Word, Excel, PowerPoint) Outlook, MS Project, Salesforce, TFS Project Management, Webex, and GoToMeeting",
+          "Fluent in English, Spanish, and French"
+        ]
+      },
+      "tokens": {
+        "fontFamily": "Arimo",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "color": "#000000",
+        "lineHeight": 1.15
+      },
+      "decorations": []
+    }
+  ],
+  "fonts": [
+    {
+      "originalFont": "Arimo",
+      "matchedFont": "Inter",
+      "source": "google",
+      "url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap",
+      "confidence": 0.2
+    }
+  ],
+  "pageSettings": {
+    "width": 816,
+    "height": 1056,
+    "margins": {
+      "top": 24,
+      "right": 35,
+      "bottom": 19,
+      "left": 36
+    }
+  }
+}

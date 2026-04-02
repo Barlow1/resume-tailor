@@ -2,53 +2,35 @@ import { useCallback, useEffect, useRef, useState, useMemo } from 'react'
 import {
 	json,
 	type LoaderFunctionArgs,
-	type ActionFunctionArgs,
 } from '@remix-run/node'
 import {
 	useLoaderData,
 	useFetcher,
 	useNavigate,
 	useSubmit,
-	Form,
-	Link,
 } from '@remix-run/react'
 import { useOptionalUser } from '~/utils/user.ts'
-import { getUserImgSrc } from '~/utils/misc.ts'
 import { useTheme } from '~/routes/resources+/theme/index.tsx'
 import {
 	ChevronDown,
 	Search,
 	Sun,
 	Moon,
-	Sparkles,
 	Download,
 	LayoutTemplate,
 	Check,
 	X,
 	Plus,
-	Minus,
 	Briefcase,
 	GraduationCap,
 	Code2,
 	AlignLeft,
 	Target,
-	TrendingUp,
-	Zap,
-	ArrowRight,
-	CheckCircle2,
-	Circle,
 	PanelLeftClose,
 	PanelRightClose,
-	Palette,
 	Eye,
 	EyeOff,
-	ChevronRight,
-	Rocket,
-	LogOut,
-	User as UserIcon,
-	CreditCard,
 	Trash2,
-	Undo2,
 } from 'lucide-react'
 import { SubscribeModal } from '~/components/subscribe-modal.tsx'
 import { getStripeSubscription, getUserId } from '~/utils/auth.server.ts'
@@ -71,7 +53,6 @@ import { prisma } from '~/utils/db.server.ts'
 import { ResumeCreationModal } from '~/components/resume-creation-modal.tsx'
 import { getUserBuilderResumes } from '~/utils/builder-resume.server.ts'
 import { type Jsonify } from '@remix-run/server-runtime/dist/jsonify.js'
-import { generateResumeHtml } from '~/utils/generate-resume-html.ts'
 import {
 	ResumeIframe,
 	type ResumeIframeHandle,
@@ -80,19 +61,19 @@ import {
 } from '~/components/resume-iframe.tsx'
 import { FloatingToolbar } from '~/components/floating-toolbar.tsx'
 import { type Job } from '@prisma/client'
-import { useResumeScore } from '~/hooks/use-resume-score.ts'
-import {
-	type ChecklistItem,
-	type KeywordMatch,
-} from '~/utils/resume-scoring.ts'
-import { parseTieredKeywords } from '~/utils/keyword-utils.ts'
 import { trackEvent } from '~/utils/analytics.ts'
 import { trackEvent as trackLegacyEvent } from '~/utils/tracking.client.ts'
 import { track } from '~/lib/analytics.client.ts'
 import { toast } from '~/components/ui/use-toast.ts'
 import { useOnboardingFlow } from '~/hooks/use-onboarding-flow.ts'
 import { JobPasteModal } from '~/components/job-paste-modal.tsx'
+import { BuilderNav } from '~/components/builder-nav.tsx'
+import { OnboardingWidget } from '~/components/onboarding-widget.tsx'
+import { TruthPanel } from '~/components/truth-panel.tsx'
+import { CoverLetterPanel } from '~/components/cover-letter-panel.tsx'
+import { TEMPLATE_META, FONT_PAIRINGS, COLOR_PALETTE } from '~/utils/templates/registry.ts'
 import { TailorPanel } from '~/components/tailor-panel.tsx'
+import { generateResumeHtml } from '~/utils/generate-resume-html.ts'
 
 function base64ToUint8Array(base64: string): Uint8Array {
 	return Uint8Array.from(atob(base64), c => c.charCodeAt(0))
@@ -101,7 +82,7 @@ function base64ToUint8Array(base64: string): Uint8Array {
 const getDefaultFormData = (): ResumeData => {
 	return {
 		name: '',
-		nameColor: '#6B45FF',
+		nameColor: '#1b3a5c',
 		role: '',
 		email: '',
 		phone: '',
@@ -151,8 +132,8 @@ const getDefaultFormData = (): ResumeData => {
 			personalDetails: true,
 			photo: true,
 		},
-		font: 'font-crimson',
-		layout: 'traditional',
+		font: 'inter',
+		layout: 'slate',
 		textSize: 'medium',
 	}
 }
@@ -184,7 +165,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 				hobbies: resume.hobbies,
 				jobId: resume.jobId || null,
 				job: resume.job || null,
-				nameColor: resume.nameColor || '#6B45FF',
+				nameColor: resume.nameColor || '#1b3a5c',
 				headers: {
 					experienceHeader:
 						resume.headers?.experienceHeader || 'Work Experience',
@@ -204,8 +185,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 					personalDetails: resume.visibleSections?.personalDetails ?? true,
 					photo: resume.visibleSections?.photo ?? true,
 				},
-				font: resume.font || 'font-crimson',
-				layout: resume.layout || 'traditional',
+				font: resume.font || 'inter',
+				layout: resume.layout || 'slate',
 				textSize: resume.textSize || 'medium',
 			}
 		}
@@ -252,8 +233,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 /* ═══ DESIGN TOKENS ═══ */
 const BRAND = '#6B45FF'
 const SUCCESS = '#30A46C'
-const WARN = '#F76B15'
-const ERROR = '#E5484D'
 const AMBER = '#F5D90A'
 
 const lightTheme = {
@@ -263,11 +242,11 @@ const lightTheme = {
 	border: '#E0E0E6',
 	borderSub: '#EBEBEF',
 	text: '#111113',
-	muted: '#63636A',
-	dim: '#9C9CA3',
+	muted: '#46464C',
+	dim: '#4A4A50',
 	canvas: '#E8E8EC',
 	white: '#FFFFFF',
-	brandText: BRAND,
+	brandText: '#4B30B3',
 }
 const darkTheme = {
 	bg: '#111113',
@@ -276,82 +255,17 @@ const darkTheme = {
 	border: '#2B2B31',
 	borderSub: '#222228',
 	text: '#ECECEE',
-	muted: '#8B8B8F',
-	dim: '#858589',
+	muted: '#B5B5BB',
+	dim: '#B4B4BA',
 	canvas: '#0C0C0E',
 	white: '#FFFFFF',
-	brandText: '#9B7FFF',
+	brandText: '#C0ABFF',
 }
 type Theme = typeof lightTheme
 
-const tiers = [
-	{ min: 0, max: 25, color: ERROR, label: 'Needs work' },
-	{ min: 26, max: 50, color: WARN, label: 'Getting there' },
-	{ min: 51, max: 70, color: AMBER, label: 'Good' },
-	{ min: 71, max: 85, color: SUCCESS, label: 'Great match' },
-	{ min: 86, max: 100, color: BRAND, label: 'Excellent' },
-]
-const getTier = (s: number) =>
-	tiers.find(t => s >= t.min && s <= t.max) || tiers[0]
-const scoreMsg = (s: number) =>
-	s <= 25
-		? 'Your resume is off to a start. Here are 3 quick wins.'
-		: s <= 50
-		? "You're building momentum. A few targeted changes will make a big difference."
-		: s <= 70
-		? "Looking good. Let's sharpen it for this specific role."
-		: s <= 85
-		? 'Strong resume. Fine-tune these details to really stand out.'
-		: 'Your resume is in great shape. Apply with confidence.'
 
-/* ═══ FONT / TEMPLATE OPTIONS ═══ */
-const FONT_OPTIONS = [
-	{
-		value: 'font-crimson',
-		label: 'Crimson Pro',
-		family: 'Crimson Pro, Georgia, serif',
-	},
-	{
-		value: 'font-sans',
-		label: 'Arial',
-		family: 'Arial, Helvetica, sans-serif',
-	},
-	{
-		value: 'font-serif',
-		label: 'Georgia',
-		family: 'Georgia, "Times New Roman", serif',
-	},
-	{
-		value: 'font-mono',
-		label: 'Courier',
-		family: '"Courier New", Courier, monospace',
-	},
-	{
-		value: 'font-garamond',
-		label: 'Garamond',
-		family: 'Garamond, "Times New Roman", serif',
-	},
-	{
-		value: 'font-trebuchet',
-		label: 'Trebuchet',
-		family: '"Trebuchet MS", Helvetica, sans-serif',
-	},
-	{
-		value: 'font-verdana',
-		label: 'Verdana',
-		family: 'Verdana, Geneva, sans-serif',
-	},
-]
-const ACCENT_COLORS = [
-	'#6B45FF',
-	'#2563EB',
-	'#059669',
-	'#E11D48',
-	'#F76B15',
-	'#7C3AED',
-	'#111113',
-	'#1E3A5F',
-]
+/* ═══ FONT / TEMPLATE OPTIONS (from registry) ═══ */
+const VISIBLE_PAIRINGS = FONT_PAIRINGS.filter((p: { legacy?: boolean }) => !p.legacy)
 const DEFAULT_SECTION_ORDER = [
 	'summary',
 	'experience',
@@ -369,150 +283,59 @@ function moveArray<T>(arr: T[], from: number, to: number): T[] {
 
 /* ═══ PAGE DIMENSIONS ═══ */
 
-/* ═══ SCORE ARC ═══ */
-function ScoreArc({
-	score,
-	size = 148,
+
+/* ═══ EDITABLE TEXT ═══ */
+/* ═══ BACKDROP ═══ */
+function Backdrop({
+	children,
 	onClick,
-	c,
+	open,
 }: {
-	score: number
-	size?: number
-	onClick?: () => void
-	c: Theme
+	children: React.ReactNode
+	onClick: () => void
+	open: boolean
 }) {
-	const [a, setA] = useState(0)
-	const [pulse, setPulse] = useState(false)
-	const prevScoreRef = useRef(score)
-	const t = getTier(score)
+	const [mounted, setMounted] = useState(false)
+	const [visible, setVisible] = useState(false)
+
 	useEffect(() => {
-		let s: number | null = null
-		const ease = (t: number) =>
-			t === 0
-				? 0
-				: t === 1
-				? 1
-				: Math.pow(2, -10 * t) *
-						Math.sin(((t * 10 - 0.75) * (2 * Math.PI)) / 3) +
-				  1
-		const f = (ts: number) => {
-			if (!s) s = ts
-			const p = Math.min((ts - s) / 1200, 1)
-			setA(ease(p) * score)
-			if (p < 1) requestAnimationFrame(f)
-		}
-		setA(0)
-		requestAnimationFrame(f)
-	}, [score])
-	useEffect(() => {
-		if (prevScoreRef.current !== score && prevScoreRef.current > 0) {
-			setPulse(true)
-			const timer = setTimeout(() => setPulse(false), 1800)
-			prevScoreRef.current = score
+		if (open) {
+			setMounted(true)
+			requestAnimationFrame(() => requestAnimationFrame(() => setVisible(true)))
+		} else {
+			setVisible(false)
+			const timer = setTimeout(() => setMounted(false), 200)
 			return () => clearTimeout(timer)
 		}
-		prevScoreRef.current = score
-	}, [score])
-	const r = 54,
-		cx = 64,
-		cy = 64,
-		sw = 8,
-		sA = -220,
-		eA = 40,
-		rng = eA - sA,
-		fA = sA + (rng * a) / 100,
-		toR = (d: number) => (d * Math.PI) / 180
-	const arc = (s: number, e: number) => {
-		const p1 = { x: cx + r * Math.cos(toR(s)), y: cy + r * Math.sin(toR(s)) },
-			p2 = { x: cx + r * Math.cos(toR(e)), y: cy + r * Math.sin(toR(e)) }
-		return `M ${p1.x} ${p1.y} A ${r} ${r} 0 ${e - s > 180 ? 1 : 0} 1 ${p2.x} ${
-			p2.y
-		}`
-	}
+	}, [open])
+
+	if (!mounted) return null
 	return (
 		<div
 			onClick={onClick}
 			style={{
+				position: 'fixed',
+				inset: 0,
+				zIndex: 200,
 				display: 'flex',
-				flexDirection: 'column',
 				alignItems: 'center',
-				padding: '16px 0 8px',
-				cursor: onClick ? 'pointer' : 'default',
+				justifyContent: 'center',
+				background: 'rgba(0,0,0,0.55)',
+				backdropFilter: 'blur(8px)',
+				opacity: visible ? 1 : 0,
+				transition: 'opacity 180ms ease',
 			}}
 		>
-			<svg width={size} height={size * 0.78} viewBox="0 0 128 100">
-				<path
-					d={arc(sA, eA)}
-					fill="none"
-					stroke={c.border}
-					strokeWidth={sw}
-					strokeLinecap="round"
-				/>
-				<path
-					d={arc(sA, fA)}
-					fill="none"
-					stroke={t.color}
-					strokeWidth={sw}
-					strokeLinecap="round"
-					style={{ filter: pulse ? `drop-shadow(0 0 12px ${t.color}88)` : `drop-shadow(0 0 6px ${t.color}44)`, transition: 'filter 600ms' }}
-				/>
-				<text
-					x={cx}
-					y={cy - 2}
-					textAnchor="middle"
-					fill={pulse ? t.color : c.text}
-					fontSize="34"
-					fontWeight="600"
-					fontFamily="Nunito Sans,system-ui"
-					style={{ transition: 'fill 600ms' }}
-				>
-					{Math.round(a)}
-				</text>
-				<text
-					x={cx}
-					y={cy + 16}
-					textAnchor="middle"
-					fill={c.muted}
-					fontSize="14"
-					fontFamily="Nunito Sans,system-ui"
-				>
-					/ 100
-				</text>
-			</svg>
-			<span
-				style={{ fontSize: 16, fontWeight: 600, color: t.color, marginTop: -4 }}
-			>
-				{t.label}
-			</span>
+			<div style={{
+				transform: visible ? 'scale(1)' : 'scale(0.97)',
+				opacity: visible ? 1 : 0,
+				transition: 'transform 200ms cubic-bezier(0.32, 0.72, 0, 1), opacity 180ms ease',
+			}}>
+				{children}
+			</div>
 		</div>
 	)
 }
-
-/* ═══ EDITABLE TEXT ═══ */
-/* ═══ BACKDROP ═══ */
-const Backdrop = ({
-	children,
-	onClick,
-}: {
-	children: React.ReactNode
-	onClick: () => void
-}) => (
-	<div
-		onClick={onClick}
-		style={{
-			position: 'fixed',
-			inset: 0,
-			zIndex: 200,
-			display: 'flex',
-			alignItems: 'center',
-			justifyContent: 'center',
-			background: 'rgba(0,0,0,0.55)',
-			backdropFilter: 'blur(8px)',
-		}}
-	>
-		{children}
-	</div>
-)
 
 /* ═══ JOB DROPDOWN ═══ */
 function JobDropdown({
@@ -604,15 +427,7 @@ function JobDropdown({
 										? `2px solid ${BRAND}`
 										: '2px solid transparent',
 							}}
-							onMouseEnter={e => {
-								if (current !== jb.id)
-									(e.currentTarget as HTMLElement).style.background = c.bgSurf
-							}}
-							onMouseLeave={e => {
-								if (current !== jb.id)
-									(e.currentTarget as HTMLElement).style.background =
-										'transparent'
-							}}
+							className={current !== jb.id ? 'hover-bg' : undefined}
 						>
 							<div style={{ fontSize: 16, color: c.text, fontWeight: 500 }}>
 								{jb.title}
@@ -644,7 +459,21 @@ function SlideOver({
 	children: React.ReactNode
 	c: Theme
 }) {
-	if (!open) return null
+	const [mounted, setMounted] = useState(false)
+	const [visible, setVisible] = useState(false)
+
+	useEffect(() => {
+		if (open) {
+			setMounted(true)
+			requestAnimationFrame(() => requestAnimationFrame(() => setVisible(true)))
+		} else {
+			setVisible(false)
+			const timer = setTimeout(() => setMounted(false), 250)
+			return () => clearTimeout(timer)
+		}
+	}, [open])
+
+	if (!mounted) return null
 	return (
 		<div
 			style={{
@@ -662,6 +491,8 @@ function SlideOver({
 					inset: 0,
 					background: 'rgba(0,0,0,0.4)',
 					backdropFilter: 'blur(4px)',
+					opacity: visible ? 1 : 0,
+					transition: 'opacity 200ms ease',
 				}}
 			/>
 			<div
@@ -675,6 +506,8 @@ function SlideOver({
 					flexDirection: 'column',
 					overflow: 'hidden',
 					boxShadow: '-8px 0 32px rgba(0,0,0,0.2)',
+					transform: visible ? 'translateX(0)' : 'translateX(100%)',
+					transition: 'transform 250ms cubic-bezier(0.32, 0.72, 0, 1)',
 				}}
 			>
 				<div
@@ -754,27 +587,14 @@ export default function ResumeBuilder() {
 	const [diagnosticContext, setDiagnosticContext] =
 		useState<DiagnosticContext | null>(null)
 	const [, setHighlightedBullets] = useState<Set<string>>(new Set())
-	const [keywordPopover, setKeywordPopover] = useState<{
-		keyword: string
-		status: 'missing' | 'partial'
-		anchorRect: DOMRect
-	} | null>(null)
-	const [skillsAddPopover, setSkillsAddPopover] = useState<{
-		keywords: string[]
-		addedKeywords: Set<string>
-		anchorRect: DOMRect
-	} | null>(null)
-	const [summaryFixModal, setSummaryFixModal] = useState<{
-		original: string
-		shortened: string
-	} | null>(null)
-	const checklistClickRect = useRef<DOMRect | null>(null)
 	const [selectedJob, setSelectedJob] = useState<BuilderJob | null | undefined>(
 		formData.job,
 	)
 	const [downloadClicked, setDownloadClicked] = useState(false)
 	const [sectionOrder, setSectionOrder] = useState(DEFAULT_SECTION_ORDER)
-	const [showScoreDetail, setShowScoreDetail] = useState(false)
+	const [coverLetterOpen, setCoverLetterOpen] = useState(false)
+	const [coverLetterText, setCoverLetterText] = useState('')
+	const [isGeneratingCoverLetter, setIsGeneratingCoverLetter] = useState(false)
 	const [showTemplateGallery, setShowTemplateGallery] = useState(false)
 	const [showCommandPalette, setShowCommandPalette] = useState(false)
 	const [showAllResumes, setShowAllResumes] = useState(false)
@@ -782,12 +602,19 @@ export default function ResumeBuilder() {
 	const [cmdSelected, setCmdSelected] = useState(0)
 	const [onboardingDismissed, setOnboardingDismissed] = useState(false)
 	const [onboardingCollapsed, setOnboardingCollapsed] = useState(false)
+	const [hasReviewedMatch, setHasReviewedMatch] = useState(false)
+	const [hasTakenAction, setHasTakenAction] = useState(false)
+	const [editingResumeId, setEditingResumeId] = useState<string | null>(null)
+	const [matchRefetchKey, setMatchRefetchKey] = useState(0)
+	const undoSnapshotRef = useRef<typeof formData | null>(null)
+	const bulletUndoMapRef = useRef<Map<string, { action: 'rewrite' | 'new'; experienceId: string; originalText: string | null }>>(new Map())
+	const [pendingHighlights, setPendingHighlights] = useState<string[]>([])
 	const [coachStep, setCoachStep] = useState<number | null>(null)
 	const customizeBtnRef = useRef<HTMLButtonElement>(null)
 	const tailorBtnRef = useRef<HTMLButtonElement>(null)
-	const [editingResumeId, setEditingResumeId] = useState<string | null>(null)
 	const [tailorPanelOpen, setTailorPanelOpen] = useState(false)
-	const [hasTailorSnapshot, setHasTailorSnapshot] = useState(false)
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	const [_hasTailorSnapshot, setHasTailorSnapshot] = useState(false)
 	const tailorSnapshotFetcher = useFetcher<{ success?: boolean; snapshot?: string; hasSnapshot?: boolean; error?: string }>()
 	const [hoveredElement, setHoveredElement] =
 		useState<HoveredElementInfo | null>(null)
@@ -802,6 +629,15 @@ export default function ResumeBuilder() {
 
 	const c = isDark ? darkTheme : lightTheme
 	const sW = sidebar ? 304 : 64
+	const rightPanelW = scorePanel ? 340 : 0
+	const [viewportWidth, setViewportWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1440)
+	useEffect(() => {
+		const handler = () => setViewportWidth(window.innerWidth)
+		window.addEventListener('resize', handler)
+		return () => window.removeEventListener('resize', handler)
+	}, [])
+	const canvasAvailable = viewportWidth - sW - rightPanelW - 80
+	const canvasScale = Math.min(Math.max(canvasAvailable / 816, 0.7), 1.25)
 
 	/* ═══ DARK MODE (synced with app theme) ═══ */
 	const themeFetcher = useFetcher()
@@ -843,9 +679,61 @@ export default function ResumeBuilder() {
 		return () => document.removeEventListener('mousedown', handleClickOutside)
 	}, [profileOpen])
 
+	/* ═══ COVER LETTER ═══ */
+	const coverLetterFetcher = useFetcher<{ coverLetter: string }>()
+
+	const handleGenerateCoverLetter = useCallback(() => {
+		if (!formData.id || !selectedJob?.id) return
+		setIsGeneratingCoverLetter(true)
+		setCoverLetterOpen(true)
+		coverLetterFetcher.submit(
+			JSON.stringify({ resumeId: formData.id, jobId: selectedJob.id }),
+			{ method: 'POST', action: '/resources/generate-cover-letter', encType: 'application/json' },
+		)
+	}, [formData.id, selectedJob?.id, coverLetterFetcher])
+
+	useEffect(() => {
+		if (coverLetterFetcher.data?.coverLetter) {
+			setCoverLetterText(coverLetterFetcher.data.coverLetter)
+			setIsGeneratingCoverLetter(false)
+		}
+	}, [coverLetterFetcher.data])
+
+	// Load existing draft when opening cover letter panel
+	useEffect(() => {
+		if (coverLetterOpen && selectedJob?.id && !coverLetterText) {
+			if (formData.coverLetterDrafts) {
+				try {
+					const drafts = JSON.parse(formData.coverLetterDrafts) as Record<string, string>
+					if (drafts[selectedJob.id]) {
+						setCoverLetterText(drafts[selectedJob.id])
+					}
+				} catch {
+					// ignore parse errors
+				}
+			}
+		}
+	}, [coverLetterOpen, selectedJob?.id])
+
+	const debouncedSaveRef = useRef<((data: ResumeData) => void) | null>(null)
+	const handleCoverLetterTextChange = useCallback((text: string) => {
+		setCoverLetterText(text)
+		const jobId = selectedJob?.id
+		if (jobId) {
+			setFormData(prev => {
+				const drafts = prev.coverLetterDrafts ? JSON.parse(prev.coverLetterDrafts) as Record<string, string> : {}
+				drafts[jobId] = text
+				const next = { ...prev, coverLetterDrafts: JSON.stringify(drafts) }
+				debouncedSaveRef.current?.(next)
+				return next
+			})
+		}
+	}, [selectedJob?.id])
+
 	/* ═══ SAVE ═══ */
 	const fetcher = useFetcher<{ success: boolean; error?: string }>()
 	const pdfFetcher = useFetcher<{ fileData: string; fileType: string }>()
+	const applicationFetcher = useFetcher()
 	const [saveStatus, setSaveStatus] = useState<
 		'idle' | 'saving' | 'saved' | 'error'
 	>('idle')
@@ -862,6 +750,7 @@ export default function ResumeBuilder() {
 			action: '/resources/save-resume',
 		})
 	}, 1000)
+	debouncedSaveRef.current = debouncedSave
 
 	useEffect(() => {
 		if (fetcher.state === 'submitting') {
@@ -949,6 +838,7 @@ export default function ResumeBuilder() {
 		[formData, debouncedSave, tailorSnapshotFetcher],
 	)
 
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const handleTailorUndo = useCallback(() => {
 		if (!formData.id) return
 		if (!confirm('Undo all tailoring changes? This will revert to your pre-tailoring resume. Any manual edits since tailoring will also be reverted.')) return
@@ -964,6 +854,7 @@ export default function ResumeBuilder() {
 
 	/* ═══ RESUME SWITCHING ═══ */
 	const resumeSwitchFetcher = useFetcher()
+	const cloneForJobFetcher = useFetcher<{ resumeId?: string; error?: string }>()
 	const handleResumeSwitch = useCallback(
 		(resumeId: string) => {
 			if (resumeId === formData.id) return
@@ -1000,20 +891,19 @@ export default function ResumeBuilder() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [savedData.id])
 
-	/* ═══ SCORING ═══ */
-	const tieredKeywords = parseTieredKeywords(
-		formData.job?.extractedKeywords ?? null,
-	)
-	const extractedKeywords = tieredKeywords?.all ?? null
-	const primaryKeywords = tieredKeywords?.primary ?? null
-
-	const { scores, checklist } = useResumeScore({
-		resumeData: formData,
-		jobDescription: formData.job?.content ?? undefined,
-		extractedKeywords,
-		primaryKeywords,
-		debounceMs: 500,
-	})
+	// When clone-for-job completes, switch to the new resume
+	useEffect(() => {
+		if (cloneForJobFetcher.state === 'idle' && cloneForJobFetcher.data?.resumeId) {
+			const newResumeId = cloneForJobFetcher.data.resumeId
+			if (newResumeId !== formData.id) {
+				resumeSwitchFetcher.submit(
+					{ resumeId: newResumeId },
+					{ method: 'POST', action: '/resumes' },
+				)
+			}
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [cloneForJobFetcher.state, cloneForJobFetcher.data])
 
 	/* ═══ ANALYTICS ═══ */
 	// eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1035,6 +925,20 @@ export default function ResumeBuilder() {
 			})
 		}
 	}, [resumeUploadedTracking])
+
+	/* ═══ PENDING HIGHLIGHTS — apply after formData settles into iframe ═══ */
+	useEffect(() => {
+		if (pendingHighlights.length === 0) return
+		// Mark structural so iframe accepts the new HTML from the updated formData
+		iframeComponentRef.current?.markStructuralUpdate()
+		// Wait for iframe to re-render with new content, then highlight
+		const timer = setTimeout(() => {
+			iframeComponentRef.current?.highlightDescriptions(pendingHighlights)
+			setPendingHighlights([])
+		}, 800)
+		return () => clearTimeout(timer)
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [pendingHighlights])
 
 	/* ═══ EDIT HANDLERS ═══ */
 	const updateField = (field: string, val: string) => {
@@ -1324,31 +1228,99 @@ export default function ResumeBuilder() {
 		}
 	}, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+	const isResumeBlank = useCallback((data: typeof formData) => {
+		const hasName = !!data.name?.trim()
+		const hasRole = !!data.role?.trim()
+		const hasEmail = !!data.email?.trim()
+		const hasAbout = !!data.about?.trim()
+		const hasRealExperience = (data.experiences ?? []).some(
+			exp => exp.role?.trim() || exp.company?.trim(),
+		)
+		return !hasName && !hasRole && !hasEmail && !hasAbout && !hasRealExperience
+	}, [])
+
 	const handleJobChange = useCallback(
 		(job: any) => {
-			setSelectedJob(job)
-			const newFormData = {
-				...formData,
-				jobId: job?.id ?? null,
-				job: job ?? null,
+			// Deselecting job — navigate to base (jobless) resume
+			if (!job) {
+				setSelectedJob(null)
+				const baseResume = resumes.find(r => !r.jobId)
+				if (baseResume && baseResume.id !== formData.id) {
+					handleResumeSwitch(baseResume.id!)
+				} else {
+					const newFormData = { ...formData, jobId: null, job: null }
+					setFormData(newFormData)
+					debouncedSave(newFormData)
+				}
+				return
 			}
-			setFormData(newFormData)
-			debouncedSave(newFormData)
+
+			// Check if a resume already exists for this job — switch to it
+			// Note: resumes is from loader data and may be stale for same-session clones;
+			// the server-side idempotency guard is the authoritative duplicate check.
+			const existingForJob = resumes.find(r => r.jobId === job.id)
+			if (existingForJob && existingForJob.id !== formData.id) {
+				handleResumeSwitch(existingForJob.id!)
+				setSelectedJob(job)
+				setSidebar(false)
+				trackLegacyEvent('job_selected', {
+					jobId: job.id,
+					hasJobDescription: !!(job?.content && job.content.trim().length > 0),
+					userId,
+					category: 'Resume Builder',
+				})
+				return
+			}
+
+			// Blank resume — just attach job directly, no clone needed
+			if (isResumeBlank(formData)) {
+				setSelectedJob(job)
+				setSidebar(false)
+				const newFormData = { ...formData, jobId: job.id, job }
+				setFormData(newFormData)
+				debouncedSave(newFormData)
+				trackLegacyEvent('job_selected', {
+					jobId: job.id,
+					hasJobDescription: !!(job?.content && job.content.trim().length > 0),
+					userId,
+					category: 'Resume Builder',
+				})
+				if (job.id && job.content?.trim() && !job.extractedKeywords) {
+					keywordExtractFetcher.submit(
+						{ jobId: job.id },
+						{ method: 'POST', action: '/resources/extract-keywords' },
+					)
+				}
+				return
+			}
+
+			// Clone the current resume for this job
+			setSelectedJob(job)
+			setSidebar(false)
+
+			cloneForJobFetcher.submit(
+				{
+					existingResumeId: formData.id!,
+					jobId: job.id,
+				},
+				{ method: 'POST', action: '/resources/create-resume?type=clone-for-job' },
+			)
+
 			trackLegacyEvent('job_selected', {
-				jobId: job?.id,
+				jobId: job.id,
 				hasJobDescription: !!(job?.content && job.content.trim().length > 0),
 				userId,
 				category: 'Resume Builder',
 			})
-			// Auto-extract keywords if job has content but no extracted keywords
-			if (job?.id && job?.content?.trim() && !job.extractedKeywords) {
+
+			if (job.id && job.content?.trim() && !job.extractedKeywords) {
 				keywordExtractFetcher.submit(
 					{ jobId: job.id },
 					{ method: 'POST', action: '/resources/extract-keywords' },
 				)
 			}
 		},
-		[formData, debouncedSave, userId, keywordExtractFetcher],
+		[formData, resumes, debouncedSave, userId, keywordExtractFetcher, cloneForJobFetcher, isResumeBlank, handleResumeSwitch],
 	)
 
 	/* ═══ AI ═══ */
@@ -1367,248 +1339,6 @@ export default function ResumeBuilder() {
 		setAiModalInitialTab(undefined)
 		setShowAIModal(true)
 		onboarding.handleAIModalOpen()
-	}
-
-	const handleKeywordRolePick = (experience: BuilderExperience) => {
-		const keyword = keywordPopover?.keyword
-		setKeywordPopover(null)
-		if (!keyword || !experience.id) return
-		setSelectedExperience(experience)
-		setSelectedBullet({
-			content: '',
-			experienceId: experience.id,
-			bulletIndex: -1,
-		})
-		setDiagnosticContext({
-			issueType: 'missing-keywords',
-			reason: `Incorporate the keyword "${keyword}" naturally into this achievement`,
-			missingKeywords: [keyword],
-		})
-		setAiModalInitialTab('tailor')
-		setShowAIModal(true)
-	}
-
-	const handleKeywordAddToSkills = () => {
-		const keyword = keywordPopover?.keyword
-		setKeywordPopover(null)
-		if (!keyword || !formData.skills) return
-		const capitalized = keyword.charAt(0).toUpperCase() + keyword.slice(1)
-		const alreadyExists = formData.skills.some(s =>
-			(s.name || '').toLowerCase().includes(keyword.toLowerCase()),
-		)
-		if (alreadyExists) return
-		// Append to the last skill entry with a comma
-		const lastIdx = formData.skills.length - 1
-		if (lastIdx >= 0 && formData.skills[lastIdx].name?.trim()) {
-			const updatedSkills = formData.skills.map((s, i) =>
-				i === lastIdx ? { ...s, name: `${s.name}, ${capitalized}` } : s,
-			)
-			const newFormData = { ...formData, skills: updatedSkills }
-			setFormData(newFormData)
-			debouncedSave(newFormData)
-		} else {
-			// No existing skills with content — create a new entry
-			const newFormData = {
-				...formData,
-				skills: [
-					...formData.skills,
-					{ id: crypto.randomUUID(), name: capitalized },
-				],
-			}
-			setFormData(newFormData)
-			debouncedSave(newFormData)
-		}
-	}
-
-	const handleChecklistAction = (item: ChecklistItem, anchorRect?: DOMRect) => {
-		if (item.completed) return
-
-		switch (item.fixType) {
-			case 'ai-modal': {
-				// Items with flaggedBullets (metrics, action verbs) → open AI modal
-				if (item.flaggedBullets && item.flaggedBullets.length > 0) {
-					const bulletKeys = new Set(
-						item.flaggedBullets.map(b => `${b.experienceId}_${b.bulletIndex}`),
-					)
-					setHighlightedBullets(bulletKeys)
-					const first = item.flaggedBullets[0]
-					const issueType: DiagnosticContext['issueType'] =
-						item.id === 'metrics' || item.id === 'metrics-good'
-							? 'no-metrics'
-							: item.id === 'action-verbs' || item.id === 'action-verbs-good'
-							? 'weak-verb'
-							: 'missing-keywords'
-					handleAIClick(first.experienceId, first.bulletIndex, first.content, {
-						issueType,
-						reason: first.reason,
-						missingKeywords: item.missingKeywords,
-					})
-				}
-				// Keyword spread items → open AI modal for target experience
-				else if (item.spreadKeyword && item.targetExperienceId) {
-					const experience = formData.experiences?.find(e => e.id === item.targetExperienceId)
-					if (!experience?.id) return
-					setSelectedExperience(experience)
-					setSelectedBullet({ content: '', experienceId: experience.id, bulletIndex: -1 })
-					setDiagnosticContext({
-						issueType: 'missing-keywords',
-						reason: `Incorporate the keyword "${item.spreadKeyword}" naturally into this achievement`,
-						missingKeywords: [item.spreadKeyword],
-					})
-					setAiModalInitialTab('generate')
-					setShowAIModal(true)
-				}
-				break
-			}
-
-			case 'keyword-popover': {
-				// Single or multiple missing keywords → open keyword popover
-				if (!item.missingKeywords?.length || !anchorRect) return
-				if (item.missingKeywords.length === 1) {
-					setKeywordPopover({
-						keyword: item.missingKeywords[0],
-						status: 'missing',
-						anchorRect,
-					})
-				} else {
-					// Multiple keywords → open skills-add popover for the first,
-					// but if there's a targetExperienceId, open AI modal instead
-					if (item.targetExperienceId) {
-						const experience = formData.experiences?.find(e => e.id === item.targetExperienceId)
-						if (!experience?.id) return
-						setSelectedExperience(experience)
-						setSelectedBullet({ content: '', experienceId: experience.id, bulletIndex: -1 })
-						setDiagnosticContext({
-							issueType: 'missing-keywords',
-							reason: `Add these keywords from the job description to your bullets: ${item.missingKeywords.join(', ')}`,
-							missingKeywords: item.missingKeywords,
-						})
-						setAiModalInitialTab('generate')
-						setShowAIModal(true)
-					} else {
-						setSkillsAddPopover({
-							keywords: item.missingKeywords,
-							addedKeywords: new Set(),
-							anchorRect,
-						})
-					}
-				}
-				break
-			}
-
-			case 'skills-add': {
-				// Missing secondary keywords → open multi-keyword add popover
-				if (!item.missingKeywords?.length || !anchorRect) return
-				setSkillsAddPopover({
-					keywords: item.missingKeywords,
-					addedKeywords: new Set(),
-					anchorRect,
-				})
-				break
-			}
-
-			case 'auto-reorder': {
-				// Move strongest bullet to top
-				if (!item.targetExperienceId || item.strongestBulletIndex == null) return
-				const exp = formData.experiences?.find(e => e.id === item.targetExperienceId)
-				if (!exp?.descriptions) return
-				const bulletContent = exp.descriptions[item.strongestBulletIndex]?.content || ''
-				const preview = bulletContent.length > 60 ? bulletContent.substring(0, 60) + '...' : bulletContent
-				const expLabel = exp.company || exp.role || 'Experience'
-				const oldIndex = item.strongestBulletIndex
-				reorderBullets(item.targetExperienceId, oldIndex, 0)
-				iframeComponentRef.current?.forceRerender()
-				setTimeout(() => iframeComponentRef.current?.highlightBullet(item.targetExperienceId!, 0), 400)
-				toast({
-					title: 'Bullet reordered',
-					description: `Moved "${preview}" to top of ${expLabel}.`,
-				})
-				break
-			}
-
-			case 'generate-bullets': {
-				// Open AI modal in generate mode for experience with fewest bullets
-				if (!item.targetExperienceId) return
-				const experience = formData.experiences?.find(e => e.id === item.targetExperienceId)
-				if (!experience?.id) return
-				setSelectedExperience(experience)
-				setSelectedBullet({ content: '', experienceId: experience.id, bulletIndex: -1 })
-				setDiagnosticContext(null)
-				setAiModalInitialTab('generate')
-				setShowAIModal(true)
-				break
-			}
-
-			case 'summary-shorten': {
-				// Generate shortened summary and show diff
-				const current = formData.about?.trim() || ''
-				if (!current) return
-				// Smart trim: cut to ~240 chars at last sentence boundary
-				const trimmed = current.substring(0, 245)
-				const lastPeriod = trimmed.lastIndexOf('.')
-				const lastSpace = trimmed.lastIndexOf(' ')
-				const shortened = lastPeriod > 100
-					? trimmed.substring(0, lastPeriod + 1)
-					: lastSpace > 100
-					? trimmed.substring(0, lastSpace)
-					: trimmed
-				setSummaryFixModal({ original: current, shortened })
-				break
-			}
-
-			case 'summary-add': {
-				// Scroll to summary section and focus it
-				scrollToSection('summary')
-				break
-			}
-
-			default: {
-				// Fallback: scroll to relevant section
-				const targetSec =
-					item.text.toLowerCase().includes('experience') ||
-					item.text.toLowerCase().includes('bullet') ||
-					item.text.toLowerCase().includes('achievement')
-						? 'experience'
-						: item.text.toLowerCase().includes('skill') ||
-						  item.text.toLowerCase().includes('keyword')
-						? 'skills'
-						: item.text.toLowerCase().includes('summary') ||
-						  item.text.toLowerCase().includes('about')
-						? 'summary'
-						: item.text.toLowerCase().includes('education')
-						? 'education'
-						: 'experience'
-				scrollToSection(targetSec)
-			}
-		}
-	}
-
-	const handleAddKeywordToSkills = (keyword: string) => {
-		if (!formData.skills) return
-		const capitalized = keyword.charAt(0).toUpperCase() + keyword.slice(1)
-		const alreadyExists = formData.skills.some(s =>
-			(s.name || '').toLowerCase().includes(keyword.toLowerCase()),
-		)
-		if (alreadyExists) return
-		const lastIdx = formData.skills.length - 1
-		if (lastIdx >= 0 && formData.skills[lastIdx].name?.trim()) {
-			const updatedSkills = formData.skills.map((s, i) =>
-				i === lastIdx ? { ...s, name: `${s.name}, ${capitalized}` } : s,
-			)
-			const newFormData = { ...formData, skills: updatedSkills }
-			setFormData(newFormData)
-			debouncedSave(newFormData)
-		} else {
-			const newFormData = {
-				...formData,
-				skills: [
-					...formData.skills,
-					{ id: crypto.randomUUID(), name: capitalized },
-				],
-			}
-			setFormData(newFormData)
-			debouncedSave(newFormData)
-		}
 	}
 
 	const handleBulletUpdate = (newContent: string) => {
@@ -1680,7 +1410,7 @@ export default function ResumeBuilder() {
 										0,
 										selectedBullet.bulletIndex,
 									),
-									{ content: firstBullet },
+									{ id: crypto.randomUUID(), content: firstBullet },
 									...rest.map(b => ({ id: crypto.randomUUID(), content: b })),
 									...(exp.descriptions ?? []).slice(
 										selectedBullet.bulletIndex + 1,
@@ -1700,7 +1430,8 @@ export default function ResumeBuilder() {
 		serverProgress: gettingStartedProgress,
 		hasResume: !!(formData.name || formData.role),
 		selectedJob: selectedJob as Jsonify<Job> | null | undefined,
-		hasTailored: (gettingStartedProgress?.tailorCount ?? 0) > 0,
+		hasReviewedMatch,
+		hasTakenAction,
 		onJobSelect: handleJobChange as (job: Jsonify<Job>) => void,
 	})
 
@@ -1773,7 +1504,7 @@ export default function ResumeBuilder() {
 	)
 
 	const handleDownloadPDF = useCallback(async () => {
-		const MAX_FREE_DOWNLOADS = 3
+		const MAX_FREE_DOWNLOADS = 6
 		if (
 			!subscription?.active &&
 			(gettingStartedProgress?.downloadCount ?? 0) >= MAX_FREE_DOWNLOADS
@@ -1840,7 +1571,27 @@ export default function ResumeBuilder() {
 		a.href = url
 		a.download = `${formData.name || 'resume'}.pdf`
 		a.click()
-	}, [formData.name, pdfFetcher.data, pdfFetcher.state])
+		setTimeout(() => URL.revokeObjectURL(url), 1000)
+
+		// After PDF generation succeeds, create application if job selected
+		if (selectedJob?.id && formData.id) {
+			applicationFetcher.submit(
+				JSON.stringify({
+					intent: 'create',
+					resumeId: formData.id,
+					jobId: selectedJob.id,
+					matchLevel: 'moderate', // TODO: get from truth panel data
+					matchSummary: null,
+				}),
+				{ method: 'POST', action: '/resources/applications', encType: 'application/json' },
+			)
+
+			toast({
+				title: 'Application tracked',
+				description: `We'll check in on your application in 7 days.`,
+			})
+		}
+	}, [formData.name, formData.id, selectedJob?.id, pdfFetcher.data, pdfFetcher.state])
 
 	const pricingFetcher = useFetcher()
 	useEffect(() => {
@@ -1874,6 +1625,21 @@ export default function ResumeBuilder() {
 	}, [])
 
 	/* ═══ TEMPLATE APPLY ═══ */
+	const applyTemplate = (templateId: string) => {
+		if (templateId === formData.layout) return
+		const meta = TEMPLATE_META.find(t => t.id === templateId)
+		if (!meta) return
+		setFormData(prev => {
+			const next = {
+				...prev,
+				layout: templateId,
+				font: meta.defaultPairing,
+				nameColor: meta.defaultAccent,
+			}
+			debouncedSave(next)
+			return next
+		})
+	}
 	const applyFont = (fontValue: string) => {
 		setFormData(prev => {
 			const next = { ...prev, font: fontValue }
@@ -1924,9 +1690,9 @@ export default function ResumeBuilder() {
 			},
 			{
 				id: 'score',
-				label: 'View Score Details',
+				label: 'Toggle Match Panel',
 				icon: Target,
-				action: () => setShowScoreDetail(true),
+				action: () => setScorePanel(p => !p),
 			},
 			{
 				id: 'add-job',
@@ -2200,8 +1966,19 @@ export default function ResumeBuilder() {
 				flexDirection: 'column',
 				overflow: 'hidden',
 				letterSpacing: '-0.01em',
-			}}
+				'--c-bg-surf': c.bgSurf,
+				'--c-brand-text': c.brandText,
+				'--c-dim': c.dim,
+			} as React.CSSProperties}
 		>
+			<style>{`
+				.hover-bg { transition: background 150ms ease, color 150ms ease, opacity 150ms ease; }
+				.hover-bg:hover { background: var(--c-bg-surf) !important; }
+				.hover-brand { transition: color 150ms ease; color: var(--c-dim); }
+				.hover-brand:hover { color: var(--c-brand-text) !important; }
+				.hover-reveal { transition: opacity 150ms ease; }
+				.hover-reveal:hover { opacity: 1 !important; }
+			`}</style>
 			{/* MODALS */}
 			<SubscribeModal
 				isOpen={showSubscribeModal}
@@ -2278,766 +2055,32 @@ export default function ResumeBuilder() {
 				/>
 			)}
 
-			{/* KEYWORD ROLE-PICKER POPOVER */}
-			{keywordPopover && (
-				<>
-					<div
-						onClick={() => setKeywordPopover(null)}
-						style={{ position: 'fixed', inset: 0, zIndex: 90 }}
-					/>
-					<div
-						style={{
-							position: 'fixed',
-							zIndex: 91,
-							width: 340,
-							...(keywordPopover.anchorRect.bottom + 250 > window.innerHeight
-								? {
-										bottom:
-											window.innerHeight - keywordPopover.anchorRect.top + 6,
-								  }
-								: { top: keywordPopover.anchorRect.bottom + 6 }),
-							left: Math.min(
-								keywordPopover.anchorRect.left,
-								window.innerWidth - 356,
-							),
-							background: c.bgEl,
-							borderRadius: 10,
-							border: `1px solid ${c.border}`,
-							boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
-							overflow: 'hidden',
-						}}
-					>
-						<div
-							style={{
-								padding: '10px 14px',
-								borderBottom: `1px solid ${c.border}`,
-								display: 'flex',
-								alignItems: 'center',
-								gap: 8,
-							}}
-						>
-							<Plus size={16} color={c.brandText} strokeWidth={2.5} />
-							<span style={{ fontSize: 15, fontWeight: 600, color: c.text }}>
-								Add "
-								<span style={{ color: c.brandText }}>{keywordPopover.keyword}</span>"
-							</span>
-						</div>
-						<div style={{ maxHeight: 300, overflow: 'auto' }}>
-							{/* Add to Skills — instant, no AI */}
-							<div
-								onClick={handleKeywordAddToSkills}
-								style={{
-									padding: '12px 16px',
-									cursor: 'pointer',
-									display: 'flex',
-									alignItems: 'center',
-									gap: 12,
-									transition: 'background 100ms',
-									borderBottom: `1px solid ${c.border}`,
-								}}
-								onMouseEnter={e => {
-									;(
-										e.currentTarget as HTMLElement
-									).style.background = `${BRAND}10`
-								}}
-								onMouseLeave={e => {
-									;(e.currentTarget as HTMLElement).style.background =
-										'transparent'
-								}}
-							>
-								<Code2 size={16} color={c.brandText} strokeWidth={1.75} />
-								<div style={{ flex: 1, minWidth: 0 }}>
-									<div style={{ fontSize: 14, fontWeight: 500, color: c.text }}>
-										Add to Skills
-									</div>
-									<div style={{ fontSize: 12, color: c.muted }}>
-										Instant — no AI needed
-									</div>
-								</div>
-								<Plus size={14} color={c.muted} strokeWidth={1.75} />
-							</div>
-							{/* Generate bullet for a role — AI */}
-							{(formData.experiences ?? [])
-								.filter(exp => exp.id)
-								.map(exp => (
-									<div
-										key={exp.id}
-										onClick={() => handleKeywordRolePick(exp)}
-										style={{
-											padding: '12px 16px',
-											cursor: 'pointer',
-											display: 'flex',
-											alignItems: 'center',
-											gap: 12,
-											transition: 'background 100ms',
-										}}
-										onMouseEnter={e => {
-											;(
-												e.currentTarget as HTMLElement
-											).style.background = `${BRAND}10`
-										}}
-										onMouseLeave={e => {
-											;(e.currentTarget as HTMLElement).style.background =
-												'transparent'
-										}}
-									>
-										<Briefcase size={16} color={c.muted} strokeWidth={1.75} />
-										<div style={{ flex: 1, minWidth: 0 }}>
-											<div
-												style={{
-													fontSize: 14,
-													fontWeight: 500,
-													color: c.text,
-													whiteSpace: 'nowrap',
-													overflow: 'hidden',
-													textOverflow: 'ellipsis',
-												}}
-											>
-												{exp.role || 'Untitled Role'}
-											</div>
-											{exp.company && (
-												<div
-													style={{
-														fontSize: 12,
-														color: c.muted,
-														whiteSpace: 'nowrap',
-														overflow: 'hidden',
-														textOverflow: 'ellipsis',
-													}}
-												>
-													{exp.company}
-												</div>
-											)}
-										</div>
-										<Sparkles size={14} color={c.muted} strokeWidth={1.75} />
-									</div>
-								))}
-						</div>
-					</div>
-				</>
-			)}
-
-			{/* Skills Add Popover — multi-keyword */}
-			{skillsAddPopover && (
-				<>
-					<div
-						onClick={() => setSkillsAddPopover(null)}
-						style={{ position: 'fixed', inset: 0, zIndex: 90 }}
-					/>
-					<div
-						style={{
-							position: 'fixed',
-							zIndex: 91,
-							width: 380,
-							...(skillsAddPopover.anchorRect.bottom + 350 > window.innerHeight
-								? { bottom: window.innerHeight - skillsAddPopover.anchorRect.top + 6 }
-								: { top: skillsAddPopover.anchorRect.bottom + 6 }),
-							left: Math.min(skillsAddPopover.anchorRect.left, window.innerWidth - 396),
-							background: c.bgEl,
-							borderRadius: 10,
-							border: `1px solid ${c.border}`,
-							boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
-							overflow: 'hidden',
-						}}
-					>
-						<div style={{ padding: '12px 16px', borderBottom: `1px solid ${c.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-							<span style={{ fontSize: 15, fontWeight: 600, color: c.text }}>
-								Add Missing Keywords
-							</span>
-							<button
-								onClick={() => {
-									const remaining = skillsAddPopover.keywords.filter(kw => !skillsAddPopover.addedKeywords.has(kw))
-									remaining.forEach(kw => handleAddKeywordToSkills(kw))
-									setSkillsAddPopover(prev => prev ? {
-										...prev,
-										addedKeywords: new Set(prev.keywords),
-									} : null)
-									toast({ title: 'Keywords added', description: `Added ${remaining.length} keywords to Skills.` })
-								}}
-								style={{
-									fontSize: 12, fontWeight: 600, color: c.brandText,
-									background: `${BRAND}20`, border: `1px solid ${BRAND}40`,
-									borderRadius: 6, padding: '5px 12px', cursor: 'pointer',
-								}}
-							>
-								Add All to Skills
-							</button>
-						</div>
-						<div style={{ maxHeight: 360, overflow: 'auto', padding: '4px 0' }}>
-							{skillsAddPopover.keywords.map(kw => {
-								const isAdded = skillsAddPopover.addedKeywords.has(kw)
-								return (
-									<div key={kw} style={{ borderBottom: `1px solid ${c.borderSub}` }}>
-										<div
-											style={{
-												padding: '10px 16px',
-												display: 'flex',
-												alignItems: 'center',
-												justifyContent: 'space-between',
-												gap: 10,
-												opacity: isAdded ? 0.5 : 1,
-											}}
-										>
-											<span style={{ fontSize: 14, color: c.text, fontWeight: 500 }}>
-												{kw}
-											</span>
-											{isAdded ? (
-												<span style={{ fontSize: 12, color: SUCCESS, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
-													<CheckCircle2 size={14} strokeWidth={2} /> Added
-												</span>
-											) : (
-												<button
-													onClick={() => {
-														handleAddKeywordToSkills(kw)
-														setSkillsAddPopover(prev => prev ? {
-															...prev,
-															addedKeywords: new Set([...prev.addedKeywords, kw]),
-														} : null)
-													}}
-													style={{
-														fontSize: 12, fontWeight: 600, color: c.brandText,
-														background: `${BRAND}15`, border: `1px solid ${BRAND}40`,
-														borderRadius: 5, padding: '4px 10px', cursor: 'pointer',
-														display: 'flex', alignItems: 'center', gap: 4,
-													}}
-												>
-													<Code2 size={12} strokeWidth={2} /> Add to Skills
-												</button>
-											)}
-										</div>
-										{/* Show experience options for adding keyword to a bullet */}
-										{!isAdded && (formData.experiences ?? []).filter(exp => exp.id).length > 0 && (
-											<div style={{ padding: '2px 16px 8px', display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-												{(formData.experiences ?? []).filter(exp => exp.id).map(exp => (
-													<button
-														key={exp.id}
-														onClick={() => {
-															setSkillsAddPopover(null)
-															setSelectedExperience(exp)
-															setSelectedBullet({ content: '', experienceId: exp.id!, bulletIndex: -1 })
-															setDiagnosticContext({
-																issueType: 'missing-keywords',
-																reason: `Incorporate the keyword "${kw}" naturally into this achievement`,
-																missingKeywords: [kw],
-															})
-															setAiModalInitialTab('generate')
-															setShowAIModal(true)
-														}}
-														style={{
-															fontSize: 11, color: c.muted, background: c.bgSurf,
-															border: `1px solid ${c.border}`, borderRadius: 5,
-															padding: '3px 8px', cursor: 'pointer',
-															display: 'flex', alignItems: 'center', gap: 4,
-															transition: 'all 100ms',
-														}}
-														onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = c.brandText; (e.currentTarget as HTMLElement).style.borderColor = `${BRAND}60` }}
-														onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = c.muted; (e.currentTarget as HTMLElement).style.borderColor = c.border }}
-													>
-														<Sparkles size={10} strokeWidth={2} />
-														{exp.company || exp.role || 'Role'}
-													</button>
-												))}
-											</div>
-										)}
-									</div>
-								)
-							})}
-						</div>
-					</div>
-				</>
-			)}
-
-			{/* Summary Fix Modal */}
-			{summaryFixModal && (
-				<>
-					<div
-						onClick={() => setSummaryFixModal(null)}
-						style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(0,0,0,0.5)' }}
-					/>
-					<div style={{
-						position: 'fixed', zIndex: 81,
-						top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-						width: 520, maxWidth: '90vw', maxHeight: '80vh',
-						background: c.bgEl, borderRadius: 12,
-						border: `1px solid ${c.border}`,
-						boxShadow: '0 16px 48px rgba(0,0,0,0.35)',
-						display: 'flex', flexDirection: 'column', overflow: 'hidden',
-					}}>
-						<div style={{ padding: '16px 20px', borderBottom: `1px solid ${c.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-							<span style={{ fontSize: 15, fontWeight: 600, color: c.text }}>Shorten Summary</span>
-							<button onClick={() => setSummaryFixModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: c.dim, padding: 4 }}>
-								<X size={16} />
-							</button>
-						</div>
-						<div style={{ padding: '16px 20px', overflow: 'auto', flex: 1 }}>
-							{/* Current */}
-							<div style={{ marginBottom: 16 }}>
-								<div style={{ fontSize: 11, fontWeight: 600, color: ERROR, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 6 }}>
-									Current ({summaryFixModal.original.length} chars)
-								</div>
-								<div style={{ padding: '10px 12px', borderRadius: 8, background: `${ERROR}08`, border: `1px solid ${ERROR}20`, fontSize: 13, color: c.muted, lineHeight: 1.5 }}>
-									{summaryFixModal.original}
-								</div>
-							</div>
-							{/* Shortened */}
-							<div>
-								<div style={{ fontSize: 11, fontWeight: 600, color: SUCCESS, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 6 }}>
-									Shortened ({summaryFixModal.shortened.length} chars)
-								</div>
-								<textarea
-									value={summaryFixModal.shortened}
-									onChange={e => setSummaryFixModal(prev => prev ? { ...prev, shortened: e.target.value } : null)}
-									style={{
-										width: '100%', minHeight: 80, padding: '10px 12px',
-										borderRadius: 8, border: `1px solid ${SUCCESS}30`,
-										background: `${SUCCESS}08`, color: c.text,
-										fontSize: 13, lineHeight: 1.5, fontFamily: 'inherit',
-										resize: 'vertical', outline: 'none', boxSizing: 'border-box',
-									}}
-								/>
-								<div style={{ fontSize: 11, color: summaryFixModal.shortened.length <= 250 ? SUCCESS : WARN, marginTop: 4 }}>
-									{summaryFixModal.shortened.length}/250 characters
-								</div>
-							</div>
-						</div>
-						<div style={{ padding: '12px 20px', borderTop: `1px solid ${c.border}`, display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-							<button onClick={() => setSummaryFixModal(null)} style={{
-								fontSize: 13, fontWeight: 500, padding: '7px 14px', borderRadius: 6,
-								background: 'transparent', border: `1px solid ${c.border}`, color: c.muted, cursor: 'pointer',
-							}}>
-								Cancel
-							</button>
-							<button
-								onClick={() => {
-									const newFormData = { ...formData, about: summaryFixModal.shortened }
-									setFormData(newFormData)
-									debouncedSave(newFormData)
-									setSummaryFixModal(null)
-									scrollToSection('summary')
-									toast({ title: 'Summary updated', description: `Shortened to ${summaryFixModal.shortened.length} characters.` })
-								}}
-								style={{
-									fontSize: 13, fontWeight: 600, padding: '7px 16px', borderRadius: 6,
-									background: BRAND, border: 'none', color: '#fff', cursor: 'pointer',
-								}}
-							>
-								Accept
-							</button>
-						</div>
-					</div>
-				</>
-			)}
-
 			{/* TOP BAR */}
-			<div
-				style={{
-					height: 48,
-					borderBottom: `1px solid ${c.border}`,
-					display: 'flex',
-					alignItems: 'center',
-					justifyContent: 'space-between',
-					padding: '0 16px',
-					flexShrink: 0,
-					background: c.bgEl,
-				}}
-			>
-				<div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-					<Link to="/" style={{ display: 'flex', alignItems: 'center' }}>
-						<img
-							src="/RT_Logo_stacked.png"
-							alt="Resume Tailor"
-							style={{ height: 28 }}
-							className="dark:brightness-0 dark:invert"
-						/>
-					</Link>
-				</div>
-				{/* ⌘K Quick Actions */}
-				<div
-					onClick={() => {
-						setShowCommandPalette(true)
-						setCmdSearch('')
-						setCmdSelected(0)
-					}}
-					style={{
-						display: 'flex',
-						alignItems: 'center',
-						gap: 8,
-						padding: '5px 12px',
-						borderRadius: 6,
-						border: `1px solid ${c.border}`,
-						background: c.bgSurf,
-						cursor: 'pointer',
-						minWidth: 200,
-					}}
-					onMouseEnter={e => {
-						;(e.currentTarget as HTMLElement).style.borderColor = BRAND + '60'
-					}}
-					onMouseLeave={e => {
-						;(e.currentTarget as HTMLElement).style.borderColor = c.border
-					}}
-				>
-					<Search size={13} color={c.dim} strokeWidth={1.75} />
-					<span style={{ fontSize: 12, color: c.dim, flex: 1 }}>
-						Quick actions...
-					</span>
-					<span
-						style={{
-							fontSize: 10,
-							color: c.dim,
-							background: c.bgSurf,
-							border: `1px solid ${c.borderSub}`,
-							borderRadius: 3,
-							padding: '1px 5px',
-							fontFamily: 'system-ui',
-						}}
-					>
-						⌘K
-					</span>
-				</div>
-				<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-					<span
-						style={{
-							fontSize: 11,
-							color:
-								saveStatus === 'saving'
-									? AMBER
-									: saveStatus === 'saved'
-									? SUCCESS
-									: c.dim,
-							display: 'flex',
-							alignItems: 'center',
-							gap: 4,
-							transition: 'color 300ms',
-						}}
-					>
-						<Check size={12} strokeWidth={2} />
-						{saveStatus === 'saving'
-							? 'Saving...'
-							: saveStatus === 'saved'
-							? 'Saved'
-							: saveStatus === 'error'
-							? 'Error'
-							: ''}
-					</span>
-					<button
-						ref={customizeBtnRef}
-						onClick={() => setShowTemplateGallery(true)}
-						style={{
-							display: 'flex',
-							alignItems: 'center',
-							gap: 6,
-							padding: '6px 14px',
-							borderRadius: 5,
-							border: `1px solid ${BRAND}40`,
-							background: `${BRAND}08`,
-							color: c.brandText,
-							fontSize: 13,
-							fontWeight: 500,
-							cursor: 'pointer',
-						}}
-					>
-						<Palette size={14} strokeWidth={2} />
-						Customize
-					</button>
-					<button
-						onClick={toggleDarkMode}
-						style={{
-							width: 32,
-							height: 32,
-							borderRadius: 6,
-							border: 'none',
-							background: 'transparent',
-							cursor: 'pointer',
-							display: 'flex',
-							alignItems: 'center',
-							justifyContent: 'center',
-						}}
-					>
-						{isDark ? (
-							<Sun size={16} color={c.dim} strokeWidth={1.75} />
-						) : (
-							<Moon size={16} color={c.dim} strokeWidth={1.75} />
-						)}
-					</button>
-					<div
-						style={{
-							width: 1,
-							height: 20,
-							background: c.border,
-							margin: '0 4px',
-						}}
-					/>
-					<button
-						onClick={() => {
-							setScorePanel(!scorePanel)
-						}}
-						style={{
-							display: 'flex',
-							alignItems: 'center',
-							gap: 5,
-							padding: '5px 10px',
-							borderRadius: 5,
-							border: `1px solid ${c.border}`,
-							background: 'transparent',
-							color: c.muted,
-							fontSize: 12,
-							cursor: 'pointer',
-						}}
-					>
-						<Target size={14} color={c.dim} strokeWidth={1.75} />
-						<span
-							style={{ color: getTier(scores.overall).color, fontWeight: 600 }}
-						>
-							{scores.overall}
-						</span>
-					</button>
-					{hasTailorSnapshot && (
-						<button
-							onClick={handleTailorUndo}
-							style={{
-								display: 'flex',
-								alignItems: 'center',
-								gap: 5,
-								padding: '5px 10px',
-								borderRadius: 5,
-								border: `1px solid ${c.border}`,
-								background: 'transparent',
-								color: c.muted,
-								fontSize: 12,
-								cursor: 'pointer',
-							}}
-						>
-							<Undo2 size={13} strokeWidth={1.75} />
-							Undo tailoring
-						</button>
-					)}
-					<button
-						ref={tailorBtnRef}
-						onClick={() => setTailorPanelOpen(true)}
-						style={{
-							display: 'flex',
-							alignItems: 'center',
-							gap: 6,
-							padding: '6px 14px',
-							borderRadius: 5,
-							border: `1px solid ${BRAND}40`,
-							background: `${BRAND}10`,
-							color: c.brandText,
-							fontSize: 13,
-							fontWeight: 500,
-							cursor: 'pointer',
-						}}
-					>
-						<Sparkles size={14} strokeWidth={2} />
-						Tailor
-					</button>
-					<button
-						onClick={handleClickDownloadPDF}
-						style={{
-							display: 'flex',
-							alignItems: 'center',
-							gap: 6,
-							padding: '6px 14px',
-							borderRadius: 5,
-							border: 'none',
-							background: BRAND,
-							color: '#fff',
-							fontSize: 13,
-							fontWeight: 500,
-							cursor: 'pointer',
-						}}
-					>
-						<Download size={14} strokeWidth={2} />
-						Download Resume
-					</button>
-					{user ? (
-						<div ref={profileRef} style={{ position: 'relative' }}>
-							<button
-								onClick={() => setProfileOpen(!profileOpen)}
-								style={{
-									display: 'flex',
-									alignItems: 'center',
-									gap: 8,
-									padding: '4px 10px 4px 4px',
-									borderRadius: 6,
-									border: `1px solid ${c.border}`,
-									background: 'transparent',
-									cursor: 'pointer',
-									color: c.text,
-									fontSize: 13,
-									fontWeight: 500,
-								}}
-							>
-								<img
-									src={getUserImgSrc(user.imageId)}
-									alt={user.name ?? user.username}
-									style={{
-										width: 28,
-										height: 28,
-										borderRadius: '50%',
-										objectFit: 'cover' as const,
-									}}
-								/>
-								<span
-									style={{
-										maxWidth: 120,
-										overflow: 'hidden',
-										textOverflow: 'ellipsis',
-										whiteSpace: 'nowrap' as const,
-									}}
-								>
-									{user.name ?? user.username}
-								</span>
-								<ChevronDown size={12} color={c.dim} />
-							</button>
-							{profileOpen && (
-								<div
-									style={{
-										position: 'absolute',
-										top: '100%',
-										right: 0,
-										marginTop: 4,
-										width: 200,
-										background: c.bgEl,
-										border: `1px solid ${c.border}`,
-										borderRadius: 8,
-										boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
-										zIndex: 250,
-										overflow: 'hidden',
-										padding: '4px 0',
-									}}
-								>
-									<Link
-										to={`/users/${user.username}`}
-										style={{
-											display: 'flex',
-											alignItems: 'center',
-											gap: 8,
-											padding: '8px 12px',
-											color: c.text,
-											fontSize: 13,
-											textDecoration: 'none',
-											cursor: 'pointer',
-										}}
-										onMouseEnter={e => {
-											;(e.currentTarget as HTMLElement).style.background =
-												c.bgSurf
-										}}
-										onMouseLeave={e => {
-											;(e.currentTarget as HTMLElement).style.background =
-												'transparent'
-										}}
-									>
-										<UserIcon size={14} color={c.dim} strokeWidth={1.75} />
-										Profile
-									</Link>
-									<Form
-										action={`/resources/stripe/manage-subscription?redirectTo=${encodeURIComponent(
-											'/builder',
-										)}`}
-										method="POST"
-										ref={manageSubFormRef}
-										style={{ display: 'contents' }}
-									>
-										<input type="hidden" name="userId" value={user.id} />
-										<button
-											type="button"
-											onClick={() => {
-												submitForm(manageSubFormRef.current)
-												setProfileOpen(false)
-											}}
-											style={{
-												display: 'flex',
-												alignItems: 'center',
-												gap: 8,
-												padding: '8px 12px',
-												color: c.text,
-												fontSize: 13,
-												background: 'transparent',
-												border: 'none',
-												width: '100%',
-												textAlign: 'left' as const,
-												cursor: 'pointer',
-											}}
-											onMouseEnter={e => {
-												;(e.currentTarget as HTMLElement).style.background =
-													c.bgSurf
-											}}
-											onMouseLeave={e => {
-												;(e.currentTarget as HTMLElement).style.background =
-													'transparent'
-											}}
-										>
-											<CreditCard size={14} color={c.dim} strokeWidth={1.75} />
-											Manage Subscription
-										</button>
-									</Form>
-									<div
-										style={{ height: 1, background: c.border, margin: '4px 0' }}
-									/>
-									<Form
-										action="/logout"
-										method="POST"
-										ref={logoutFormRef}
-										style={{ display: 'contents' }}
-									>
-										<button
-											type="button"
-											onClick={() => {
-												submitForm(logoutFormRef.current)
-												setProfileOpen(false)
-											}}
-											style={{
-												display: 'flex',
-												alignItems: 'center',
-												gap: 8,
-												padding: '8px 12px',
-												color: c.text,
-												fontSize: 13,
-												background: 'transparent',
-												border: 'none',
-												width: '100%',
-												textAlign: 'left' as const,
-												cursor: 'pointer',
-											}}
-											onMouseEnter={e => {
-												;(e.currentTarget as HTMLElement).style.background =
-													c.bgSurf
-											}}
-											onMouseLeave={e => {
-												;(e.currentTarget as HTMLElement).style.background =
-													'transparent'
-											}}
-										>
-											<LogOut size={14} color={c.dim} strokeWidth={1.75} />
-											Logout
-										</button>
-									</Form>
-								</div>
-							)}
-						</div>
-					) : (
-						<button
-							onClick={() => navigate('/login?redirectTo=/builder')}
-							style={{
-								display: 'flex',
-								alignItems: 'center',
-								gap: 6,
-								padding: '6px 14px',
-								borderRadius: 5,
-								border: `1px solid ${c.border}`,
-								background: 'transparent',
-								color: c.text,
-								fontSize: 13,
-								fontWeight: 500,
-								cursor: 'pointer',
-							}}
-						>
-							Log in
-						</button>
-					)}
-				</div>
-			</div>
+			<BuilderNav
+				c={c}
+				isDark={isDark}
+				scorePanel={scorePanel}
+				setScorePanel={setScorePanel}
+				showCommandPalette={showCommandPalette}
+				setShowCommandPalette={setShowCommandPalette}
+				setCmdSearch={setCmdSearch}
+				setCmdSelected={setCmdSelected}
+				setShowTemplateGallery={setShowTemplateGallery}
+				saveStatus={saveStatus}
+				toggleDarkMode={toggleDarkMode}
+				handleClickDownloadPDF={handleClickDownloadPDF}
+				user={user}
+				profileOpen={profileOpen}
+				setProfileOpen={setProfileOpen}
+				profileRef={profileRef}
+				logoutFormRef={logoutFormRef}
+				manageSubFormRef={manageSubFormRef}
+				submitForm={submitForm}
+				navigate={navigate}
+				BRAND={BRAND}
+				AMBER={AMBER}
+				SUCCESS={SUCCESS}
+			/>
 
 			{/* MAIN */}
 			<div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
@@ -3100,7 +2143,7 @@ export default function ResumeBuilder() {
 								<div
 									key={r.id}
 									onClick={() => handleResumeSwitch(r.id!)}
-									className="group/resume"
+									className={`group/resume${formData.id !== r.id ? ' hover-bg' : ''}`}
 									style={{
 										display: 'flex',
 										alignItems: 'center',
@@ -3115,16 +2158,6 @@ export default function ResumeBuilder() {
 												: '2px solid transparent',
 										transition: 'all 150ms',
 										position: 'relative',
-									}}
-									onMouseEnter={e => {
-										if (formData.id !== r.id)
-											(e.currentTarget as HTMLElement).style.background =
-												c.bgSurf
-									}}
-									onMouseLeave={e => {
-										if (formData.id !== r.id)
-											(e.currentTarget as HTMLElement).style.background =
-												'transparent'
 									}}
 								>
 									<div
@@ -3186,7 +2219,8 @@ export default function ResumeBuilder() {
 													const val = e.currentTarget.value.trim()
 													if (
 														val &&
-														val !== (r.name || r.job?.title || 'Untitled')
+														val !== (r.name || r.job?.title || 'Untitled') &&
+														r.id === formData.id
 													) {
 														const newFormData = { ...formData, name: val }
 														setFormData(newFormData)
@@ -3215,7 +2249,7 @@ export default function ResumeBuilder() {
 													overflow: 'hidden',
 												}}
 											>
-												{r.name || r.job?.title || 'Untitled'}
+												{r.jobId ? ([r.job?.title, r.job?.company].filter(Boolean).join(' — ') || r.name || 'Untitled') : (r.name || 'Untitled')}
 											</div>
 										)}
 									</div>
@@ -3280,12 +2314,7 @@ export default function ResumeBuilder() {
 									marginTop: 5,
 									color: c.dim,
 								}}
-								onMouseEnter={e => {
-									;(e.currentTarget as HTMLElement).style.color = c.brandText
-								}}
-								onMouseLeave={e => {
-									;(e.currentTarget as HTMLElement).style.color = c.dim
-								}}
+								className="hover-brand"
 							>
 								<Plus size={17} strokeWidth={2} />
 								<span style={{ fontSize: 16, fontWeight: 500 }}>
@@ -3326,12 +2355,7 @@ export default function ResumeBuilder() {
 										cursor: 'pointer',
 										color: c.dim,
 									}}
-									onMouseEnter={e => {
-										;(e.currentTarget as HTMLElement).style.color = c.brandText
-									}}
-									onMouseLeave={e => {
-										;(e.currentTarget as HTMLElement).style.color = c.dim
-									}}
+									className="hover-brand"
 								>
 									<Plus size={17} strokeWidth={2} />
 									<span style={{ fontSize: 16, fontWeight: 500 }}>Add Job</span>
@@ -3394,21 +2418,7 @@ export default function ResumeBuilder() {
 														transition: 'all 150ms',
 														opacity: isVisible ? 1 : 0.4,
 													}}
-													onMouseEnter={e => {
-														if (isVisible && activeSection !== s.id)
-															(
-																e.currentTarget as HTMLElement
-															).style.background = c.bgSurf
-													}}
-													onMouseLeave={e => {
-														if (isVisible && activeSection !== s.id)
-															(
-																e.currentTarget as HTMLElement
-															).style.background =
-																activeSection === s.id
-																	? `${BRAND}12`
-																	: 'transparent'
-													}}
+													className={isVisible && activeSection !== s.id ? 'hover-bg' : undefined}
 												>
 													<s.icon
 														size={20}
@@ -3448,14 +2458,7 @@ export default function ResumeBuilder() {
 														opacity: 0.5,
 														flexShrink: 0,
 													}}
-													onMouseEnter={e => {
-														;(e.currentTarget as HTMLElement).style.opacity =
-															'1'
-													}}
-													onMouseLeave={e => {
-														;(e.currentTarget as HTMLElement).style.opacity =
-															'0.5'
-													}}
+													className="hover-reveal"
 												>
 													{isVisible ? (
 														<Eye size={15} color={c.dim} strokeWidth={1.75} />
@@ -3556,12 +2559,37 @@ export default function ResumeBuilder() {
 						onCommandK={() => setShowCommandPalette(true)}
 						toolbarHoveredRef={toolbarHoveredRef}
 						canvasBackground={c.canvas}
+						canvasScale={canvasScale}
 					/>
 					<FloatingToolbar
 						hovered={hoveredElement}
 						onAction={handleStructuralAction}
 						onAITailor={handleToolbarAITailor}
 						onToggleSection={(sectionId) => handleStructuralAction({ type: 'toggleSection', sectionId })}
+						onRevertBullet={(descId) => {
+							const meta = bulletUndoMapRef.current.get(descId)
+							if (!meta) return
+							setFormData(prev => {
+								const next = { ...prev, experiences: [...(prev.experiences ?? [])] }
+								const expIdx = next.experiences!.findIndex(e => e.id === meta.experienceId)
+								if (expIdx === -1) return prev
+								const exp = { ...next.experiences![expIdx] }
+								if (meta.action === 'rewrite' && meta.originalText !== null) {
+									exp.descriptions = (exp.descriptions ?? []).map(d =>
+										d.id === descId ? { ...d, content: meta.originalText! } : d,
+									)
+								} else {
+									exp.descriptions = (exp.descriptions ?? []).filter(d => d.id !== descId)
+								}
+								next.experiences![expIdx] = exp
+								return next
+							})
+							bulletUndoMapRef.current.delete(descId)
+							requestAnimationFrame(() => {
+								iframeComponentRef.current?.markStructuralUpdate()
+							})
+						}}
+						revertableIds={new Set(bulletUndoMapRef.current.keys())}
 						onDismiss={() => setHoveredElement(null)}
 						toolbarHoveredRef={toolbarHoveredRef}
 						sectionOrder={sectionOrder}
@@ -3573,13 +2601,14 @@ export default function ResumeBuilder() {
 				{scorePanel && (
 					<div
 						style={{
-							width: 390,
+							width: 340,
 							borderLeft: `1px solid ${c.border}`,
 							background: c.bgEl,
 							display: 'flex',
 							flexDirection: 'column',
 							flexShrink: 0,
 							overflow: 'auto',
+							position: 'relative',
 						}}
 					>
 						<div
@@ -3591,7 +2620,7 @@ export default function ResumeBuilder() {
 							}}
 						>
 							<span style={{ fontSize: 16, fontWeight: 600, color: c.text }}>
-								Fit Score
+								Match Analysis
 							</span>
 							<button
 								onClick={() => setScorePanel(false)}
@@ -3610,532 +2639,118 @@ export default function ResumeBuilder() {
 								<PanelRightClose size={18} color={c.dim} strokeWidth={1.75} />
 							</button>
 						</div>
-						{!formData.jobId ? (
-							<div
-								style={{
-									padding: '40px 21px',
-									textAlign: 'center',
-									display: 'flex',
-									flexDirection: 'column',
-									alignItems: 'center',
-									gap: 12,
-								}}
-							>
-								<Target size={32} color={c.dim} strokeWidth={1.5} />
-								<div style={{ fontSize: 15, fontWeight: 500, color: c.muted }}>
-									Select a target job to see your Fit Score
-								</div>
-								<div style={{ fontSize: 13, color: c.dim, lineHeight: 1.4 }}>
-									Your resume will be scored against the job description's
-									keywords and requirements.
-								</div>
-								<button
-									onClick={() => setShowCreateJob(true)}
-									style={{
-										marginTop: 8,
-										padding: '8px 18px',
-										borderRadius: 6,
-										border: 'none',
-										background: BRAND,
-										color: '#fff',
-										fontSize: 13,
-										fontWeight: 500,
-										cursor: 'pointer',
-										display: 'flex',
-										alignItems: 'center',
-										gap: 6,
-									}}
-								>
-									<Plus size={14} strokeWidth={2} />
-									Add a Job
-								</button>
-							</div>
-						) : (
-							<>
-								<ScoreArc
-									score={scores.overall}
-									onClick={() => setShowScoreDetail(true)}
-									c={c}
-								/>
-								<div style={{ padding: '0 21px 5px', textAlign: 'center' }}>
-									<span
-										onClick={() => setShowScoreDetail(true)}
-										style={{
-											fontSize: 14,
-											color: c.brandText,
-											cursor: 'pointer',
-											display: 'flex',
-											alignItems: 'center',
-											gap: 5,
-											justifyContent: 'center',
-										}}
-									>
-										View full analysis <ArrowRight size={14} />
-									</span>
-								</div>
-								<div style={{ padding: '9px 21px 14px' }}>
-									<div
-										style={{
-											padding: '12px 14px',
-											borderRadius: 7,
-											background: `${getTier(scores.overall).color}08`,
-											border: `1px solid ${getTier(scores.overall).color}20`,
-											fontSize: 16,
-											color: getTier(scores.overall).color,
-											lineHeight: 1.4,
-										}}
-									>
-										{scoreMsg(scores.overall)}
-									</div>
-								</div>
+						<TruthPanel
+							formData={formData}
+							selectedJob={selectedJob ?? null}
+							theme={c}
+							refetchKey={matchRefetchKey}
+							onGenerateCoverLetter={() => {
+								setHasTakenAction(true)
+								handleGenerateCoverLetter()
+							}}
+							onMatchLoaded={() => setHasReviewedMatch(true)}
+							onBulletsGenerated={(changes, gaps, summary) => {
+								setHasTakenAction(true)
+								const snapshot = structuredClone(formData)
+								const highlightIds: string[] = []
 
-								{/* Section scores */}
-								<div style={{ padding: '0 21px 18px' }}>
-									<span
-										style={{
-											fontSize: 14,
-											fontWeight: 600,
-											color: c.dim,
-											textTransform: 'uppercase',
-											letterSpacing: '0.04em',
-										}}
-									>
-										Section Scores
-									</span>
-									<div style={{ marginTop: 9 }}>
-										{(
-											[
-												['Keyword Match', scores.keyword, Target],
-												['Metrics', scores.metrics, TrendingUp],
-												['Action Verbs', scores.actionVerbs, Zap],
-												['Length', scores.length, AlignLeft],
-											] as [string, number, any][]
-										).map(([l, s, I]) => (
-											<div
-												key={l}
-												style={{
-													display: 'flex',
-													alignItems: 'center',
-													justifyContent: 'space-between',
-													padding: '8px 0',
-												}}
-											>
-												<div
-													style={{
-														display: 'flex',
-														alignItems: 'center',
-														gap: 9,
-													}}
-												>
-													<I size={17} color={c.dim} strokeWidth={1.75} />
-													<span style={{ fontSize: 16, color: c.muted }}>
-														{l}
-													</span>
-												</div>
-												<div
-													style={{
-														display: 'flex',
-														alignItems: 'center',
-														gap: 7,
-													}}
-												>
-													<div
-														style={{
-															width: 60,
-															height: 6,
-															borderRadius: 3,
-															background: c.border,
-															overflow: 'hidden',
-														}}
-													>
-														<div
-															style={{
-																width: `${s}%`,
-																height: '100%',
-																borderRadius: 3,
-																background: getTier(s).color,
-																transition: 'width 0.8s',
-															}}
-														/>
-													</div>
-													<span
-														style={{
-															fontSize: 15,
-															color: getTier(s).color,
-															fontWeight: 500,
-															width: 28,
-															textAlign: 'right',
-														}}
-													>
-														{s}
-													</span>
-												</div>
-											</div>
-										))}
-									</div>
-								</div>
-								<div
-									style={{ height: 1, background: c.border, margin: '0 21px' }}
-								/>
+								// Build per-bullet undo map
+								const undoMap = new Map(bulletUndoMapRef.current)
+								for (const change of changes) {
+									const undoId = change.action === 'rewrite' && change.existingBulletId
+										? change.existingBulletId
+										: change.descriptionId
+									undoMap.set(undoId, {
+										action: change.action,
+										experienceId: change.experienceId,
+										originalText: change.originalText,
+									})
+								}
+								bulletUndoMapRef.current = undoMap
 
-								{/* Opportunities */}
-								<div style={{ padding: '18px 21px 9px' }}>
-									<div
-										style={{
-											display: 'flex',
-											alignItems: 'center',
-											justifyContent: 'space-between',
-											marginBottom: 12,
-										}}
-									>
-										<span
-											style={{
-												fontSize: 14,
-												fontWeight: 600,
-												color: c.dim,
-												textTransform: 'uppercase',
-												letterSpacing: '0.04em',
-											}}
-										>
-											Opportunities
-										</span>
-										<span style={{ fontSize: 14, color: c.dim }}>
-											{checklist.filter(ch => !ch.completed).length} remaining
-										</span>
-									</div>
-									{checklist.map((ch, i) => {
-										const hasFlaggedBullets = !ch.completed && ch.flaggedBullets && ch.flaggedBullets.length > 0
-										const actionHint = ch.completed ? null
-											: hasFlaggedBullets ? `Fix with AI (${ch.flaggedBullets!.length} bullet${ch.flaggedBullets!.length !== 1 ? 's' : ''})`
-											: ch.fixType === 'auto-reorder' ? 'Click to reorder'
-											: ch.fixType === 'skills-add' ? 'Click to add keywords'
-											: ch.fixType === 'keyword-popover' ? 'Click to add keywords'
-											: ch.fixType === 'summary-shorten' ? 'Click to shorten'
-											: ch.fixType === 'generate-bullets' ? 'Click to generate'
-											: ch.fixType === 'ai-modal' ? 'Fix with AI'
-											: ch.fixType === 'summary-add' ? 'Click to edit'
-											: 'Fix this'
-										return (
-										<div
-											key={ch.id || i}
-											onClick={(e) => {
-												if (ch.completed) return
-												checklistClickRect.current = (e.currentTarget as HTMLElement).getBoundingClientRect()
-												handleChecklistAction(ch, (e.currentTarget as HTMLElement).getBoundingClientRect())
-											}}
-											style={{
-												display: 'flex',
-												alignItems: 'flex-start',
-												gap: 9,
-												padding: '10px 4px',
-												borderBottom: `1px solid ${c.borderSub}`,
-												opacity: ch.completed ? 0.5 : 1,
-												cursor: ch.completed ? 'default' : 'pointer',
-												borderRadius: 6,
-												transition: 'background 120ms',
-											}}
-											onMouseEnter={e => { if (!ch.completed) (e.currentTarget as HTMLElement).style.background = '#c4956a14' }}
-											onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
-										>
-											{ch.completed ? (
-												<CheckCircle2
-													size={20}
-													color={SUCCESS}
-													strokeWidth={1.75}
-													style={{ marginTop: 1, flexShrink: 0 }}
-												/>
-											) : (
-												<Circle
-													size={20}
-													color={c.dim}
-													strokeWidth={1.75}
-													style={{ marginTop: 1, flexShrink: 0 }}
-												/>
-											)}
-											<div style={{ flex: 1 }}>
-												<span
-													style={{
-														fontSize: 16,
-														color: ch.completed ? c.dim : c.text,
-														lineHeight: 1.4,
-														textDecoration: ch.completed
-															? 'line-through'
-															: 'none',
-														display: 'block',
-													}}
-												>
-													{ch.text}
-												</span>
-												{actionHint && (
-													<div
-														style={{
-															fontSize: 12,
-															color: c.brandText,
-															marginTop: 4,
-															display: 'flex',
-															alignItems: 'center',
-															gap: 4,
-															fontWeight: 500,
-														}}
-													>
-														{(hasFlaggedBullets || ch.fixType === 'ai-modal') && (
-															<Sparkles
-																size={11}
-																color={c.brandText}
-																strokeWidth={2}
-															/>
-														)}
-														{actionHint} {!hasFlaggedBullets && ch.fixType !== 'ai-modal' && <ArrowRight size={10} />}
-													</div>
-												)}
-											</div>
-											{!ch.completed && (
-												<span
-													style={{
-														fontSize: 13,
-														fontWeight: 600,
-														padding: '2px 7px',
-														borderRadius: 5,
-														background:
-															ch.priority === 'high'
-																? `${WARN}18`
-																: `${BRAND}18`,
-														color: ch.priority === 'high' ? WARN : c.brandText,
-														textTransform: 'uppercase',
-														letterSpacing: '0.04em',
-														flexShrink: 0,
-														marginTop: 1,
-													}}
-												>
-													{ch.priority}
-												</span>
-											)}
-										</div>
+								// Build updated formData outside the setter so we can save it
+								const next = { ...formData, experiences: [...(formData.experiences ?? [])] }
+								if (summary) {
+									next.about = summary
+								}
+								for (const change of changes) {
+									const expIdx = next.experiences!.findIndex(e => e.id === change.experienceId)
+									if (expIdx === -1) {
+										console.warn('Bullet skipped — no experience with id:', change.experienceId, 'Available:', next.experiences!.map(e => e.id))
+										continue
+									}
+									const exp = { ...next.experiences![expIdx] }
+
+									if (change.action === 'rewrite' && change.existingBulletId) {
+										exp.descriptions = (exp.descriptions ?? []).map(d =>
+											d.id === change.existingBulletId
+												? { ...d, content: change.content }
+												: d,
 										)
-									})}
-								</div>
+										highlightIds.push(change.existingBulletId)
+									} else {
+										exp.descriptions = [
+											...(exp.descriptions ?? []),
+											{ id: change.descriptionId, content: change.content },
+										]
+										highlightIds.push(change.descriptionId)
+									}
+									next.experiences![expIdx] = exp
+								}
 
-								{/* Keywords — uses consolidated keywordMatches from scoring engine */}
-								{scores.keywordMatches.length > 0 &&
-									(() => {
-										const primaryMatches = scores.keywordMatches.filter(
-											(m: KeywordMatch) => m.tier === 'primary',
-										)
-										const secondaryMatches = scores.keywordMatches.filter(
-											(m: KeywordMatch) => m.tier === 'secondary',
-										)
-										const hasTiers = primaryMatches.length > 0
+								// Force iframe to accept the new HTML even if user is mid-edit
+								iframeComponentRef.current?.markStructuralUpdate()
+								setFormData(next)
+								debouncedSave(next)
 
-										const renderChip = (
-											m: KeywordMatch,
-											isPrimary: boolean,
-										) => {
-											const chipColor =
-												m.status === 'full'
-													? SUCCESS
-													: m.status === 'partial'
-													? WARN
-													: ERROR
-											const chipBg =
-												m.status === 'full'
-													? `${SUCCESS}15`
-													: m.status === 'partial'
-													? `${WARN}12`
-													: `${ERROR}12`
-											const isClickable = m.status !== 'full'
-											const tooltip =
-												m.status === 'full'
-													? `Found in ${m.sections.join(', ')}`
-													: m.status === 'partial'
-													? `In ${m.sections[0]} only — click to add to another role`
-													: 'Missing — click to generate a bullet'
-											return (
-												<span
-													key={m.keyword}
-													title={tooltip}
-													onClick={
-														isClickable
-															? e => {
-																	const rect = (
-																		e.currentTarget as HTMLElement
-																	).getBoundingClientRect()
-																	setKeywordPopover({
-																		keyword: m.keyword,
-																		status: m.status as 'missing' | 'partial',
-																		anchorRect: rect,
-																	})
-															  }
-															: undefined
-													}
-													style={{
-														display: 'inline-flex',
-														alignItems: 'center',
-														gap: 4,
-														fontSize: isPrimary ? 14 : 13,
-														padding: isPrimary ? '6px 12px' : '4px 9px',
-														borderRadius: 5,
-														fontWeight: 500,
-														background: chipBg,
-														color: chipColor,
-														border: `1px solid ${chipColor}30`,
-														cursor: isClickable ? 'pointer' : 'default',
-														transition: 'filter 150ms',
-													}}
-													onMouseEnter={
-														isClickable
-															? e => {
-																	;(
-																		e.currentTarget as HTMLElement
-																	).style.filter = 'brightness(1.15)'
-															  }
-															: undefined
-													}
-													onMouseLeave={
-														isClickable
-															? e => {
-																	;(
-																		e.currentTarget as HTMLElement
-																	).style.filter = 'none'
-															  }
-															: undefined
-													}
-												>
-													{m.status === 'full' ? (
-														<Check size={13} strokeWidth={2.5} />
-													) : m.status === 'partial' ? (
-														<Minus size={13} strokeWidth={2.5} />
-													) : (
-														<X size={13} strokeWidth={2.5} />
-													)}
-													{m.keyword}
-													{m.status === 'partial' && (
-														<span style={{ fontSize: 11, opacity: 0.8 }}>
-															({m.sections[0]})
-														</span>
-													)}
-													{m.status === 'full' && (
-														<span style={{ fontSize: 11, opacity: 0.8 }}>
-															({m.sectionCount})
-														</span>
-													)}
-													{isClickable && (
-														<Plus
-															size={11}
-															strokeWidth={2.5}
-															style={{ marginLeft: 2, opacity: 0.7 }}
-														/>
-													)}
-												</span>
-											)
-										}
+								// Queue highlights — the effect will apply them after formData settles
+								setPendingHighlights(highlightIds)
 
-										return (
-											<>
-												<div
-													style={{
-														height: 1,
-														background: c.border,
-														margin: '0 21px',
-													}}
-												/>
-												<div style={{ padding: 21 }}>
-													{hasTiers ? (
-														<>
-															<span
-																style={{
-																	fontSize: 14,
-																	fontWeight: 600,
-																	color: c.dim,
-																	textTransform: 'uppercase',
-																	letterSpacing: '0.04em',
-																}}
-															>
-																Must-Haves
-															</span>
-															<div
-																style={{
-																	display: 'flex',
-																	flexWrap: 'wrap',
-																	gap: 6,
-																	marginTop: 12,
-																}}
-															>
-																{primaryMatches.map((m: KeywordMatch) =>
-																	renderChip(m, true),
-																)}
-															</div>
-															{secondaryMatches.length > 0 && (
-																<>
-																	<span
-																		style={{
-																			fontSize: 14,
-																			fontWeight: 600,
-																			color: c.dim,
-																			textTransform: 'uppercase',
-																			letterSpacing: '0.04em',
-																			display: 'block',
-																			marginTop: 18,
-																		}}
-																	>
-																		Supporting
-																	</span>
-																	<div
-																		style={{
-																			display: 'flex',
-																			flexWrap: 'wrap',
-																			gap: 6,
-																			marginTop: 12,
-																		}}
-																	>
-																		{secondaryMatches.map((m: KeywordMatch) =>
-																			renderChip(m, false),
-																		)}
-																	</div>
-																</>
-															)}
-														</>
-													) : (
-														<>
-															<span
-																style={{
-																	fontSize: 14,
-																	fontWeight: 600,
-																	color: c.dim,
-																	textTransform: 'uppercase',
-																	letterSpacing: '0.04em',
-																}}
-															>
-																Keyword Match
-															</span>
-															<div
-																style={{
-																	display: 'flex',
-																	flexWrap: 'wrap',
-																	gap: 6,
-																	marginTop: 12,
-																}}
-															>
-																{scores.keywordMatches
-																	.slice(0, 12)
-																	.map((m: KeywordMatch) =>
-																		renderChip(m, false),
-																	)}
-															</div>
-														</>
-													)}
-												</div>
-											</>
-										)
-									})()}
-							</>
+								undoSnapshotRef.current = snapshot
+								toast({
+									title: `Updated ${changes.length} bullet${changes.length > 1 ? 's' : ''}${summary ? ' + summary' : ''}`,
+									description: 'See changes highlighted on your resume.',
+								})
+								setMatchRefetchKey(k => k + 1)
+							}}
+							onUndoBullets={undoSnapshotRef.current ? () => {
+								if (undoSnapshotRef.current) {
+									setFormData(undoSnapshotRef.current)
+									debouncedSave(undoSnapshotRef.current)
+									undoSnapshotRef.current = null
+									iframeComponentRef.current?.clearHighlights()
+									setMatchRefetchKey(k => k + 1)
+								}
+							} : undefined}
+							onSkipRole={() => {
+								setSelectedJob(null)
+							}}
+							onDownload={handleDownloadPDF}
+							onNextJob={() => {
+								setSelectedJob(null)
+								setShowCreateJob(true)
+							}}
+							hasCoverLetter={!!coverLetterText}
+						/>
+						{coverLetterOpen && (
+							<CoverLetterPanel
+								open={coverLetterOpen}
+								onClose={() => setCoverLetterOpen(false)}
+								formData={formData}
+								selectedJob={selectedJob ?? null}
+								theme={c}
+								coverLetterText={coverLetterText}
+								onTextChange={handleCoverLetterTextChange}
+								onRegenerate={handleGenerateCoverLetter}
+								isGenerating={isGeneratingCoverLetter}
+							/>
 						)}
 					</div>
 				)}
 			</div>
 
 			{/* ═══ COMMAND PALETTE ═══ */}
-			{showCommandPalette && (
-				<Backdrop onClick={() => setShowCommandPalette(false)}>
+			<Backdrop open={showCommandPalette} onClick={() => setShowCommandPalette(false)}>
 					<div
 						onClick={e => e.stopPropagation()}
 						style={{
@@ -4260,7 +2875,6 @@ export default function ResumeBuilder() {
 						</div>
 					</div>
 				</Backdrop>
-			)}
 
 			{/* ═══ TEMPLATE GALLERY SLIDE-OVER ═══ */}
 			<SlideOver
@@ -4269,6 +2883,192 @@ export default function ResumeBuilder() {
 				title="Customize"
 				c={c}
 			>
+				{/* Template Picker */}
+				<div style={{ marginBottom: 24 }}>
+					<span
+						style={{
+							fontSize: 11,
+							fontWeight: 600,
+							color: c.dim,
+							textTransform: 'uppercase',
+							letterSpacing: '0.04em',
+						}}
+					>
+						Template
+					</span>
+					<div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginTop: 10 }}>
+						{TEMPLATE_META.map(t => {
+							const isActive = formData.layout === t.id || (!formData.layout && t.id === 'simple') || (formData.layout === 'traditional' && t.id === 'simple')
+							const accent = t.defaultAccent
+							return (
+								<button
+									key={t.id}
+									onClick={() => applyTemplate(t.id)}
+									aria-label={`${t.name} template`}
+									aria-pressed={isActive}
+									style={{
+										padding: 0,
+										borderRadius: 8,
+										cursor: 'pointer',
+										background: isActive ? `${BRAND}08` : c.bg,
+										border: `2px solid ${isActive ? BRAND : c.border}`,
+										boxShadow: isActive ? `0 0 0 1px ${BRAND}30` : 'none',
+										transition: 'all 150ms',
+										overflow: 'hidden',
+									}}
+								>
+									{/* Mini preview SVG */}
+									<div style={{ padding: '10px 10px 6px', background: c.bg }}>
+										<svg viewBox="0 0 80 100" width="100%" style={{ display: 'block' }}>
+											{t.id === 'slate' && (
+												<>
+													{/* Bold name */}
+													<rect x="4" y="6" width="36" height="5" rx="1" fill={accent} />
+													{/* Pipe-separated headline bar */}
+													<line x1="4" y1="15" x2="76" y2="15" stroke="#ddd" strokeWidth="0.5" />
+													<rect x="4" y="17" width="14" height="2.5" rx="0.5" fill="#999" />
+													<text x="20" y="19.5" fontSize="3" fill="#ccc">|</text>
+													<rect x="23" y="17" width="18" height="2.5" rx="0.5" fill="#999" />
+													<text x="43" y="19.5" fontSize="3" fill="#ccc">|</text>
+													<rect x="46" y="17" width="12" height="2.5" rx="0.5" fill="#999" />
+													<line x1="4" y1="22" x2="76" y2="22" stroke="#ddd" strokeWidth="0.5" />
+													{/* Section header - thin rule */}
+													<rect x="4" y="28" width="22" height="2.5" rx="0.5" fill="#333" />
+													<line x1="4" y1="33" x2="76" y2="33" stroke="#e5e5e5" strokeWidth="0.5" />
+													{/* Disc bullets */}
+													<circle cx="8" cy="38" r="1.2" fill="#333" />
+													<rect x="12" y="36.5" width="50" height="2.5" rx="0.5" fill="#ddd" />
+													<circle cx="8" cy="44" r="1.2" fill="#333" />
+													<rect x="12" y="42.5" width="42" height="2.5" rx="0.5" fill="#ddd" />
+													{/* Skills grid */}
+													<rect x="4" y="54" width="22" height="2.5" rx="0.5" fill="#333" />
+													<line x1="4" y1="59" x2="76" y2="59" stroke="#e5e5e5" strokeWidth="0.5" />
+													<rect x="4" y="63" width="16" height="6" rx="1" fill="#f0f0f0" />
+													<rect x="23" y="63" width="20" height="6" rx="1" fill="#f0f0f0" />
+													<rect x="46" y="63" width="14" height="6" rx="1" fill="#f0f0f0" />
+													<rect x="4" y="72" width="18" height="6" rx="1" fill="#f0f0f0" />
+													<rect x="25" y="72" width="16" height="6" rx="1" fill="#f0f0f0" />
+												</>
+											)}
+											{t.id === 'warm' && (
+												<>
+													{/* Sand accent band */}
+													<rect x="0" y="0" width="80" height="28" fill="#f5f0eb" />
+													{/* Italic serif name */}
+													<rect x="4" y="6" width="40" height="6" rx="1" fill={accent} opacity="0.9" />
+													{/* Role + contact */}
+													<rect x="4" y="15" width="24" height="2.5" rx="0.5" fill="#888" />
+													<rect x="4" y="20" width="36" height="2" rx="0.5" fill="#aaa" />
+													{/* Section header - serif style */}
+													<rect x="4" y="34" width="26" height="3" rx="0.5" fill={accent} />
+													<line x1="4" y1="39.5" x2="50" y2="39.5" stroke={accent} strokeWidth="0.5" opacity="0.4" />
+													{/* Job anchor rule + triangle bullets */}
+													<rect x="4" y="44" width="30" height="2.5" rx="0.5" fill="#333" />
+													<rect x="50" y="44" width="18" height="2" rx="0.5" fill="#999" />
+													<text x="6" y="53" fontSize="4" fill={accent}>▸</text>
+													<rect x="12" y="50" width="52" height="2.5" rx="0.5" fill="#ddd" />
+													<text x="6" y="59" fontSize="4" fill={accent}>▸</text>
+													<rect x="12" y="56" width="44" height="2.5" rx="0.5" fill="#ddd" />
+													{/* Em-dash skills */}
+													<rect x="4" y="68" width="26" height="3" rx="0.5" fill={accent} />
+													<line x1="4" y1="73.5" x2="50" y2="73.5" stroke={accent} strokeWidth="0.5" opacity="0.4" />
+													<rect x="4" y="77" width="60" height="2.5" rx="0.5" fill="#ccc" />
+												</>
+											)}
+											{t.id === 'editorial' && (
+												<>
+													{/* Centered header */}
+													<rect x="18" y="6" width="44" height="6" rx="1" fill={accent} />
+													{/* Italic role - centered */}
+													<rect x="24" y="15" width="32" height="2.5" rx="0.5" fill="#888" />
+													{/* Centered contact */}
+													<rect x="20" y="20" width="40" height="2" rx="0.5" fill="#aaa" />
+													{/* Left vertical rule */}
+													<line x1="8" y1="30" x2="8" y2="95" stroke={accent} strokeWidth="1.5" opacity="0.15" />
+													{/* Section header - italic, no border */}
+													<rect x="14" y="32" width="24" height="2.5" rx="0.5" fill={accent} />
+													{/* Square bullets */}
+													<rect x="14" y="39" width="2" height="2" fill="#333" />
+													<rect x="19" y="39" width="48" height="2.5" rx="0.5" fill="#ddd" />
+													<rect x="14" y="45" width="2" height="2" fill="#333" />
+													<rect x="19" y="45" width="40" height="2.5" rx="0.5" fill="#ddd" />
+													{/* Job divider */}
+													<line x1="14" y1="53" x2="72" y2="53" stroke="#eee" strokeWidth="0.5" />
+													{/* Another entry */}
+													<rect x="14" y="57" width="28" height="2.5" rx="0.5" fill="#333" />
+													<rect x="14" y="63" width="2" height="2" fill="#333" />
+													<rect x="19" y="63" width="44" height="2.5" rx="0.5" fill="#ddd" />
+													<rect x="14" y="69" width="2" height="2" fill="#333" />
+													<rect x="19" y="69" width="36" height="2.5" rx="0.5" fill="#ddd" />
+												</>
+											)}
+											{t.id === 'modernist' && (
+												<>
+													{/* Bold name - stark */}
+													<rect x="12" y="6" width="38" height="5" rx="1" fill="#111" />
+													{/* Contact line */}
+													<rect x="12" y="14" width="50" height="2" rx="0.5" fill="#888" />
+													{/* Bold 3px rule */}
+													<rect x="12" y="20" width="56" height="2" fill={accent} />
+													{/* Outdented section label */}
+													<rect x="2" y="28" width="18" height="2" rx="0.5" fill={accent} />
+													{/* Content indented */}
+													<rect x="12" y="34" width="28" height="2.5" rx="0.5" fill="#333" />
+													<rect x="52" y="34" width="16" height="2" rx="0.5" fill="#999" style={{ fontStyle: 'italic' }} />
+													{/* Square bullets */}
+													<rect x="14" y="40" width="1.8" height="1.8" fill="#333" />
+													<rect x="19" y="40" width="46" height="2.5" rx="0.5" fill="#ddd" />
+													<rect x="14" y="46" width="1.8" height="1.8" fill="#333" />
+													<rect x="19" y="46" width="38" height="2.5" rx="0.5" fill="#ddd" />
+													{/* Another outdented label */}
+													<rect x="2" y="56" width="14" height="2" rx="0.5" fill={accent} />
+													<rect x="12" y="62" width="30" height="2.5" rx="0.5" fill="#333" />
+													<rect x="12" y="68" width="24" height="2" rx="0.5" fill="#999" />
+												</>
+											)}
+											{t.id === 'simple' && (
+												<>
+													{/* Bold name with accent */}
+													<rect x="4" y="6" width="34" height="5" rx="1" fill={accent || '#111'} />
+													{/* Role */}
+													<rect x="4" y="14" width="20" height="2.5" rx="0.5" fill="#666" />
+													{/* Contact dots */}
+													<rect x="4" y="19" width="40" height="2" rx="0.5" fill="#aaa" />
+													{/* Section header with accent underline */}
+													<rect x="4" y="28" width="24" height="2.5" rx="0.5" fill={accent || '#111'} />
+													<line x1="4" y1="33" x2="76" y2="33" stroke={accent || '#111'} strokeWidth="1" />
+													{/* Disc bullets */}
+													<circle cx="8" cy="39" r="1.2" fill="#333" />
+													<rect x="12" y="37.5" width="52" height="2.5" rx="0.5" fill="#ddd" />
+													<circle cx="8" cy="45" r="1.2" fill="#333" />
+													<rect x="12" y="43.5" width="44" height="2.5" rx="0.5" fill="#ddd" />
+													<circle cx="8" cy="51" r="1.2" fill="#333" />
+													<rect x="12" y="49.5" width="48" height="2.5" rx="0.5" fill="#ddd" />
+													{/* Education */}
+													<rect x="4" y="60" width="24" height="2.5" rx="0.5" fill={accent || '#111'} />
+													<line x1="4" y1="65" x2="76" y2="65" stroke={accent || '#111'} strokeWidth="1" />
+													<rect x="4" y="69" width="30" height="2.5" rx="0.5" fill="#333" />
+													<rect x="4" y="74" width="22" height="2" rx="0.5" fill="#888" />
+												</>
+											)}
+										</svg>
+									</div>
+									{/* Label */}
+									<div style={{
+										padding: '4px 8px 8px',
+										fontSize: 11,
+										fontWeight: isActive ? 600 : 500,
+										color: isActive ? c.brandText : c.text,
+										textAlign: 'center',
+									}}>
+										{t.name}
+									</div>
+								</button>
+							)
+						})}
+					</div>
+				</div>
+
 				{/* Accent Color */}
 				<div style={{ marginBottom: 20 }}>
 					<span
@@ -4285,32 +3085,35 @@ export default function ResumeBuilder() {
 					<div
 						style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}
 					>
-						{ACCENT_COLORS.map(color => (
-							<div
-								key={color}
-								onClick={() => applyAccentColor(color)}
+						{COLOR_PALETTE.map(color => (
+							<button
+								key={color.id}
+								onClick={() => applyAccentColor(color.hex)}
+								aria-label={color.name}
+								aria-pressed={formData.nameColor === color.hex}
 								style={{
 									width: 28,
 									height: 28,
 									borderRadius: '50%',
-									background: color,
+									background: color.hex,
 									cursor: 'pointer',
 									border:
-										formData.nameColor === color
+										formData.nameColor === color.hex
 											? `2px solid ${c.text}`
 											: '2px solid transparent',
 									boxShadow:
-										formData.nameColor === color
-											? `0 0 0 2px ${color}40`
+										formData.nameColor === color.hex
+											? `0 0 0 2px ${color.hex}40`
 											: 'none',
 									transition: 'all 150ms',
+									padding: 0,
 								}}
 							/>
 						))}
 					</div>
 				</div>
 
-				{/* Font Picker */}
+				{/* Font Pairing Picker */}
 				<div>
 					<span
 						style={{
@@ -4331,47 +3134,41 @@ export default function ResumeBuilder() {
 							marginTop: 10,
 						}}
 					>
-						{FONT_OPTIONS.map(f => (
-							<div
-								key={f.value}
-								onClick={() => applyFont(f.value)}
-								style={{
-									padding: '8px 12px',
-									borderRadius: 6,
-									cursor: 'pointer',
-									display: 'flex',
-									alignItems: 'center',
-									justifyContent: 'space-between',
-									background:
-										formData.font === f.value ? `${BRAND}12` : 'transparent',
-									border: `1px solid ${
-										formData.font === f.value ? BRAND + '40' : 'transparent'
-									}`,
-								}}
-								onMouseEnter={e => {
-									if (formData.font !== f.value)
-										(e.currentTarget as HTMLElement).style.background = c.bgSurf
-								}}
-								onMouseLeave={e => {
-									if (formData.font !== f.value)
-										(e.currentTarget as HTMLElement).style.background =
-											'transparent'
-								}}
-							>
-								<span
+						{VISIBLE_PAIRINGS.map(p => {
+							const isActive = formData.font === p.id
+							return (
+								<button
+									key={p.id}
+									onClick={() => applyFont(p.id)}
+									aria-label={`${p.label} font`}
+									aria-pressed={isActive}
 									style={{
-										fontSize: 13,
-										color: formData.font === f.value ? c.brandText : c.text,
-										fontFamily: f.family,
+										padding: '8px 12px',
+										borderRadius: 6,
+										cursor: 'pointer',
+										display: 'flex',
+										alignItems: 'center',
+										justifyContent: 'space-between',
+										background: isActive ? `${BRAND}12` : 'transparent',
+										border: `1px solid ${isActive ? BRAND + '40' : 'transparent'}`,
+										textAlign: 'left',
 									}}
 								>
-									{f.label}
-								</span>
-								{formData.font === f.value && (
-									<Check size={14} color={c.brandText} strokeWidth={2} />
-								)}
-							</div>
-						))}
+									<span
+										style={{
+											fontSize: 13,
+											color: isActive ? c.brandText : c.text,
+											fontFamily: p.headingFamily,
+										}}
+									>
+										{p.label}
+									</span>
+									{isActive && (
+										<Check size={14} color={c.brandText} strokeWidth={2} />
+									)}
+								</button>
+							)
+						})}
 					</div>
 				</div>
 
@@ -4390,7 +3187,7 @@ export default function ResumeBuilder() {
 					</span>
 					<div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
 						{(['small', 'medium', 'large'] as const).map(size => (
-							<div
+							<button
 								key={size}
 								onClick={() => {
 									setFormData(prev => {
@@ -4417,276 +3214,12 @@ export default function ResumeBuilder() {
 								}}
 							>
 								{size}
-							</div>
+							</button>
 						))}
 					</div>
 				</div>
 			</SlideOver>
 
-			{/* ═══ SCORE DETAIL SLIDE-OVER ═══ */}
-			<SlideOver
-				open={showScoreDetail}
-				onClose={() => setShowScoreDetail(false)}
-				title="Score Analysis"
-				c={c}
-			>
-				<ScoreArc score={scores.overall} size={184} c={c} />
-				<div style={{ padding: '8px 0 16px', textAlign: 'center' }}>
-					<div
-						style={{
-							padding: '10px 12px',
-							borderRadius: 6,
-							background: `${getTier(scores.overall).color}08`,
-							border: `1px solid ${getTier(scores.overall).color}20`,
-							fontSize: 13,
-							color: getTier(scores.overall).color,
-							lineHeight: 1.4,
-						}}
-					>
-						{scoreMsg(scores.overall)}
-					</div>
-				</div>
-
-				{/* Section Scores */}
-				<div style={{ marginBottom: 20 }}>
-					<span
-						style={{
-							fontSize: 11,
-							fontWeight: 600,
-							color: c.dim,
-							textTransform: 'uppercase',
-							letterSpacing: '0.04em',
-						}}
-					>
-						Section Breakdown
-					</span>
-					<div style={{ marginTop: 10 }}>
-						{(
-							[
-								['Keyword Match', scores.keyword, Target],
-								['Metrics', scores.metrics, TrendingUp],
-								['Action Verbs', scores.actionVerbs, Zap],
-								['Length', scores.length, AlignLeft],
-							] as [string, number, any][]
-						).map(([l, s, I]) => (
-							<div
-								key={l}
-								style={{
-									display: 'flex',
-									alignItems: 'center',
-									justifyContent: 'space-between',
-									padding: '10px 0',
-									borderBottom: `1px solid ${c.borderSub}`,
-								}}
-							>
-								<div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-									<div
-										style={{
-											width: 32,
-											height: 32,
-											borderRadius: 6,
-											background: `${getTier(s).color}12`,
-											display: 'flex',
-											alignItems: 'center',
-											justifyContent: 'center',
-										}}
-									>
-										<I size={16} color={getTier(s).color} strokeWidth={1.75} />
-									</div>
-									<div>
-										<div
-											style={{ fontSize: 13, color: c.text, fontWeight: 500 }}
-										>
-											{l}
-										</div>
-										<div style={{ fontSize: 11, color: c.dim }}>
-											{getTier(s).label}
-										</div>
-									</div>
-								</div>
-								<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-									<div
-										style={{
-											width: 60,
-											height: 5,
-											borderRadius: 3,
-											background: c.border,
-											overflow: 'hidden',
-										}}
-									>
-										<div
-											style={{
-												width: `${s}%`,
-												height: '100%',
-												borderRadius: 3,
-												background: getTier(s).color,
-												transition: 'width 0.8s',
-											}}
-										/>
-									</div>
-									<span
-										style={{
-											fontSize: 14,
-											color: getTier(s).color,
-											fontWeight: 600,
-											width: 28,
-											textAlign: 'right',
-										}}
-									>
-										{s}
-									</span>
-								</div>
-							</div>
-						))}
-					</div>
-				</div>
-
-				{/* Strengths */}
-				{checklist.filter(ch => ch.completed).length > 0 && (
-					<div style={{ marginBottom: 20 }}>
-						<span
-							style={{
-								fontSize: 11,
-								fontWeight: 600,
-								color: SUCCESS,
-								textTransform: 'uppercase',
-								letterSpacing: '0.04em',
-							}}
-						>
-							Strengths
-						</span>
-						<div style={{ marginTop: 8 }}>
-							{checklist
-								.filter(ch => ch.completed)
-								.map((ch, i) => (
-									<div
-										key={ch.id || i}
-										style={{
-											display: 'flex',
-											alignItems: 'center',
-											gap: 8,
-											padding: '6px 0',
-										}}
-									>
-										<CheckCircle2
-											size={14}
-											color={SUCCESS}
-											strokeWidth={1.75}
-										/>
-										<span style={{ fontSize: 13, color: c.muted }}>
-											{ch.text}
-										</span>
-									</div>
-								))}
-						</div>
-					</div>
-				)}
-
-				{/* Opportunities with Fix This → */}
-				{checklist.filter(ch => !ch.completed).length > 0 && (
-					<div>
-						<span
-							style={{
-								fontSize: 11,
-								fontWeight: 600,
-								color: WARN,
-								textTransform: 'uppercase',
-								letterSpacing: '0.04em',
-							}}
-						>
-							Opportunities
-						</span>
-						<div style={{ marginTop: 8 }}>
-							{checklist
-								.filter(ch => !ch.completed)
-								.map((ch, i) => {
-									const hasFlaggedBullets =
-										ch.flaggedBullets && ch.flaggedBullets.length > 0
-									const slideActionHint = hasFlaggedBullets
-										? `Fix with AI (${ch.flaggedBullets!.length} bullet${ch.flaggedBullets!.length !== 1 ? 's' : ''})`
-										: ch.fixType === 'auto-reorder' ? 'Click to reorder'
-										: ch.fixType === 'skills-add' ? 'Click to add keywords'
-										: ch.fixType === 'keyword-popover' ? 'Click to add keywords'
-										: ch.fixType === 'summary-shorten' ? 'Click to shorten'
-										: ch.fixType === 'generate-bullets' ? 'Click to generate'
-										: ch.fixType === 'ai-modal' ? 'Fix with AI'
-										: ch.fixType === 'summary-add' ? 'Click to edit'
-										: 'Fix this'
-									return (
-										<div
-											key={ch.id || i}
-											onClick={(e) => {
-												setShowScoreDetail(false)
-												handleChecklistAction(ch, (e.currentTarget as HTMLElement).getBoundingClientRect())
-											}}
-											style={{
-												display: 'flex',
-												alignItems: 'flex-start',
-												gap: 8,
-												padding: '8px 4px',
-												borderBottom: `1px solid ${c.borderSub}`,
-												cursor: 'pointer',
-												borderRadius: 6,
-												transition: 'background 120ms',
-											}}
-											onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#c4956a14' }}
-											onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
-										>
-											<Circle
-												size={14}
-												color={c.dim}
-												strokeWidth={1.75}
-												style={{ marginTop: 2, flexShrink: 0 }}
-											/>
-											<div style={{ flex: 1 }}>
-												<span
-													style={{
-														fontSize: 13,
-														color: c.text,
-														lineHeight: 1.4,
-													}}
-												>
-													{ch.text}
-												</span>
-												<div
-													style={{
-														fontSize: 11,
-														color: c.brandText,
-														marginTop: 4,
-														display: 'flex',
-														alignItems: 'center',
-														gap: 4,
-														fontWeight: 500,
-													}}
-												>
-													{(hasFlaggedBullets || ch.fixType === 'ai-modal') && (
-														<Sparkles size={10} color={c.brandText} strokeWidth={2} />
-													)}
-													{slideActionHint} {!hasFlaggedBullets && ch.fixType !== 'ai-modal' && <ArrowRight size={10} />}
-												</div>
-											</div>
-											<span
-												style={{
-													fontSize: 10,
-													fontWeight: 600,
-													padding: '2px 6px',
-													borderRadius: 4,
-													background:
-														ch.priority === 'high' ? `${WARN}18` : `${BRAND}18`,
-													color: ch.priority === 'high' ? WARN : c.brandText,
-													textTransform: 'uppercase',
-													flexShrink: 0,
-												}}
-											>
-												{ch.priority}
-											</span>
-										</div>
-									)
-								})}
-						</div>
-					</div>
-				)}
-			</SlideOver>
 
 			{/* ═══ COACH MARKS ═══ */}
 			{coachStep !== null && (() => {
@@ -4777,193 +3310,20 @@ export default function ResumeBuilder() {
 			})()}
 
 			{/* ═══ ONBOARDING WIDGET ═══ */}
-			{!onboarding.isComplete && !onboardingDismissed && (
-				<div
-					style={{
-						position: 'fixed',
-						bottom: 20,
-						right: 20,
-						zIndex: 150,
-						width: onboardingCollapsed ? 48 : 280,
-						background: c.bgEl,
-						borderRadius: 12,
-						border: `1px solid ${c.border}`,
-						boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
-						overflow: 'hidden',
-						transition: 'width 200ms',
-					}}
-				>
-					{onboardingCollapsed ? (
-						<div
-							onClick={() => setOnboardingCollapsed(false)}
-							style={{
-								width: 48,
-								height: 48,
-								display: 'flex',
-								alignItems: 'center',
-								justifyContent: 'center',
-								cursor: 'pointer',
-							}}
-						>
-							<Rocket size={20} color={c.brandText} strokeWidth={1.75} />
-						</div>
-					) : (
-						<>
-							<div
-								style={{
-									padding: '12px 16px 8px',
-									display: 'flex',
-									alignItems: 'center',
-									justifyContent: 'space-between',
-								}}
-							>
-								<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-									<Rocket size={16} color={c.brandText} strokeWidth={1.75} />
-									<span
-										style={{ fontSize: 13, fontWeight: 600, color: c.text }}
-									>
-										Getting Started
-									</span>
-								</div>
-								<div style={{ display: 'flex', gap: 2 }}>
-									<button
-										onClick={() => setOnboardingCollapsed(true)}
-										style={{
-											width: 24,
-											height: 24,
-											borderRadius: 4,
-											border: 'none',
-											background: 'transparent',
-											cursor: 'pointer',
-											display: 'flex',
-											alignItems: 'center',
-											justifyContent: 'center',
-										}}
-									>
-										<ChevronDown size={14} color={c.dim} />
-									</button>
-									<button
-										onClick={() => setOnboardingDismissed(true)}
-										style={{
-											width: 24,
-											height: 24,
-											borderRadius: 4,
-											border: 'none',
-											background: 'transparent',
-											cursor: 'pointer',
-											display: 'flex',
-											alignItems: 'center',
-											justifyContent: 'center',
-										}}
-									>
-										<X size={14} color={c.dim} />
-									</button>
-								</div>
-							</div>
-							<div style={{ padding: '4px 16px 16px' }}>
-								{[
-									{
-										id: 'resume',
-										label: 'Create a resume',
-										done: !!(formData.name || formData.role),
-										action: () => scrollToSection('summary'),
-									},
-									{
-										id: 'job',
-										label: 'Add a target job',
-										done: !!selectedJob,
-										action: () => setShowCreateJob(true),
-									},
-									{
-										id: 'tailor',
-										label: 'Tailor with AI',
-										done: (gettingStartedProgress?.tailorCount ?? 0) > 0,
-										action: () => {
-											const firstExp = formData.experiences?.[0]
-											const firstBullet = firstExp?.descriptions?.[0]
-											if (firstExp?.id && firstBullet)
-												handleAIClick(firstExp.id, 0, firstBullet.content || '')
-										},
-									},
-								].map(step => (
-									<div
-										key={step.id}
-										onClick={!step.done ? step.action : undefined}
-										style={{
-											display: 'flex',
-											alignItems: 'center',
-											gap: 10,
-											padding: '8px 0',
-											cursor: step.done ? 'default' : 'pointer',
-											opacity: step.done ? 0.6 : 1,
-										}}
-									>
-										{step.done ? (
-											<CheckCircle2
-												size={16}
-												color={SUCCESS}
-												strokeWidth={1.75}
-											/>
-										) : (
-											<Circle size={16} color={c.dim} strokeWidth={1.75} />
-										)}
-										<span
-											style={{
-												fontSize: 13,
-												color: step.done ? c.dim : c.text,
-												textDecoration: step.done ? 'line-through' : 'none',
-											}}
-										>
-											{step.label}
-										</span>
-										{!step.done && (
-											<ChevronRight
-												size={12}
-												color={c.dim}
-												style={{ marginLeft: 'auto' }}
-											/>
-										)}
-									</div>
-								))}
-								{/* Progress bar */}
-								<div
-									style={{
-										marginTop: 8,
-										height: 3,
-										borderRadius: 2,
-										background: c.border,
-										overflow: 'hidden',
-									}}
-								>
-									<div
-										style={{
-											height: '100%',
-											borderRadius: 2,
-											background: BRAND,
-											transition: 'width 300ms',
-											width: `${
-												([
-													!!(formData.name || formData.role),
-													!!selectedJob,
-													(gettingStartedProgress?.tailorCount ?? 0) > 0,
-												].filter(Boolean).length /
-													3) *
-												100
-											}%`,
-										}}
-									/>
-								</div>
-							</div>
-						</>
-					)}
-				</div>
-			)}
+			<OnboardingWidget
+				isComplete={onboarding.isComplete}
+				dismissed={onboardingDismissed}
+				collapsed={onboardingCollapsed}
+				setDismissed={setOnboardingDismissed}
+				setCollapsed={setOnboardingCollapsed}
+				hasResume={!!(formData.name || formData.role)}
+				hasJob={!!selectedJob}
+				hasReviewedMatch={hasReviewedMatch}
+				hasTakenAction={hasTakenAction}
+				onResumeClick={() => scrollToSection('summary')}
+				onJobClick={() => setShowCreateJob(true)}
+				c={c}
+			/>
 		</div>
 	)
-}
-
-export const action = async ({ request }: ActionFunctionArgs) => {
-	const formData = await request.formData()
-	console.log(formData)
-	return null
 }
