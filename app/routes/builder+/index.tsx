@@ -73,6 +73,7 @@ import { TruthPanel } from '~/components/truth-panel.tsx'
 import { CoverLetterPanel } from '~/components/cover-letter-panel.tsx'
 import { TEMPLATE_META, FONT_PAIRINGS, COLOR_PALETTE } from '~/utils/templates/registry.ts'
 import { TailorPanel } from '~/components/tailor-panel.tsx'
+import { generateResumeHtml } from '~/utils/generate-resume-html.ts'
 
 function base64ToUint8Array(base64: string): Uint8Array {
 	return Uint8Array.from(atob(base64), c => c.charCodeAt(0))
@@ -1522,8 +1523,9 @@ export default function ResumeBuilder() {
 			subscribe: false,
 		})
 		if (pdfFetcher.state !== 'idle') return
+		const html = generateResumeHtml(formData, sectionOrder)
 		pdfFetcher.submit(
-			{ resumeId: formData.id ?? '', sectionOrder: JSON.stringify(sectionOrder) },
+			{ html, resumeId: formData.id ?? '' },
 			{ method: 'post', action: '/resources/generate-pdf' },
 		)
 	}, [
