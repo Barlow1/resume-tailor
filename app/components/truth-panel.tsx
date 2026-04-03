@@ -112,12 +112,16 @@ function ConversationLayer({
 		setAnswers(prev => { const next = new Map(prev); next.delete(i); return next })
 	}
 
-	const allAnswered = answers.size === requirements.length
 	const yesItems = requirements
 		.map((req, i) => ({ req, ans: answers.get(i) }))
 		.filter((x): x is { req: string; ans: { yes: true; experienceId: string } } => !!x.ans?.yes && !!x.ans.experienceId)
 		.map(x => ({ requirement: x.req, experienceId: x.ans.experienceId }))
-	const noItems = requirements.filter((_, i) => answers.get(i)?.yes === false)
+	// Unanswered questions are treated as "No" when proceeding
+	const noItems = requirements.filter((_, i) => {
+		const ans = answers.get(i)
+		return !ans || ans.yes === false
+	})
+	const canProceed = yesItems.length > 0
 
 	return (
 		<div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -173,9 +177,9 @@ function ConversationLayer({
 											style={{
 												padding: '8px 16px',
 												borderRadius: 8,
-												border: `1px solid ${BRAND}`,
+												border: `1px solid ${c.border}`,
 												background: 'transparent',
-												color: BRAND,
+												color: c.text,
 												fontSize: 13,
 												fontWeight: 600,
 												cursor: 'pointer',
@@ -190,7 +194,7 @@ function ConversationLayer({
 												borderRadius: 8,
 												border: `1px solid ${c.border}`,
 												background: 'transparent',
-												color: c.dim,
+												color: c.text,
 												fontSize: 13,
 												fontWeight: 600,
 												cursor: 'pointer',
@@ -228,7 +232,7 @@ function ConversationLayer({
 				)
 			})}
 
-			{allAnswered && yesItems.length > 0 && (
+			{canProceed && (
 				<button
 					onClick={() => onDone(yesItems, noItems)}
 					style={{
@@ -247,7 +251,7 @@ function ConversationLayer({
 					Add {yesItems.length} to my resume →
 				</button>
 			)}
-			{allAnswered && yesItems.length === 0 && (
+			{answers.size === requirements.length && yesItems.length === 0 && (
 				<div style={{ fontSize: 13, color: c.dim, marginTop: 4 }}>
 					These appear to be genuine gaps in your background for this role.
 				</div>

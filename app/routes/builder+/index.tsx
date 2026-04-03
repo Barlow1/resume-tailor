@@ -65,6 +65,7 @@ import { trackEvent } from '~/utils/analytics.ts'
 import { trackEvent as trackLegacyEvent } from '~/utils/tracking.client.ts'
 import { track } from '~/lib/analytics.client.ts'
 import { toast } from '~/components/ui/use-toast.ts'
+import { ToastAction } from '~/components/ui/toast.tsx'
 import { useOnboardingFlow } from '~/hooks/use-onboarding-flow.ts'
 import { JobPasteModal } from '~/components/job-paste-modal.tsx'
 import { BuilderNav } from '~/components/builder-nav.tsx'
@@ -607,6 +608,7 @@ export default function ResumeBuilder() {
 	const [editingResumeId, setEditingResumeId] = useState<string | null>(null)
 	const [matchRefetchKey, setMatchRefetchKey] = useState(0)
 	const undoSnapshotRef = useRef<typeof formData | null>(null)
+	const skipUndoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 	const bulletUndoMapRef = useRef<Map<string, { action: 'rewrite' | 'new'; experienceId: string; originalText: string | null }>>(new Map())
 	const [pendingHighlights, setPendingHighlights] = useState<string[]>([])
 	const [coachStep, setCoachStep] = useState<number | null>(null)
@@ -638,6 +640,13 @@ export default function ResumeBuilder() {
 	}, [])
 	const canvasAvailable = viewportWidth - sW - rightPanelW - 80
 	const canvasScale = Math.min(Math.max(canvasAvailable / 816, 0.7), 1.25)
+
+	// Clean up skip-role undo timer on unmount
+	useEffect(() => {
+		return () => {
+			if (skipUndoTimerRef.current) clearTimeout(skipUndoTimerRef.current)
+		}
+	}, [])
 
 	/* ═══ DARK MODE (synced with app theme) ═══ */
 	const themeFetcher = useFetcher()
@@ -2723,7 +2732,22 @@ export default function ResumeBuilder() {
 								}
 							} : undefined}
 							onSkipRole={() => {
+								const skippedJob = selectedJob
 								setSelectedJob(null)
+								if (skipUndoTimerRef.current) clearTimeout(skipUndoTimerRef.current)
+								const { dismiss } = toast({
+									title: 'Role skipped',
+									action: <ToastAction altText="Undo skip" onClick={() => {
+										if (skipUndoTimerRef.current) clearTimeout(skipUndoTimerRef.current)
+										skipUndoTimerRef.current = null
+										setSelectedJob(skippedJob ?? null)
+										dismiss()
+									}}>Undo</ToastAction>,
+								})
+								skipUndoTimerRef.current = setTimeout(() => {
+									skipUndoTimerRef.current = null
+									dismiss()
+								}, 5000)
 							}}
 							onDownload={handleDownloadPDF}
 							onNextJob={() => {
