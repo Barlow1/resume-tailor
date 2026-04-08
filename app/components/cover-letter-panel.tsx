@@ -102,13 +102,13 @@ export function CoverLetterPanel({
 						Back to Assessment
 					</span>
 				</button>
-				<div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+				<div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
 					<button
 						onClick={onRegenerate}
 						disabled={isGenerating}
 						title="Regenerate"
 						style={{
-							padding: 8,
+							padding: '6px 12px',
 							borderRadius: 8,
 							border: 'none',
 							background: 'transparent',
@@ -116,8 +116,10 @@ export function CoverLetterPanel({
 							color: c.dim,
 							display: 'flex',
 							alignItems: 'center',
-							justifyContent: 'center',
+							gap: 6,
 							opacity: isGenerating ? 0.5 : 1,
+							fontSize: 12,
+							fontWeight: 500,
 						}}
 						onMouseEnter={e => {
 							;(e.currentTarget as HTMLButtonElement).style.background = c.bgSurf
@@ -126,14 +128,15 @@ export function CoverLetterPanel({
 							;(e.currentTarget as HTMLButtonElement).style.background = 'transparent'
 						}}
 					>
-						<RefreshCw size={16} strokeWidth={1.75} />
+						<RefreshCw size={14} strokeWidth={1.75} />
+						<span>Regenerate</span>
 					</button>
 					<button
 						onClick={handleCopy}
 						disabled={!coverLetterText}
 						title="Copy"
 						style={{
-							padding: 8,
+							padding: '6px 12px',
 							borderRadius: 8,
 							border: 'none',
 							background: 'transparent',
@@ -141,8 +144,10 @@ export function CoverLetterPanel({
 							color: c.dim,
 							display: 'flex',
 							alignItems: 'center',
-							justifyContent: 'center',
+							gap: 6,
 							opacity: coverLetterText ? 1 : 0.5,
+							fontSize: 12,
+							fontWeight: 500,
 						}}
 						onMouseEnter={e => {
 							;(e.currentTarget as HTMLButtonElement).style.background = c.bgSurf
@@ -151,14 +156,15 @@ export function CoverLetterPanel({
 							;(e.currentTarget as HTMLButtonElement).style.background = 'transparent'
 						}}
 					>
-						<Copy size={16} strokeWidth={1.75} />
+						<Copy size={14} strokeWidth={1.75} />
+						<span>Copy</span>
 					</button>
 					<button
 						onClick={handleDownload}
 						disabled={!coverLetterText}
 						title="Download"
 						style={{
-							padding: 8,
+							padding: '6px 12px',
 							borderRadius: 8,
 							border: 'none',
 							background: 'transparent',
@@ -166,8 +172,10 @@ export function CoverLetterPanel({
 							color: c.dim,
 							display: 'flex',
 							alignItems: 'center',
-							justifyContent: 'center',
+							gap: 6,
 							opacity: coverLetterText ? 1 : 0.5,
+							fontSize: 12,
+							fontWeight: 500,
 						}}
 						onMouseEnter={e => {
 							;(e.currentTarget as HTMLButtonElement).style.background = c.bgSurf
@@ -176,7 +184,8 @@ export function CoverLetterPanel({
 							;(e.currentTarget as HTMLButtonElement).style.background = 'transparent'
 						}}
 					>
-						<Download size={16} strokeWidth={1.75} />
+						<Download size={14} strokeWidth={1.75} />
+						<span>Download</span>
 					</button>
 				</div>
 			</div>
@@ -242,7 +251,7 @@ export function CoverLetterPanel({
 					<textarea
 						value={coverLetterText}
 						onChange={e => onTextChange(e.target.value)}
-						placeholder="Your cover letter will appear here..."
+						placeholder="Your cover letter will appear here. You can edit it directly."
 						style={{
 							flex: 1,
 							fontFamily: 'Crimson Pro, Georgia, serif',

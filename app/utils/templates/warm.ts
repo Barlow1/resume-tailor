@@ -162,6 +162,12 @@ export function generate(
 		[data-education-id] {
 			break-inside: avoid;
 		}
+		li span[contenteditable]:empty::before {
+			content: 'Add a bullet point...';
+			color: #9CA3AF;
+			font-style: italic;
+			pointer-events: none;
+		}
 		@media print {
 			.page-gap { display: none; }
 		}${options.editable ? getEditableCss() : ''}

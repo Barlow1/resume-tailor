@@ -384,3 +384,8 @@
   size: letter;
   margin: 0;
 }
+
+/* Hide reCAPTCHA badge — attribution text required in footer per Google ToS */
+.grecaptcha-badge {
+  visibility: hidden !important;
+}

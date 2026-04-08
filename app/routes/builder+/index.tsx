@@ -8,6 +8,9 @@ import {
 	useFetcher,
 	useNavigate,
 	useSubmit,
+	useSearchParams,
+	useRouteError,
+	isRouteErrorResponse,
 } from '@remix-run/react'
 import { useOptionalUser } from '~/utils/user.ts'
 import { useTheme } from '~/routes/resources+/theme/index.tsx'
@@ -31,6 +34,8 @@ import {
 	Eye,
 	EyeOff,
 	Trash2,
+	HelpCircle,
+	RotateCcw,
 } from 'lucide-react'
 import { SubscribeModal } from '~/components/subscribe-modal.tsx'
 import { getStripeSubscription, getUserId } from '~/utils/auth.server.ts'
@@ -75,6 +80,7 @@ import { CoverLetterPanel } from '~/components/cover-letter-panel.tsx'
 import { TEMPLATE_META, FONT_PAIRINGS, COLOR_PALETTE } from '~/utils/templates/registry.ts'
 import { TailorPanel } from '~/components/tailor-panel.tsx'
 import { generateResumeHtml } from '~/utils/generate-resume-html.ts'
+import { useBuilderSave } from '~/hooks/use-builder-save.ts'
 
 function base64ToUint8Array(base64: string): Uint8Array {
 	return Uint8Array.from(atob(base64), c => c.charCodeAt(0))
@@ -491,7 +497,6 @@ function SlideOver({
 					position: 'absolute',
 					inset: 0,
 					background: 'rgba(0,0,0,0.4)',
-					backdropFilter: 'blur(4px)',
 					opacity: visible ? 1 : 0,
 					transition: 'opacity 200ms ease',
 				}}
@@ -563,6 +568,8 @@ export default function ResumeBuilder() {
 	} = useLoaderData<typeof loader>()
 
 	const navigate = useNavigate()
+	const [searchParams] = useSearchParams()
+	const onboardingReset = searchParams.get('onboarding') === 'reset'
 	const [formData, setFormData] = useState(savedData)
 	const appTheme = useTheme()
 	const isDark = appTheme === 'dark'
@@ -572,7 +579,7 @@ export default function ResumeBuilder() {
 	const [showSubscribeModal, setShowSubscribeModal] = useState(false)
 	const [subscribeModalTrigger, setSubscribeModalTrigger] = useState<'download_limit' | 'ai_limit'>('download_limit')
 	const [showCreateJob, setShowCreateJob] = useState(false)
-	const [showCreationModal, setShowCreationModal] = useState(!formData.id)
+	const [showCreationModal, setShowCreationModal] = useState(!formData.id || onboardingReset)
 	const [showAIModal, setShowAIModal] = useState(false)
 	const [aiModalInitialTab, setAiModalInitialTab] = useState<
 		'tailor' | 'generate' | undefined
@@ -603,10 +610,20 @@ export default function ResumeBuilder() {
 	const [cmdSelected, setCmdSelected] = useState(0)
 	const [onboardingDismissed, setOnboardingDismissed] = useState(false)
 	const [onboardingCollapsed, setOnboardingCollapsed] = useState(false)
-	const [hasReviewedMatch, setHasReviewedMatch] = useState(false)
-	const [hasTakenAction, setHasTakenAction] = useState(false)
+	const [hasReviewedMatch, setHasReviewedMatch] = useState(onboardingReset ? false : false)
+	const [hasTakenAction, setHasTakenAction] = useState(onboardingReset ? false : false)
+	const [postTailorMode, setPostTailorMode] = useState(false)
+
+	// ?onboarding=reset: clear coach dismissal so walkthrough replays
+	useEffect(() => {
+		if (onboardingReset) {
+			try { localStorage.removeItem('builder_coach_dismissed') } catch {}
+		}
+	}, [onboardingReset])
 	const [editingResumeId, setEditingResumeId] = useState<string | null>(null)
 	const [matchRefetchKey, setMatchRefetchKey] = useState(0)
+	const [resumeChangedSinceMatch, setResumeChangedSinceMatch] = useState(false)
+	const matchAnalysisVersionRef = useRef(0)
 	const undoSnapshotRef = useRef<typeof formData | null>(null)
 	const skipUndoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 	const bulletUndoMapRef = useRef<Map<string, { action: 'rewrite' | 'new'; experienceId: string; originalText: string | null }>>(new Map())
@@ -740,52 +757,18 @@ export default function ResumeBuilder() {
 	}, [selectedJob?.id])
 
 	/* ═══ SAVE ═══ */
-	const fetcher = useFetcher<{ success: boolean; error?: string }>()
+	const { debouncedSave, saveStatus, saveFetcher: fetcher } = useBuilderSave()
 	const pdfFetcher = useFetcher<{ fileData: string; fileType: string }>()
 	const applicationFetcher = useFetcher()
-	const [saveStatus, setSaveStatus] = useState<
-		'idle' | 'saving' | 'saved' | 'error'
-	>('idle')
-	const saveStatusTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
 	const scrollHighlightTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
-
-	const debouncedSave = useDebouncedCallback(async (data: ResumeData) => {
-		const form = new FormData()
-		form.append('formData', JSON.stringify(data))
-		form.append('downloadPDFRequested', 'false')
-		form.append('subscribe', 'false')
-		await fetcher.submit(form, {
-			method: 'POST',
-			action: '/resources/save-resume',
-		})
-	}, 1000)
 	debouncedSaveRef.current = debouncedSave
 
+	// #28-29: Track when resume changes after last match analysis
 	useEffect(() => {
-		if (fetcher.state === 'submitting') {
-			setSaveStatus('saving')
-			return
+		if (saveStatus === 'saved' && matchAnalysisVersionRef.current > 0) {
+			setResumeChangedSinceMatch(true)
 		}
-		if (fetcher.state === 'idle' && fetcher.data) {
-			if (fetcher.data.success === false) {
-				setSaveStatus('error')
-				toast({
-					variant: 'destructive',
-					title: 'Failed to save',
-					description:
-						fetcher.data.error ||
-						'Your changes could not be saved. Please try again.',
-				})
-			} else {
-				setSaveStatus('saved')
-			}
-			clearTimeout(saveStatusTimeoutRef.current)
-			saveStatusTimeoutRef.current = setTimeout(
-				() => setSaveStatus('idle'),
-				3000,
-			)
-		}
-	}, [fetcher.state, fetcher.data])
+	}, [saveStatus])
 
 	/* ═══ TAILOR PANEL ═══ */
 	// Check for existing snapshot on load
@@ -997,42 +980,46 @@ export default function ResumeBuilder() {
 	}
 
 	const addBulletPoint = (experienceId: string) => {
-		if (!formData.experiences) return
-		const newFormData = {
-			...formData,
-			experiences: formData.experiences.map(exp => {
-				if (exp.id !== experienceId) return exp
-				return {
-					...exp,
-					descriptions: [
-						...(exp.descriptions || []),
-						{ id: crypto.randomUUID(), content: '' },
-					],
-				}
-			}),
-		}
-		setFormData(newFormData)
-		debouncedSave(newFormData)
+		setFormData(prev => {
+			if (!prev.experiences) return prev
+			const newFormData = {
+				...prev,
+				experiences: prev.experiences.map(exp => {
+					if (exp.id !== experienceId) return exp
+					return {
+						...exp,
+						descriptions: [
+							...(exp.descriptions || []),
+							{ id: crypto.randomUUID(), content: '' },
+						],
+					}
+				}),
+			}
+			debouncedSave(newFormData)
+			return newFormData
+		})
 	}
 
 	const deleteBullet = (experienceId: string, bulletIndex: number) => {
-		if (!formData.experiences) return
-		const newFormData = {
-			...formData,
-			experiences: formData.experiences.map(exp => {
-				if (exp.id !== experienceId || !exp.descriptions) return exp
-				const filtered = exp.descriptions.filter((_, i) => i !== bulletIndex)
-				return {
-					...exp,
-					descriptions:
-						filtered.length > 0
-							? filtered
-							: [{ id: crypto.randomUUID(), content: '' }],
-				}
-			}),
-		}
-		setFormData(newFormData)
-		debouncedSave(newFormData)
+		setFormData(prev => {
+			if (!prev.experiences) return prev
+			const newFormData = {
+				...prev,
+				experiences: prev.experiences.map(exp => {
+					if (exp.id !== experienceId || !exp.descriptions) return exp
+					const filtered = exp.descriptions.filter((_, i) => i !== bulletIndex)
+					return {
+						...exp,
+						descriptions:
+							filtered.length > 0
+								? filtered
+								: [{ id: crypto.randomUUID(), content: '' }],
+					}
+				}),
+			}
+			debouncedSave(newFormData)
+			return newFormData
+		})
 	}
 
 	const reorderBullets = (
@@ -1040,19 +1027,22 @@ export default function ResumeBuilder() {
 		oldIndex: number,
 		newIndex: number,
 	) => {
-		if (!formData.experiences) return
-		const newFormData = {
-			...formData,
-			experiences: formData.experiences.map(exp => {
-				if (exp.id !== experienceId || !exp.descriptions) return exp
-				return {
-					...exp,
-					descriptions: moveArray(exp.descriptions, oldIndex, newIndex),
-				}
-			}),
-		}
-		setFormData(newFormData)
-		debouncedSave(newFormData)
+		setFormData(prev => {
+			if (!prev.experiences) return prev
+			const newFormData = {
+				...prev,
+				experiences: prev.experiences.map(exp => {
+					if (exp.id !== experienceId || !exp.descriptions) return exp
+					return {
+						...exp,
+						descriptions: moveArray(exp.descriptions, oldIndex, newIndex),
+					}
+				}),
+			}
+			debouncedSave(newFormData)
+			iframeComponentRef.current?.markStructuralUpdate()
+			return newFormData
+		})
 	}
 
 	const updateEduField = (
@@ -1284,7 +1274,6 @@ export default function ResumeBuilder() {
 			// Blank resume — just attach job directly, no clone needed
 			if (isResumeBlank(formData)) {
 				setSelectedJob(job)
-				setSidebar(false)
 				const newFormData = { ...formData, jobId: job.id, job }
 				setFormData(newFormData)
 				debouncedSave(newFormData)
@@ -1305,7 +1294,6 @@ export default function ResumeBuilder() {
 
 			// Clone the current resume for this job
 			setSelectedJob(job)
-			setSidebar(false)
 
 			cloneForJobFetcher.submit(
 				{
@@ -1457,19 +1445,19 @@ export default function ResumeBuilder() {
 	const coachSteps = useMemo(
 		() => [
 			{
-				title: 'Reorder sections',
-				body: 'Hover over section headers to reorder, add items, or toggle visibility.',
+				title: 'Edit your resume',
+				body: 'Hover over any text in the resume to edit it directly. Bullet points show a toolbar on hover.',
 				anchor: 'iframe' as const,
 			},
 			{
 				title: 'Customize appearance',
-				body: 'Change fonts, colors, text size, and layout templates from the Customize panel.',
-				anchor: 'customize' as const,
+				body: 'Open Quick Actions (Ctrl+K) and search "Customize" to change fonts, colors, and layout.',
+				anchor: 'nav' as const,
 			},
 			{
 				title: 'AI-powered tailoring',
-				body: 'Match your resume to a specific job description with one click.',
-				anchor: 'tailor' as const,
+				body: 'Add a target job, then hover a bullet and click the purple AI button to tailor it.',
+				anchor: 'iframe' as const,
 			},
 		],
 		[],
@@ -1709,8 +1697,18 @@ export default function ResumeBuilder() {
 				icon: Briefcase,
 				action: () => setShowCreateJob(true),
 			},
+			{
+				id: 'replay-walkthrough',
+				label: 'Replay Walkthrough',
+				icon: RotateCcw,
+				action: () => {
+					onboarding.resetOnboarding()
+					localStorage.removeItem('builder_coach_dismissed')
+					setCoachStep(0)
+				},
+			},
 		],
-		[isDark, toggleDarkMode, handleClickDownloadPDF],
+		[isDark, toggleDarkMode, handleClickDownloadPDF, onboarding],
 	)
 
 	const filteredCommands = cmdSearch
@@ -1814,6 +1812,17 @@ export default function ResumeBuilder() {
 	/* ═══ IFRAME HANDLERS ═══ */
 	const handleIframeFieldChange = useCallback(
 		(fieldPath: string, value: string) => {
+			// #12: Update section highlighting to follow editing
+			if (['name', 'role', 'email', 'phone', 'location', 'website', 'about'].includes(fieldPath) || fieldPath.startsWith('headers.about')) {
+				setActiveSection('summary')
+			} else if (fieldPath.startsWith('experiences.') || fieldPath.startsWith('headers.experience')) {
+				setActiveSection('experience')
+			} else if (fieldPath.startsWith('education.') || fieldPath.startsWith('headers.education')) {
+				setActiveSection('education')
+			} else if (fieldPath.startsWith('skills.') || fieldPath.startsWith('headers.skills')) {
+				setActiveSection('skills')
+			}
+
 			if (
 				[
 					'name',
@@ -1958,6 +1967,7 @@ export default function ResumeBuilder() {
 			const bullet = exp.descriptions?.[bulletIndex]
 			handleAIClick(experienceId, bulletIndex, bullet?.content || '')
 			setHoveredElement(null)
+			setHasTakenAction(true)
 		},
 		[formData, handleAIClick],
 	)
@@ -2086,6 +2096,11 @@ export default function ResumeBuilder() {
 				manageSubFormRef={manageSubFormRef}
 				submitForm={submitForm}
 				navigate={navigate}
+				onReplayWalkthrough={() => {
+					onboarding.resetOnboarding()
+					localStorage.removeItem('builder_coach_dismissed')
+					setCoachStep(0)
+				}}
 				BRAND={BRAND}
 				AMBER={AMBER}
 				SUCCESS={SUCCESS}
@@ -2345,13 +2360,32 @@ export default function ResumeBuilder() {
 									Target Job
 								</span>
 								{jobs.length > 0 && (
-									<div style={{ marginTop: 9 }}>
-										<JobDropdown
-											jobs={jobs}
-											current={formData.jobId ?? null}
-											onSelect={handleJobChange}
-											c={c}
-										/>
+									<div style={{ marginTop: 9, display: 'flex', alignItems: 'center', gap: 4 }}>
+										<div style={{ flex: 1 }}>
+											<JobDropdown
+												jobs={jobs}
+												current={formData.jobId ?? null}
+												onSelect={handleJobChange}
+												c={c}
+											/>
+										</div>
+										{selectedJob && (
+											<button
+												onClick={() => {
+													if (!selectedJob.id || !confirm(`Remove "${selectedJob.company || selectedJob.title || 'this job'}" from your target jobs?`)) return
+													const fd = new FormData()
+													fd.append('jobid', selectedJob.id)
+													fetch('/resources/delete-job', { method: 'POST', body: fd })
+													setSelectedJob(null)
+													setFormData(prev => ({ ...prev, jobId: undefined, job: undefined }))
+												}}
+												title="Remove target job"
+												style={{ padding: 4, cursor: 'pointer', color: c.muted, background: 'transparent', border: 'none', borderRadius: 4 }}
+												className="hover-brand"
+											>
+												<Trash2 size={14} />
+											</button>
+										)}
 									</div>
 								)}
 								<div
@@ -2546,6 +2580,22 @@ export default function ResumeBuilder() {
 							))}
 						</div>
 					)}
+
+					{/* ═══ ONBOARDING WIDGET (inline in sidebar) ═══ */}
+					{sidebar && !showCreationModal && <OnboardingWidget
+						isComplete={onboarding.isComplete}
+						dismissed={onboardingDismissed}
+						collapsed={onboardingCollapsed}
+						setDismissed={setOnboardingDismissed}
+						setCollapsed={setOnboardingCollapsed}
+						hasResume={!!(formData.name || formData.role)}
+						hasJob={!!selectedJob}
+						hasReviewedMatch={hasReviewedMatch}
+						hasTakenAction={hasTakenAction}
+						onResumeClick={() => scrollToSection('summary')}
+						onJobClick={() => setShowCreateJob(true)}
+						c={c}
+					/>}
 				</div>
 
 				{/* CENTER CANVAS */}
@@ -2607,6 +2657,33 @@ export default function ResumeBuilder() {
 				</div>
 
 				{/* SCORE PANEL */}
+				{!scorePanel && (
+					<button
+						onClick={() => setScorePanel(true)}
+						style={{
+							position: 'absolute',
+							right: 0,
+							top: '50%',
+							transform: 'translateY(-50%)',
+							background: c.bgEl,
+							border: `1px solid ${c.border}`,
+							borderRight: 'none',
+							borderRadius: '8px 0 0 8px',
+							padding: '12px 6px',
+							cursor: 'pointer',
+							zIndex: 10,
+							display: 'flex',
+							flexDirection: 'column',
+							alignItems: 'center',
+							gap: 4,
+							boxShadow: '-2px 0 8px rgba(0,0,0,0.05)',
+						}}
+						title="Show match analysis"
+					>
+						<Target size={16} color={c.dim} />
+						<span style={{ fontSize: 10, color: c.muted, writingMode: 'vertical-rl', textOrientation: 'mixed' }}>Match</span>
+					</button>
+				)}
 				{scorePanel && (
 					<div
 						style={{
@@ -2653,11 +2730,23 @@ export default function ResumeBuilder() {
 							selectedJob={selectedJob ?? null}
 							theme={c}
 							refetchKey={matchRefetchKey}
+							resumeChanged={resumeChangedSinceMatch}
+							postTailorMode={postTailorMode}
+							onRefreshMatch={() => {
+								setMatchRefetchKey(k => k + 1)
+								setResumeChangedSinceMatch(false)
+								matchAnalysisVersionRef.current += 1
+							}}
 							onGenerateCoverLetter={() => {
 								setHasTakenAction(true)
 								handleGenerateCoverLetter()
 							}}
-							onMatchLoaded={() => setHasReviewedMatch(true)}
+							onMatchLoaded={() => {
+								setHasReviewedMatch(true)
+								matchAnalysisVersionRef.current += 1
+								setResumeChangedSinceMatch(false)
+								if (postTailorMode) setPostTailorMode(false)
+							}}
 							onBulletsGenerated={(changes, gaps, summary) => {
 								setHasTakenAction(true)
 								const snapshot = structuredClone(formData)
@@ -2720,7 +2809,9 @@ export default function ResumeBuilder() {
 									title: `Updated ${changes.length} bullet${changes.length > 1 ? 's' : ''}${summary ? ' + summary' : ''}`,
 									description: 'See changes highlighted on your resume.',
 								})
-								setMatchRefetchKey(k => k + 1)
+								// Trigger post-tailor re-analysis (summary only, no conversation)
+								setPostTailorMode(true)
+								setResumeChangedSinceMatch(false)
 							}}
 							onUndoBullets={undoSnapshotRef.current ? () => {
 								if (undoSnapshotRef.current) {
@@ -3249,16 +3340,14 @@ export default function ResumeBuilder() {
 			{coachStep !== null && (() => {
 				const step = coachSteps[coachStep]
 				if (!step) return null
-				let anchorRect: { top: number; left: number; width: number; height: number } | null = null
-				if (step.anchor === 'customize' && customizeBtnRef.current) {
-					anchorRect = customizeBtnRef.current.getBoundingClientRect()
-				} else if (step.anchor === 'tailor' && tailorBtnRef.current) {
-					anchorRect = tailorBtnRef.current.getBoundingClientRect()
-				} else if (step.anchor === 'iframe') {
-					// Point at the resume area (upper-left of main content)
+				let anchorRect: { top: number; left: number; width: number; height: number }
+				if (step.anchor === 'nav') {
+					// Point at the search/quick actions bar area in the nav
+					anchorRect = { top: 8, left: window.innerWidth / 2 - 100, width: 200, height: 40 }
+				} else {
+					// Point at the resume area (center of main content)
 					anchorRect = { top: 120, left: window.innerWidth / 2 - 100, width: 200, height: 0 }
 				}
-				if (!anchorRect) return null
 				const tooltipTop = anchorRect.top + anchorRect.height + 12
 				const tooltipLeft = Math.max(16, Math.min(anchorRect.left + anchorRect.width / 2 - 140, window.innerWidth - 296))
 				return (
@@ -3333,21 +3422,40 @@ export default function ResumeBuilder() {
 				)
 			})()}
 
-			{/* ═══ ONBOARDING WIDGET ═══ */}
-			<OnboardingWidget
-				isComplete={onboarding.isComplete}
-				dismissed={onboardingDismissed}
-				collapsed={onboardingCollapsed}
-				setDismissed={setOnboardingDismissed}
-				setCollapsed={setOnboardingCollapsed}
-				hasResume={!!(formData.name || formData.role)}
-				hasJob={!!selectedJob}
-				hasReviewedMatch={hasReviewedMatch}
-				hasTakenAction={hasTakenAction}
-				onResumeClick={() => scrollToSection('summary')}
-				onJobClick={() => setShowCreateJob(true)}
-				c={c}
-			/>
+		</div>
+	)
+}
+
+export function ErrorBoundary() {
+	const error = useRouteError()
+
+	let heading = 'Something went wrong'
+	let message = 'An unexpected error occurred in the builder.'
+
+	if (isRouteErrorResponse(error)) {
+		heading = `${error.status} ${error.statusText}`
+		message = error.data?.message || error.data || 'The server returned an error.'
+	} else if (error instanceof Error) {
+		message = error.message
+	}
+
+	return (
+		<div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 dark:bg-gray-900">
+			<div className="w-full max-w-md rounded-lg bg-white p-8 text-center shadow-lg dark:bg-gray-800">
+				<div className="mb-4 text-4xl">⚠</div>
+				<h1 className="mb-2 text-xl font-semibold text-gray-900 dark:text-gray-100">
+					{heading}
+				</h1>
+				<p className="mb-6 text-sm text-gray-600 dark:text-gray-400">
+					{message}
+				</p>
+				<button
+					onClick={() => window.location.reload()}
+					className="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+				>
+					Reload page
+				</button>
+			</div>
 		</div>
 	)
 }
