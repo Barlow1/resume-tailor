@@ -73,7 +73,7 @@ export function useOnboardingFlow({
 	const onboardingStartTime = useRef<number>(Date.now())
 
 	// Local state for session-level overrides
-	const [jobModalDismissed, setJobModalDismissed] = useState(false)
+	const [, setJobModalDismissed] = useState(false)
 	const [sessionTailorComplete, setSessionTailorComplete] = useState(false)
 	const [, setAiModalOpenDuringOnboarding] = useState(false)
 

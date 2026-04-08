@@ -34,12 +34,11 @@ import {
 	Eye,
 	EyeOff,
 	Trash2,
-	HelpCircle,
 	RotateCcw,
 } from 'lucide-react'
 import { SubscribeModal } from '~/components/subscribe-modal.tsx'
 import { getStripeSubscription, getUserId } from '~/utils/auth.server.ts'
-import { useDebouncedCallback } from 'use-debounce'
+// useDebouncedCallback moved to use-builder-save hook
 import { resumeCookie } from '~/utils/resume-cookie.server.ts'
 import {
 	AIAssistantModal,
@@ -629,8 +628,6 @@ export default function ResumeBuilder() {
 	const bulletUndoMapRef = useRef<Map<string, { action: 'rewrite' | 'new'; experienceId: string; originalText: string | null }>>(new Map())
 	const [pendingHighlights, setPendingHighlights] = useState<string[]>([])
 	const [coachStep, setCoachStep] = useState<number | null>(null)
-	const customizeBtnRef = useRef<HTMLButtonElement>(null)
-	const tailorBtnRef = useRef<HTMLButtonElement>(null)
 	const [tailorPanelOpen, setTailorPanelOpen] = useState(false)
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const [_hasTailorSnapshot, setHasTailorSnapshot] = useState(false)
