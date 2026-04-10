@@ -2,6 +2,11 @@ import { json, type ActionFunctionArgs } from '@remix-run/node'
 import { getUserId } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
 import { generateRequirementBullets } from '~/utils/openai.server.ts'
+import {
+	trackAiTailorStarted,
+	trackAiTailorCompleted,
+	flushAnalytics,
+} from '~/lib/analytics.server.ts'
 
 export async function action({ request }: ActionFunctionArgs) {
 	const userId = await getUserId(request)
@@ -61,6 +66,17 @@ export async function action({ request }: ActionFunctionArgs) {
 		visibleSections: null,
 	}
 
+	const startTime = Date.now()
+	trackAiTailorStarted(
+		userId,
+		'truth_panel_bullets',
+		true,
+		true,
+		request,
+		resumeId,
+		jobId,
+	)
+
 	try {
 		const result = await generateRequirementBullets({
 			resumeData,
@@ -69,9 +85,47 @@ export async function action({ request }: ActionFunctionArgs) {
 			requirementExperienceMap,
 		})
 
+		await prisma.gettingStartedProgress.upsert({
+			where: { ownerId: userId },
+			update: {
+				tailorCount: { increment: 1 },
+			},
+			create: {
+				ownerId: userId,
+				hasSavedJob: false,
+				hasSavedResume: false,
+				hasGeneratedResume: false,
+				hasTailoredResume: true,
+				tailorCount: 1,
+			},
+		})
+
+		trackAiTailorCompleted(
+			userId,
+			'truth_panel_bullets',
+			Date.now() - startTime,
+			true,
+			undefined,
+			request,
+			resumeId,
+			jobId,
+		)
+		await flushAnalytics()
+
 		return json({ bullets: result.bullets, summary: result.summary, warnings: result.warnings })
 	} catch (err) {
 		console.error('generate-requirement-bullets error:', err)
+		trackAiTailorCompleted(
+			userId,
+			'truth_panel_bullets',
+			Date.now() - startTime,
+			false,
+			undefined,
+			request,
+			resumeId,
+			jobId,
+		)
+		await flushAnalytics()
 		return json({ error: 'Failed to generate bullets' }, { status: 500 })
 	}
 }
