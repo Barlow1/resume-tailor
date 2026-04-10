@@ -5,6 +5,7 @@ import { generateRequirementBullets } from '~/utils/openai.server.ts'
 import {
 	trackAiTailorStarted,
 	trackAiTailorCompleted,
+	trackServerEvent,
 	flushAnalytics,
 } from '~/lib/analytics.server.ts'
 
@@ -100,15 +101,28 @@ export async function action({ request }: ActionFunctionArgs) {
 			},
 		})
 
-		trackAiTailorCompleted(
-			userId,
-			'truth_panel_bullets',
-			Date.now() - startTime,
-			true,
-			undefined,
-			request,
-			resumeId,
-			jobId,
+		const bullets = result.bullets ?? []
+		const gapCount = bullets.filter(b => b.isGap || !b.experienceId || !b.bulletText).length
+		const alreadyCoveredCount = bullets.filter(
+			b => b.action === 'already_covered' || b.action === 'not_a_bullet',
+		).length
+		const warningsCount = result.warnings?.length ?? 0
+		const appliedCount = bullets.length - gapCount - alreadyCoveredCount
+
+		trackServerEvent(
+			'ai_tailor_completed',
+			{
+				experience_id: 'truth_panel_bullets',
+				duration_ms: Date.now() - startTime,
+				success: true,
+				resume_id: resumeId,
+				job_id: jobId,
+				bullet_count: appliedCount,
+				gap_count: gapCount,
+				already_covered_count: alreadyCoveredCount,
+				warnings_count: warningsCount,
+			},
+			{ userId, request },
 		)
 		await flushAnalytics()
 

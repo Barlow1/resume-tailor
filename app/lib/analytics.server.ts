@@ -506,6 +506,117 @@ export function trackAiGenerateCompleted(
 }
 
 /**
+ * Track experience match requested (fired at start of /resources/experience-match).
+ * Use alongside trackExperienceMatchLoaded to measure match render rate + latency.
+ */
+export function trackExperienceMatchRequested(
+	userId: string,
+	resumeId: string,
+	jobId: string,
+	isPostTailor: boolean,
+	request?: Request,
+): void {
+	trackServerEvent(
+		'experience_match_requested',
+		{
+			resume_id: resumeId,
+			job_id: jobId,
+			is_post_tailor: isPostTailor,
+		},
+		{ userId, request },
+	)
+}
+
+/**
+ * Track experience match loaded successfully, with the verdict and stats that matter for PMF.
+ * `level` tells us how harsh the advisor is; `from_cache` tells us caching ROI.
+ */
+export function trackExperienceMatchLoaded(
+	userId: string,
+	resumeId: string,
+	jobId: string,
+	level: 'strong' | 'moderate' | 'weak' | 'mismatch',
+	requirementsTotal: number,
+	requirementsCovered: number,
+	missingCount: number,
+	bestMovesCount: number,
+	durationMs: number,
+	fromCache: boolean,
+	request?: Request,
+): void {
+	trackServerEvent(
+		'experience_match_loaded',
+		{
+			resume_id: resumeId,
+			job_id: jobId,
+			level,
+			requirements_total: requirementsTotal,
+			requirements_covered: requirementsCovered,
+			missing_count: missingCount,
+			best_moves_count: bestMovesCount,
+			duration_ms: durationMs,
+			from_cache: fromCache,
+		},
+		{ userId, request },
+	)
+}
+
+/**
+ * Track experience match failure (network, AI error, schema mismatch, etc.)
+ */
+export function trackExperienceMatchFailed(
+	userId: string,
+	resumeId: string,
+	jobId: string,
+	errorType: string,
+	durationMs: number,
+	request?: Request,
+): void {
+	trackServerEvent(
+		'experience_match_failed',
+		{
+			resume_id: resumeId,
+			job_id: jobId,
+			error_type: errorType,
+			duration_ms: durationMs,
+		},
+		{ userId, request },
+	)
+}
+
+/**
+ * Track post-tailor re-match — did the generated bullets actually improve the verdict?
+ * This is the outcome metric: if improved is rarely true, the tailoring isn't helping.
+ */
+export function trackPostTailorMatchLoaded(
+	userId: string,
+	resumeId: string,
+	jobId: string,
+	newLevel: 'strong' | 'moderate' | 'weak' | 'mismatch',
+	newCovered: number,
+	requirementsTotal: number,
+	improved: boolean,
+	oldLevel?: 'strong' | 'moderate' | 'weak' | 'mismatch',
+	oldCovered?: number,
+	request?: Request,
+): void {
+	trackServerEvent(
+		'post_tailor_match_loaded',
+		{
+			resume_id: resumeId,
+			job_id: jobId,
+			old_level: oldLevel,
+			new_level: newLevel,
+			old_covered: oldCovered,
+			new_covered: newCovered,
+			requirements_total: requirementsTotal,
+			improved,
+		},
+		{ userId, request },
+	)
+}
+
+/**
  * Track analysis started event
  */
 export function trackAnalysisStarted(

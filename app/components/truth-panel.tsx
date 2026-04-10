@@ -4,6 +4,7 @@ import { CheckCircle2, ChevronDown, Loader2 } from 'lucide-react'
 import type { ResumeData, BuilderJob } from '~/utils/builder-resume.server.ts'
 import type { ExperienceMatch, BestMove } from '~/utils/ai/experience-match.server.ts'
 import type { GeneratedBullet } from '~/utils/openai.server.ts'
+import { track } from '~/lib/analytics.client.ts'
 
 const BRAND = '#6B45FF'
 const SUCCESS = '#30A46C'
@@ -88,12 +89,16 @@ function ConversationLayer({
 	c,
 	onDone,
 	onBack,
+	resumeId,
+	jobId,
 }: {
 	requirements: string[]
 	experiences: Array<{ id: string; label: string }>
 	c: TruthPanelProps['theme']
 	onDone: (yesItems: Array<{ requirement: string; experienceId: string }>, noItems: string[]) => void
 	onBack: () => void
+	resumeId: string
+	jobId: string
 }) {
 	const [answers, setAnswers] = useState<Map<number, { yes: boolean; experienceId?: string }>>(new Map())
 	const [expandedIdx, setExpandedIdx] = useState<number | null>(null)
@@ -101,11 +106,25 @@ function ConversationLayer({
 	const markNo = (i: number) => {
 		setAnswers(prev => { const next = new Map(prev); next.set(i, { yes: false }); return next })
 		setExpandedIdx(null)
+		track('match_requirement_answered', {
+			resume_id: resumeId,
+			job_id: jobId,
+			answer: 'no',
+			requirement_index: i,
+			total_requirements: requirements.length,
+		})
 	}
 
 	const markYes = (i: number, experienceId: string) => {
 		setAnswers(prev => { const next = new Map(prev); next.set(i, { yes: true, experienceId }); return next })
 		setExpandedIdx(null)
+		track('match_requirement_answered', {
+			resume_id: resumeId,
+			job_id: jobId,
+			answer: 'yes',
+			requirement_index: i,
+			total_requirements: requirements.length,
+		})
 	}
 
 	const clear = (i: number) => {
@@ -268,9 +287,9 @@ function ConversationLayer({
 
 /* ═══ Full analysis ═══ */
 function FullAnalysis({
-	match, c, onGenerateCoverLetter, hasCoverLetter,
+	match, c, onGenerateCoverLetter, hasCoverLetter, resumeId, jobId,
 }: {
-	match: ExperienceMatch; c: TruthPanelProps['theme']; onGenerateCoverLetter: () => void; hasCoverLetter?: boolean
+	match: ExperienceMatch; c: TruthPanelProps['theme']; onGenerateCoverLetter: () => void; hasCoverLetter?: boolean; resumeId?: string | null; jobId?: string | null
 }) {
 	return (
 		<div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -290,7 +309,20 @@ function FullAnalysis({
 						<div style={{ fontSize: 13, color: c.muted, lineHeight: 1.5, marginTop: 4 }}>{move.explanation}</div>
 						{move.evidenceNote && <div style={{ fontSize: 12, color: c.dim, marginTop: 4, fontStyle: 'italic' }}>{move.evidenceNote}</div>}
 						{move.type === 'cover_letter' && !hasCoverLetter && (
-							<button onClick={onGenerateCoverLetter} style={{ marginTop: 10, background: BRAND, color: '#fff', fontSize: 13, fontWeight: 700, padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer' }}>
+							<button
+								onClick={() => {
+									if (resumeId && jobId) {
+										track('best_move_clicked', {
+											resume_id: resumeId,
+											job_id: jobId,
+											move_type: 'cover_letter',
+											source: 'analysis',
+										})
+									}
+									onGenerateCoverLetter()
+								}}
+								style={{ marginTop: 10, background: BRAND, color: '#fff', fontSize: 13, fontWeight: 700, padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer' }}
+							>
 								Generate with AI
 							</button>
 						)}
@@ -352,12 +384,31 @@ export function TruthPanel({
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [selectedJob?.id, formData.id])
 
+	// Capture the match state that existed just before a post-tailor refetch
+	// so the server can compare old → new level and fire post_tailor_match_loaded.
+	const previousMatchRef = useRef<{ level: ExperienceMatch['level']; covered: number } | null>(null)
+	useEffect(() => {
+		if (fetcher.data && !('error' in (fetcher.data as { error?: string }))) {
+			const m = fetcher.data as ExperienceMatch
+			previousMatchRef.current = {
+				level: m.level,
+				covered: m.requirementsCovered ?? 0,
+			}
+		}
+	}, [fetcher.data])
+
 	useEffect(() => {
 		if (!refetchKey || !selectedJob?.id || !formData.id) return
 		prevJobIdRef.current = null
 		matchLoadedCalledRef.current = false
 		fetcher.submit(
-			JSON.stringify({ resumeId: formData.id, jobId: selectedJob.id }),
+			JSON.stringify({
+				resumeId: formData.id,
+				jobId: selectedJob.id,
+				isPostTailor: true,
+				previousLevel: previousMatchRef.current?.level,
+				previousCovered: previousMatchRef.current?.covered,
+			}),
 			{ method: 'POST', action: '/resources/experience-match', encType: 'application/json' },
 		)
 		// eslint-disable-next-line react-hooks/exhaustive-deps
@@ -419,6 +470,16 @@ export function TruthPanel({
 	) => {
 		if (!formData.id || !selectedJob?.id) return
 		conversationNoItemsRef.current = noItems
+		const total = yesItems.length + noItems.length
+		track('match_conversation_proceeded', {
+			resume_id: formData.id,
+			job_id: selectedJob.id,
+			yes_count: yesItems.length,
+			no_count: noItems.length,
+			total_requirements: total,
+			fraction_answered: total > 0 ? 1 : 0,
+			all_no: yesItems.length === 0,
+		})
 		bulletFetcher.submit(
 			JSON.stringify({
 				resumeId: formData.id,
@@ -537,7 +598,17 @@ export function TruthPanel({
 								{missingReqs.length} thing{missingReqs.length > 1 ? 's' : ''} could strengthen this. Do you have experience with any of them?
 							</div>
 							<button
-								onClick={() => setLayer('conversation')}
+								onClick={() => {
+									if (formData.id && selectedJob?.id) {
+										track('match_conversation_started', {
+											resume_id: formData.id,
+											job_id: selectedJob.id,
+											match_level: match.level,
+											missing_count: missingReqs.length,
+										})
+									}
+									setLayer('conversation')
+								}}
 								style={{ background: BRAND, color: '#fff', fontSize: 14, fontWeight: 700, padding: '12px 20px', borderRadius: 10, border: 'none', cursor: 'pointer', width: '100%' }}
 							>
 								Let's find out →
@@ -546,14 +617,31 @@ export function TruthPanel({
 					)}
 					{match.level === 'strong' && (
 						<button
-							onClick={onGenerateCoverLetter}
+							onClick={() => {
+								if (formData.id && selectedJob?.id) {
+									track('best_move_clicked', {
+										resume_id: formData.id,
+										job_id: selectedJob.id,
+										move_type: 'cover_letter',
+										source: 'verdict',
+									})
+								}
+								onGenerateCoverLetter()
+							}}
 							style={{ background: BRAND, color: '#fff', fontSize: 14, fontWeight: 700, padding: '12px 20px', borderRadius: 10, border: 'none', cursor: 'pointer', width: '100%' }}
 						>
 							{hasCoverLetter ? 'Regenerate cover letter' : 'Write a cover letter →'}
 						</button>
 					)}
 					<button
-						onClick={onSkipRole}
+						onClick={() => {
+							track('match_conversation_skipped', {
+								resume_id: formData.id ?? undefined,
+								job_id: selectedJob?.id ?? undefined,
+								match_level: match.level,
+							})
+							onSkipRole?.()
+						}}
 						style={{ background: 'none', color: c.dim, fontSize: 14, fontWeight: 600, padding: '10px 20px', borderRadius: 10, border: `1px solid ${c.border}`, cursor: 'pointer', width: '100%' }}
 					>
 						Skip this role
@@ -565,7 +653,16 @@ export function TruthPanel({
 					)}
 					{onUndoBullets && (
 						<button
-							onClick={onUndoBullets}
+							onClick={() => {
+								if (formData.id) {
+									track('tailor_undone', {
+										resume_id: formData.id,
+										job_id: selectedJob?.id ?? undefined,
+										source: 'full_snapshot',
+									})
+								}
+								onUndoBullets()
+							}}
 							style={{ background: 'none', border: 'none', color: c.dim, fontSize: 13, cursor: 'pointer', padding: 0, marginTop: 8, textDecoration: 'underline' }}
 						>
 							Undo last changes
@@ -575,7 +672,7 @@ export function TruthPanel({
 			)}
 
 			{/* ═══ CONVERSATION ═══ */}
-			{layer === 'conversation' && (
+			{layer === 'conversation' && formData.id && selectedJob?.id && (
 				<div style={{ marginTop: 24 }}>
 					<ConversationLayer
 						requirements={missingReqs}
@@ -583,6 +680,8 @@ export function TruthPanel({
 						c={c}
 						onDone={handleConversationDone}
 						onBack={() => setLayer('verdict')}
+						resumeId={formData.id}
+						jobId={selectedJob.id}
 					/>
 				</div>
 			)}
@@ -638,7 +737,17 @@ export function TruthPanel({
 					<div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
 						{!hasCoverLetter && (
 							<button
-								onClick={onGenerateCoverLetter}
+								onClick={() => {
+									if (formData.id && selectedJob?.id) {
+										track('best_move_clicked', {
+											resume_id: formData.id,
+											job_id: selectedJob.id,
+											move_type: 'cover_letter',
+											source: 'done',
+										})
+									}
+									onGenerateCoverLetter()
+								}}
 								style={{ background: BRAND, color: '#fff', fontSize: 14, fontWeight: 700, padding: '12px 20px', borderRadius: 10, border: 'none', cursor: 'pointer', width: '100%' }}
 							>
 								Write a cover letter →
@@ -678,7 +787,16 @@ export function TruthPanel({
 
 					{onUndoBullets && (
 						<button
-							onClick={onUndoBullets}
+							onClick={() => {
+								if (formData.id) {
+									track('tailor_undone', {
+										resume_id: formData.id,
+										job_id: selectedJob?.id ?? undefined,
+										source: 'full_snapshot',
+									})
+								}
+								onUndoBullets()
+							}}
 							style={{ background: 'none', border: 'none', color: c.dim, fontSize: 13, cursor: 'pointer', padding: 0, textDecoration: 'underline', marginTop: 4 }}
 						>
 							Undo all changes
@@ -690,7 +808,7 @@ export function TruthPanel({
 			{/* ═══ FULL ANALYSIS ═══ */}
 			{layer === 'analysis' && (
 				<div style={{ marginTop: 24 }}>
-					<FullAnalysis match={match} c={c} onGenerateCoverLetter={onGenerateCoverLetter} hasCoverLetter={hasCoverLetter} />
+					<FullAnalysis match={match} c={c} onGenerateCoverLetter={onGenerateCoverLetter} hasCoverLetter={hasCoverLetter} resumeId={formData.id} jobId={selectedJob?.id} />
 					<button
 						onClick={() => setLayer('verdict')}
 						style={{ background: 'none', border: 'none', color: c.brandText, fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: 0, marginTop: 16 }}
