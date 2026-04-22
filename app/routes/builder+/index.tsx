@@ -857,6 +857,7 @@ export default function ResumeBuilder() {
 	)
 
 	const deleteFetcher = useFetcher()
+	const deleteJobFetcher = useFetcher()
 	const handleDeleteResume = useCallback(
 		(e: React.MouseEvent, resumeId: string) => {
 			e.stopPropagation()
@@ -976,20 +977,23 @@ export default function ResumeBuilder() {
 		})
 	}
 
-	const addBulletPoint = (experienceId: string) => {
+	const addBulletPoint = (experienceId: string, afterIndex?: number) => {
 		setFormData(prev => {
 			if (!prev.experiences) return prev
 			const newFormData = {
 				...prev,
 				experiences: prev.experiences.map(exp => {
 					if (exp.id !== experienceId) return exp
-					return {
-						...exp,
-						descriptions: [
-							...(exp.descriptions || []),
-							{ id: crypto.randomUUID(), content: '' },
-						],
-					}
+					const current = exp.descriptions || []
+					const newBullet = { id: crypto.randomUUID(), content: '' }
+					const insertAt =
+						afterIndex === undefined ? current.length : afterIndex + 1
+					const descriptions = [
+						...current.slice(0, insertAt),
+						newBullet,
+						...current.slice(insertAt),
+					]
+					return { ...exp, descriptions }
 				}),
 			}
 			debouncedSave(newFormData)
@@ -1258,7 +1262,6 @@ export default function ResumeBuilder() {
 			if (existingForJob && existingForJob.id !== formData.id) {
 				handleResumeSwitch(existingForJob.id!)
 				setSelectedJob(job)
-				setSidebar(false)
 				trackLegacyEvent('job_selected', {
 					jobId: job.id,
 					hasJobDescription: !!(job?.content && job.content.trim().length > 0),
@@ -1330,7 +1333,7 @@ export default function ResumeBuilder() {
 		setSelectedExperience(experience)
 		setSelectedBullet({ content, experienceId, bulletIndex })
 		setDiagnosticContext(diagnostic ?? null)
-		setAiModalInitialTab(undefined)
+		setAiModalInitialTab(content.trim() ? undefined : 'generate')
 		setShowAIModal(true)
 		onboarding.handleAIModalOpen()
 	}
@@ -1893,7 +1896,7 @@ export default function ResumeBuilder() {
 			iframeComponentRef.current?.markStructuralUpdate()
 			switch (action.type) {
 				case 'addBullet':
-					addBulletPoint(action.experienceId)
+					addBulletPoint(action.experienceId, action.afterIndex)
 					break
 				case 'deleteBullet':
 					deleteBullet(action.experienceId, action.bulletIndex)
@@ -2358,7 +2361,7 @@ export default function ResumeBuilder() {
 								</span>
 								{jobs.length > 0 && (
 									<div style={{ marginTop: 9, display: 'flex', alignItems: 'center', gap: 4 }}>
-										<div style={{ flex: 1 }}>
+										<div style={{ flex: 1, minWidth: 0 }}>
 											<JobDropdown
 												jobs={jobs}
 												current={formData.jobId ?? null}
@@ -2372,7 +2375,10 @@ export default function ResumeBuilder() {
 													if (!selectedJob.id || !confirm(`Remove "${selectedJob.company || selectedJob.title || 'this job'}" from your target jobs?`)) return
 													const fd = new FormData()
 													fd.append('jobid', selectedJob.id)
-													fetch('/resources/delete-job', { method: 'POST', body: fd })
+													deleteJobFetcher.submit(fd, {
+														method: 'POST',
+														action: '/resources/delete-job',
+													})
 													setSelectedJob(null)
 													setFormData(prev => ({ ...prev, jobId: undefined, job: undefined }))
 												}}
@@ -3343,6 +3349,7 @@ export default function ResumeBuilder() {
 
 			{/* ═══ COACH MARKS ═══ */}
 			{coachStep !== null && (() => {
+				if (showCreationModal) return null
 				const step = coachSteps[coachStep]
 				if (!step) return null
 				let anchorRect: { top: number; left: number; width: number; height: number }

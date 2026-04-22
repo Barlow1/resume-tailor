@@ -12,7 +12,7 @@ import { generateResumeHtml } from '~/utils/generate-resume-html.ts'
 import type { ResumeData } from '~/utils/builder-resume.server.ts'
 
 export type StructuralAction =
-	| { type: 'addBullet'; experienceId: string }
+	| { type: 'addBullet'; experienceId: string; afterIndex?: number }
 	| { type: 'deleteBullet'; experienceId: string; bulletIndex: number }
 	| { type: 'reorderBullet'; experienceId: string; oldIndex: number; newIndex: number }
 	| { type: 'addExperience' }

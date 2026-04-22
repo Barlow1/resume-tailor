@@ -100,7 +100,7 @@ export function FloatingToolbar({
 					key: 'addBullet',
 					label: 'Add bullet below',
 					icon: Plus,
-					action: { type: 'addBullet', experienceId: hovered.experienceId! },
+					action: { type: 'addBullet', experienceId: hovered.experienceId!, afterIndex: hovered.bulletIndex! },
 				})
 				const bulletContent = exp?.descriptions?.[hovered.bulletIndex!]?.content?.trim() ?? ''
 				items.push({

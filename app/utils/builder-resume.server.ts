@@ -112,7 +112,7 @@ export async function createBuilderResume(
 									content: descData.content ?? '',
 									order: descData.order ?? index,
 								}
-							}).filter(desc => desc.content !== '') ?? [],
+							}) ?? [],
 						},
 					}
 				}) || [],
