@@ -146,6 +146,10 @@ export interface AiTailorCompletedEvent {
 	gap_count?: number
 	already_covered_count?: number
 	warnings_count?: number
+	new_count?: number
+	rewrite_count?: number
+	not_a_bullet_count?: number
+	requirements_requested?: number
 }
 
 // ============================================================================
