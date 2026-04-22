@@ -102,6 +102,40 @@ export async function action({ request }: ActionFunctionArgs) {
 		})
 
 		const bullets = result.bullets ?? []
+
+		try {
+			// Look up by user+job only (not resumeId). The BuilderResume ID can change
+			// between match and tailor (save regenerates it via deleteMany/create), so
+			// filtering by resumeId here causes the lookup to miss legitimate runs.
+			const triggeringRun = await prisma.experienceMatchRun.findFirst({
+				where: { jobId, userId },
+				orderBy: { createdAt: 'desc' },
+				select: { id: true },
+			})
+			if (triggeringRun) {
+				const fixesToLog = bullets.filter(
+					b => (b.action === 'new' || b.action === 'rewrite') && b.experienceId && b.bulletText,
+				)
+				if (fixesToLog.length > 0) {
+					await prisma.requirementFix.createMany({
+						data: fixesToLog.map(b => ({
+							userId,
+							resumeId,
+							jobId,
+							experienceId: b.experienceId as string,
+							triggeringRunId: triggeringRun.id,
+							requirement: b.requirement,
+							bulletAction: b.action,
+							previousBulletContent: b.action === 'rewrite' ? b.originalText : null,
+							finalBulletContent: b.bulletText as string,
+						})),
+					})
+				}
+			}
+		} catch (fixErr) {
+			console.error('[generate-requirement-bullets] failed to log fixes', fixErr)
+		}
+
 		const newCount = bullets.filter(b => b.action === 'new').length
 		const rewriteCount = bullets.filter(b => b.action === 'rewrite').length
 		const alreadyCoveredCount = 0

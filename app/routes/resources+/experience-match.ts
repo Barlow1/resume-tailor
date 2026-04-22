@@ -35,13 +35,17 @@ export async function action({ request }: ActionFunctionArgs) {
 	if (!userId) return json({ error: 'Unauthorized' }, { status: 401 })
 
 	const body = await request.json()
-	const { resumeId, jobId, isPostTailor, previousLevel, previousCovered } = body as {
+	const { resumeId, jobId, isPostTailor, previousLevel, previousCovered, triggeredBy } = body as {
 		resumeId: string
 		jobId: string
 		isPostTailor?: boolean
 		previousLevel?: MatchLevel
 		previousCovered?: number
+		triggeredBy?: 'initial' | 'post_tailor' | 'manual_refresh'
 	}
+
+	const runTrigger: 'initial' | 'post_tailor' | 'manual_refresh' =
+		triggeredBy ?? (isPostTailor ? 'post_tailor' : 'manual_refresh')
 
 	const startTime = Date.now()
 	trackExperienceMatchRequested(userId, resumeId, jobId, !!isPostTailor, request)
@@ -114,6 +118,26 @@ export async function action({ request }: ActionFunctionArgs) {
 				create: { resumeId, jobId, resumeHash, jobHash, resultJson: JSON.stringify(result) },
 				update: { resumeHash, jobHash, resultJson: JSON.stringify(result) },
 			})
+		}
+
+		try {
+			await prisma.experienceMatchRun.create({
+				data: {
+					userId,
+					resumeId,
+					jobId,
+					triggeredBy: runTrigger,
+					level: result.level,
+					requirementsCovered: result.requirementsCovered ?? 0,
+					requirementsTotal: result.requirementsTotal ?? 0,
+					missingRequirements: JSON.stringify(result.missingRequirements ?? []),
+					coveredRequirements: JSON.stringify(result.coveredRequirements ?? []),
+					bestMoves: JSON.stringify(result.bestMoves ?? []),
+					cacheHit: fromCache,
+				},
+			})
+		} catch (logErr) {
+			console.error('[experience-match] failed to log run', logErr)
 		}
 
 		const duration = Date.now() - startTime
