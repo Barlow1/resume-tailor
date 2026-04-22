@@ -2,6 +2,12 @@ import { json, type ActionFunctionArgs } from '@remix-run/node'
 import { getUserId } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
 import { generateRequirementBullets } from '~/utils/openai.server.ts'
+import {
+	trackAiTailorStarted,
+	trackAiTailorCompleted,
+	trackServerEvent,
+	flushAnalytics,
+} from '~/lib/analytics.server.ts'
 
 export async function action({ request }: ActionFunctionArgs) {
 	const userId = await getUserId(request)
@@ -61,6 +67,17 @@ export async function action({ request }: ActionFunctionArgs) {
 		visibleSections: null,
 	}
 
+	const startTime = Date.now()
+	trackAiTailorStarted(
+		userId,
+		'truth_panel_bullets',
+		true,
+		true,
+		request,
+		resumeId,
+		jobId,
+	)
+
 	try {
 		const result = await generateRequirementBullets({
 			resumeData,
@@ -69,9 +86,65 @@ export async function action({ request }: ActionFunctionArgs) {
 			requirementExperienceMap,
 		})
 
+		await prisma.gettingStartedProgress.upsert({
+			where: { ownerId: userId },
+			update: {
+				tailorCount: { increment: 1 },
+			},
+			create: {
+				ownerId: userId,
+				hasSavedJob: false,
+				hasSavedResume: false,
+				hasGeneratedResume: false,
+				hasTailoredResume: true,
+				tailorCount: 1,
+			},
+		})
+
+		const bullets = result.bullets ?? []
+		const newCount = bullets.filter(b => b.action === 'new').length
+		const rewriteCount = bullets.filter(b => b.action === 'rewrite').length
+		const alreadyCoveredCount = 0
+		const notABulletCount = bullets.filter(b => b.action === 'not_a_bullet').length
+		const gapCount = bullets.filter(b => b.isGap || !b.experienceId || !b.bulletText).length
+		const warningsCount = result.warnings?.length ?? 0
+		const appliedCount = newCount + rewriteCount
+
+		trackServerEvent(
+			'ai_tailor_completed',
+			{
+				experience_id: 'truth_panel_bullets',
+				duration_ms: Date.now() - startTime,
+				success: true,
+				resume_id: resumeId,
+				job_id: jobId,
+				bullet_count: appliedCount,
+				gap_count: gapCount,
+				already_covered_count: alreadyCoveredCount,
+				warnings_count: warningsCount,
+				new_count: newCount,
+				rewrite_count: rewriteCount,
+				not_a_bullet_count: notABulletCount,
+				requirements_requested: requirements.length,
+			},
+			{ userId, request },
+		)
+		await flushAnalytics()
+
 		return json({ bullets: result.bullets, summary: result.summary, warnings: result.warnings })
 	} catch (err) {
 		console.error('generate-requirement-bullets error:', err)
+		trackAiTailorCompleted(
+			userId,
+			'truth_panel_bullets',
+			Date.now() - startTime,
+			false,
+			undefined,
+			request,
+			resumeId,
+			jobId,
+		)
+		await flushAnalytics()
 		return json({ error: 'Failed to generate bullets' }, { status: 500 })
 	}
 }

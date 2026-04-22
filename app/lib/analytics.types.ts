@@ -142,6 +142,115 @@ export interface AiTailorCompletedEvent {
 	success: boolean
 	resume_id?: string
 	job_id?: string
+	bullet_count?: number
+	gap_count?: number
+	already_covered_count?: number
+	warnings_count?: number
+	new_count?: number
+	rewrite_count?: number
+	not_a_bullet_count?: number
+	requirements_requested?: number
+}
+
+// ============================================================================
+// TRUTH PANEL / EXPERIENCE MATCH EVENTS (Mix: server loads, client interactions)
+// ============================================================================
+
+export type ExperienceMatchLevel = 'strong' | 'moderate' | 'weak' | 'mismatch'
+
+export interface ExperienceMatchRequestedEvent {
+	resume_id: string
+	job_id: string
+	is_post_tailor: boolean
+}
+
+export interface ExperienceMatchLoadedEvent {
+	resume_id: string
+	job_id: string
+	level: ExperienceMatchLevel
+	requirements_total: number
+	requirements_covered: number
+	missing_count: number
+	best_moves_count: number
+	duration_ms: number
+	from_cache: boolean
+}
+
+export interface ExperienceMatchFailedEvent {
+	resume_id: string
+	job_id: string
+	error_type: string
+	duration_ms: number
+}
+
+export interface PostTailorMatchLoadedEvent {
+	resume_id: string
+	job_id: string
+	old_level?: ExperienceMatchLevel
+	new_level: ExperienceMatchLevel
+	old_covered?: number
+	new_covered: number
+	requirements_total: number
+	improved: boolean
+}
+
+export interface MatchConversationStartedEvent {
+	resume_id: string
+	job_id: string
+	match_level: ExperienceMatchLevel
+	missing_count: number
+}
+
+export interface MatchConversationSkippedEvent {
+	resume_id?: string
+	job_id?: string
+	match_level?: ExperienceMatchLevel
+}
+
+export interface MatchRequirementAnsweredEvent {
+	resume_id: string
+	job_id: string
+	answer: 'yes' | 'no'
+	requirement_index: number
+	total_requirements: number
+}
+
+export interface MatchConversationProceededEvent {
+	resume_id: string
+	job_id: string
+	yes_count: number
+	no_count: number
+	total_requirements: number
+	fraction_answered: number
+	all_no: boolean
+}
+
+export type BestMoveType =
+	| 'cover_letter'
+	| 'address_gap'
+	| 'rewrite_bullets'
+	| 'dont_apply'
+	| 'referral'
+	| 'linkedin'
+
+export interface BestMoveClickedEvent {
+	resume_id: string
+	job_id: string
+	move_type: BestMoveType
+	source: 'verdict' | 'done' | 'analysis'
+}
+
+export interface TailorBulletsAppliedEvent {
+	resume_id: string
+	job_id: string
+	bullet_count: number
+	gap_count: number
+}
+
+export interface TailorUndoneEvent {
+	resume_id: string
+	job_id?: string
+	source: 'full_snapshot' | 'per_bullet'
 }
 
 export interface AiTailorAcceptedEvent {
@@ -394,6 +503,19 @@ export interface AnalyticsEventMap {
 	ai_tailor_rejected: AiTailorRejectedEvent
 	ai_generate_started: AiGenerateStartedEvent
 	ai_generate_completed: AiGenerateCompletedEvent
+
+	// Truth Panel / Experience Match journey
+	experience_match_requested: ExperienceMatchRequestedEvent
+	experience_match_loaded: ExperienceMatchLoadedEvent
+	experience_match_failed: ExperienceMatchFailedEvent
+	post_tailor_match_loaded: PostTailorMatchLoadedEvent
+	match_conversation_started: MatchConversationStartedEvent
+	match_conversation_skipped: MatchConversationSkippedEvent
+	match_requirement_answered: MatchRequirementAnsweredEvent
+	match_conversation_proceeded: MatchConversationProceededEvent
+	best_move_clicked: BestMoveClickedEvent
+	tailor_bullets_applied: TailorBulletsAppliedEvent
+	tailor_undone: TailorUndoneEvent
 	analysis_started: AnalysisStartedEvent
 	analysis_completed: AnalysisCompletedEvent
 	outreach_generated: OutreachGeneratedEvent

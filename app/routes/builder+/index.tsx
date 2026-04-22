@@ -2746,6 +2746,14 @@ export default function ResumeBuilder() {
 							}}
 							onBulletsGenerated={(changes, gaps, summary) => {
 								setHasTakenAction(true)
+								if (formData.id && selectedJob?.id) {
+									track('tailor_bullets_applied', {
+										resume_id: formData.id,
+										job_id: selectedJob.id,
+										bullet_count: changes.length,
+										gap_count: gaps.length,
+									})
+								}
 								const snapshot = structuredClone(formData)
 								const highlightIds: string[] = []
 
