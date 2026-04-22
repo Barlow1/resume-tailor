@@ -485,9 +485,6 @@ export default function MatchHistoryPage() {
 												const missing = safeJsonArray(run.missingRequirements)
 												const covered = safeJsonArray(run.coveredRequirements)
 												const bestMoves = safeJsonBestMoves(run.bestMoves)
-												const expMap = new Map(
-													(run.resume?.experiences ?? []).map(e => [e.id, `${e.role} at ${e.company}`]),
-												)
 												return (
 													<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 16 }}>
 														<div>
