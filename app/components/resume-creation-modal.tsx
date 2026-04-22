@@ -1,5 +1,5 @@
 import { useFetcher } from '@remix-run/react'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { type ResumeData } from '~/utils/builder-resume.server.ts'
 import { X, FilePlus, Upload, Copy, Loader2, ChevronRight, Check } from 'lucide-react'
 
@@ -45,8 +45,37 @@ export function ResumeCreationModal({
 	const fileInputRef = useRef<HTMLInputElement>(null)
 	const [selectedResumeId, setSelectedResumeId] = useState<string | null>(null)
 	const [showResumes, setShowResumes] = useState(false)
+	const [uploadError, setUploadError] = useState<string | null>(null)
 
 	const isSubmitting = fetcher.state !== 'idle'
+
+	const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+	const ALLOWED_TYPES = [
+		'application/pdf',
+		'application/msword',
+		'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+	]
+	const ALLOWED_EXTENSIONS = ['.pdf', '.doc', '.docx']
+
+	// Watch fetcher.data for server errors
+	useEffect(() => {
+		if (fetcher.data && typeof fetcher.data === 'object' && 'error' in fetcher.data) {
+			const errorMsg = (fetcher.data as { error: string }).error
+			setUploadError(errorMsg)
+		}
+	}, [fetcher.data])
+
+	// Auto-clear error after 10 seconds
+	useEffect(() => {
+		if (!uploadError) return
+		const timer = setTimeout(() => setUploadError(null), 10_000)
+		return () => clearTimeout(timer)
+	}, [uploadError])
+
+	// Clear error when modal closes
+	useEffect(() => {
+		if (!isOpen) setUploadError(null)
+	}, [isOpen])
 
 	const handleClickUpload = () => {
 		const isLoggedInAndHasSubscription = handleUploadResume()
@@ -58,6 +87,23 @@ export function ResumeCreationModal({
 	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0]
 		if (!file) return
+
+		setUploadError(null)
+
+		// Client-side file size validation
+		if (file.size > MAX_FILE_SIZE) {
+			setUploadError('File exceeds 5MB limit')
+			if (fileInputRef.current) fileInputRef.current.value = ''
+			return
+		}
+
+		// Client-side file type validation
+		const ext = file.name.toLowerCase().slice(file.name.lastIndexOf('.'))
+		if (!ALLOWED_TYPES.includes(file.type) && !ALLOWED_EXTENSIONS.includes(ext)) {
+			setUploadError('Please upload a PDF or DOCX file')
+			if (fileInputRef.current) fileInputRef.current.value = ''
+			return
+		}
 
 		const formData = new FormData()
 		formData.append('resumeFile', file)
@@ -148,6 +194,44 @@ export function ResumeCreationModal({
 						onChange={handleFileChange}
 						accept=".doc, .docx, application/msword, application/vnd.openxmlformats-officedocument.wordprocessingml.document, application/pdf, image/png, image/jpeg, .txt"
 					/>
+
+					{uploadError && (
+						<div style={{
+							background: '#FEE2E2',
+							color: '#991B1B',
+							borderRadius: 8,
+							padding: '10px 14px',
+							marginBottom: 6,
+							fontSize: 13,
+							display: 'flex',
+							alignItems: 'center',
+							justifyContent: 'space-between',
+							gap: 10,
+						}}>
+							<span>{uploadError}</span>
+							<button
+								type="button"
+								onClick={() => {
+									setUploadError(null)
+									if (fileInputRef.current) fileInputRef.current.value = ''
+									fileInputRef.current?.click()
+								}}
+								style={{
+									background: 'transparent',
+									border: 'none',
+									color: '#991B1B',
+									fontWeight: 600,
+									fontSize: 13,
+									cursor: 'pointer',
+									whiteSpace: 'nowrap',
+									textDecoration: 'underline',
+									padding: 0,
+								}}
+							>
+								Try again
+							</button>
+						</div>
+					)}
 
 					<div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
 						{!showResumes && (

@@ -269,7 +269,7 @@ model BuilderResume {
   textSize        String?
   visibleSections BuilderVisibleSections?
   user            User?                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  job             Job?                    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  job             Job?                    @relation(fields: [jobId], references: [id], onDelete: SetNull)
   experiences     BuilderExperience[]
   education       BuilderEducation[]
   skills          BuilderSkill[]

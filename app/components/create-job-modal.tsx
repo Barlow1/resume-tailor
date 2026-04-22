@@ -104,6 +104,7 @@ export function CreateJobModal({ isOpen, onClose, onCreate, theme, showSkip, onS
 								Job Title
 							</label>
 							<input
+								autoFocus
 								type="text"
 								id="title"
 								name="title"

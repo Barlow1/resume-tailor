@@ -58,6 +58,8 @@ interface UseOnboardingFlowReturn {
 	handleAIModalClose: () => void
 	/** Handler to call when user clicks "Tailor Achievement" - completes onboarding */
 	handleTailorComplete: () => void
+	/** Reset onboarding state so user can replay the walkthrough */
+	resetOnboarding: () => void
 }
 
 export function useOnboardingFlow({
@@ -71,7 +73,7 @@ export function useOnboardingFlow({
 	const onboardingStartTime = useRef<number>(Date.now())
 
 	// Local state for session-level overrides
-	const [jobModalDismissed, setJobModalDismissed] = useState(false)
+	const [, setJobModalDismissed] = useState(false)
 	const [sessionTailorComplete, setSessionTailorComplete] = useState(false)
 	const [, setAiModalOpenDuringOnboarding] = useState(false)
 
@@ -97,10 +99,9 @@ export function useOnboardingFlow({
 		sessionTailorComplete,
 	])
 
-	// Show job modal only when:
-	// 1. Stage is needs_job
-	// 2. User hasn't dismissed it this session
-	const showJobModal = stage === 'needs_job' && !jobModalDismissed
+	// #6: Don't auto-trigger the job modal when user starts typing.
+	// The modal should only appear from explicit user action (e.g. "Add Target Job" command).
+	const showJobModal = false
 
 	// Handle job creation from modal
 	const handleJobCreated = useCallback(
@@ -160,6 +161,13 @@ export function useOnboardingFlow({
 		})
 	}, [])
 
+	// Reset onboarding so the walkthrough can be replayed
+	const resetOnboarding = useCallback(() => {
+		setJobModalDismissed(false)
+		setSessionTailorComplete(false)
+		setAiModalOpenDuringOnboarding(false)
+	}, [])
+
 	// Spotlight configuration
 	const spotlightTarget = useMemo(() => getSpotlightTarget(stage), [stage])
 	const spotlightHint = useMemo(() => getSpotlightHint(stage), [stage])
@@ -180,5 +188,6 @@ export function useOnboardingFlow({
 		handleAIModalOpen,
 		handleAIModalClose,
 		handleTailorComplete,
+		resetOnboarding,
 	}
 }

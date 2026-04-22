@@ -10,6 +10,7 @@ import { ErrorList } from '~/components/forms.tsx'
 
 const DeleteFormSchema = z.object({
 	jobid: z.string(),
+	redirectTo: z.string().optional(),
 })
 
 export async function action({ request }: DataFunctionArgs) {
@@ -29,7 +30,7 @@ export async function action({ request }: DataFunctionArgs) {
 		)
 	}
 
-	const { jobid } = submission.value
+	const { jobid, redirectTo } = submission.value
 
 	const job = await prisma.job.findFirst({
 		select: { id: true, owner: { select: { username: true } } },
@@ -49,7 +50,8 @@ export async function action({ request }: DataFunctionArgs) {
 		where: { id: job.id },
 	})
 
-	return redirect(`/jobs`)
+	if (redirectTo) return redirect(redirectTo)
+	return json({ status: 'success', submission } as const)
 }
 
 export function DeleteJob({ id }: { id: string }) {
@@ -70,6 +72,7 @@ export function DeleteJob({ id }: { id: string }) {
 			{...form.props}
 		>
 			<input type="hidden" name="jobid" value={id} />
+			<input type="hidden" name="redirectTo" value="/jobs" />
 			<Button
 				type="submit"
 				variant="danger"

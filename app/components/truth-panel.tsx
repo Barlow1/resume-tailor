@@ -45,9 +45,13 @@ interface TruthPanelProps {
 	onNextJob?: () => void
 	hasCoverLetter?: boolean
 	refetchKey?: number
+	resumeChanged?: boolean
+	onRefreshMatch?: () => void
+	/** When true, skip conversation and show summary-only verdict after re-analysis */
+	postTailorMode?: boolean
 }
 
-type Layer = 'verdict' | 'conversation' | 'generating' | 'done' | 'analysis'
+type Layer = 'verdict' | 'conversation' | 'generating' | 'done' | 'analysis' | 'post-tailor-loading' | 'post-tailor-result'
 
 function getLevelColor(level: ExperienceMatch['level']): string {
 	switch (level) {
@@ -352,11 +356,15 @@ export function TruthPanel({
 	onNextJob,
 	hasCoverLetter,
 	refetchKey,
+	resumeChanged,
+	onRefreshMatch,
+	postTailorMode,
 }: TruthPanelProps) {
 	const fetcher = useFetcher<ExperienceMatch>()
 	const bulletFetcher = useFetcher<{ bullets: GeneratedBullet[] }>()
 	const prevJobIdRef = useRef<string | null>(null)
 	const matchLoadedCalledRef = useRef(false)
+	const hasAutoExpandedRef = useRef(false)
 	const [layer, setLayer] = useState<Layer>('verdict')
 	const [lastGaps, setLastGaps] = useState<string[]>([])
 	const [lastAlreadyCovered, setLastAlreadyCovered] = useState<string[]>([])
@@ -370,6 +378,7 @@ export function TruthPanel({
 		setLastAlreadyCovered([])
 		setLastAddedCount(0)
 		setLastWarnings([])
+		hasAutoExpandedRef.current = false
 	}, [selectedJob?.id])
 
 	useEffect(() => {
@@ -414,12 +423,58 @@ export function TruthPanel({
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [refetchKey])
 
+	// Post-tailor: auto re-analyze after tailor changes are applied
+	const postTailorTriggeredRef = useRef(false)
+	const awaitingPostTailorRef = useRef(false)
 	useEffect(() => {
-		if (fetcher.data && !matchLoadedCalledRef.current) {
+		if (postTailorMode && !postTailorTriggeredRef.current && selectedJob?.id && formData.id) {
+			postTailorTriggeredRef.current = true
+			awaitingPostTailorRef.current = true
+			setLayer('post-tailor-loading')
+			prevJobIdRef.current = null
+			fetcher.submit(
+				JSON.stringify({ resumeId: formData.id, jobId: selectedJob.id }),
+				{ method: 'POST', action: '/resources/experience-match', encType: 'application/json' },
+			)
+		}
+		if (!postTailorMode) {
+			postTailorTriggeredRef.current = false
+		}
+	}, [postTailorMode, selectedJob?.id, formData.id, fetcher])
+
+	// Watch fetcher state transitions to detect when NEW data arrives
+	const prevFetcherStateRef = useRef(fetcher.state)
+	useEffect(() => {
+		const wasLoading = prevFetcherStateRef.current !== 'idle'
+		const isNowIdle = fetcher.state === 'idle'
+		prevFetcherStateRef.current = fetcher.state
+
+		// Only fire when transitioning from loading → idle (new data arrived)
+		if (!wasLoading || !isNowIdle || !fetcher.data) return
+
+		// Post-tailor: skip conversation, show result
+		if (awaitingPostTailorRef.current) {
+			awaitingPostTailorRef.current = false
+			onMatchLoaded?.()
+			setLayer('post-tailor-result')
+			return
+		}
+
+		if (!matchLoadedCalledRef.current) {
 			matchLoadedCalledRef.current = true
 			onMatchLoaded?.()
+
+			// Auto-expand into conversation if there are missing requirements to address
+			const data = fetcher.data as ExperienceMatch & { error?: string } | undefined
+			if (data && !('error' in data)) {
+				const missing = data.missingRequirements ?? []
+				if (missing.length > 0 && data.level !== 'mismatch' && !hasAutoExpandedRef.current) {
+					hasAutoExpandedRef.current = true
+					setLayer('conversation')
+				}
+			}
 		}
-	}, [fetcher.data, onMatchLoaded])
+	}, [fetcher.state, fetcher.data, onMatchLoaded])
 
 	// When bullets arrive, convert and call parent
 	const bulletDataProcessedRef = useRef<unknown>(null)
@@ -517,11 +572,39 @@ export function TruthPanel({
 	const isError = !isLoading && (!rawData || 'error' in rawData) && fetcher.state === 'idle' && prevJobIdRef.current !== null && selectedJob !== null
 	const match = rawData && !('error' in rawData) ? rawData as ExperienceMatch : undefined
 
-	/* ═══ Empty ═══ */
-	if (!selectedJob) {
+	/* ═══ Empty-state matrix ═══ */
+	const hasContent = !!(
+		(formData.about && formData.about.trim().length > 0) ||
+		(formData.experiences ?? []).some(exp =>
+			(exp.descriptions ?? []).some(d => d.content && d.content.trim().length > 0)
+		)
+	)
+	const hasJob = !!selectedJob
+
+	if (!hasContent || !hasJob) {
+		const message = !hasContent && !hasJob
+			? 'Add your experience and a target job to see your match analysis'
+			: hasContent && !hasJob
+				? 'Add a target job to see your match'
+				: 'Add your experience to see your match'
 		return (
-			<div style={{ padding: 32, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center' }}>
-				<div style={{ fontSize: 16, fontWeight: 500, color: c.muted }}>Paste a job description to get started</div>
+			<div style={{
+				padding: 32,
+				display: 'flex',
+				flexDirection: 'column',
+				alignItems: 'center',
+				justifyContent: 'center',
+				height: '100%',
+				textAlign: 'center',
+			}}>
+				<div style={{
+					fontSize: 15,
+					fontWeight: 500,
+					color: c.muted,
+					lineHeight: 1.6,
+				}}>
+					{message}
+				</div>
 			</div>
 		)
 	}
@@ -535,6 +618,9 @@ export function TruthPanel({
 				<SkeletonBlock width="70%" height={40} c={c} />
 				<SkeletonBlock width="100%" height={16} c={c} />
 				<div style={{ marginTop: 12 }}><SkeletonBlock width="80%" height={36} c={c} /></div>
+				<div style={{ fontSize: 13, color: c.muted, marginTop: 4 }}>
+					Analyzing your resume against this job...
+				</div>
 			</div>
 		)
 	}
@@ -560,6 +646,37 @@ export function TruthPanel({
 		)
 	}
 
+	// #28-29: Resume changed banner
+	const refreshBanner = resumeChanged && onRefreshMatch && !postTailorMode && layer !== 'post-tailor-loading' && layer !== 'post-tailor-result' ? (
+		<div style={{
+			padding: '10px 16px',
+			background: '#FFF7ED',
+			borderBottom: `1px solid ${c.border}`,
+			display: 'flex',
+			alignItems: 'center',
+			justifyContent: 'space-between',
+			gap: 8,
+		}}>
+			<span style={{ fontSize: 13, color: '#9A3412', fontWeight: 500 }}>Resume changed since last analysis</span>
+			<button
+				onClick={onRefreshMatch}
+				style={{
+					padding: '5px 12px',
+					borderRadius: 6,
+					border: 'none',
+					background: BRAND,
+					color: '#fff',
+					fontSize: 12,
+					fontWeight: 600,
+					cursor: 'pointer',
+					whiteSpace: 'nowrap',
+				}}
+			>
+				Refresh
+			</button>
+		</div>
+	) : null
+
 	const levelColor = getLevelColor(match.level)
 	const coveredReqs = match.coveredRequirements ?? []
 	const missingReqs = match.missingRequirements ?? []
@@ -570,7 +687,9 @@ export function TruthPanel({
 	const isMismatch = match.level === 'mismatch'
 
 	return (
-		<div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '32px 28px', overflow: 'auto' }}>
+		<div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'auto' }}>
+			{refreshBanner}
+			<div style={{ padding: '32px 28px', flex: 1 }}>
 			{/* ═══ VERDICT ═══ */}
 			<div>
 				<div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: c.dim }}>
@@ -644,7 +763,7 @@ export function TruthPanel({
 						}}
 						style={{ background: 'none', color: c.dim, fontSize: 14, fontWeight: 600, padding: '10px 20px', borderRadius: 10, border: `1px solid ${c.border}`, cursor: 'pointer', width: '100%' }}
 					>
-						Skip this role
+						Skip{selectedJob?.company ? ` ${selectedJob.company}` : ' this role'}
 					</button>
 					{match.skipSuggestion && isMismatch && (
 						<div style={{ fontSize: 13, color: c.dim, marginTop: 4, lineHeight: 1.5 }}>
@@ -767,7 +886,7 @@ export function TruthPanel({
 								width: '100%',
 							}}
 						>
-							Download & apply
+							Download
 						</button>
 						{!hasCoverLetter && (
 							<button
@@ -818,17 +937,88 @@ export function TruthPanel({
 				</div>
 			)}
 
-			{/* ═══ Footer ═══ */}
-			{layer !== 'analysis' && layer !== 'generating' && (
-				<div style={{ marginTop: 'auto', paddingTop: 24 }}>
-					<button
-						onClick={() => setLayer('analysis')}
-						style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: c.dim, fontSize: 13, cursor: 'pointer', padding: 0 }}
-					>
-						See full analysis <ChevronDown size={12} />
-					</button>
+			{/* ═══ POST-TAILOR LOADING ═══ */}
+			{layer === 'post-tailor-loading' && (
+				<div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 0', gap: 12 }}>
+					<Loader2 size={24} color={BRAND} strokeWidth={2} style={{ animation: 'spin 1s linear infinite' }} />
+					<style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+					<div style={{ fontSize: 14, color: c.muted, fontWeight: 500 }}>Updating your match score...</div>
 				</div>
 			)}
+
+			{/* ═══ POST-TAILOR RESULT ═══ */}
+			{layer === 'post-tailor-result' && match && (
+				<div style={{ marginTop: 20 }}>
+					<div style={{
+						padding: '16px 20px',
+						borderRadius: 10,
+						background: getLevelColor(match.level) + '10',
+						border: `1px solid ${getLevelColor(match.level)}30`,
+					}}>
+						<div style={{ fontSize: 28, fontWeight: 800, color: getLevelColor(match.level), fontFamily: 'Manrope, sans-serif' }}>
+							{match.level.charAt(0).toUpperCase() + match.level.slice(1)}
+						</div>
+						<div style={{ fontSize: 14, color: c.text, lineHeight: 1.6, marginTop: 8 }}>
+							{match.oneLineSummary || match.summary}
+						</div>
+					</div>
+
+					<div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 20 }}>
+						{!hasCoverLetter && (
+							<button
+								onClick={onGenerateCoverLetter}
+								style={{
+									padding: '10px 16px',
+									borderRadius: 8,
+									border: 'none',
+									background: BRAND,
+									color: '#fff',
+									fontSize: 14,
+									fontWeight: 600,
+									cursor: 'pointer',
+								}}
+							>
+								Write a cover letter
+							</button>
+						)}
+						<button
+							onClick={onDownload}
+							style={{
+								padding: '10px 16px',
+								borderRadius: 8,
+								border: `1px solid ${c.border}`,
+								background: hasCoverLetter ? BRAND : c.bgEl,
+								color: hasCoverLetter ? '#fff' : c.text,
+								fontSize: 14,
+								fontWeight: 600,
+								cursor: 'pointer',
+							}}
+						>
+							Download
+						</button>
+					</div>
+				</div>
+			)}
+
+			{/* ═══ Footer ═══ */}
+			{layer !== 'analysis' && layer !== 'generating' && layer !== 'post-tailor-loading' && layer !== 'post-tailor-result' && (
+				<div style={{ marginTop: 'auto', paddingTop: 24 }}>
+					<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+						<button
+							onClick={() => setLayer('analysis')}
+							style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: c.dim, fontSize: 13, cursor: 'pointer', padding: 0 }}
+						>
+							See full analysis <ChevronDown size={12} />
+						</button>
+						{lastAddedCount > 0 && (
+							<span style={{ fontSize: 12, color: SUCCESS, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
+								<CheckCircle2 size={12} strokeWidth={2} /> {lastAddedCount} change{lastAddedCount > 1 ? 's' : ''} applied
+							</span>
+						)}
+					</div>
+				</div>
+			)}
+		</div>
 		</div>
 	)
 }

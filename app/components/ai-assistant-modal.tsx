@@ -203,9 +203,8 @@ export function AIAssistantModal({
 			setTailorContent(content)
 			setTailorExperience(experience)
 			setShowBulletPicker(!content)
+			setActiveTab(initialTab ?? 'tailor')
 			if (!wasOpenRef.current) {
-				// Modal just opened — reset tab and track
-				setActiveTab(initialTab ?? 'tailor')
 				trackAiModalOpened(initialTab ?? 'tailor', experience?.id ?? undefined)
 				wasOpenRef.current = true
 			}

@@ -6,10 +6,12 @@ import {
 	Moon,
 	Download,
 	Check,
+	AlertTriangle,
 	Palette,
 	LogOut,
 	User as UserIcon,
 	CreditCard,
+	HelpCircle,
 } from 'lucide-react'
 import { getUserImgSrc } from '~/utils/misc.ts'
 
@@ -51,6 +53,7 @@ export interface BuilderNavProps {
 	manageSubFormRef: React.RefObject<HTMLFormElement>
 	submitForm: (form: HTMLFormElement | null) => void
 	navigate: (to: string) => void
+	onReplayWalkthrough?: () => void
 	BRAND: string
 	AMBER: string
 	SUCCESS: string
@@ -77,10 +80,12 @@ export function BuilderNav({
 	manageSubFormRef,
 	submitForm,
 	navigate,
+	onReplayWalkthrough,
 	BRAND,
 	AMBER,
 	SUCCESS,
 }: BuilderNavProps) {
+	const isMac = typeof navigator !== 'undefined' && /Mac/.test(navigator.platform)
 	return (
 		<div
 			style={{
@@ -152,7 +157,7 @@ export function BuilderNav({
 						fontFamily: 'system-ui',
 					}}
 				>
-					⌘K
+					{isMac ? '⌘K' : 'Ctrl+K'}
 				</span>
 			</div>
 			<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -164,6 +169,8 @@ export function BuilderNav({
 								? AMBER
 								: saveStatus === 'saved'
 								? SUCCESS
+								: saveStatus === 'error'
+								? '#ef4444'
 								: c.dim,
 						display: 'flex',
 						alignItems: 'center',
@@ -171,7 +178,8 @@ export function BuilderNav({
 						transition: 'color 300ms',
 					}}
 				>
-					<Check size={12} strokeWidth={2} />
+					{saveStatus === 'saved' && <Check size={12} strokeWidth={2} />}
+					{saveStatus === 'error' && <AlertTriangle size={12} strokeWidth={2} />}
 					{saveStatus === 'saving'
 						? 'Saving...'
 						: saveStatus === 'saved'
@@ -198,6 +206,25 @@ export function BuilderNav({
 					<Palette size={14} color={c.dim} strokeWidth={1.75} />
 					Customize
 				</button>
+				{onReplayWalkthrough && (
+					<button
+						onClick={onReplayWalkthrough}
+						title="Replay walkthrough"
+						style={{
+							width: 32,
+							height: 32,
+							borderRadius: 6,
+							border: 'none',
+							background: 'transparent',
+							cursor: 'pointer',
+							display: 'flex',
+							alignItems: 'center',
+							justifyContent: 'center',
+						}}
+					>
+						<HelpCircle size={16} color={c.dim} strokeWidth={1.75} />
+					</button>
+				)}
 				<button
 					onClick={toggleDarkMode}
 					style={{

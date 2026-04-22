@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useRef, useEffect } from 'react'
 import {
 	ChevronUp,
 	ChevronDown,
@@ -54,6 +54,14 @@ export function FloatingToolbar({
 	sectionOrder,
 	formData,
 }: FloatingToolbarProps) {
+	const dismissTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
+
+	useEffect(() => {
+		return () => {
+			if (dismissTimeoutRef.current) clearTimeout(dismissTimeoutRef.current)
+		}
+	}, [])
+
 	const actions = useMemo((): ToolbarAction[] => {
 		if (!hovered) return []
 
@@ -92,11 +100,12 @@ export function FloatingToolbar({
 					key: 'addBullet',
 					label: 'Add bullet below',
 					icon: Plus,
-					action: { type: 'addBullet', experienceId: hovered.experienceId! },
+					action: { type: 'addBullet', experienceId: hovered.experienceId!, afterIndex: hovered.bulletIndex! },
 				})
+				const bulletContent = exp?.descriptions?.[hovered.bulletIndex!]?.content?.trim() ?? ''
 				items.push({
 					key: 'aiTailor',
-					label: 'AI tailor',
+					label: bulletContent ? 'Rewrite' : 'Generate',
 					icon: Sparkles,
 					action: { type: '__aiTailor' },
 				})
@@ -271,15 +280,28 @@ export function FloatingToolbar({
 		<div
 			style={style}
 			onMouseDown={(e) => e.preventDefault()}
-			onMouseEnter={() => { if (toolbarHoveredRef) (toolbarHoveredRef as React.MutableRefObject<boolean>).current = true }}
-			onMouseLeave={() => { if (toolbarHoveredRef) { (toolbarHoveredRef as React.MutableRefObject<boolean>).current = false; onDismiss?.() } }}
+			onMouseEnter={() => {
+				if (toolbarHoveredRef) (toolbarHoveredRef as React.MutableRefObject<boolean>).current = true
+				if (dismissTimeoutRef.current) clearTimeout(dismissTimeoutRef.current)
+			}}
+			onMouseLeave={() => {
+				if (toolbarHoveredRef) (toolbarHoveredRef as React.MutableRefObject<boolean>).current = false
+				dismissTimeoutRef.current = setTimeout(() => {
+					if (toolbarHoveredRef && !toolbarHoveredRef.current) {
+						onDismiss?.()
+					}
+				}, 150)
+			}}
+			onKeyDown={(e) => {
+				if (e.key === 'Escape') onDismiss?.()
+			}}
 			role="toolbar"
 			aria-label="Element actions"
 		>
 			<style>{`
 				.floating-toolbar-wrap {
 					display: flex;
-					flex-direction: column;
+					flex-direction: row;
 					gap: 2px;
 					background: #fff;
 					border-radius: 8px;
@@ -313,9 +335,20 @@ export function FloatingToolbar({
 					background: #fef2f2;
 					color: #dc2626;
 				}
+				.floating-toolbar-btn.ai {
+					background: #6B45FF;
+					color: #fff;
+					width: auto;
+					min-width: 26px;
+					padding: 0 7px;
+					gap: 4px;
+					font-size: 10px;
+					font-weight: 600;
+					letter-spacing: 0.02em;
+				}
 				.floating-toolbar-btn.ai:hover:not(:disabled) {
-					background: #f5f3ff;
-					color: #7c3aed;
+					background: #5A37E0;
+					color: #fff;
 				}
 			`}</style>
 			<div className="floating-toolbar-wrap">
@@ -329,6 +362,7 @@ export function FloatingToolbar({
 						aria-label={a.label}
 					>
 						<a.icon size={14} />
+						{a.key === 'aiTailor' && <span>{a.label}</span>}
 					</button>
 				))}
 			</div>
