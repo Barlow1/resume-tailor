@@ -439,7 +439,7 @@ export function TruthPanel({
 		const alreadyCovered: string[] = []
 		const apiGaps: string[] = []
 		for (const b of data.bullets) {
-			if (b.action === 'already_covered' || b.action === 'not_a_bullet') {
+			if (b.action === 'not_a_bullet') {
 				alreadyCovered.push(b.requirement)
 			} else if (b.isGap || !b.experienceId || !b.bulletText) {
 				apiGaps.push(b.requirement)

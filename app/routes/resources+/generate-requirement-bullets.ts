@@ -102,12 +102,13 @@ export async function action({ request }: ActionFunctionArgs) {
 		})
 
 		const bullets = result.bullets ?? []
+		const newCount = bullets.filter(b => b.action === 'new').length
+		const rewriteCount = bullets.filter(b => b.action === 'rewrite').length
+		const alreadyCoveredCount = 0
+		const notABulletCount = bullets.filter(b => b.action === 'not_a_bullet').length
 		const gapCount = bullets.filter(b => b.isGap || !b.experienceId || !b.bulletText).length
-		const alreadyCoveredCount = bullets.filter(
-			b => b.action === 'already_covered' || b.action === 'not_a_bullet',
-		).length
 		const warningsCount = result.warnings?.length ?? 0
-		const appliedCount = bullets.length - gapCount - alreadyCoveredCount
+		const appliedCount = newCount + rewriteCount
 
 		trackServerEvent(
 			'ai_tailor_completed',
@@ -121,6 +122,10 @@ export async function action({ request }: ActionFunctionArgs) {
 				gap_count: gapCount,
 				already_covered_count: alreadyCoveredCount,
 				warnings_count: warningsCount,
+				new_count: newCount,
+				rewrite_count: rewriteCount,
+				not_a_bullet_count: notABulletCount,
+				requirements_requested: requirements.length,
 			},
 			{ userId, request },
 		)

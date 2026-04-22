@@ -1174,7 +1174,7 @@ export const generateCoverLetter = async ({
 
 const GeneratedBulletSchema = z.object({
 	requirement: z.string(),
-	action: z.enum(['rewrite', 'new', 'already_covered', 'not_a_bullet']),
+	action: z.enum(['rewrite', 'new', 'not_a_bullet']),
 	experienceId: z.string().nullable(),
 	experienceName: z.string().nullable(),
 	existingBulletId: z.string().nullable(),
@@ -1222,30 +1222,21 @@ export const generateRequirementBullets = async ({
 				role: 'system',
 				content: `You improve resumes to demonstrate specific job requirements. For each requirement the user confirms they have experience with, you either REWRITE an existing bullet or CREATE a new one.
 
-DECISION: NOT_A_BULLET vs ALREADY_COVERED vs REWRITE vs NEW
+DECISION: NOT_A_BULLET vs NEW vs REWRITE
 
 FIRST CHECK — is this requirement about tenure, years of experience, or seniority level?
 NEVER generate bullets that describe tenure or experience level. "Bring 5+ years of...", "Leverage extensive background in...", "Apply N years of experience across..." are summary statements, not accomplishments. Every bullet must describe something the person DID — an action with context and ideally a result. If a requirement is about years of experience (e.g., "4+ years healthcare PM", "5+ years B2B SaaS", "8+ years engineering"), it cannot be addressed by a new bullet. It's addressed by the resume's dates, job titles, and the headline. Return action: "not_a_bullet" with explanation: "Years of experience requirements are shown through your timeline, not through a bullet." Set all other fields to null, isGap false.
 
-SECOND CHECK — does an existing bullet ALREADY demonstrate this requirement in substance, even without using the exact JD vocabulary? If yes, return action "already_covered" with the existingBulletId and originalText, bulletText set to null, isGap false. Do NOT rewrite bullets that already cover the requirement — the user's authentic voice is more valuable than JD-mirrored phrasing.
+The user has already told us they have this experience. Your job is to surface it on the resume, not to second-guess whether it's already there. For every requirement that is not a tenure/years requirement, you MUST write a bullet — either NEW or REWRITE. You may not return "already_covered" or skip the requirement.
 
-"Collaborated daily with design and engineering to turn user research into shipped product changes" ALREADY demonstrates cross-functional Agile collaboration. It doesn't need "Served as Product Owner for an embedded engineering pod" layered on top.
+NEW is the default. When the user confirmed they have this experience, prefer creating a new bullet that explicitly addresses the requirement under the most plausible experience. A new bullet makes the coverage visible to both ATS systems and human readers.
 
-If the requirement is NOT already covered, scan ALL existing bullets across all experiences. If an existing bullet partially covers the requirement — mentions the domain, a related task, or adjacent work — REWRITE that bullet to make the coverage explicit and specific. If no existing bullet has any overlap with the requirement, CREATE a new bullet under the most plausible experience.
-
-REWRITE is preferred. It makes the resume tighter. Only CREATE when nothing existing can be adapted.
+REWRITE only when an existing bullet has partial, adjacent overlap with the requirement (mentions the domain, a related task, or adjacent work) and can be strengthened to make the coverage explicit WITHOUT substituting its original claim. If rewriting would destroy a distinct accomplishment that the existing bullet already demonstrates, create a NEW bullet instead.
 
 When NOT_A_BULLET:
 - Set action to "not_a_bullet"
 - Set explanation to a short reason (e.g. "Years of experience requirements are shown through your timeline, not through a bullet.")
 - Set all other fields (experienceId, experienceName, existingBulletId, originalText, bulletText) to null
-- Set isGap to false
-
-When ALREADY_COVERED:
-- Set action to "already_covered"
-- Set existingBulletId to the ID of the bullet that already covers it
-- Set originalText to the current text of that bullet
-- Set bulletText to null
 - Set isGap to false
 
 When REWRITING:
@@ -1292,7 +1283,7 @@ RULES:
 BULLET WRITING RULES:
 - READ the existing bullets for the target experience carefully. Your new/rewritten bullet must fit naturally alongside them — same tense, same specificity level, same format.
 - Each bullet: specific action + context + outcome/metric. Ground it in the ROLE (what this person's title and company suggest they did), the EXISTING BULLETS (what level of detail and domain they demonstrate), and the JD REQUIREMENT (what specific skill or competency the hiring manager is screening for).
-- If metrics aren't known, use placeholders: "[X]%", "[N] clients"
+- If metrics aren't known, OMIT them entirely. Write the bullet without a metric — a specific action with context is stronger evidence than a placeholder. NEVER use brackets like "[X]%", "[N] clients", or any other placeholder tokens. Placeholder brackets degrade the bullet's evidentiary weight, read as unfilled templates rather than real accomplishments, and reduce the likelihood the requirement is recognized as demonstrated.
 - Sound like something this person actually did in THAT specific role at THAT company. Reference the industry, company type, and scope evident from other bullets.
 - experienceId must match a provided experience ID, or null for gaps
 - experienceName is "Role at Company" for display
