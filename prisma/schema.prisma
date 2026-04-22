@@ -76,6 +76,8 @@ model User {
   tailoredResumes        TailoredResume[]
   bulletTailorLogs       BulletTailorLog[]
   applications           Application[]
+  experienceMatchRuns    ExperienceMatchRun[]
+  requirementFixes       RequirementFix[]
 }
 
 model Password {
@@ -136,6 +138,7 @@ model Job {
   ownerId              String?
   applications         Application[]
   experienceMatchCache ExperienceMatchCache[]
+  experienceMatchRuns  ExperienceMatchRun[]
 }
 
 model Experience {
@@ -281,6 +284,7 @@ model BuilderResume {
   tailorSnapshotDate   DateTime?
   applications         Application[]
   experienceMatchCache ExperienceMatchCache[]
+  experienceMatchRuns  ExperienceMatchRun[]
 
   @@index([userId])
 }
@@ -490,4 +494,50 @@ model ExperienceMatchCache {
 
   @@unique([resumeId, jobId])
   @@index([resumeId])
+}
+
+model ExperienceMatchRun {
+  id                  String   @id @default(cuid())
+  userId              String
+  resumeId            String
+  jobId               String
+  triggeredBy         String
+  level               String
+  requirementsCovered Int
+  requirementsTotal   Int
+  missingRequirements String
+  coveredRequirements String
+  bestMoves           String
+  cacheHit            Boolean  @default(false)
+  createdAt           DateTime @default(now())
+
+  user   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resume BuilderResume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  job    Job           @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  requirementFixes RequirementFix[]
+
+  @@index([userId, createdAt])
+  @@index([resumeId, jobId, createdAt])
+}
+
+model RequirementFix {
+  id                    String   @id @default(cuid())
+  userId                String
+  resumeId              String
+  jobId                 String
+  experienceId          String
+  triggeringRunId       String
+  requirement           String
+  bulletAction          String
+  previousBulletContent String?
+  finalBulletContent    String
+  createdAt             DateTime @default(now())
+
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  triggeringRun ExperienceMatchRun @relation(fields: [triggeringRunId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([triggeringRunId])
+  @@index([resumeId, jobId, createdAt])
 }
