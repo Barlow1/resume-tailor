@@ -387,7 +387,7 @@ export function TruthPanel({
 		prevJobIdRef.current = selectedJob.id
 		matchLoadedCalledRef.current = false
 		fetcher.submit(
-			JSON.stringify({ resumeId: formData.id, jobId: selectedJob.id }),
+			JSON.stringify({ resumeId: formData.id, jobId: selectedJob.id, triggeredBy: 'initial' }),
 			{ method: 'POST', action: '/resources/experience-match', encType: 'application/json' },
 		)
 		// eslint-disable-next-line react-hooks/exhaustive-deps
@@ -415,6 +415,7 @@ export function TruthPanel({
 				resumeId: formData.id,
 				jobId: selectedJob.id,
 				isPostTailor: true,
+				triggeredBy: 'post_tailor',
 				previousLevel: previousMatchRef.current?.level,
 				previousCovered: previousMatchRef.current?.covered,
 			}),
