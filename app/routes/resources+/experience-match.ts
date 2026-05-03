@@ -35,13 +35,19 @@ export async function action({ request }: ActionFunctionArgs) {
 	if (!userId) return json({ error: 'Unauthorized' }, { status: 401 })
 
 	const body = await request.json()
-	const { resumeId, jobId, isPostTailor, previousLevel, previousCovered, triggeredBy } = body as {
+	const { resumeId, jobId, isPostTailor, previousLevel, previousCovered, triggeredBy, clientResume } = body as {
 		resumeId: string
 		jobId: string
 		isPostTailor?: boolean
 		previousLevel?: MatchLevel
 		previousCovered?: number
 		triggeredBy?: 'initial' | 'post_tailor' | 'manual_refresh'
+		clientResume?: {
+			about?: string | null
+			experiences?: Array<{ id?: string | null; role?: string | null; company?: string | null; startDate?: string | null; endDate?: string | null; descriptions?: Array<{ id?: string | null; content?: string | null }> }>
+			education?: Array<{ id?: string | null; school?: string | null; degree?: string | null; startDate?: string | null; endDate?: string | null; description?: string | null }>
+			skills?: Array<{ id?: string | null; name?: string | null }>
+		}
 	}
 
 	const runTrigger: 'initial' | 'post_tailor' | 'manual_refresh' =
@@ -69,7 +75,31 @@ export async function action({ request }: ActionFunctionArgs) {
 			return json({ error: 'Not found' }, { status: 404 })
 		}
 
-		const resumeData: ResumeData = {
+		// Prefer the client-supplied resume (in-memory, post-tailor) over the DB
+		// snapshot. The DB lags behind because debouncedSave is 1s debounced —
+		// without this, a post-tailor re-match reads stale content, hits cache,
+		// and reports the same score as before the tailor.
+		const resumeData: ResumeData = clientResume ? {
+			about: clientResume.about ?? null,
+			experiences: (clientResume.experiences ?? []).map(e => ({
+				id: e.id ?? null,
+				role: e.role ?? null,
+				company: e.company ?? null,
+				startDate: e.startDate ?? null,
+				endDate: e.endDate ?? null,
+				descriptions: (e.descriptions ?? []).map(d => ({ id: d.id ?? null, content: d.content ?? null })),
+			})),
+			education: (clientResume.education ?? []).map(e => ({
+				id: e.id ?? null,
+				school: e.school ?? null,
+				degree: e.degree ?? null,
+				startDate: e.startDate ?? null,
+				endDate: e.endDate ?? null,
+				description: e.description ?? null,
+			})),
+			skills: (clientResume.skills ?? []).map(s => ({ id: s.id ?? null, name: s.name ?? null })),
+			visibleSections: null,
+		} : {
 			about: resume.about,
 			experiences: resume.experiences.map(e => ({
 				id: e.id,
