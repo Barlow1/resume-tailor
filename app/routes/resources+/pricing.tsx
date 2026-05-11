@@ -1,61 +1,45 @@
 import { parse } from '@conform-to/zod'
-import { CheckIcon } from '@heroicons/react/20/solid'
 import { json } from '@remix-run/node'
 import { Form, useRouteLoaderData } from '@remix-run/react'
 import { type ActionFunctionArgs, redirect } from '@remix-run/router'
-import { z } from 'zod'
-import { Button } from '~/components/ui/button.tsx'
-import { getUserId, requireStripeSubscription } from '~/utils/auth.server.ts'
 import { useState } from 'react'
-import { Radio, RadioGroup } from '@headlessui/react'
-import { cn } from '~/utils/misc.ts'
-import { trackEvent } from '~/utils/analytics.ts'
+import { z } from 'zod'
 import { track } from '~/lib/analytics.client.ts'
+import { useTheme } from '~/routes/resources+/theme/index.tsx'
 import type { loader as rootLoader } from '~/root.tsx'
+import { trackEvent } from '~/utils/analytics.ts'
+import { getUserId, requireStripeSubscription } from '~/utils/auth.server.ts'
 
-const frequencies = [
-	{ value: 'weekly' as const, label: 'Weekly', priceSuffix: '/week' },
-	{ value: 'monthly' as const, label: 'Monthly', priceSuffix: '/month' },
+export type Frequency = 'weekly' | 'monthly'
+
+export type SubscribeTrigger =
+	| 'pricing_page'
+	| 'download_limit'
+	| 'ai_limit'
+	| 'analysis_limit'
+	| 'outreach_limit'
+	| 'upload_required'
+	| 'direct'
+
+const FREE_FEATURES = [
+	'3 tailored experiences',
+	'3 generated experiences',
+	'48-hour support response time',
+	'Export to an ATS optimized PDF',
 ]
-const tiers = [
-	{
-		name: 'Free',
-		id: 'tier-free',
-		href: '#',
-		price: {
-			monthly: 'FREE',
-			weekly: 'FREE',
-		},
-		description:
-			"Build your first resume and tailor it to any job you're applying to and export it to an ATS optimized PDF",
-		features: [
-			'6 tailored experiences',
-			'6 generated experiences',
-			'48-hour support response time',
-			'Export to an ATS optimized PDF',
-		],
-		mostPopular: false,
-	},
-	{
-		name: 'Pro',
-		id: 'tier-pro',
-		href: '#',
-		price: {
-			monthly: { initial: '3 DAY FREE TRIAL', recurring: '$15' },
-			weekly: { initial: '3 DAY FREE TRIAL', recurring: '$4.99' },
-		},
-		description:
-			"Tailor unlimited resumes to all jobs you're applying to and download them in an ATS optimized PDF",
-		features: [
-			'3-day free trial',
-			'Unlimited AI tailored & ATS optimized resumes',
-			'AI powered resume builder',
-			'AI resume upload & parsing',
-			'Dedicated support',
-		],
-		mostPopular: true,
-	},
+
+const PRO_FEATURES = [
+	'3-day free trial',
+	'Unlimited AI tailored & ATS optimized resumes',
+	'AI powered resume builder',
+	'AI resume upload & parsing',
+	'Dedicated support',
 ]
+
+const PRICES: Record<Frequency, { amount: string; period: string }> = {
+	weekly: { amount: '$4.99', period: 'week' },
+	monthly: { amount: '$15', period: 'month' },
+}
 
 export const PricingSchema = z.object({
 	successUrl: z.string(),
@@ -66,9 +50,7 @@ export const PricingSchema = z.object({
 
 export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData()
-	const submission = parse(formData, {
-		schema: PricingSchema,
-	})
+	const submission = parse(formData, { schema: PricingSchema })
 	if (submission.intent !== 'submit') {
 		return json({ status: 'idle', submission } as const)
 	}
@@ -81,7 +63,6 @@ export async function action({ request }: ActionFunctionArgs) {
 		return redirect(`/login?redirectTo=${redirectTo || successUrl}`)
 	}
 	const baseUrl = new URL(request.url).origin
-
 	const fullSuccessUrl = `${baseUrl}${redirectTo || successUrl}`
 	const fullCancelUrl = `${baseUrl}${cancelUrl}`
 	await requireStripeSubscription({
@@ -93,6 +74,69 @@ export async function action({ request }: ActionFunctionArgs) {
 	return null
 }
 
+// ---------------------------------------------------------------------------
+// Theme-aware token map
+// ---------------------------------------------------------------------------
+
+interface Tokens {
+	el: string         // tier card surface
+	brand: string      // primary purple (always #6B45FF)
+	gradFrom: string   // gradient stop 1
+	gradMid: string   // gradient stop 2
+	gradTo: string     // gradient stop 3
+	text: string
+	sec: string
+	mut: string
+	brd: string
+	checkmark: string
+	proGlow: string    // inner radial glow on Pro card
+	proShadow: string  // outer shadow on Pro card
+	toggleBg: string
+	toggleBrd: string
+}
+
+const dark: Tokens = {
+	el: '#18181B',
+	brand: '#6B45FF',
+	gradFrom: '#8B6AFF',
+	gradMid: '#C4B5FD',
+	gradTo: '#6B45FF',
+	text: '#FAFAFA',
+	sec: '#A1A1AA',
+	mut: '#8E8E96',
+	brd: 'rgba(255,255,255,0.06)',
+	checkmark: '#8B6AFF',
+	proGlow: 'radial-gradient(ellipse 90% 50% at 50% 0%, rgba(107,69,255,0.18) 0%, transparent 70%)',
+	proShadow: '0 0 0 1px rgba(107,69,255,0.3), 0 8px 32px rgba(107,69,255,0.15)',
+	toggleBg: '#18181B',
+	toggleBrd: 'rgba(255,255,255,0.06)',
+}
+
+const light: Tokens = {
+	el: '#FAFAFA',
+	brand: '#6B45FF',
+	gradFrom: '#5430BB',
+	gradMid: '#6B45FF',
+	gradTo: '#5430BB',
+	text: '#111113',
+	sec: '#46464C',
+	mut: '#71717A',
+	brd: '#E0E0E6',
+	checkmark: '#6B45FF',
+	proGlow: 'radial-gradient(ellipse 90% 50% at 50% 0%, rgba(107,69,255,0.06) 0%, transparent 70%)',
+	proShadow: '0 0 0 1px rgba(107,69,255,0.35), 0 8px 24px rgba(107,69,255,0.18)',
+	toggleBg: '#F4F4F5',
+	toggleBrd: '#E0E0E6',
+}
+
+export function tokensFor(theme: 'light' | 'dark'): Tokens {
+	return theme === 'light' ? light : dark
+}
+
+// ---------------------------------------------------------------------------
+// Pricing
+// ---------------------------------------------------------------------------
+
 export function Pricing({
 	successUrl,
 	cancelUrl,
@@ -102,150 +146,415 @@ export function Pricing({
 	successUrl: string
 	cancelUrl: string
 	redirectTo?: string | undefined
-	trigger?: 'pricing_page' | 'download_limit' | 'ai_limit' | 'analysis_limit' | 'outreach_limit' | 'direct'
+	trigger?: SubscribeTrigger
 }) {
-	const [frequency, setFrequency] = useState(frequencies[0])
+	const [frequency, setFrequency] = useState<Frequency>('weekly')
 	const rootData = useRouteLoaderData<typeof rootLoader>('root')
 	const userId = rootData?.user?.id
+	const theme = useTheme()
+	const t = tokensFor(theme)
+	const price = PRICES[frequency]
+
+	const handleSubmit = () => {
+		try {
+			if (userId) {
+				trackEvent('free_trial_started', {
+					user_id: userId,
+					plan_tier: frequency,
+				})
+			}
+			trackEvent('checkout_started', {
+				plan: frequency,
+				is_trial: true,
+				trigger,
+			})
+			track('checkout_started', {
+				plan: frequency,
+				is_trial: true,
+				trigger,
+			})
+		} catch {
+			// never block checkout on analytics
+		}
+	}
 
 	return (
-		<div className="mx-auto max-w-7xl">
-			<div className="mt-16 flex justify-center">
-				<RadioGroup
-					value={frequency}
-					onChange={setFrequency}
-					className="grid grid-cols-2 gap-x-1 rounded-full bg-background p-1 text-center text-xs/5 font-semibold ring-1 ring-inset ring-border"
-				>
-					{frequencies.map(option => (
-						<Radio
-							key={option.value}
-							value={option}
-							className="cursor-pointer rounded-full px-2.5 py-1 text-muted-foreground data-[checked]:bg-brand-800 data-[checked]:text-primary-foreground"
-						>
-							{option.label}
-						</Radio>
-					))}
-				</RadioGroup>
+		<div style={{ fontFamily: 'Nunito Sans, system-ui, sans-serif' }}>
+			<div style={{ display: 'flex', justifyContent: 'center', marginBottom: 26 }}>
+				<FrequencyToggle value={frequency} onChange={setFrequency} t={t} />
 			</div>
-			<div className="isolate mx-auto mt-10 grid max-w-md grid-cols-1 gap-8 lg:mx-0 lg:max-w-none lg:grid-cols-2">
-				{tiers.map(tier => {
-					const price = tier.price[frequency.value]
-					const initalPrice = typeof price === 'string' ? price : price.initial
-					const recurringPrice =
-						typeof price === 'string' ? undefined : price.recurring
-					return (
-						<div
-							key={tier.id}
-							className={cn(
-								tier.mostPopular
-									? 'ring-2 ring-brand-800'
-									: 'ring-1 ring-border',
-								'rounded-3xl bg-background p-8 xl:p-10',
-							)}
-						>
-							<div className="flex items-center justify-between gap-x-4">
-								<h3
-									id={tier.id}
-									className={cn(
-										tier.mostPopular ? 'text-brand-300' : 'text-foreground',
-										'text-lg/8 font-semibold',
-									)}
-								>
-									{tier.name}
-								</h3>
-								{tier.mostPopular ? (
-									<p className="rounded-full bg-brand-800/10 px-2.5 py-1 text-xs/5 font-semibold text-brand-300 dark:bg-brand-800/20">
-										Most popular
-									</p>
-								) : null}
-							</div>
-							<p className="mt-4 text-sm/6 text-muted-foreground">
-								{tier.description}
-							</p>
-							<p className="mt-6 flex items-baseline gap-x-1">
-								<span className="text-4xl font-semibold tracking-tight text-foreground">
-									{initalPrice}
-								</span>
-								{tier.name === 'Free' || tier.name === 'Pro' ? null : (
-									<span className="text-sm/6 font-semibold text-muted-foreground">
-										{frequency.priceSuffix}
-									</span>
-								)}
-							</p>
-							{recurringPrice ? (
-								<p className="mt-6 flex items-baseline gap-x-1">
-									<span className="text-sm/6 font-semibold text-muted-foreground">
-										then
-									</span>
-									<span className="text-sm/6 font-semibold tracking-tight text-foreground">
-										{recurringPrice}
-									</span>
-									{tier.name === 'Free' ? null : (
-										<span className="text-sm/6 font-semibold text-muted-foreground">
-											{frequency.priceSuffix}
-										</span>
-									)}
-								</p>
-							) : null}
-							{tier.name === 'Free' ? null : (
-								<Form method="post" action="/resources/pricing">
-									<input type="hidden" name="successUrl" value={successUrl} />
-									<input type="hidden" name="cancelUrl" value={cancelUrl} />
-									<input type="hidden" name="redirectTo" value={redirectTo} />
-									<input
-										type="hidden"
-										name="frequency"
-										value={frequency.value}
-									/>
-									<Button
-										type="submit"
-										onClick={() => {
-											// Track free_trial_started event
-											if (userId) {
-												trackEvent('free_trial_started', {
-													user_id: userId,
-													plan_tier: frequency.value,
-												})
-											}
-											// Track checkout_started event (GA4)
-											trackEvent('checkout_started', {
-												plan: frequency.value,
-												is_trial: true,
-												trigger,
-											})
-											// Track checkout_started event (PostHog)
-											track('checkout_started', {
-												plan: frequency.value,
-												is_trial: true,
-												trigger,
-											})
-										}}
-										className={cn(
-											tier.mostPopular
-												? 'bg-brand-800 text-primary-foreground hover:bg-brand-500'
-												: 'bg-background text-brand-300 ring-1 ring-inset ring-border hover:ring-brand-800/30',
-											'mt-6 block w-full',
-										)}
-									>
-										Start free trial
-									</Button>
-								</Form>
-							)}
-							<ul className="mt-8 space-y-3 text-sm/6 text-muted-foreground xl:mt-10">
-								{tier.features.map(feature => (
-									<li key={feature} className="flex gap-x-3">
-										<CheckIcon
-											aria-hidden="true"
-											className="h-6 w-5 flex-none text-brand-300"
-										/>
-										{feature}
-									</li>
-								))}
-							</ul>
-						</div>
-					)
-				})}
+			<div
+				style={{
+					display: 'grid',
+					gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+					gap: 16,
+					maxWidth: 700,
+					marginLeft: 'auto',
+					marginRight: 'auto',
+				}}
+			>
+				<FreeCard t={t} />
+				<ProCard
+					t={t}
+					price={price}
+					successUrl={successUrl}
+					cancelUrl={cancelUrl}
+					redirectTo={redirectTo}
+					frequency={frequency}
+					trigger={trigger}
+					onSubmit={handleSubmit}
+				/>
 			</div>
 		</div>
 	)
 }
+
+// ---------------------------------------------------------------------------
+// Tier cards
+// ---------------------------------------------------------------------------
+
+function FreeCard({ t }: { t: Tokens }) {
+	return (
+		<div
+			style={{
+				background: t.el,
+				border: `1px solid ${t.brd}`,
+				borderRadius: 16,
+				padding: '24px 22px',
+				display: 'flex',
+				flexDirection: 'column',
+			}}
+		>
+			<h3
+				style={{
+					margin: 0,
+					fontSize: 18,
+					fontWeight: 600,
+					color: t.text,
+					letterSpacing: '-0.01em',
+				}}
+			>
+				Free
+			</h3>
+
+			<div style={{ marginTop: 12, marginBottom: 14 }}>
+				<span
+					style={{
+						fontFamily: 'Manrope, Nunito Sans, system-ui, sans-serif',
+						fontSize: 24,
+						fontWeight: 700,
+						letterSpacing: '-0.02em',
+						color: t.text,
+						lineHeight: 1,
+					}}
+				>
+					FREE
+				</span>
+			</div>
+
+			<p style={{ margin: '0 0 18px', color: t.sec, fontSize: 14, lineHeight: 1.5 }}>
+				Build your first resume and tailor it to any job you&rsquo;re applying to and export
+				it to an ATS optimized PDF
+			</p>
+
+			<ul
+				style={{
+					listStyle: 'none',
+					padding: 0,
+					margin: 0,
+					display: 'flex',
+					flexDirection: 'column',
+					gap: 10,
+				}}
+			>
+				{FREE_FEATURES.map(f => (
+					<FeatureItem key={f} text={f} t={t} />
+				))}
+			</ul>
+		</div>
+	)
+}
+
+interface ProCardProps {
+	t: Tokens
+	price: { amount: string; period: string }
+	successUrl: string
+	cancelUrl: string
+	redirectTo?: string
+	frequency: Frequency
+	trigger?: SubscribeTrigger
+	onSubmit: () => void
+}
+
+function ProCard({
+	t,
+	price,
+	successUrl,
+	cancelUrl,
+	redirectTo,
+	frequency,
+	trigger,
+	onSubmit,
+}: ProCardProps) {
+	const [ctaHover, setCtaHover] = useState(false)
+	return (
+		<div
+			style={{
+				position: 'relative',
+				background: t.el,
+				border: `1px solid ${t.brand}`,
+				borderRadius: 16,
+				padding: '24px 22px',
+				boxShadow: t.proShadow,
+				display: 'flex',
+				flexDirection: 'column',
+				overflow: 'hidden',
+			}}
+		>
+			<div
+				aria-hidden="true"
+				style={{
+					position: 'absolute',
+					inset: 0,
+					pointerEvents: 'none',
+					background: t.proGlow,
+				}}
+			/>
+
+			<div
+				style={{
+					position: 'relative',
+					display: 'flex',
+					justifyContent: 'space-between',
+					alignItems: 'center',
+				}}
+			>
+				<h3
+					style={{
+						margin: 0,
+						fontSize: 18,
+						fontWeight: 600,
+						letterSpacing: '-0.01em',
+						background: `linear-gradient(135deg, ${t.gradFrom}, ${t.gradMid}, ${t.gradTo})`,
+						WebkitBackgroundClip: 'text',
+						WebkitTextFillColor: 'transparent',
+						backgroundClip: 'text',
+					}}
+				>
+					Pro
+				</h3>
+				<span
+					style={{
+						background: 'rgba(107,69,255,0.12)',
+						color: t.brand,
+						border: '1px solid rgba(107,69,255,0.25)',
+						borderRadius: 999,
+						padding: '4px 10px',
+						fontSize: 11,
+						fontWeight: 600,
+						textTransform: 'uppercase',
+						letterSpacing: '0.05em',
+					}}
+				>
+					Most popular
+				</span>
+			</div>
+
+			<div style={{ position: 'relative', marginTop: 12, marginBottom: 14 }}>
+				<div
+					style={{
+						fontFamily: 'Manrope, Nunito Sans, system-ui, sans-serif',
+						fontSize: 28,
+						fontWeight: 700,
+						letterSpacing: '-0.02em',
+						color: t.text,
+						lineHeight: 1.05,
+					}}
+				>
+					3 DAY FREE TRIAL
+				</div>
+				<div style={{ fontSize: 14, color: t.mut, marginTop: 4 }}>
+					then {price.amount}/{price.period}
+				</div>
+			</div>
+
+			<p
+				style={{
+					position: 'relative',
+					margin: '0 0 18px',
+					color: t.sec,
+					fontSize: 14,
+					lineHeight: 1.5,
+				}}
+			>
+				Tailor unlimited resumes to all jobs you&rsquo;re applying to and download them in an
+				ATS optimized PDF
+			</p>
+
+			<ul
+				style={{
+					position: 'relative',
+					listStyle: 'none',
+					padding: 0,
+					margin: '0 0 20px',
+					display: 'flex',
+					flexDirection: 'column',
+					gap: 10,
+				}}
+			>
+				{PRO_FEATURES.map(f => (
+					<FeatureItem key={f} text={f} t={t} />
+				))}
+			</ul>
+
+			<Form
+				method="post"
+				action="/resources/pricing"
+				onSubmit={onSubmit}
+				style={{ position: 'relative', marginTop: 'auto' }}
+			>
+				<input type="hidden" name="successUrl" value={successUrl} />
+				<input type="hidden" name="cancelUrl" value={cancelUrl} />
+				{redirectTo ? <input type="hidden" name="redirectTo" value={redirectTo} /> : null}
+				<input type="hidden" name="frequency" value={frequency} />
+				{trigger ? <input type="hidden" name="trigger" value={trigger} /> : null}
+
+				<button
+					type="submit"
+					onMouseEnter={() => setCtaHover(true)}
+					onMouseLeave={() => setCtaHover(false)}
+					style={{
+						width: '100%',
+						background: t.brand,
+						color: '#fff',
+						border: 'none',
+						borderRadius: 8,
+						padding: '12px 24px',
+						fontSize: 15,
+						fontWeight: 500,
+						cursor: 'pointer',
+						fontFamily: 'Nunito Sans, system-ui, sans-serif',
+						boxShadow: ctaHover
+							? '0 0 0 1px rgba(107,69,255,0.4), 0 6px 24px rgba(107,69,255,0.35)'
+							: '0 0 0 1px rgba(107,69,255,0.3), 0 4px 16px rgba(107,69,255,0.25)',
+						transform: ctaHover ? 'translateY(-1px)' : 'translateY(0)',
+						transition: 'all 0.2s',
+					}}
+				>
+					Start free trial
+				</button>
+			</Form>
+		</div>
+	)
+}
+
+// ---------------------------------------------------------------------------
+// Bits
+// ---------------------------------------------------------------------------
+
+function FeatureItem({ text, t }: { text: string; t: Tokens }) {
+	return (
+		<li
+			style={{
+				display: 'flex',
+				alignItems: 'flex-start',
+				gap: 10,
+				color: t.sec,
+				fontSize: 14,
+				lineHeight: 1.5,
+			}}
+		>
+			<svg
+				width="16"
+				height="16"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke={t.checkmark}
+				strokeWidth={2.25}
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				aria-hidden="true"
+				style={{ flexShrink: 0, marginTop: 2 }}
+			>
+				<polyline points="20 6 9 17 4 12" />
+			</svg>
+			<span>{text}</span>
+		</li>
+	)
+}
+
+function FrequencyToggle({
+	value,
+	onChange,
+	t,
+}: {
+	value: Frequency
+	onChange: (f: Frequency) => void
+	t: Tokens
+}) {
+	const options: { id: Frequency; label: string }[] = [
+		{ id: 'weekly', label: 'Weekly' },
+		{ id: 'monthly', label: 'Monthly' },
+	]
+	const activeIdx = options.findIndex(o => o.id === value)
+	return (
+		<div
+			role="tablist"
+			aria-label="Billing frequency"
+			style={{
+				position: 'relative',
+				display: 'inline-flex',
+				padding: 4,
+				background: t.toggleBg,
+				border: `1px solid ${t.toggleBrd}`,
+				borderRadius: 999,
+			}}
+		>
+			<div
+				aria-hidden="true"
+				style={{
+					position: 'absolute',
+					top: 4,
+					bottom: 4,
+					left: 4,
+					width: 'calc(50% - 4px)',
+					borderRadius: 999,
+					background: t.brand,
+					boxShadow: '0 0 0 1px rgba(107,69,255,0.4), 0 2px 8px rgba(107,69,255,0.3)',
+					transform: `translateX(${activeIdx * 100}%)`,
+					transition: 'transform 0.2s cubic-bezier(0.16,1,0.3,1)',
+				}}
+			/>
+			{options.map(o => {
+				const active = o.id === value
+				return (
+					<button
+						key={o.id}
+						type="button"
+						role="tab"
+						aria-selected={active}
+						onClick={() => onChange(o.id)}
+						style={{
+							position: 'relative',
+							zIndex: 1,
+							minWidth: 108,
+							padding: '8px 18px',
+							background: 'transparent',
+							border: 'none',
+							cursor: 'pointer',
+							color: active ? '#fff' : t.sec,
+							fontFamily: 'Nunito Sans, system-ui, sans-serif',
+							fontSize: 13,
+							fontWeight: 600,
+							transition: 'color 0.2s',
+						}}
+					>
+						{o.label}
+					</button>
+				)
+			})}
+		</div>
+	)
+}
+
+export default Pricing

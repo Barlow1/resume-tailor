@@ -1,5 +1,5 @@
 import { type DataFunctionArgs, redirectDocument, json } from '@remix-run/node'
-import { getUserId } from '~/utils/auth.server.ts'
+import { getUserId, getStripeSubscription } from '~/utils/auth.server.ts'
 import { parseResumeWithOpenAI, ResumeParseError } from '~/utils/openai-resume-parser.server.ts'
 import {
 	createBuilderResume,
@@ -70,6 +70,23 @@ export async function action({ request }: DataFunctionArgs) {
 	const type = url.searchParams.get('type')
 
 	if (type === 'upload') {
+		if (!userId) {
+			return json(
+				{ error: 'Please sign in to upload a resume.', type: 'auth_required' },
+				{ status: 401 },
+			)
+		}
+		const subscription = await getStripeSubscription(userId)
+		if (!subscription) {
+			return json(
+				{
+					error: 'Upload is a Pro feature. Subscribe to upload your resume.',
+					type: 'subscription_required',
+				},
+				{ status: 402 },
+			)
+		}
+
 		const formData = await unstable_parseMultipartFormData(
 			request,
 			unstable_createMemoryUploadHandler({ maxPartSize: MAX_SIZE }),

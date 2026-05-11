@@ -576,7 +576,7 @@ export default function ResumeBuilder() {
 	const [scorePanel, setScorePanel] = useState(true)
 	const [activeSection, setActiveSection] = useState('experience')
 	const [showSubscribeModal, setShowSubscribeModal] = useState(false)
-	const [subscribeModalTrigger, setSubscribeModalTrigger] = useState<'download_limit' | 'ai_limit'>('download_limit')
+	const [subscribeModalTrigger, setSubscribeModalTrigger] = useState<'download_limit' | 'ai_limit' | 'upload_required'>('download_limit')
 	const [showCreateJob, setShowCreateJob] = useState(false)
 	const [showCreationModal, setShowCreationModal] = useState(!formData.id || onboardingReset)
 	const [showAIModal, setShowAIModal] = useState(false)
@@ -1501,7 +1501,7 @@ export default function ResumeBuilder() {
 	)
 
 	const handleDownloadPDF = useCallback(async () => {
-		const MAX_FREE_DOWNLOADS = 6
+		const MAX_FREE_DOWNLOADS = 3
 		if (
 			!subscription?.active &&
 			(gettingStartedProgress?.downloadCount ?? 0) >= MAX_FREE_DOWNLOADS
@@ -1720,6 +1720,16 @@ export default function ResumeBuilder() {
 	const handleUploadResume = () => {
 		if (!userId) {
 			navigate('/login?redirectTo=/builder')
+			return false
+		}
+		if (!subscription?.active) {
+			setSubscribeModalTrigger('upload_required')
+			setShowSubscribeModal(true)
+			track('paywall_shown', {
+				trigger: 'upload_required',
+				usage_count: 0,
+				limit: 0,
+			})
 			return false
 		}
 		return true
@@ -2063,6 +2073,7 @@ export default function ResumeBuilder() {
 				resumes={resumes}
 				userId={userId}
 				handleUploadResume={handleUploadResume}
+				hasActiveSubscription={!!subscription?.active}
 				theme={c}
 			/>
 			{onboarding.showJobModal && (

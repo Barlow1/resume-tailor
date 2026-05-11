@@ -304,7 +304,12 @@ export interface ResumeDownloadedEvent {
 // PAYWALL / CONVERSION EVENTS (Mix)
 // ============================================================================
 
-export type PaywallTrigger = 'ai_limit' | 'download_limit' | 'analysis_limit' | 'outreach_limit'
+export type PaywallTrigger =
+	| 'ai_limit'
+	| 'download_limit'
+	| 'analysis_limit'
+	| 'outreach_limit'
+	| 'upload_required'
 
 export interface PricingPageViewedEvent {
 	trigger: string

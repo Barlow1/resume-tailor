@@ -20,7 +20,7 @@ import { z } from 'zod'
 import { ErrorList } from '~/components/forms.tsx'
 import { Button } from '~/components/ui/button.tsx'
 import * as deleteFileRoute from '~/routes/resources+/delete-file.tsx'
-import { authenticator, requireUserId } from '~/utils/auth.server.ts'
+import { authenticator, getStripeSubscription, requireUserId } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
 import { parseResumeWithOpenAI, ResumeParseError } from '~/utils/openai-resume-parser.server.ts'
 import { bytesToMB, invariant } from '~/utils/misc.ts'
@@ -72,16 +72,38 @@ export async function loader({ request }: DataFunctionArgs) {
 		where: { ownerId: userId },
 		include: { file: true },
 	})
+	const subscriptionPromise = getStripeSubscription(userId)
 
-	const [user, resume] = await Promise.all([userPromise, resumePromise])
+	const [user, resume, subscription] = await Promise.all([
+		userPromise,
+		resumePromise,
+		subscriptionPromise,
+	])
 	if (!user) {
 		throw await authenticator.logout(request, { redirectTo: '/' })
+	}
+	if (!subscription) {
+		throw redirect('/pricing?trigger=upload_required')
 	}
 	return json({ user, resume })
 }
 
 export async function action({ request }: DataFunctionArgs) {
 	const userId = await requireUserId(request)
+
+	const subscription = await getStripeSubscription(userId)
+	if (!subscription) {
+		return json(
+			{
+				status: 'error' as const,
+				type: 'subscription_required' as const,
+				error: 'Upload is a Pro feature. Subscribe to upload your resume.',
+				submission: null,
+			},
+			{ status: 402 },
+		)
+	}
+
 	const formData = await unstable_parseMultipartFormData(
 		request,
 		unstable_createMemoryUploadHandler({ maxPartSize: MAX_SIZE }),
@@ -321,7 +343,7 @@ export default function FileUploaderModal() {
 	const [form, { resumeFile }] = useForm({
 		id: 'profile-resume',
 		constraint: getFieldsetConstraint(ResumeFormSchema),
-		lastSubmission: actionData?.submission,
+		lastSubmission: actionData?.submission ?? undefined,
 		onValidate({ formData }) {
 			return parse(formData, { schema: ResumeFormSchema })
 		},
