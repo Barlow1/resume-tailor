@@ -167,7 +167,6 @@ export function SubscribeModal({
 											margin: '0 0 22px',
 											color: t.text,
 											textAlign: 'center',
-											textWrap: 'balance' as const,
 										}}
 									>
 										<span
