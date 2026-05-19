@@ -300,7 +300,7 @@ let paywallShownAt: number | null = null
  * Track paywall shown and start timer for dismissal tracking
  */
 export function trackPaywallShown(
-	trigger: 'ai_limit' | 'download_limit' | 'analysis_limit' | 'outreach_limit',
+	trigger: 'ai_limit' | 'download_limit' | 'analysis_limit' | 'outreach_limit' | 'upload_required',
 	usageCount: number,
 	limit: number,
 ): void {
@@ -316,7 +316,7 @@ export function trackPaywallShown(
  * Track paywall dismissal with time viewed
  */
 export function trackPaywallDismissed(
-	trigger: 'ai_limit' | 'download_limit' | 'analysis_limit' | 'outreach_limit',
+	trigger: 'ai_limit' | 'download_limit' | 'analysis_limit' | 'outreach_limit' | 'upload_required',
 ): void {
 	const timeViewed = paywallShownAt ? Date.now() - paywallShownAt : 0
 	track('paywall_dismissed', {

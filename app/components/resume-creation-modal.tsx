@@ -28,6 +28,7 @@ interface ResumeCreationModalProps {
 	resumes: ResumeData[] | null
 	userId: string | null
 	handleUploadResume: () => boolean
+	hasActiveSubscription?: boolean
 	theme?: ThemeColors
 }
 
@@ -38,6 +39,7 @@ export function ResumeCreationModal({
 	resumes,
 	userId,
 	handleUploadResume,
+	hasActiveSubscription = false,
 	theme,
 }: ResumeCreationModalProps) {
 	const c = theme ?? defaultTheme
@@ -57,13 +59,21 @@ export function ResumeCreationModal({
 	]
 	const ALLOWED_EXTENSIONS = ['.pdf', '.doc', '.docx']
 
-	// Watch fetcher.data for server errors
+	// Watch fetcher.data for server errors. If the server returned a paywall
+	// (e.g. someone bypassed the client gate), close the modal so the parent
+	// can surface the SubscribeModal instead of showing a red error banner.
 	useEffect(() => {
-		if (fetcher.data && typeof fetcher.data === 'object' && 'error' in fetcher.data) {
-			const errorMsg = (fetcher.data as { error: string }).error
-			setUploadError(errorMsg)
+		if (fetcher.data && typeof fetcher.data === 'object') {
+			const data = fetcher.data as { error?: string; type?: string }
+			if (data.type === 'subscription_required') {
+				onClose()
+				return
+			}
+			if (data.error) {
+				setUploadError(data.error)
+			}
 		}
-	}, [fetcher.data])
+	}, [fetcher.data, onClose])
 
 	// Auto-clear error after 10 seconds
 	useEffect(() => {
@@ -253,26 +263,50 @@ export function ResumeCreationModal({
 									<ChevronRight size={16} color={c.dim} style={{ flexShrink: 0 }} />
 								</div>
 
-								{/* Upload */}
+								{/* Upload — Pro feature, rainbow-bordered when not subscribed */}
 								<div
-									onClick={() => { if (!isSubmitting) handleClickUpload() }}
-									style={optionStyle()}
-									onMouseEnter={e => { if (!isSubmitting) (e.currentTarget as HTMLElement).style.background = c.bgSurf }}
-									onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+									className={!hasActiveSubscription ? 'animate-rainbow-border' : ''}
+									style={!hasActiveSubscription ? { padding: 2, borderRadius: 10 } : undefined}
 								>
-									<div style={{ width: 32, height: 32, borderRadius: 8, background: `${BRAND}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-										{isSubmitting
-											? <Loader2 size={16} color={BRAND} strokeWidth={2} style={{ animation: 'spin 1s linear infinite' }} />
-											: <Upload size={16} color={BRAND} strokeWidth={2} />
-										}
-									</div>
-									<div style={{ flex: 1 }}>
-										<div style={{ fontSize: 14, fontWeight: 600, color: c.text }}>{isSubmitting ? 'Uploading...' : 'Upload existing resume'}</div>
-										<div style={{ fontSize: 12, color: c.dim, marginTop: 2 }}>
-											{isSubmitting ? 'Processing your resume, please wait...' : "Upload your current resume and we'll help you improve it"}
+									<div
+										onClick={() => { if (!isSubmitting) handleClickUpload() }}
+										style={{
+											...optionStyle(),
+											...(hasActiveSubscription
+												? null
+												: { background: c.bgEl, border: 'none', position: 'relative', zIndex: 1 }),
+										}}
+										onMouseEnter={e => { if (!isSubmitting) (e.currentTarget as HTMLElement).style.background = hasActiveSubscription ? c.bgSurf : c.bgEl }}
+										onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = hasActiveSubscription ? 'transparent' : c.bgEl }}
+									>
+										<div style={{ width: 32, height: 32, borderRadius: 8, background: `${BRAND}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+											{isSubmitting
+												? <Loader2 size={16} color={BRAND} strokeWidth={2} style={{ animation: 'spin 1s linear infinite' }} />
+												: <Upload size={16} color={BRAND} strokeWidth={2} />
+											}
 										</div>
+										<div style={{ flex: 1 }}>
+											<div style={{ fontSize: 14, fontWeight: 600, color: c.text, display: 'flex', alignItems: 'center', gap: 8 }}>
+												{isSubmitting ? 'Uploading...' : 'Upload existing resume'}
+												{!hasActiveSubscription && !isSubmitting ? (
+													<span style={{
+														fontSize: 10,
+														fontWeight: 700,
+														letterSpacing: 0.4,
+														color: '#fff',
+														background: 'linear-gradient(90deg, #6366f1 0%, #ec4899 100%)',
+														borderRadius: 999,
+														padding: '2px 7px',
+														textTransform: 'uppercase',
+													}}>Pro</span>
+												) : null}
+											</div>
+											<div style={{ fontSize: 12, color: c.dim, marginTop: 2 }}>
+												{isSubmitting ? 'Processing your resume, please wait...' : "Upload your current resume and we'll help you improve it"}
+											</div>
+										</div>
+										{!isSubmitting && <ChevronRight size={16} color={c.dim} style={{ flexShrink: 0 }} />}
 									</div>
-									{!isSubmitting && <ChevronRight size={16} color={c.dim} style={{ flexShrink: 0 }} />}
 								</div>
 
 								{/* Use existing */}

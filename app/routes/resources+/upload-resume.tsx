@@ -15,7 +15,7 @@ import { z } from 'zod'
 import { ErrorList } from '~/components/forms.tsx'
 import { Button } from '~/components/ui/button.tsx'
 import * as deleteFileRoute from '~/routes/resources+/delete-file.tsx'
-import { requireUserId } from '~/utils/auth.server.ts'
+import { getStripeSubscription, requireUserId } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
 import { parseResumeWithOpenAI, ResumeParseError } from '~/utils/openai-resume-parser.server.ts'
 import { bytesToMB, invariant } from '~/utils/misc.ts'
@@ -59,6 +59,20 @@ const ResumeFormSchema = z.object({
 
 export async function action({ request }: DataFunctionArgs) {
 	const userId = await requireUserId(request)
+
+	const subscription = await getStripeSubscription(userId)
+	if (!subscription) {
+		return json(
+			{
+				status: 'error' as const,
+				type: 'subscription_required' as const,
+				error: 'Upload is a Pro feature. Subscribe to upload your resume.',
+				submission: null,
+			},
+			{ status: 402 },
+		)
+	}
+
 	const formData = await unstable_parseMultipartFormData(
 		request,
 		unstable_createMemoryUploadHandler({ maxPartSize: MAX_SIZE }),
@@ -308,7 +322,7 @@ export default function ResumeUploader(props: {
 	const [form, { resumeFile }] = useForm({
 		id: 'profile-resume',
 		constraint: getFieldsetConstraint(ResumeFormSchema),
-		lastSubmission: actionData?.submission,
+		lastSubmission: actionData?.submission ?? undefined,
 		onValidate({ formData }) {
 			return parse(formData, { schema: ResumeFormSchema })
 		},

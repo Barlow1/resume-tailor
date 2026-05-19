@@ -414,8 +414,7 @@ export function TruthPanel({
 			JSON.stringify({
 				resumeId: formData.id,
 				jobId: selectedJob.id,
-				isPostTailor: true,
-				triggeredBy: 'post_tailor',
+				triggeredBy: 'manual_refresh',
 				previousLevel: previousMatchRef.current?.level,
 				previousCovered: previousMatchRef.current?.covered,
 			}),
@@ -434,14 +433,44 @@ export function TruthPanel({
 			setLayer('post-tailor-loading')
 			prevJobIdRef.current = null
 			fetcher.submit(
-				JSON.stringify({ resumeId: formData.id, jobId: selectedJob.id }),
+				JSON.stringify({
+					resumeId: formData.id,
+					jobId: selectedJob.id,
+					isPostTailor: true,
+					triggeredBy: 'post_tailor',
+					previousLevel: previousMatchRef.current?.level,
+					previousCovered: previousMatchRef.current?.covered,
+					// Send in-memory resume so the server doesn't read stale DB state
+					// (debouncedSave is 1s debounced; without this the server hits cache
+					// on the pre-tailor resume and the score never moves).
+					clientResume: {
+						about: formData.about,
+						experiences: (formData.experiences ?? []).map(e => ({
+							id: e.id,
+							role: e.role,
+							company: e.company,
+							startDate: e.startDate,
+							endDate: e.endDate,
+							descriptions: (e.descriptions ?? []).map(d => ({ id: d.id, content: d.content })),
+						})),
+						education: (formData.education ?? []).map(e => ({
+							id: e.id,
+							school: e.school,
+							degree: e.degree,
+							startDate: e.startDate,
+							endDate: e.endDate,
+							description: e.description,
+						})),
+						skills: (formData.skills ?? []).map(s => ({ id: s.id, name: s.name })),
+					},
+				}),
 				{ method: 'POST', action: '/resources/experience-match', encType: 'application/json' },
 			)
 		}
 		if (!postTailorMode) {
 			postTailorTriggeredRef.current = false
 		}
-	}, [postTailorMode, selectedJob?.id, formData.id, fetcher])
+	}, [postTailorMode, selectedJob?.id, formData.id, formData.about, formData.experiences, formData.education, formData.skills, fetcher])
 
 	// Watch fetcher state transitions to detect when NEW data arrives
 	const prevFetcherStateRef = useRef(fetcher.state)

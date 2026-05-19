@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react'
 import { lc } from './landing-colors.ts'
 import { BuilderMockup } from './builder-mockup.tsx'
 import { PrimaryBtn, SecondaryBtn } from './landing-buttons.tsx'
@@ -6,16 +5,16 @@ import { useMobile } from '~/hooks/use-mobile.ts'
 import { trackCtaClick } from '~/lib/analytics.client.ts'
 
 export function HeroSection() {
-	const [mounted, setMounted] = useState(false)
 	const mobile = useMobile()
-	useEffect(() => {
-		setTimeout(() => setMounted(true), 100)
-	}, [])
 
+	// LCP-safe slide (no opacity change) — for the H1, which is the LCP element.
+	// Browsers don't count opacity:0 elements as painted, so fading it in
+	// pushes LCP out by the full transition duration.
+	const slide = (delay: number) => ({
+		animation: `heroSlideUp 0.9s cubic-bezier(0.16,1,0.3,1) ${delay}s both`,
+	})
 	const fade = (delay: number) => ({
-		opacity: mounted ? 1 : 0,
-		transform: mounted ? 'translateY(0)' : 'translateY(28px)',
-		transition: `opacity 0.9s cubic-bezier(0.16,1,0.3,1) ${delay}s, transform 0.9s cubic-bezier(0.16,1,0.3,1) ${delay}s`,
+		animation: `heroFadeIn 0.9s cubic-bezier(0.16,1,0.3,1) ${delay}s both`,
 	})
 
 	return (
@@ -29,6 +28,16 @@ export function HeroSection() {
 					'radial-gradient(ellipse at 50% 0%,rgba(107,69,255,0.15) 0%,transparent 65%)',
 			}}
 		>
+			<style>{`
+				@keyframes heroFadeIn {
+					from { opacity: 0; transform: translateY(28px); }
+					to { opacity: 1; transform: translateY(0); }
+				}
+				@keyframes heroSlideUp {
+					from { transform: translateY(28px); }
+					to { transform: translateY(0); }
+				}
+			`}</style>
 			<div style={{ maxWidth: 1120, margin: '0 auto' }}>
 				{/* Pill badge */}
 				<div style={fade(0)}>
@@ -49,10 +58,11 @@ export function HeroSection() {
 					</span>
 				</div>
 
-				{/* Headline */}
+				{/* Headline — LCP element. Uses transform-only animation so the
+				    browser counts it as painted at first frame. */}
 				<h1
 					style={{
-						...fade(0.1),
+						...slide(0.1),
 						fontSize: 'clamp(36px,5.5vw,64px)',
 						fontWeight: 700,
 						letterSpacing: '-0.035em',
