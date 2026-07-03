@@ -45,6 +45,7 @@ import { getEnv } from './utils/env.server.ts'
 import { getFlashSession } from './utils/flash-session.server.ts'
 import { combineHeaders, getDomainUrl, getUserImgSrc } from './utils/misc.ts'
 import { useNonce } from './utils/nonce-provider.ts'
+import { storageGet, storageSet, sessionGet, sessionSet } from './utils/safe-storage.ts'
 import { makeTimings, time } from './utils/timing.server.ts'
 import { useToast } from './utils/useToast.tsx'
 import { useOptionalUser, useUser } from './utils/user.ts'
@@ -386,7 +387,7 @@ function App() {
 			const trackedKey = `tracked_conversion_${data.conversionEvent.id}`
 
 			// Check if we've already tracked this conversion event
-			if (!sessionStorage.getItem(trackedKey)) {
+			if (!sessionGet(trackedKey)) {
 				const eventName = data.conversionEvent.event_type === 'subscription_started'
 					? 'subscription_started'
 					: 'purchase_completed'
@@ -400,7 +401,7 @@ function App() {
 				})
 
 				// Mark as tracked in sessionStorage to prevent duplicates on refresh
-				sessionStorage.setItem(trackedKey, 'true')
+				sessionSet(trackedKey, 'true')
 
 				// Mark as tracked in database
 				fetch('/resources/conversion/mark-tracked', {
@@ -434,7 +435,7 @@ function App() {
 
 	// Load collapsed state from localStorage on mount
 	useEffect(() => {
-		const savedState = localStorage.getItem('sidebarCollapsed')
+		const savedState = storageGet('sidebarCollapsed')
 		if (savedState) {
 			setIsCollapsed(JSON.parse(savedState) as boolean)
 		}
@@ -444,7 +445,7 @@ function App() {
 	const toggleCollapse = () => {
 		const newState = !isCollapsed
 		setIsCollapsed(newState)
-		localStorage.setItem('sidebarCollapsed', JSON.stringify(newState))
+		storageSet('sidebarCollapsed', JSON.stringify(newState))
 	}
 
 	const navigation = [

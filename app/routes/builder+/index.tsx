@@ -13,6 +13,7 @@ import {
 	isRouteErrorResponse,
 } from '@remix-run/react'
 import { useOptionalUser } from '~/utils/user.ts'
+import { storageGet, storageSet, storageRemove } from '~/utils/safe-storage.ts'
 import { useTheme } from '~/routes/resources+/theme/index.tsx'
 import {
 	ChevronDown,
@@ -1438,7 +1439,7 @@ export default function ResumeBuilder() {
 	useEffect(() => {
 		if (typeof window === 'undefined') return
 		const key = 'builder_coach_dismissed'
-		if (localStorage.getItem(key)) return
+		if (storageGet(key)) return
 		// Delay slightly so layout settles
 		const t = setTimeout(() => setCoachStep(0), 800)
 		return () => clearTimeout(t)
@@ -1467,14 +1468,14 @@ export default function ResumeBuilder() {
 
 	const dismissCoach = useCallback(() => {
 		setCoachStep(null)
-		localStorage.setItem('builder_coach_dismissed', '1')
+		storageSet('builder_coach_dismissed', '1')
 	}, [])
 
 	const advanceCoach = useCallback(() => {
 		setCoachStep(prev => {
 			if (prev === null) return null
 			if (prev >= coachSteps.length - 1) {
-				localStorage.setItem('builder_coach_dismissed', '1')
+				storageSet('builder_coach_dismissed', '1')
 				return null
 			}
 			return prev + 1
@@ -1713,7 +1714,7 @@ export default function ResumeBuilder() {
 				icon: RotateCcw,
 				action: () => {
 					onboarding.resetOnboarding()
-					localStorage.removeItem('builder_coach_dismissed')
+					storageRemove('builder_coach_dismissed')
 					setCoachStep(0)
 				},
 			},
@@ -2119,7 +2120,7 @@ export default function ResumeBuilder() {
 				navigate={navigate}
 				onReplayWalkthrough={() => {
 					onboarding.resetOnboarding()
-					localStorage.removeItem('builder_coach_dismissed')
+					storageRemove('builder_coach_dismissed')
 					setCoachStep(0)
 				}}
 				BRAND={BRAND}
