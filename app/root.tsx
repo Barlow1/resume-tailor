@@ -699,7 +699,9 @@ function App() {
 																	className="h-6 w-6 shrink-0 text-purple-200 group-hover:text-white"
 																	aria-hidden="true"
 																/>
-																{!isCollapsed && 'Settings'}
+																{/* Wrapped in a span so Google Translate's <font> injection
+																    can't detach a React-owned text node (removeChild crash) */}
+																{!isCollapsed && <span>Settings</span>}
 															</Link>
 														</li>
 													) : null}
@@ -1227,7 +1229,19 @@ export function ErrorBoundary() {
 
 	return (
 		<Document nonce={nonce}>
-			<GeneralErrorBoundary />
+			<GeneralErrorBoundary
+				unexpectedErrorHandler={() => (
+					<div className="flex flex-col items-center gap-6 text-center">
+						<p>Something went wrong.</p>
+						<Button
+							variant="primary"
+							onClick={() => window.location.reload()}
+						>
+							Reload page
+						</Button>
+					</div>
+				)}
+			/>
 		</Document>
 	)
 }

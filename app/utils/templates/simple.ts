@@ -158,7 +158,7 @@ export function generate(
 		.join('\n')
 
 	return `<!DOCTYPE html>
-<html>
+<html translate="no">
 <head>
 	<meta charset="utf-8">
 	${theme.fontLinks}

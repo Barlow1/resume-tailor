@@ -480,7 +480,7 @@ function ExpandedRow({
 					}}
 				>
 					{showJD ? 'Hide' : 'Show'} Job Description
-					{log.jobTitle && ` (${log.jobTitle})`}
+					{log.jobTitle && <span> ({log.jobTitle})</span>}
 				</button>
 				{showJD && (
 					<pre
