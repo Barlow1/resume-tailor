@@ -48,14 +48,22 @@ export async function action({ request }: ActionFunctionArgs) {
 	}
 	const { email, message } = result.data
 	const supportInbox = process.env.SUPPORT_EMAIL || 'hello@resumetailor.ai'
-	const response = await sendEmail({
-		to: supportInbox,
-		subject: `Support request from ${email}`,
-		text: `From: ${email}\n\n${message}`,
-		html: `<p><strong>From:</strong> ${escapeHtml(email)}</p><p>${escapeHtml(
-			message,
-		).replace(/\n/g, '<br />')}</p>`,
-	})
+	let response: Awaited<ReturnType<typeof sendEmail>>
+	try {
+		response = await sendEmail({
+			to: supportInbox,
+			subject: `Support request from ${email}`,
+			text: `From: ${email}\n\n${message}`,
+			html: `<p><strong>From:</strong> ${escapeHtml(email)}</p><p>${escapeHtml(
+				message,
+			).replace(/\n/g, '<br />')}</p>`,
+		})
+	} catch (error) {
+		// sendEmail throws on network failure / non-JSON responses — a support
+		// form must degrade to its own error copy, never the crash screen.
+		console.error('Support email failed:', error)
+		response = { status: 'error' } as Awaited<ReturnType<typeof sendEmail>>
+	}
 	if (response.status === 'error') {
 		return json(
 			{

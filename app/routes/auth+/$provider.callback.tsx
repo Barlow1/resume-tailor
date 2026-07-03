@@ -1,12 +1,12 @@
 import type { LoaderFunctionArgs as LoaderArgs } from "@remix-run/node";
-import { authenticator } from "~/utils/auth.server.ts";
+import { authenticator, KNOWN_AUTH_PROVIDERS } from "~/utils/auth.server.ts";
 import { invariantResponse } from "~/utils/misc.ts";
 import { getSession } from "~/utils/session.server.ts";
 
 export const loader = async ({ request, params }: LoaderArgs) => {
   const baseUrl = new URL(request.url).origin;
   invariantResponse(
-    params.provider && ["google", "github", "linkedin"].includes(params.provider),
+    params.provider && KNOWN_AUTH_PROVIDERS.includes(params.provider),
     "Unknown auth provider",
     { status: 404 },
   );

@@ -88,6 +88,11 @@ declare global {
 	}
 }
 
+// In-memory fallback dedupe for conversion tracking in browsers where
+// sessionStorage is blocked (safe-storage silently no-ops there). Lives for
+// the tab's JS lifetime — the same scope sessionStorage would have covered.
+const trackedConversionIds = new Set<string>()
+
 export const links: LinksFunction = () => {
 	return [
 		// Preload svg sprite as a resource to avoid render blocking
@@ -387,7 +392,11 @@ function App() {
 			const trackedKey = `tracked_conversion_${data.conversionEvent.id}`
 
 			// Check if we've already tracked this conversion event
-			if (!sessionGet(trackedKey)) {
+			if (
+				!sessionGet(trackedKey) &&
+				!trackedConversionIds.has(data.conversionEvent.id)
+			) {
+				trackedConversionIds.add(data.conversionEvent.id)
 				const eventName = data.conversionEvent.event_type === 'subscription_started'
 					? 'subscription_started'
 					: 'purchase_completed'

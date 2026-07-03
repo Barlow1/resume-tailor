@@ -29,26 +29,60 @@ async function launchBrowser(): Promise<Browser> {
 // browsers, which is exactly what starved the machine into
 // "Failed to launch the browser process".
 let pdfQueue: Promise<unknown> = Promise.resolve()
+let pdfQueueDepth = 0
+
+// A serialized queue must never head-of-line block: a wedged render or a
+// hung browser.close() would stall every user's download behind it. Each
+// render gets a hard deadline (Fly's proxy gives up around 60s anyway) and
+// the queue rejects new work instead of growing unboundedly.
+const RENDER_TIMEOUT_MS = 60_000
+const CLOSE_TIMEOUT_MS = 5_000
+const MAX_QUEUE_DEPTH = 10
 
 export function getPdfFromHtml(html: string): Promise<Uint8Array> {
+	if (pdfQueueDepth >= MAX_QUEUE_DEPTH) {
+		return Promise.reject(
+			new Error('Too many PDF downloads in flight — try again in a moment'),
+		)
+	}
+	pdfQueueDepth++
 	const run = pdfQueue.then(
 		() => renderWithBrowser(html),
 		() => renderWithBrowser(html)
 	)
 	pdfQueue = run.catch(() => {})
-	return run
+	return run.finally(() => {
+		pdfQueueDepth--
+	})
 }
 
 async function renderWithBrowser(html: string): Promise<Uint8Array> {
 	const browser = await launchBrowser()
+	let timedOut = false
+	const deadline = setTimeout(() => {
+		timedOut = true
+		// SIGKILL makes every pending protocol call reject, unwedging the
+		// render so the queue can advance.
+		browser.process()?.kill('SIGKILL')
+	}, RENDER_TIMEOUT_MS)
 	try {
 		return await renderPdf(browser, html)
+	} catch (error) {
+		throw timedOut ? new Error('PDF render timed out') : error
 	} finally {
-		try {
-			await browser.close()
-		} catch {
-			// close() can hang or throw on a wedged browser — make sure the
-			// process tree dies so it can't keep starving the VM.
+		clearTimeout(deadline)
+		// close() can hang (not just throw) on a wedged browser — bound it,
+		// then make sure the process tree dies so it can't starve the VM.
+		const closed = await Promise.race([
+			browser.close().then(
+				() => true,
+				() => false,
+			),
+			new Promise<boolean>(resolve =>
+				setTimeout(() => resolve(false), CLOSE_TIMEOUT_MS),
+			),
+		])
+		if (!closed) {
 			browser.process()?.kill('SIGKILL')
 		}
 	}
@@ -387,8 +421,15 @@ async function renderPdf(browser: Browser, html: string): Promise<Uint8Array> {
 				const isSection = lastChild.hasAttribute('data-section-id') || lastChild.hasAttribute('data-section-split')
 				// Real sections keep header + at least one entry (> 2) so peeling
 				// can never strand an orphaned section header at a page bottom;
-				// continuations have no header (> 1).
-				if (isSection && lastChild.children.length > (lastChild.hasAttribute('data-section-id') ? 2 : 1)) {
+				// continuations have no header (> 1). Deadlock breaker: when the
+				// section is the container's ONLY child, the whole-section move
+				// below can't fire — peel anyway, because an orphaned header
+				// beats an overflowing container that Chrome splits mid-content.
+				const minPeelChildren = lastChild.hasAttribute('data-section-id') ? 2 : 1
+				const canPeel =
+					lastChild.children.length > minPeelChildren ||
+					(container.children.length === 1 && lastChild.children.length > 1)
+				if (isSection && canPeel) {
 					const lastEntry = lastChild.lastElementChild as HTMLElement
 					lastChild.removeChild(lastEntry)
 
