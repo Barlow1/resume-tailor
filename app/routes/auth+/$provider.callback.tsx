@@ -5,7 +5,11 @@ import { getSession } from "~/utils/session.server.ts";
 
 export const loader = async ({ request, params }: LoaderArgs) => {
   const baseUrl = new URL(request.url).origin;
-  invariantResponse(params.provider, "provider is a required parameter");
+  invariantResponse(
+    params.provider && ["google", "github", "linkedin"].includes(params.provider),
+    "Unknown auth provider",
+    { status: 404 },
+  );
   const session = await getSession(request.headers.get('cookie'))
   const returnTo = session.get('redirectTo')
   session.unset('redirectTo');
