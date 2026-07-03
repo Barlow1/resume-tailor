@@ -46,6 +46,7 @@ export function LandingFooter() {
 					{[
 						{ label: 'Pricing', to: '/pricing' },
 						{ label: 'Blog', to: '/blog' },
+						{ label: 'Support', to: '/support' },
 					].map(link => (
 						<Link
 							key={link.label}
