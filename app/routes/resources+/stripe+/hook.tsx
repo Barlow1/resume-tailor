@@ -6,7 +6,7 @@ import {
 	activateSubscription,
 	deactivateSubscription,
 } from '~/utils/subscription.server.ts'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '~/utils/db.server.ts'
 import { trackTrialStarted, trackSubscriptionCreated, trackSubscriptionCanceledWithContext, flushAnalytics } from '~/lib/analytics.server.ts'
 
 export async function action(args: DataFunctionArgs) {
@@ -78,10 +78,7 @@ async function handleCheckoutSessionCompleted(
 		return
 	}
 
-	const prisma = new PrismaClient()
 	try {
-		await prisma.$connect()
-
 		const isWeekly = subscription.stripePriceId === process.env.STRIPE_PRICE_ID_WEEKLY
 		const planTier = isWeekly ? 'weekly' : 'monthly'
 
@@ -103,8 +100,6 @@ async function handleCheckoutSessionCompleted(
 	} catch (e) {
 		console.error('Error creating subscription_started conversion event', e)
 		throw e
-	} finally {
-		await prisma.$disconnect()
 	}
 }
 async function handleCanceledSubscription(deletedSubscription: Stripe.Subscription) {
@@ -113,10 +108,7 @@ async function handleCanceledSubscription(deletedSubscription: Stripe.Subscripti
 		'id must be present on the subscription deleted webhook',
 	)
 
-	const prisma = new PrismaClient()
 	try {
-		await prisma.$connect()
-
 		// Find subscription to get user ID and plan details
 		const subscription = await prisma.subscription.findUnique({
 			where: { stripeSubscriptionId: deletedSubscription.id },
@@ -179,8 +171,6 @@ async function handleCanceledSubscription(deletedSubscription: Stripe.Subscripti
 	} catch (e) {
 		console.error('Error tracking subscription cancellation', e)
 		// Don't throw - we still want to deactivate the subscription
-	} finally {
-		await prisma.$disconnect()
 	}
 
 	// Always deactivate the subscription
@@ -200,10 +190,7 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
 		'subscription must be present on invoice.payment_succeeded webhook',
 	)
 
-	const prisma = new PrismaClient()
 	try {
-		await prisma.$connect()
-
 		// Find the subscription by Stripe subscription ID
 		const subscription = await prisma.subscription.findUnique({
 			where: {
@@ -262,7 +249,5 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
 	} catch (e) {
 		console.error('Error handling invoice.payment_succeeded', e)
 		throw e
-	} finally {
-		await prisma.$disconnect()
 	}
 }

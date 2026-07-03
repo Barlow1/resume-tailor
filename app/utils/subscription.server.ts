@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "~/utils/db.server.ts";
 
 export const createSubscription = async ({
   userId,
@@ -13,10 +13,7 @@ export const createSubscription = async ({
   stripePriceId: string;
   stripeProductId: string;
 }) => {
-  const prisma = new PrismaClient();
   try {
-    prisma.$connect();
-
     const subscription = await prisma.subscription.create({
       data: {
         ownerId: userId,
@@ -32,16 +29,11 @@ export const createSubscription = async ({
   } catch (e) {
     console.error("Error updating customer stripe id", e);
     throw e;
-  } finally {
-    prisma.$disconnect();
   }
 };
 
 export const getActiveSubscriptions = async (userId: string) => {
-  const prisma = new PrismaClient();
   try {
-    prisma.$connect();
-
     const subscriptions = await prisma.subscription.findMany({
       where: {
         ownerId: userId,
@@ -53,8 +45,6 @@ export const getActiveSubscriptions = async (userId: string) => {
   } catch (e) {
     console.error("Error updating customer stripe id", e);
     throw e;
-  } finally {
-    prisma.$disconnect();
   }
 };
 
@@ -62,10 +52,7 @@ export const activateSubscription = async (
   subscriptionId: string,
   stripeSubscriptionId: string
 ) => {
-  const prisma = new PrismaClient();
   try {
-    prisma.$connect();
-
     const subscriptions = await prisma.subscription.update({
       where: {
         id: subscriptionId,
@@ -80,16 +67,11 @@ export const activateSubscription = async (
   } catch (e) {
     console.error("Error updating customer stripe id", e);
     throw e;
-  } finally {
-    prisma.$disconnect();
   }
 };
 
 export const deactivateSubscription = async (subscriptionId: string) => {
-  const prisma = new PrismaClient();
   try {
-    prisma.$connect();
-
     const subscriptions = await prisma.subscription.update({
       where: {
         stripeSubscriptionId: subscriptionId
@@ -103,7 +85,5 @@ export const deactivateSubscription = async (subscriptionId: string) => {
   } catch (e) {
     console.error("Error updating customer stripe id", e);
     throw e;
-  } finally {
-    prisma.$disconnect();
   }
 };

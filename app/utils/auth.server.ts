@@ -1,4 +1,4 @@
-import { PrismaClient, type Password, type User } from '@prisma/client'
+import { type Password, type User } from '@prisma/client'
 import { redirect } from '@remix-run/node'
 import bcrypt from 'bcryptjs'
 import { Authenticator } from 'remix-auth'
@@ -385,10 +385,6 @@ export const oauth = async ({
 	request: Request
 	provider: 'google' | 'github' | 'linkedin'
 }) => {
-	const prisma = new PrismaClient()
-	await prisma
-		.$connect()
-		.catch(err => console.error('Failed to connect to db', err))
 	let profile: User | undefined
 
 	const normalizedEmail = values.email.toLowerCase()

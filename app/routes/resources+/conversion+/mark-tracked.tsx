@@ -1,5 +1,5 @@
 import { type DataFunctionArgs, json } from '@remix-run/node'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '~/utils/db.server.ts'
 import { invariant } from '~/utils/misc.ts'
 
 interface MarkTrackedRequest {
@@ -16,10 +16,7 @@ export async function action({ request }: DataFunctionArgs) {
 
 	invariant(conversionEventId, 'conversionEventId is required')
 
-	const prisma = new PrismaClient()
 	try {
-		await prisma.$connect()
-
 		// Mark the conversion event as tracked
 		await prisma.conversionEvent.update({
 			where: {
@@ -33,7 +30,5 @@ export async function action({ request }: DataFunctionArgs) {
 		return json({ success: true })
 	} catch (e) {
 		return json({ error: 'Failed to mark event as tracked' }, { status: 500 })
-	} finally {
-		await prisma.$disconnect()
 	}
 }
