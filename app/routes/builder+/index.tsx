@@ -755,7 +755,9 @@ export default function ResumeBuilder() {
 
 	/* ═══ SAVE ═══ */
 	const { debouncedSave, saveStatus, saveFetcher: fetcher } = useBuilderSave()
-	const pdfFetcher = useFetcher<{ fileData: string; fileType: string }>()
+	const pdfFetcher = useFetcher<
+		{ fileData: string; fileType: string } | { error: string }
+	>()
 	const applicationFetcher = useFetcher()
 	const scrollHighlightTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
 	debouncedSaveRef.current = debouncedSave
@@ -1553,13 +1555,21 @@ export default function ResumeBuilder() {
 		handleDownloadPDF,
 	])
 
-	const lastPdfDataRef = useRef<{ fileData: string; fileType: string } | null>(
-		null,
-	)
+	const lastPdfDataRef = useRef<
+		{ fileData: string; fileType: string } | { error: string } | null
+	>(null)
 	useEffect(() => {
 		if (!pdfFetcher.data || pdfFetcher.state !== 'idle') return
 		if (pdfFetcher.data === lastPdfDataRef.current) return
 		lastPdfDataRef.current = pdfFetcher.data
+		if ('error' in pdfFetcher.data) {
+			toast({
+				title: 'Download failed',
+				description: pdfFetcher.data.error,
+				variant: 'destructive',
+			})
+			return
+		}
 		const { fileData, fileType } = pdfFetcher.data
 		const byteArray = base64ToUint8Array(fileData)
 		const blob = new Blob([byteArray as BlobPart], { type: fileType })

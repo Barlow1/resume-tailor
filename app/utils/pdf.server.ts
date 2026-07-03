@@ -1,18 +1,60 @@
-import puppeteer from 'puppeteer'
+import puppeteer, { type Browser } from 'puppeteer'
 
-export async function getPdfFromHtml(html: string): Promise<Uint8Array> {
-	const browser = await puppeteer.launch({
-		headless: true,
-		executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
-		args: [
-			'--no-sandbox',
-			'--disable-setuid-sandbox',
-			'--disable-dev-shm-usage',
-			'--disable-gpu',
-			'--font-render-hinting=none'
-		]
-	})
+const LAUNCH_OPTIONS: Parameters<typeof puppeteer.launch>[0] = {
+	headless: true,
+	executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+	args: [
+		'--no-sandbox',
+		'--disable-setuid-sandbox',
+		'--disable-dev-shm-usage',
+		'--disable-gpu',
+		'--font-render-hinting=none'
+	]
+}
 
+async function launchBrowser(): Promise<Browser> {
+	try {
+		return await puppeteer.launch(LAUNCH_OPTIONS)
+	} catch (error) {
+		// Launch failures under memory pressure are often transient — one
+		// retry after a beat recovers most of them (RESUME-TAILOR-4B).
+		console.error('Puppeteer launch failed, retrying once:', error)
+		await new Promise(resolve => setTimeout(resolve, 500))
+		return puppeteer.launch(LAUNCH_OPTIONS)
+	}
+}
+
+// Renders are serialized: each Chromium tree costs ~150MB+ and the Fly VM
+// runs with a 512MB swapfile — N concurrent downloads used to mean N
+// browsers, which is exactly what starved the machine into
+// "Failed to launch the browser process".
+let pdfQueue: Promise<unknown> = Promise.resolve()
+
+export function getPdfFromHtml(html: string): Promise<Uint8Array> {
+	const run = pdfQueue.then(
+		() => renderWithBrowser(html),
+		() => renderWithBrowser(html)
+	)
+	pdfQueue = run.catch(() => {})
+	return run
+}
+
+async function renderWithBrowser(html: string): Promise<Uint8Array> {
+	const browser = await launchBrowser()
+	try {
+		return await renderPdf(browser, html)
+	} finally {
+		try {
+			await browser.close()
+		} catch {
+			// close() can hang or throw on a wedged browser — make sure the
+			// process tree dies so it can't keep starving the VM.
+			browser.process()?.kill('SIGKILL')
+		}
+	}
+}
+
+async function renderPdf(browser: Browser, html: string): Promise<Uint8Array> {
 	const page = await browser.newPage()
 	await page.setContent(html, {
 		waitUntil: 'networkidle0'
@@ -371,7 +413,6 @@ export async function getPdfFromHtml(html: string): Promise<Uint8Array> {
 		}
 	})
 
-	await browser.close()
 	return pdfBuffer
 }
 

@@ -14,7 +14,19 @@ export async function action({ request }: ActionFunctionArgs) {
 		return json({ error: 'HTML is required' }, { status: 400 })
 	}
 
-	const pdf = await getPdfFromHtml(html as string)
+	let pdf: Uint8Array
+	try {
+		pdf = await getPdfFromHtml(html as string)
+	} catch (error) {
+		// Return a fetcher-consumable error instead of throwing — a thrown
+		// action error bubbles to the builder's ErrorBoundary and replaces
+		// the user's whole editing session with a crash screen.
+		console.error('PDF generation failed:', error)
+		return json(
+			{ error: 'We could not generate your PDF. Please try again in a moment.' },
+			{ status: 500 },
+		)
+	}
 
 	// Increment download count when PDF is successfully generated
 	const userId = await getUserId(request)
