@@ -5,6 +5,7 @@ import {
 	type HandleDocumentRequestFunction,
 } from '@remix-run/node'
 import { RemixServer } from '@remix-run/react'
+import { isRouteErrorResponse } from '@remix-run/router'
 import * as Sentry from '@sentry/remix'
 import isbot from 'isbot'
 import { getInstanceInfo } from 'litefs-js'
@@ -96,6 +97,17 @@ export function handleError(
 	error: unknown,
 	{ request }: DataFunctionArgs,
 ): void {
+	// Client disconnected mid-request; the router throws "query()/queryRoute()
+	// call aborted" and body streams fail with "Invalid response body ...
+	// aborted". Remix's own default handleError skips aborted requests too.
+	if (request.signal.aborted) {
+		return
+	}
+	// Thrown Responses (404s from the splat route, 405s from bot POSTs to
+	// routes without an action) are expected control flow, not crashes.
+	if (isRouteErrorResponse(error)) {
+		return
+	}
 	if (error instanceof Error) {
 		Sentry.captureRemixServerException(error, 'remix.server', request)
 	} else {
