@@ -2,7 +2,7 @@ import { json, type DataFunctionArgs } from '@remix-run/node'
 import { Link, useLoaderData } from '@remix-run/react'
 import { GeneralErrorBoundary } from '~/components/error-boundary.tsx'
 import { DeleteJob } from '~/routes/resources+/delete-job.tsx'
-import { getUserId } from '~/utils/auth.server.ts'
+import { requireUserId } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
 import { z } from 'zod'
 import { useUser } from '~/utils/user.ts'
@@ -15,7 +15,9 @@ export const JobEditorSchema = z.object({
 })
 
 export async function loader({ request, params }: DataFunctionArgs) {
-	const userId = await getUserId(request)
+	// This component calls useUser(), which throws for logged-out visitors —
+	// gate the loader like every sibling job route does.
+	const userId = await requireUserId(request)
 	const job = await prisma.job.findUnique({
 		where: {
 			id: params.jobId,
