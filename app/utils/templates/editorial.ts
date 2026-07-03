@@ -44,7 +44,7 @@ export function generate(
 		if (!formData.about && !options.editable) return ''
 		const h = formData.headers?.aboutHeader || 'Summary'
 		return `
-		<div style="margin-bottom: 22px;" data-section-id="about">
+		<div style="padding-bottom: 22px; border-left: 3px solid ${accent}18; padding-left: 22px;" data-section-id="about">
 			${sectionHeader(h, accent, heading, ts, options, 'headers.aboutHeader', 'Summary')}
 			<div style="font-size: ${ts(16)}px; line-height: 1.7; color: #333; font-family: ${body};" ${editableAttrs(options, 'about', 'Write a professional summary...', { multiline: true })}>${escapeHtml(formData.about || '')}</div>
 		</div>`
@@ -56,7 +56,7 @@ export function generate(
 		if (exps.length === 0) return ''
 		const h = formData.headers?.experienceHeader || 'Experience'
 		return `
-		<div style="margin-bottom: 22px;" data-section-id="experience">
+		<div style="padding-bottom: 22px; border-left: 3px solid ${accent}18; padding-left: 22px;" data-section-id="experience">
 			${sectionHeader(h, accent, heading, ts, options, 'headers.experienceHeader', 'Experience')}
 			${exps.map((exp, i) => {
 				const bullets = options.editable ? (exp.descriptions || []) : (exp.descriptions || []).filter(b => b.content)
@@ -86,7 +86,7 @@ export function generate(
 		if (edu.length === 0) return ''
 		const h = formData.headers?.educationHeader || 'Education'
 		return `
-		<div style="margin-bottom: 22px;" data-section-id="education">
+		<div style="padding-bottom: 22px; border-left: 3px solid ${accent}18; padding-left: 22px;" data-section-id="education">
 			${sectionHeader(h, accent, heading, ts, options, 'headers.educationHeader', 'Education')}
 			${edu.map((e, i) => `
 			<div style="display: flex; justify-content: space-between; margin-bottom: 10px; break-inside: avoid;" ${options.editable ? `data-education-id="${e.id}"` : ''}>
@@ -105,7 +105,7 @@ export function generate(
 		if (skills.length === 0) return ''
 		const h = formData.headers?.skillsHeader || 'Skills'
 		return `
-		<div style="margin-bottom: 22px;" data-section-id="skills">
+		<div style="padding-bottom: 22px; border-left: 3px solid ${accent}18; padding-left: 22px;" data-section-id="skills">
 			${sectionHeader(h, accent, heading, ts, options, 'headers.skillsHeader', 'Skills')}
 			${skills.map((s, i) => `<div style="font-size: ${ts(16)}px; color: #333; line-height: 1.6; font-family: ${body};" ${options.editable ? `data-skill-id="${s.id}"` : ''} ${editableAttrs(options, `skills.${i}.name`, 'Skill')}>${escapeHtml(s.name || '')}</div>`).join('\n\t\t\t')}
 		</div>`
@@ -117,7 +117,7 @@ export function generate(
 		if (hobbies.length === 0) return ''
 		const h = formData.headers?.hobbiesHeader || 'Interests & Activities'
 		return `
-		<div style="margin-bottom: 22px;" data-section-id="hobbies">
+		<div style="padding-bottom: 22px; border-left: 3px solid ${accent}18; padding-left: 22px;" data-section-id="hobbies">
 			${sectionHeader(h, accent, heading, ts, options, 'headers.hobbiesHeader', 'Interests')}
 			${hobbies.map((hob, i) => `<div style="font-size: ${ts(16)}px; color: #333; line-height: 1.6; font-family: ${body};" ${options.editable ? `data-hobby-id="${hob.id}"` : ''} ${editableAttrs(options, `hobbies.${i}.name`, 'Interest')}>${escapeHtml(hob.name || '')}</div>`).join('\n\t\t\t')}
 		</div>`
@@ -137,7 +137,7 @@ export function generate(
 	const sectionsHtml = sectionOrder.map(renderSection).filter(Boolean).join('\n')
 
 	return `<!DOCTYPE html>
-<html>
+<html translate="no">
 <head>
 	<meta charset="utf-8">
 	${theme.fontLinks}
@@ -154,10 +154,11 @@ export function generate(
 		.resume {
 			padding: 48px 48px;
 		}
-		/* Decorative left vertical rule on body content */
-		.editorial-body {
-			border-left: 3px solid ${accent}18;
-			padding-left: 22px;
+		/* Decorative left vertical rule runs per-section so the pagination
+		   logic (which operates on direct children of .resume) can split
+		   and re-bucket sections across page containers. */
+		.resume > [data-section-id]:last-child {
+			padding-bottom: 0;
 		}
 		[data-experience-id],
 		[data-education-id] {
@@ -177,9 +178,7 @@ export function generate(
 <body>
 	<div class="resume">
 		${headerHtml}
-		<div class="editorial-body">
-			${sectionsHtml}
-		</div>
+		${sectionsHtml}
 	</div>
 </body>
 </html>`
