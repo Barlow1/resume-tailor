@@ -1239,19 +1239,7 @@ export function ErrorBoundary() {
 
 	return (
 		<Document nonce={nonce}>
-			<GeneralErrorBoundary
-				unexpectedErrorHandler={() => (
-					<div className="flex flex-col items-center gap-6 text-center">
-						<p>Something went wrong.</p>
-						<Button
-							variant="primary"
-							onClick={() => window.location.reload()}
-						>
-							Reload page
-						</Button>
-					</div>
-				)}
-			/>
+			<GeneralErrorBoundary />
 		</Document>
 	)
 }
