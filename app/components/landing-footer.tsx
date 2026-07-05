@@ -46,7 +46,7 @@ export function LandingFooter() {
 					{[
 						{ label: 'Pricing', to: '/pricing' },
 						{ label: 'Blog', to: '/blog' },
-						{ label: 'Support', to: '/support' },
+						{ label: 'Support', to: 'mailto:hello@resumetailor.ai' },
 					].map(link => (
 						<Link
 							key={link.label}
