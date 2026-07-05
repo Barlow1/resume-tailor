@@ -12,18 +12,6 @@ const LAUNCH_OPTIONS: Parameters<typeof puppeteer.launch>[0] = {
 	]
 }
 
-async function launchBrowser(): Promise<Browser> {
-	try {
-		return await puppeteer.launch(LAUNCH_OPTIONS)
-	} catch (error) {
-		// Launch failures under memory pressure are often transient — one
-		// retry after a beat recovers most of them (RESUME-TAILOR-4B).
-		console.error('Puppeteer launch failed, retrying once:', error)
-		await new Promise(resolve => setTimeout(resolve, 500))
-		return puppeteer.launch(LAUNCH_OPTIONS)
-	}
-}
-
 // Renders are serialized: each Chromium tree costs ~150MB+ and the Fly VM
 // runs with a 512MB swapfile — N concurrent downloads used to mean N
 // browsers, which is exactly what starved the machine into
@@ -57,7 +45,7 @@ export function getPdfFromHtml(html: string): Promise<Uint8Array> {
 }
 
 async function renderWithBrowser(html: string): Promise<Uint8Array> {
-	const browser = await launchBrowser()
+	const browser = await puppeteer.launch(LAUNCH_OPTIONS)
 	let timedOut = false
 	const deadline = setTimeout(() => {
 		timedOut = true
