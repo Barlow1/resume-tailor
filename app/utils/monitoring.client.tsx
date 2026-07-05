@@ -40,10 +40,8 @@ export function init() {
 			/Cannot redefine property: walletRouter/i,
 			// Session-replay recorder internals (bundled, so denyUrls can't
 			// catch them): rrweb probing cross-origin iframes it can't record.
-			// (Firefox's generic cross-origin SecurityError is handled in
-			// beforeSend, scoped to rrweb frames — a message-level ignore here
-			// would also hide real app cross-origin bugs.)
 			/bufferBelongsToIframe/i,
+			/Permission denied to access property/i,
 		],
 
 		// Errors thrown by code we don't control: browser extensions, Safari's
@@ -67,44 +65,16 @@ export function init() {
 			) {
 				return null
 			}
-			// Firefox's cross-origin SecurityError thrown inside the bundled
-			// session-replay recorder — filter by stack frame, not message, so
-			// real app cross-origin bugs still report.
-			const topException = event.exception?.values?.[0]
-			if (
-				topException?.value &&
-				/Permission denied to access property/i.test(topException.value)
-			) {
-				const frames = topException.stacktrace?.frames ?? []
-				if (
-					frames.some(f =>
-						`${f.filename ?? ''} ${f.module ?? ''} ${f.function ?? ''}`.includes(
-							'rrweb',
-						),
-					)
-				) {
-					return null
-				}
-			}
 			// unhandledrejection whose "reason" is a DOM Event/CustomEvent or a
-			// keyless PLAIN object: no stack, no message, nothing actionable.
-			// (Class instances like Response have a non-Object prototype and
-			// carry real signal — keep those.)
-			const mechanism = topException?.mechanism?.type
+			// keyless object: no stack, no message, nothing actionable.
+			const mechanism = event.exception?.values?.[0]?.mechanism?.type
 			if (
 				mechanism === 'onunhandledrejection' &&
 				ex != null &&
 				!(ex instanceof Error)
 			) {
 				if (typeof Event !== 'undefined' && ex instanceof Event) return null
-				if (
-					typeof ex === 'object' &&
-					(Object.getPrototypeOf(ex) === Object.prototype ||
-						Object.getPrototypeOf(ex) === null) &&
-					Object.keys(ex).length === 0
-				) {
-					return null
-				}
+				if (typeof ex === 'object' && Object.keys(ex).length === 0) return null
 			}
 			return event
 		},
