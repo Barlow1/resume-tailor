@@ -48,6 +48,24 @@ const getHost = (req: { get: (key: string) => string | undefined }) =>
 // fly is our proxy
 app.set('trust proxy', true)
 
+// Reject requests whose Host / X-Forwarded-Host headers can't form a valid
+// URL. Bots/scanners send garbage values (e.g. non-numeric ports) that make
+// Remix's `new URL()` throw a TypeError before any route runs. Mirror the
+// exact host reconstruction @remix-run/express uses so we fail closed with
+// a 400 instead of a 500 + Sentry noise.
+app.use((req, res, next) => {
+	const [, forwardedPort] = req.get('X-Forwarded-Host')?.split(':') ?? []
+	const [, hostPort] = req.get('host')?.split(':') ?? []
+	const port = forwardedPort || hostPort
+	const resolvedHost = `${req.hostname}${port ? `:${port}` : ''}`
+	try {
+		new URL(`${req.protocol}://${resolvedHost}${req.url}`)
+	} catch {
+		return res.status(400).send('Bad Request')
+	}
+	next()
+})
+
 // ensure HTTPS only (X-Forwarded-Proto comes from Fly)
 app.use((req, res, next) => {
 	const proto = req.get('X-Forwarded-Proto')

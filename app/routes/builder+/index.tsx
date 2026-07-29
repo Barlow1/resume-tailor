@@ -13,6 +13,7 @@ import {
 	isRouteErrorResponse,
 } from '@remix-run/react'
 import { useOptionalUser } from '~/utils/user.ts'
+import { storageGet, storageSet, storageRemove } from '~/utils/safe-storage.ts'
 import { useTheme } from '~/routes/resources+/theme/index.tsx'
 import {
 	ChevronDown,
@@ -755,7 +756,9 @@ export default function ResumeBuilder() {
 
 	/* ═══ SAVE ═══ */
 	const { debouncedSave, saveStatus, saveFetcher: fetcher } = useBuilderSave()
-	const pdfFetcher = useFetcher<{ fileData: string; fileType: string }>()
+	const pdfFetcher = useFetcher<
+		{ fileData: string; fileType: string } | { error: string }
+	>()
 	const applicationFetcher = useFetcher()
 	const scrollHighlightTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
 	debouncedSaveRef.current = debouncedSave
@@ -1436,7 +1439,7 @@ export default function ResumeBuilder() {
 	useEffect(() => {
 		if (typeof window === 'undefined') return
 		const key = 'builder_coach_dismissed'
-		if (localStorage.getItem(key)) return
+		if (storageGet(key)) return
 		// Delay slightly so layout settles
 		const t = setTimeout(() => setCoachStep(0), 800)
 		return () => clearTimeout(t)
@@ -1465,14 +1468,14 @@ export default function ResumeBuilder() {
 
 	const dismissCoach = useCallback(() => {
 		setCoachStep(null)
-		localStorage.setItem('builder_coach_dismissed', '1')
+		storageSet('builder_coach_dismissed', '1')
 	}, [])
 
 	const advanceCoach = useCallback(() => {
 		setCoachStep(prev => {
 			if (prev === null) return null
 			if (prev >= coachSteps.length - 1) {
-				localStorage.setItem('builder_coach_dismissed', '1')
+				storageSet('builder_coach_dismissed', '1')
 				return null
 			}
 			return prev + 1
@@ -1553,13 +1556,21 @@ export default function ResumeBuilder() {
 		handleDownloadPDF,
 	])
 
-	const lastPdfDataRef = useRef<{ fileData: string; fileType: string } | null>(
-		null,
-	)
+	const lastPdfDataRef = useRef<
+		{ fileData: string; fileType: string } | { error: string } | null
+	>(null)
 	useEffect(() => {
 		if (!pdfFetcher.data || pdfFetcher.state !== 'idle') return
 		if (pdfFetcher.data === lastPdfDataRef.current) return
 		lastPdfDataRef.current = pdfFetcher.data
+		if ('error' in pdfFetcher.data) {
+			toast({
+				title: 'Download failed',
+				description: pdfFetcher.data.error,
+				variant: 'destructive',
+			})
+			return
+		}
 		const { fileData, fileType } = pdfFetcher.data
 		const byteArray = base64ToUint8Array(fileData)
 		const blob = new Blob([byteArray as BlobPart], { type: fileType })
@@ -1703,7 +1714,7 @@ export default function ResumeBuilder() {
 				icon: RotateCcw,
 				action: () => {
 					onboarding.resetOnboarding()
-					localStorage.removeItem('builder_coach_dismissed')
+					storageRemove('builder_coach_dismissed')
 					setCoachStep(0)
 				},
 			},
@@ -2109,7 +2120,7 @@ export default function ResumeBuilder() {
 				navigate={navigate}
 				onReplayWalkthrough={() => {
 					onboarding.resetOnboarding()
-					localStorage.removeItem('builder_coach_dismissed')
+					storageRemove('builder_coach_dismissed')
 					setCoachStep(0)
 				}}
 				BRAND={BRAND}

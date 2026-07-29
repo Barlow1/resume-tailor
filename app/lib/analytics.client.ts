@@ -9,6 +9,7 @@
  * - Automatic common properties
  */
 
+import { storageGet, storageSet } from '~/utils/safe-storage.ts'
 import { posthog, type PostHogInterface } from 'posthog-js'
 import type {
 	AnalyticsEventName,
@@ -49,7 +50,7 @@ export function getAnonymousId(): string {
 	}
 
 	// Try localStorage first
-	let anonymousId = localStorage.getItem(ANONYMOUS_ID_KEY)
+	let anonymousId = storageGet(ANONYMOUS_ID_KEY)
 
 	if (!anonymousId) {
 		// Try cookie as fallback
@@ -63,7 +64,7 @@ export function getAnonymousId(): string {
 	if (!anonymousId) {
 		anonymousId = generateAnonymousId()
 		// Store in both localStorage and cookie for persistence
-		localStorage.setItem(ANONYMOUS_ID_KEY, anonymousId)
+		storageSet(ANONYMOUS_ID_KEY, anonymousId)
 		// Set cookie with 1 year expiry
 		const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString()
 		document.cookie = `${ANONYMOUS_ID_KEY}=${anonymousId}; expires=${expires}; path=/; SameSite=Lax`
@@ -259,7 +260,7 @@ export function resetIdentity(): void {
 
 	// Generate new anonymous ID
 	const newAnonymousId = generateAnonymousId()
-	localStorage.setItem(ANONYMOUS_ID_KEY, newAnonymousId)
+	storageSet(ANONYMOUS_ID_KEY, newAnonymousId)
 	posthog.register({ anonymous_id: newAnonymousId })
 }
 
@@ -276,9 +277,9 @@ export function trackFeatureFirstUse(featureName: FeatureName): void {
 
 	const key = `${FIRST_USE_PREFIX}${featureName}`
 
-	if (!localStorage.getItem(key)) {
+	if (!storageGet(key)) {
 		track('feature_first_use', { feature_name: featureName })
-		localStorage.setItem(key, new Date().toISOString())
+		storageSet(key, new Date().toISOString())
 	}
 }
 
@@ -287,7 +288,7 @@ export function trackFeatureFirstUse(featureName: FeatureName): void {
  */
 export function hasUsedFeature(featureName: FeatureName): boolean {
 	if (typeof window === 'undefined') return false
-	return !!localStorage.getItem(`${FIRST_USE_PREFIX}${featureName}`)
+	return !!storageGet(`${FIRST_USE_PREFIX}${featureName}`)
 }
 
 // ============================================================================

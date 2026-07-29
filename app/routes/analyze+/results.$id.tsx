@@ -7,6 +7,7 @@ import {
 	useRevalidator,
 } from '@remix-run/react'
 import { prisma } from '~/utils/db.server.ts'
+import { storageGet, storageSet, storageRemove } from '~/utils/safe-storage.ts'
 import { KeywordPlan } from '~/components/keyword-plan.tsx'
 import type { KeywordSnippet } from '~/lib/keywords/types.ts'
 import { trackEvent } from '~/utils/analytics.ts'
@@ -115,7 +116,7 @@ export default function ResultsPage() {
 	const [resumeTxt] = React.useState<string>(() => {
 		if (typeof window === 'undefined') return analysis.resumeTxt ?? ''
 		return (
-			localStorage.getItem(resumeKey(analysis.id)) ?? analysis.resumeTxt ?? ''
+			storageGet(resumeKey(analysis.id)) ?? analysis.resumeTxt ?? ''
 		)
 	})
 	const [selectedBullets, setSelectedBullets] = React.useState<string[]>([])
@@ -166,7 +167,7 @@ export default function ResultsPage() {
 
 	React.useEffect(() => {
 		if (typeof window !== 'undefined') {
-			localStorage.setItem(resumeKey(analysis.id), resumeTxt ?? '')
+			storageSet(resumeKey(analysis.id), resumeTxt ?? '')
 		}
 	}, [analysis.id, resumeTxt])
 
@@ -493,7 +494,7 @@ export default function ResultsPage() {
 			}
 
 			// Clear streaming data from localStorage
-			localStorage.removeItem(`analysis-streaming-${analysis.id}`)
+			storageRemove(`analysis-streaming-${analysis.id}`)
 
 			// Remove streaming param from URL
 			const url = new URL(window.location.href)
@@ -513,7 +514,7 @@ export default function ResultsPage() {
 	React.useEffect(() => {
 		if (!isStreaming || typeof window === 'undefined') return
 
-		const streamingData = localStorage.getItem(`analysis-streaming-${analysis.id}`)
+		const streamingData = storageGet(`analysis-streaming-${analysis.id}`)
 		if (!streamingData) {
 			setStreamError('Missing analysis data')
 			setIsStreamingActive(false)

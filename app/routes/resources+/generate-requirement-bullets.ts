@@ -1,4 +1,5 @@
 import { json, type ActionFunctionArgs } from '@remix-run/node'
+import * as Sentry from '@sentry/remix'
 import { getUserId } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
 import { generateRequirementBullets } from '~/utils/openai.server.ts'
@@ -117,23 +118,32 @@ export async function action({ request }: ActionFunctionArgs) {
 					b => (b.action === 'new' || b.action === 'rewrite') && b.experienceId && b.bulletText,
 				)
 				if (fixesToLog.length > 0) {
-					await prisma.requirementFix.createMany({
-						data: fixesToLog.map(b => ({
-							userId,
-							resumeId,
-							jobId,
-							experienceId: b.experienceId as string,
-							triggeringRunId: triggeringRun.id,
-							requirement: b.requirement,
-							bulletAction: b.action,
-							previousBulletContent: b.action === 'rewrite' ? b.originalText : null,
-							finalBulletContent: b.bulletText as string,
-						})),
-					})
+					// createMany is unsupported on Prisma 5.1's SQLite connector — it
+					// throws on every call, which this catch silently ate for 10 weeks
+					// (zero RequirementFix rows ever written). Individual creates in a
+					// transaction are supported.
+					await prisma.$transaction(
+						fixesToLog.map(b =>
+							prisma.requirementFix.create({
+								data: {
+									userId,
+									resumeId,
+									jobId,
+									experienceId: b.experienceId as string,
+									triggeringRunId: triggeringRun.id,
+									requirement: b.requirement,
+									bulletAction: b.action,
+									previousBulletContent: b.action === 'rewrite' ? b.originalText : null,
+									finalBulletContent: b.bulletText as string,
+								},
+							}),
+						),
+					)
 				}
 			}
 		} catch (fixErr) {
 			console.error('[generate-requirement-bullets] failed to log fixes', fixErr)
+			Sentry.captureException(fixErr)
 		}
 
 		const newCount = bullets.filter(b => b.action === 'new').length

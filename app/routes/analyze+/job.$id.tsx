@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { storageGet, storageSet } from '~/utils/safe-storage.ts'
 import { useLoaderData, useNavigate, Link, useRouteLoaderData, useLocation } from '@remix-run/react'
 import { json, type LoaderFunctionArgs } from '@remix-run/node'
 import { SubscribeModal } from '~/components/subscribe-modal.tsx'
@@ -32,7 +33,7 @@ export default function JobPage() {
 
 	const resumePreview =
 		(typeof window !== 'undefined' &&
-			localStorage.getItem(`analysis-resume-${a.id}`)) ||
+			storageGet(`analysis-resume-${a.id}`)) ||
 		a.resumeTxt ||
 		''
 
@@ -75,7 +76,7 @@ export default function JobPage() {
 
 			// Save the inputs to localStorage for the results page to pick up
 			if (typeof window !== 'undefined') {
-				localStorage.setItem(`analysis-streaming-${a.id}`, JSON.stringify({
+				storageSet(`analysis-streaming-${a.id}`, JSON.stringify({
 					title,
 					company,
 					jdText,

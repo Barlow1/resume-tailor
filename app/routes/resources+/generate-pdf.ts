@@ -1,6 +1,7 @@
 import { getPdfFromHtml, uint8ArrayToBase64 } from '~/utils/pdf.server.ts'
 import { type ActionFunctionArgs } from '@remix-run/node'
 import { json } from '@remix-run/node'
+import * as Sentry from '@sentry/remix'
 import { getUserId, getStripeSubscription } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
 import { trackResumeDownloaded } from '~/lib/analytics.server.ts'
@@ -14,37 +15,60 @@ export async function action({ request }: ActionFunctionArgs) {
 		return json({ error: 'HTML is required' }, { status: 400 })
 	}
 
-	const pdf = await getPdfFromHtml(html as string)
-
-	// Increment download count when PDF is successfully generated
-	const userId = await getUserId(request)
-	if (userId) {
-		const [progress, subscription] = await Promise.all([
-			prisma.gettingStartedProgress.upsert({
-				where: { ownerId: userId },
-				update: { downloadCount: { increment: 1 } },
-				create: {
-					ownerId: userId,
-					downloadCount: 1,
-					hasSavedJob: false,
-					hasSavedResume: false,
-					hasTailoredResume: false,
-					hasGeneratedResume: false,
-					tailorCount: 0,
-					generateCount: 0,
-				},
-			}),
-			getStripeSubscription(userId),
-		])
-
-		// Track download in PostHog
-		trackResumeDownloaded(
-			userId,
-			'pdf',
-			resumeId ?? 'builder',
-			!!subscription,
-			progress.downloadCount,
+	let pdf: Uint8Array
+	try {
+		pdf = await getPdfFromHtml(html as string)
+	} catch (error) {
+		// Return a fetcher-consumable error instead of throwing — a thrown
+		// action error bubbles to the builder's ErrorBoundary and replaces
+		// the user's whole editing session with a crash screen. Still report
+		// to Sentry: returning json() bypasses handleError, and a silently
+		// broken download is a revenue-critical outage.
+		console.error('PDF generation failed:', error)
+		Sentry.captureException(error)
+		return json(
+			{ error: 'We could not generate your PDF. Please try again in a moment.' },
+			{ status: 500 },
 		)
+	}
+
+	// Increment download count when PDF is successfully generated.
+	// Best-effort: the PDF is already rendered — a tracking failure (e.g.
+	// SQLITE_BUSY under write contention) must not throw the finished
+	// download away and crash the builder.
+	try {
+		const userId = await getUserId(request)
+		if (userId) {
+			const [progress, subscription] = await Promise.all([
+				prisma.gettingStartedProgress.upsert({
+					where: { ownerId: userId },
+					update: { downloadCount: { increment: 1 } },
+					create: {
+						ownerId: userId,
+						downloadCount: 1,
+						hasSavedJob: false,
+						hasSavedResume: false,
+						hasTailoredResume: false,
+						hasGeneratedResume: false,
+						tailorCount: 0,
+						generateCount: 0,
+					},
+				}),
+				getStripeSubscription(userId),
+			])
+
+			// Track download in PostHog
+			trackResumeDownloaded(
+				userId,
+				'pdf',
+				resumeId ?? 'builder',
+				!!subscription,
+				progress.downloadCount,
+			)
+		}
+	} catch (error) {
+		console.error('Download tracking failed (PDF still returned):', error)
+		Sentry.captureException(error)
 	}
 
 	return json({

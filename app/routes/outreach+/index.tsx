@@ -4,6 +4,7 @@ import type {
 	MetaFunction,
 	LoaderFunctionArgs,
 } from '@remix-run/node'
+import { storageGet, storageSet } from '~/utils/safe-storage.ts'
 import { json } from '@remix-run/node'
 import {
 	Form,
@@ -303,26 +304,26 @@ export default function RecruiterOutreachPage() {
 	// Persist drafts as user types (keep your old key for backward compat)
 	useEffect(() => {
 		if (typeof window !== 'undefined') {
-			localStorage.setItem('resume-draft-outreach', resumeText)
-			localStorage.setItem('recruiter-resume', resumeText)
+			storageSet('resume-draft-outreach', resumeText)
+			storageSet('recruiter-resume', resumeText)
 		}
 	}, [resumeText])
 
 	useEffect(() => {
 		if (typeof window !== 'undefined') {
-			localStorage.setItem('recruiter-jd', jdText)
+			storageSet('recruiter-jd', jdText)
 		}
 	}, [jdText])
 
 	useEffect(() => {
 		if (typeof window !== 'undefined') {
-			localStorage.setItem('recruiter-jobTitle', jobTitle)
+			storageSet('recruiter-jobTitle', jobTitle)
 		}
 	}, [jobTitle])
 
 	useEffect(() => {
 		if (typeof window !== 'undefined') {
-			localStorage.setItem('recruiter-recruiterName', recruiterName)
+			storageSet('recruiter-recruiterName', recruiterName)
 		}
 	}, [recruiterName])
 
@@ -335,13 +336,13 @@ export default function RecruiterOutreachPage() {
 			setRecruiterName((data.fields as any).recruiterName || '')
 		} else if (typeof window !== 'undefined') {
 			setResumeText(
-				localStorage.getItem('recruiter-resume') ||
-					localStorage.getItem('resume-draft-outreach') ||
+				storageGet('recruiter-resume') ||
+					storageGet('resume-draft-outreach') ||
 					'',
 			)
-			setJdText(localStorage.getItem('recruiter-jd') || '')
-			setJobTitle(localStorage.getItem('recruiter-jobTitle') || '')
-			setRecruiterName(localStorage.getItem('recruiter-recruiterName') || '')
+			setJdText(storageGet('recruiter-jd') || '')
+			setJobTitle(storageGet('recruiter-jobTitle') || '')
+			setRecruiterName(storageGet('recruiter-recruiterName') || '')
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [])
@@ -351,10 +352,10 @@ export default function RecruiterOutreachPage() {
 		if (!userId) {
 			e.preventDefault()
 			if (typeof window !== 'undefined') {
-				localStorage.setItem('recruiter-resume', resumeText)
-				localStorage.setItem('recruiter-jd', jdText)
-				localStorage.setItem('recruiter-jobTitle', jobTitle)
-				localStorage.setItem('recruiter-recruiterName', recruiterName)
+				storageSet('recruiter-resume', resumeText)
+				storageSet('recruiter-jd', jdText)
+				storageSet('recruiter-jobTitle', jobTitle)
+				storageSet('recruiter-recruiterName', recruiterName)
 				const backTo = window.location.pathname + window.location.search
 				navigate(`/login?redirectTo=${encodeURIComponent(backTo)}`)
 			}

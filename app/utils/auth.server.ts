@@ -1,4 +1,4 @@
-import { PrismaClient, type Password, type User } from '@prisma/client'
+import { type Password, type User } from '@prisma/client'
 import { redirect } from '@remix-run/node'
 import bcrypt from 'bcryptjs'
 import { Authenticator } from 'remix-auth'
@@ -57,6 +57,12 @@ authenticator.use(
 	}),
 	FormStrategy.name,
 )
+
+// The OAuth strategies registered below. The /auth/$provider routes validate
+// their param against this list so bot probes (POST /auth/signin) get a 404
+// instead of remix-auth's 'Strategy not found' 500. Register a new strategy?
+// Add its name here or its login will 404.
+export const KNOWN_AUTH_PROVIDERS = ['google', 'github', 'linkedin']
 
 authenticator.use(
 	new GoogleStrategy(
@@ -385,10 +391,6 @@ export const oauth = async ({
 	request: Request
 	provider: 'google' | 'github' | 'linkedin'
 }) => {
-	const prisma = new PrismaClient()
-	await prisma
-		.$connect()
-		.catch(err => console.error('Failed to connect to db', err))
 	let profile: User | undefined
 
 	const normalizedEmail = values.email.toLowerCase()

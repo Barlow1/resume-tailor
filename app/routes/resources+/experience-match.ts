@@ -1,4 +1,5 @@
 import { json, type ActionFunctionArgs } from '@remix-run/node'
+import { Prisma } from '@prisma/client'
 import { createHash } from 'crypto'
 import { getUserId } from '~/utils/auth.server.ts'
 import { prisma } from '~/utils/db.server.ts'
@@ -143,11 +144,26 @@ export async function action({ request }: ActionFunctionArgs) {
 			fromCache = true
 		} else {
 			result = (await getExperienceMatch({ resumeData, jobDescription: job.content })) as typeof result
-			await prisma.experienceMatchCache.upsert({
-				where: { resumeId_jobId: { resumeId, jobId } },
-				create: { resumeId, jobId, resumeHash, jobHash, resultJson: JSON.stringify(result) },
-				update: { resumeHash, jobHash, resultJson: JSON.stringify(result) },
-			})
+			try {
+				await prisma.experienceMatchCache.upsert({
+					where: { resumeId_jobId: { resumeId, jobId } },
+					create: { resumeId, jobId, resumeHash, jobHash, resultJson: JSON.stringify(result) },
+					update: { resumeHash, jobHash, resultJson: JSON.stringify(result) },
+				})
+			} catch (cacheErr) {
+				// P2003: the resume or job was deleted while the OpenAI call was
+				// in flight (both parents were verified before the call, and both
+				// delete routes cascade this table). Caching is best-effort —
+				// still return the computed result.
+				if (
+					cacheErr instanceof Prisma.PrismaClientKnownRequestError &&
+					cacheErr.code === 'P2003'
+				) {
+					console.error('[experience-match] cache write skipped: resume or job deleted mid-request')
+				} else {
+					throw cacheErr
+				}
+			}
 		}
 
 		try {

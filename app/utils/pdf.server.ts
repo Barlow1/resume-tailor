@@ -1,18 +1,82 @@
-import puppeteer from 'puppeteer'
+import puppeteer, { type Browser } from 'puppeteer'
 
-export async function getPdfFromHtml(html: string): Promise<Uint8Array> {
-	const browser = await puppeteer.launch({
-		headless: true,
-		executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
-		args: [
-			'--no-sandbox',
-			'--disable-setuid-sandbox',
-			'--disable-dev-shm-usage',
-			'--disable-gpu',
-			'--font-render-hinting=none'
-		]
+const LAUNCH_OPTIONS: Parameters<typeof puppeteer.launch>[0] = {
+	headless: true,
+	executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+	args: [
+		'--no-sandbox',
+		'--disable-setuid-sandbox',
+		'--disable-dev-shm-usage',
+		'--disable-gpu',
+		'--font-render-hinting=none'
+	]
+}
+
+// Renders are serialized: each Chromium tree costs ~150MB+ and the Fly VM
+// runs with a 512MB swapfile — N concurrent downloads used to mean N
+// browsers, which is exactly what starved the machine into
+// "Failed to launch the browser process".
+let pdfQueue: Promise<unknown> = Promise.resolve()
+let pdfQueueDepth = 0
+
+// A serialized queue must never head-of-line block: a wedged render or a
+// hung browser.close() would stall every user's download behind it. Each
+// render gets a hard deadline (Fly's proxy gives up around 60s anyway) and
+// the queue rejects new work instead of growing unboundedly.
+const RENDER_TIMEOUT_MS = 60_000
+const CLOSE_TIMEOUT_MS = 5_000
+const MAX_QUEUE_DEPTH = 10
+
+export function getPdfFromHtml(html: string): Promise<Uint8Array> {
+	if (pdfQueueDepth >= MAX_QUEUE_DEPTH) {
+		return Promise.reject(
+			new Error('Too many PDF downloads in flight — try again in a moment'),
+		)
+	}
+	pdfQueueDepth++
+	const run = pdfQueue.then(
+		() => renderWithBrowser(html),
+		() => renderWithBrowser(html)
+	)
+	pdfQueue = run.catch(() => {})
+	return run.finally(() => {
+		pdfQueueDepth--
 	})
+}
 
+async function renderWithBrowser(html: string): Promise<Uint8Array> {
+	const browser = await puppeteer.launch(LAUNCH_OPTIONS)
+	let timedOut = false
+	const deadline = setTimeout(() => {
+		timedOut = true
+		// SIGKILL makes every pending protocol call reject, unwedging the
+		// render so the queue can advance.
+		browser.process()?.kill('SIGKILL')
+	}, RENDER_TIMEOUT_MS)
+	try {
+		return await renderPdf(browser, html)
+	} catch (error) {
+		throw timedOut ? new Error('PDF render timed out') : error
+	} finally {
+		clearTimeout(deadline)
+		// close() can hang (not just throw) on a wedged browser — bound it,
+		// then make sure the process tree dies so it can't starve the VM.
+		const closed = await Promise.race([
+			browser.close().then(
+				() => true,
+				() => false,
+			),
+			new Promise<boolean>(resolve =>
+				setTimeout(() => resolve(false), CLOSE_TIMEOUT_MS),
+			),
+		])
+		if (!closed) {
+			browser.process()?.kill('SIGKILL')
+		}
+	}
+}
+
+async function renderPdf(browser: Browser, html: string): Promise<Uint8Array> {
 	const page = await browser.newPage()
 	await page.setContent(html, {
 		waitUntil: 'networkidle0'
@@ -52,12 +116,21 @@ export async function getPdfFromHtml(html: string): Promise<Uint8Array> {
 
 		// Disable break-inside:avoid — we handle page breaks manually.
 		// CSS-level paged breaks conflict with our layout and cause gaps.
-		resume.querySelectorAll('[data-experience-id], [data-education-id]').forEach(el => {
+		// Print HTML is generated with editable=false, which strips the data-*
+		// id attributes — match inline break-inside styles directly so this
+		// pass isn't dead code in production PDFs.
+		resume.querySelectorAll('[data-experience-id], [data-education-id], [style*="break-inside"]').forEach(el => {
 			;(el as HTMLElement).style.breakInside = 'auto'
 		})
 
 		function isSectionContainer(el: HTMLElement): boolean {
-			return el.hasAttribute('data-section-id') && el.children.length > 1
+			// data-section-split marks a continuation we created ourselves —
+			// it must stay splittable or oversized continuations can never
+			// emit further page markers.
+			return (
+				(el.hasAttribute('data-section-id') || el.hasAttribute('data-section-split')) &&
+				el.children.length > 1
+			)
 		}
 
 		/** offsetHeight + marginTop + marginBottom */
@@ -118,16 +191,19 @@ export async function getPdfFromHtml(html: string): Promise<Uint8Array> {
 		//   - Bullet-level splitting within entries that overflow a page boundary
 
 		let currentPageUsed = 0
-		const children = Array.from(resume.children) as HTMLElement[]
+		// A queue rather than a snapshot: continuations we create get spliced
+		// in after their source so they are re-processed (and can split again).
+		const queue = Array.from(resume.children) as HTMLElement[]
 
-		for (const child of children) {
+		for (let qi = 0; qi < queue.length; qi++) {
+			const child = queue[qi]
 			if (child.classList.contains('page-gap')) continue
 			if (child.classList.contains('page-break-marker')) continue
 
 			const childHeight = totalHeight(child)
 			const remainingOnPage = EFFECTIVE_CONTENT - currentPageUsed
 
-			if (childHeight > remainingOnPage && currentPageUsed > 0 && isSectionContainer(child)) {
+			if (childHeight > remainingOnPage && isSectionContainer(child) && (currentPageUsed > 0 || childHeight > EFFECTIVE_CONTENT)) {
 				const sectionChildren = Array.from(child.children) as HTMLElement[]
 				let splitIndex = -1
 				let usedInSection = 0
@@ -152,12 +228,14 @@ export async function getPdfFromHtml(html: string): Promise<Uint8Array> {
 				// Determine what we can keep on the current page:
 				// - Full entries before the split point (splitIndex > 1)
 				// - Partial overflow entry via bullet split
-				const hasFullEntries = splitIndex > 1
+				// Continuations have no section header at index 0, so a split at
+				// index 0 is meaningless only for real sections.
+				const hasFullEntries = splitIndex > (child.hasAttribute('data-section-id') ? 1 : 0)
 				const hasPartialEntry = bulletSplit !== null
 
 				if (hasFullEntries || hasPartialEntry) {
 					const continuation = child.cloneNode(false) as HTMLElement
-					const sectionId = child.getAttribute('data-section-id') || ''
+					const sectionId = child.getAttribute('data-section-id') || child.getAttribute('data-section-split') || ''
 					continuation.removeAttribute('data-section-id')
 					continuation.setAttribute('data-section-split', sectionId)
 
@@ -194,7 +272,12 @@ export async function getPdfFromHtml(html: string): Promise<Uint8Array> {
 					resume.insertBefore(marker, child.nextSibling)
 					resume.insertBefore(continuation, marker.nextSibling)
 
-					currentPageUsed = totalHeight(continuation)
+					// Re-process the continuation on a fresh page — if it is
+					// itself taller than a page it can split again, emitting
+					// proper markers instead of one overflowing bucket.
+					queue.splice(qi + 1, 0, continuation)
+					currentPageUsed = 0
+					continue
 				} else {
 					// Nothing meaningful fits — push whole section to next page
 					const marker = document.createElement('div')
@@ -243,6 +326,10 @@ export async function getPdfFromHtml(html: string): Promise<Uint8Array> {
 		// --- Phase 3: Build one .resume container per page ---
 		const parent = resume.parentElement!
 		const bgColor = window.getComputedStyle(resume).backgroundColor || 'white'
+		// Preserve the template's own padding — modernist uses an asymmetric
+		// left gutter (48px 48px 48px 70px) for outdented section labels;
+		// hardcoding 48px reflowed every page of its multi-page output.
+		const pagePadding = window.getComputedStyle(resume).padding || `${PADDING}px`
 
 		while (resume.firstChild) {
 			resume.removeChild(resume.firstChild)
@@ -252,7 +339,7 @@ export async function getPdfFromHtml(html: string): Promise<Uint8Array> {
 		function createPageContainer(index: number): HTMLElement {
 			const pageDiv = document.createElement('div')
 			pageDiv.className = 'resume'
-			pageDiv.style.padding = `${PADDING}px`
+			pageDiv.style.padding = pagePadding
 			pageDiv.style.width = '816px'
 			pageDiv.style.minHeight = `${PAGE_HEIGHT}px`
 			pageDiv.style.boxSizing = 'border-box'
@@ -320,7 +407,17 @@ export async function getPdfFromHtml(html: string): Promise<Uint8Array> {
 				// If the last child is a section with multiple entries,
 				// peel its last entry rather than moving the whole section.
 				const isSection = lastChild.hasAttribute('data-section-id') || lastChild.hasAttribute('data-section-split')
-				if (isSection && lastChild.children.length > 1) {
+				// Real sections keep header + at least one entry (> 2) so peeling
+				// can never strand an orphaned section header at a page bottom;
+				// continuations have no header (> 1). Deadlock breaker: when the
+				// section is the container's ONLY child, the whole-section move
+				// below can't fire — peel anyway, because an orphaned header
+				// beats an overflowing container that Chrome splits mid-content.
+				const minPeelChildren = lastChild.hasAttribute('data-section-id') ? 2 : 1
+				const canPeel =
+					lastChild.children.length > minPeelChildren ||
+					(container.children.length === 1 && lastChild.children.length > 1)
+				if (isSection && canPeel) {
 					const lastEntry = lastChild.lastElementChild as HTMLElement
 					lastChild.removeChild(lastEntry)
 
@@ -371,7 +468,6 @@ export async function getPdfFromHtml(html: string): Promise<Uint8Array> {
 		}
 	})
 
-	await browser.close()
 	return pdfBuffer
 }
 
