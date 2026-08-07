@@ -44,11 +44,11 @@ export function AgentBanner() {
 			>
 				<strong style={{ color: lc.text, fontWeight: 600 }}>NEW</strong>
 				{mobile
-					? ' — Stop applying. Let your agent do it.'
-					: ' — Stop applying to jobs. Your AI career agent finds, tailors, and applies for you.'}
+					? ' — Meet your AI reverse recruiter.'
+					: ' — Meet your AI reverse recruiter. It finds roles, tailors your resume, and applies for you.'}
 			</span>
 			<Link
-				to="/agent"
+				to="/reverse-recruiter"
 				reloadDocument
 				style={{
 					flexShrink: 0,
