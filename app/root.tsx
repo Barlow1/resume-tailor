@@ -299,7 +299,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
 const hideNavPages = [
 	'routes/_marketing+/index',
-	'routes/agent',
+	'routes/reverse-recruiter',
 	'routes/_auth+/signup/index',
 	'routes/_auth+/login',
 	'routes/_auth+/forgot-password/index',
@@ -357,7 +357,9 @@ function App() {
 	)
 	const shouldHideNav = Boolean(matches.find(m => hideNavPages.includes(m.id))) || isBlogRoute || isSeoRoute
 	const isBuilderRoute = Boolean(matches.find(m => m.id === 'routes/builder+/index'))
-	const isAgentRoute = Boolean(matches.find(m => m.id === 'routes/agent'))
+	const isAgentRoute = Boolean(
+		matches.find(m => m.id === 'routes/reverse-recruiter'),
+	)
 
 	const location = useLocation()
 	const path = location.pathname
