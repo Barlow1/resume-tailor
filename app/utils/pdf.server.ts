@@ -98,9 +98,18 @@ async function renderPdf(browser: Browser, html: string): Promise<Uint8Array> {
 	//   4. Fix overflows — if a container is taller than one page, move its
 	//      trailing children to the next container so Puppeteer never has to
 	//      break inside a container (which creates orphaned content + blank pages)
-	await page.evaluate(() => {
+	const diagnostics = await page.evaluate(() => {
+		const diag = {
+			pageCount: 0,
+			peels: 0,
+			bulletPeels: 0,
+			gaveUpSingleChild: 0,
+			gaveUpIterationCap: 0,
+			containers: [] as { page: number; height: number; children: number }[],
+		}
+
 		const resume = document.querySelector('.resume') as HTMLElement
-		if (!resume) return
+		if (!resume) return diag
 
 		const PAGE_HEIGHT = 1056  // 11in at 96dpi
 		const PADDING = 48        // .resume padding
@@ -114,14 +123,8 @@ async function renderPdf(browser: Browser, html: string): Promise<Uint8Array> {
 		const SAFETY_BUFFER = 20
 		const EFFECTIVE_CONTENT = CONTENT_HEIGHT - SAFETY_BUFFER // 940px
 
-		// Disable break-inside:avoid — we handle page breaks manually.
-		// CSS-level paged breaks conflict with our layout and cause gaps.
-		// Print HTML is generated with editable=false, which strips the data-*
-		// id attributes — match inline break-inside styles directly so this
-		// pass isn't dead code in production PDFs.
-		resume.querySelectorAll('[data-experience-id], [data-education-id], [style*="break-inside"]').forEach(el => {
-			;(el as HTMLElement).style.breakInside = 'auto'
-		})
+		// break-inside:avoid is left in place as a safety net. It has no effect
+		// on offsetHeight, so it only matters if a container overflows.
 
 		function isSectionContainer(el: HTMLElement): boolean {
 			// data-section-split marks a continuation we created ourselves —
@@ -321,7 +324,8 @@ async function renderPdf(browser: Browser, html: string): Promise<Uint8Array> {
 		}
 
 		// Single page — no restructuring needed
-		if (pages.length <= 1) return
+		diag.pageCount = pages.length
+		if (pages.length <= 1) return diag
 
 		// --- Phase 3: Build one .resume container per page ---
 		const parent = resume.parentElement!
@@ -417,6 +421,61 @@ async function renderPdf(browser: Browser, html: string): Promise<Uint8Array> {
 				const canPeel =
 					lastChild.children.length > minPeelChildren ||
 					(container.children.length === 1 && lastChild.children.length > 1)
+				// Shed trailing bullets before peeling a whole entry: entries run
+				// ~700px, so a whole-entry peel overshoots and leaves a hole.
+				if (isSection && lastChild.lastElementChild) {
+					const entry = lastChild.lastElementChild as HTMLElement
+					const ul = entry.querySelector('ul')
+					if (ul && ul.children.length >= 2) {
+						const moved: HTMLElement[] = []
+						while (
+							container.scrollHeight > PAGE_HEIGHT &&
+							ul.children.length > 1
+						) {
+							const b = ul.lastElementChild as HTMLElement
+							ul.removeChild(b)
+							moved.unshift(b)
+						}
+
+						if (moved.length > 0 && container.scrollHeight <= PAGE_HEIGHT) {
+							const nextContainer = ensureNextContainer(i)
+							const sectionId =
+								lastChild.getAttribute('data-section-id') ||
+								lastChild.getAttribute('data-section-split') ||
+								''
+							const entryId =
+								entry.getAttribute('data-experience-id') ||
+								entry.getAttribute('data-education-id') ||
+								''
+							const existingUl = nextContainer.querySelector(
+								`[data-bullet-continuation="${entryId}"] > ul`,
+							) as HTMLElement | null
+
+							if (existingUl && entryId) {
+								for (let k = moved.length - 1; k >= 0; k--) {
+									existingUl.insertBefore(moved[k], existingUl.firstChild)
+								}
+							} else {
+								const contUl = ul.cloneNode(false) as HTMLElement
+								for (const b of moved) contUl.appendChild(b)
+								const contEntry = entry.cloneNode(false) as HTMLElement
+								contEntry.setAttribute('data-bullet-continuation', entryId)
+								contEntry.appendChild(contUl)
+								const wrapper = lastChild.cloneNode(false) as HTMLElement
+								wrapper.removeAttribute('data-section-id')
+								wrapper.setAttribute('data-section-split', sectionId)
+								wrapper.appendChild(contEntry)
+								prependToContainer(nextContainer, wrapper)
+							}
+							diag.bulletPeels++
+							continue
+						}
+
+						// No fit — restore and fall through to the whole-entry peel.
+						for (const b of moved) ul.appendChild(b)
+					}
+				}
+
 				if (isSection && canPeel) {
 					const lastEntry = lastChild.lastElementChild as HTMLElement
 					lastChild.removeChild(lastEntry)
@@ -443,18 +502,53 @@ async function renderPdf(browser: Browser, html: string): Promise<Uint8Array> {
 						wrapper.appendChild(lastEntry)
 						prependToContainer(nextContainer, wrapper)
 					}
+					diag.peels++
 					continue
 				}
 
 				// Default: move the whole child to the next container
-				if (container.children.length <= 1) break // can't peel further
+				if (container.children.length <= 1) {
+					diag.gaveUpSingleChild++
+					break // can't peel further
+				}
 				container.removeChild(lastChild)
+				diag.peels++
 
 				const nextContainer = ensureNextContainer(i)
 				prependToContainer(nextContainer, lastChild)
 			}
+			if (iterations >= MAX_ITERATIONS) diag.gaveUpIterationCap++
 		}
+
+		diag.pageCount = containers.length
+		diag.containers = containers.map((c, i) => {
+			// scrollHeight is floored by minHeight, so measure the ink extent.
+			const first = c.firstElementChild
+			const last = c.lastElementChild
+			const height =
+				first && last
+					? Math.round(
+							last.getBoundingClientRect().bottom -
+								first.getBoundingClientRect().top,
+						)
+					: 0
+			return { page: i + 1, height, children: c.children.length }
+		})
+		return diag
 	})
+
+	// A non-final page under ~65% full means the paginator left a hole.
+	const underfilled = diagnostics.containers.filter(
+		c => c.page < diagnostics.pageCount && c.height < 620,
+	)
+	if (
+		process.env.PDF_DEBUG ||
+		underfilled.length > 0 ||
+		diagnostics.gaveUpSingleChild > 0 ||
+		diagnostics.gaveUpIterationCap > 0
+	) {
+		console.warn('[pdf] pagination diagnostics ' + JSON.stringify(diagnostics))
+	}
 
 	const pdfBuffer = await page.pdf({
 		printBackground: true,

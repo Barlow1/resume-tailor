@@ -106,8 +106,10 @@ export async function action({ request }: ActionFunctionArgs) {
 		subscribe,
 	}
 
+	// resumeId lets the client adopt a new id without waiting for the loader,
+	// whose snapshot lags the user's typing.
 	return json(
-		{ success: true },
+		{ success: true, resumeId: resume.id },
 		{
 			headers: {
 				'Set-Cookie': await resumeCookie.serialize(cookieData),
