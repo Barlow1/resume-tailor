@@ -58,7 +58,8 @@ interface ResumeIframeProps {
 
 export interface ResumeIframeHandle {
 	flushPendingEdits: () => void
-	forceRerender: (focusFieldAfter?: string) => void
+	/** Pass the same object you just handed to setFormData. */
+	forceRerender: (nextData?: ResumeData, focusFieldAfter?: string) => void
 	/** Signal that a structural change is coming so the next html update re-renders even if a field is focused */
 	markStructuralUpdate: () => void
 	/** Scroll the resume canvas to bring a section into view */
@@ -144,6 +145,77 @@ function trySplitEntry(entry: HTMLElement, remaining: number): { bulletSplitInde
 	if (bulletSplitIndex < 1) return null
 
 	return { bulletSplitIndex, usedHeight: usedInEntry }
+}
+
+type CaretSnapshot = { field: string; start: number; end: number } | null
+
+/** Repagination re-parents nodes, which blurs the caret. Record it by
+ *  character offset so it survives the move. */
+function saveCaret(doc: Document): CaretSnapshot {
+	const el = doc.activeElement as HTMLElement | null
+	const field = el?.dataset?.field
+	if (!el || !field) return null
+	const sel = doc.getSelection()
+	if (!sel || sel.rangeCount === 0) return { field, start: 0, end: 0 }
+	const range = sel.getRangeAt(0)
+	// Both edges, so a selection comes back as a selection.
+	const offsetOf = (container: Node, offset: number) => {
+		const probe = range.cloneRange()
+		probe.selectNodeContents(el)
+		probe.setEnd(container, offset)
+		return probe.toString().length
+	}
+	return {
+		field,
+		start: offsetOf(range.startContainer, range.startOffset),
+		end: offsetOf(range.endContainer, range.endOffset),
+	}
+}
+
+/** Convert a character offset within `el` back into a DOM position. */
+function pointAt(
+	doc: Document,
+	el: HTMLElement,
+	offset: number,
+): { node: Node; offset: number } {
+	const walker = doc.createTreeWalker(el, NodeFilter.SHOW_TEXT)
+	let remaining = offset
+	let node: Node | null = null
+	let lastSeen: Node | null = null
+	while ((node = walker.nextNode())) {
+		lastSeen = node
+		if (remaining <= (node.textContent?.length ?? 0)) break
+		remaining -= node.textContent?.length ?? 0
+	}
+	const target = node ?? lastSeen
+	if (!target) return { node: el, offset: 0 }
+	return {
+		node: target,
+		offset: Math.min(remaining, target.textContent?.length ?? 0),
+	}
+}
+
+function restoreCaret(doc: Document, snapshot: CaretSnapshot) {
+	if (!snapshot) return
+	const el = doc.querySelector(
+		`[data-field="${snapshot.field}"]`,
+	) as HTMLElement | null
+	if (!el) return
+	// preventScroll: the canvas must not jump while typing
+	el.focus({ preventScroll: true })
+
+	const from = pointAt(doc, el, snapshot.start)
+	const to = pointAt(doc, el, snapshot.end)
+	const range = doc.createRange()
+	range.setStart(from.node, from.offset)
+	try {
+		range.setEnd(to.node, to.offset)
+	} catch {
+		range.collapse(true)
+	}
+	const sel = doc.getSelection()
+	sel?.removeAllRanges()
+	sel?.addRange(range)
 }
 
 function calculatePageBreaks(doc: Document) {
@@ -317,6 +389,8 @@ export const ResumeIframe = forwardRef<ResumeIframeHandle, ResumeIframeProps>(
 		const isStructuralUpdateRef = useRef(false)
 		const isComposingRef = useRef(false)
 		const observerRef = useRef<MutationObserver | null>(null)
+		// True while repagination moves nodes, so blurs we cause are ignored.
+		const isRepaginatingRef = useRef(false)
 		const blurTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
 		const pageBreakTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
 		const [srcdoc, setSrcdoc] = useState('')
@@ -339,14 +413,16 @@ export const ResumeIframe = forwardRef<ResumeIframeHandle, ResumeIframeProps>(
 			debouncedFieldUpdate.flush()
 		}, [debouncedFieldUpdate])
 
-		const forceRerender = useCallback((focusFieldAfter?: string) => {
+		const forceRerender = useCallback((nextData?: ResumeData, focusFieldAfter?: string) => {
 			editingFieldRef.current = null
-			isStructuralUpdateRef.current = true
 			pendingFocusRef.current = focusFieldAfter || null
 			// Clear toolbar on structural update
 			onHoverElementRef.current?.(null)
-			// Trigger re-render by generating fresh HTML
-			const freshHtml = generateResumeHtml(formData, sectionOrder, { editable: true })
+			// Render from the caller's committed data: this closure's formData is
+			// still the previous state. Deliberately does not arm
+			// isStructuralUpdateRef — the latch would never be consumed when the
+			// resulting html string is unchanged.
+			const freshHtml = generateResumeHtml(nextData ?? formData, sectionOrder, { editable: true })
 			setSrcdoc(freshHtml)
 		}, [formData, sectionOrder])
 
@@ -555,6 +631,7 @@ export const ResumeIframe = forwardRef<ResumeIframeHandle, ResumeIframeProps>(
 				observerRef.current.disconnect()
 				observerRef.current = null
 			}
+			clearTimeout(pageBreakTimeoutRef.current)
 
 			// --- TEXT EDITING EVENTS (capture phase) ---
 
@@ -585,6 +662,7 @@ export const ResumeIframe = forwardRef<ResumeIframeHandle, ResumeIframeProps>(
 
 			// Blur — save text, delay toolbar hide so user can click toolbar buttons
 			doc.addEventListener('blur', (e) => {
+				if (isRepaginatingRef.current) return
 				const el = e.target as HTMLElement
 				const field = el.dataset?.field
 				if (field) {
@@ -708,40 +786,44 @@ export const ResumeIframe = forwardRef<ResumeIframeHandle, ResumeIframeProps>(
 			})
 
 			// --- SIZING & PAGE BREAKS ---
-			calculatePageBreaks(doc)
-			resizeIframe()
-
-			// Re-run after fonts load — offsetHeight is inaccurate until fonts are ready
-			void doc.fonts?.ready.then(() => {
-				calculatePageBreaks(doc)
-				resizeIframe()
-			})
-
-			// MutationObserver for auto-resize and debounced page-break recalculation
-			const observer = new MutationObserver((mutations) => {
-				resizeIframe()
-				// Skip if all mutations are page-gap elements we just inserted
-				const isOnlyPageGapChanges = mutations.length > 0 && mutations.every(m =>
-					m.type === 'childList' &&
-					[...m.addedNodes, ...m.removedNodes].length > 0 &&
-					[...m.addedNodes, ...m.removedNodes].every(
-						n => (n as Element).classList?.contains('page-gap'),
-					)
-				)
-				if (!isOnlyPageGapChanges) {
-					clearTimeout(pageBreakTimeoutRef.current)
-					pageBreakTimeoutRef.current = setTimeout(() => {
-						calculatePageBreaks(doc)
-						resizeIframe()
-					}, 400)
-				}
-			})
-			observer.observe(doc.body, {
+			const OBSERVE_OPTIONS: MutationObserverInit = {
 				childList: true,
 				subtree: true,
 				characterData: true,
 				attributes: true,
+			}
+
+			// Repagination rewrites the DOM it observes. Run it deaf to its own
+			// mutations or it re-arms the observer that scheduled it, forever.
+			const repaginate = () => {
+				const observer = observerRef.current
+				observer?.disconnect()
+				const caret = saveCaret(doc)
+				isRepaginatingRef.current = true
+				try {
+					calculatePageBreaks(doc)
+					resizeIframe()
+				} finally {
+					isRepaginatingRef.current = false
+				}
+				restoreCaret(doc, caret)
+				observer?.takeRecords()
+				observer?.observe(doc.body, OBSERVE_OPTIONS)
+			}
+
+			calculatePageBreaks(doc)
+			resizeIframe()
+
+			// Re-run after fonts load — offsetHeight is inaccurate until fonts are ready
+			void doc.fonts?.ready.then(() => repaginate())
+
+			// MutationObserver for auto-resize and debounced page-break recalculation
+			const observer = new MutationObserver(() => {
+				resizeIframe()
+				clearTimeout(pageBreakTimeoutRef.current)
+				pageBreakTimeoutRef.current = setTimeout(repaginate, 400)
 			})
+			observer.observe(doc.body, OBSERVE_OPTIONS)
 			observerRef.current = observer
 
 			// --- FOCUS RESTORATION ---
@@ -799,6 +881,7 @@ export const ResumeIframe = forwardRef<ResumeIframeHandle, ResumeIframeProps>(
 					observerRef.current.disconnect()
 				}
 				clearTimeout(blurTimeoutRef.current)
+				clearTimeout(pageBreakTimeoutRef.current)
 			}
 		}, [])
 

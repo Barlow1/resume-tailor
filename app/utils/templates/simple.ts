@@ -57,7 +57,7 @@ function generateExperienceSection(formData: ResumeData, accentColor: string, fo
 				const bullets = options.editable ? allBullets : allBullets.filter(b => b.content)
 				const dates = [exp.startDate, exp.endDate].filter(Boolean).join(' \u2013 ')
 				return `
-			<div style="margin-bottom: 14px;" ${options.editable ? `data-experience-id="${exp.id}"` : ''}>
+			<div style="margin-bottom: 14px; break-inside: avoid;" ${options.editable ? `data-experience-id="${exp.id}"` : ''}>
 				<div style="display: flex; justify-content: space-between; align-items: baseline;">
 					<div style="display: flex; gap: 4px; align-items: baseline;">
 						<span style="font-size: ${ts(16)}px; font-weight: 700; color: #111; font-family: ${fontFamily};" ${editableAttrs(options, `experiences.${i}.role`, 'Job Title')}>${escapeHtml(exp.role || '')}</span>
@@ -85,7 +85,7 @@ function generateEducationSection(formData: ResumeData, accentColor: string, fon
 			${education.map((edu, i) => {
 				const dates = [edu.startDate, edu.endDate].filter(Boolean).join(' \u2013 ')
 				return `
-			<div style="display: flex; justify-content: space-between; margin-bottom: 8px;" ${options.editable ? `data-education-id="${edu.id}"` : ''}>
+			<div style="display: flex; justify-content: space-between; margin-bottom: 8px; break-inside: avoid;" ${options.editable ? `data-education-id="${edu.id}"` : ''}>
 				<div>
 					<div style="font-size: ${ts(16)}px; font-weight: 700; color: #111; font-family: ${fontFamily};" ${editableAttrs(options, `education.${i}.school`, 'School Name')}>${escapeHtml(edu.school || '')}</div>
 					<div style="font-size: ${ts(16)}px; color: #444; font-family: ${fontFamily};" ${editableAttrs(options, `education.${i}.degree`, 'Degree')}>${escapeHtml(edu.degree || '')}</div>

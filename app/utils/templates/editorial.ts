@@ -60,10 +60,12 @@ export function generate(
 			${sectionHeader(h, accent, heading, ts, options, 'headers.experienceHeader', 'Experience')}
 			${exps.map((exp, i) => {
 				const bullets = options.editable ? (exp.descriptions || []) : (exp.descriptions || []).filter(b => b.content)
-				// Job divider between entries (not before first)
-				const divider = i > 0 ? `<hr style="border: none; border-top: 1px solid #eee; margin: 16px 0;">` : ''
-				return `${divider}
-			<div style="margin-bottom: 4px; break-inside: avoid;" ${options.editable ? `data-experience-id="${exp.id}"` : ''}>
+				// Divider drawn inside the entry, as warm.ts does. A sibling <hr>
+				// lands in the section's child array where the paginator can split
+				// on it, and defeats bullet-level splitting since it has no <ul>.
+				const topBorder = i > 0 ? `border-top: 1px solid #eee; margin-top: 16px; padding-top: 16px;` : ''
+				return `
+			<div style="margin-bottom: 4px; break-inside: avoid; ${topBorder}" ${options.editable ? `data-experience-id="${exp.id}"` : ''}>
 				<div style="display: flex; justify-content: space-between; align-items: baseline;">
 					<div>
 						<span style="font-size: ${ts(16)}px; font-weight: 700; color: #222; font-family: ${heading};" ${editableAttrs(options, `experiences.${i}.role`, 'Job Title')}>${escapeHtml(exp.role || '')}</span>

@@ -5,7 +5,11 @@ import { toast } from '~/components/ui/use-toast.ts'
 import { type ResumeData } from '~/utils/builder-resume.server.ts'
 
 export function useBuilderSave() {
-	const fetcher = useFetcher<{ success: boolean; error?: string }>()
+	const fetcher = useFetcher<{
+		success: boolean
+		error?: string
+		resumeId?: string
+	}>()
 	const [saveStatus, setSaveStatus] = useState<
 		'idle' | 'saving' | 'saved' | 'error'
 	>('idle')

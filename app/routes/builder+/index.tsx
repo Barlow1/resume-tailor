@@ -796,7 +796,7 @@ export default function ResumeBuilder() {
 				const restored = JSON.parse(tailorSnapshotFetcher.data.snapshot) as typeof formData
 				setFormData(restored)
 				debouncedSave(restored as ResumeData)
-				iframeComponentRef.current?.forceRerender()
+				iframeComponentRef.current?.forceRerender(restored as ResumeData)
 				setHasTailorSnapshot(false)
 			} catch {
 				console.error('Failed to parse tailor snapshot')
@@ -821,7 +821,7 @@ export default function ResumeBuilder() {
 			// 2. Apply merged data
 			setFormData(mergedData as typeof formData)
 			debouncedSave(mergedData)
-			iframeComponentRef.current?.forceRerender()
+			iframeComponentRef.current?.forceRerender(mergedData)
 
 			// 3. Close panel, mark snapshot exists
 			setTailorPanelOpen(false)
@@ -876,11 +876,29 @@ export default function ResumeBuilder() {
 		[formData.id, deleteFetcher],
 	)
 
+	// Distinguishes "our first save came back" from "the user switched resumes";
+	// both surface as savedData.id !== formData.id with formData.id undefined.
+	const selfMintedIdRef = useRef<string | null>(null)
+
 	useEffect(() => {
-		if (savedData.id !== formData.id && savedData.id !== undefined) {
-			setFormData(savedData)
-			setSelectedJob(savedData.job)
+		const mintedId = fetcher.data?.resumeId
+		if (!mintedId) return
+		selfMintedIdRef.current = mintedId
+		setFormData(prev => (prev.id ? prev : { ...prev, id: mintedId }))
+	}, [fetcher.data])
+
+	useEffect(() => {
+		if (savedData.id === undefined || savedData.id === formData.id) return
+
+		if (formData.id === undefined && savedData.id === selfMintedIdRef.current) {
+			// savedData lags the client by up to ~1.3s, so take the id only.
+			setFormData(prev => (prev.id ? prev : { ...prev, id: savedData.id }))
+			return
 		}
+
+		// A genuine switch to a different saved resume — adopt it wholesale.
+		setFormData(savedData)
+		setSelectedJob(savedData.job)
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [savedData.id])
 
@@ -922,8 +940,8 @@ export default function ResumeBuilder() {
 	/* ═══ PENDING HIGHLIGHTS — apply after formData settles into iframe ═══ */
 	useEffect(() => {
 		if (pendingHighlights.length === 0) return
-		// Mark structural so iframe accepts the new HTML from the updated formData
-		iframeComponentRef.current?.markStructuralUpdate()
+		// Do not markStructuralUpdate() here — the caller already armed it before
+		// setFormData. Re-arming leaves a latch with no html change to consume it.
 		// Wait for iframe to re-render with new content, then highlight
 		const timer = setTimeout(() => {
 			iframeComponentRef.current?.highlightDescriptions(pendingHighlights)
